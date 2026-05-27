@@ -73,3 +73,6 @@ docs/readme/git-history-full.txt
 
 # Rust/Tauri build output (multi-GB, regenerable) — added for OSS migration
 src-tauri/target/
+
+# Vite entry point — must survive the /*.html artifact rule above
+!/index.html
