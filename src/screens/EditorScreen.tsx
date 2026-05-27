@@ -565,6 +565,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       if (prev.some((t) => t.id === "main")) return prev;
       return [...prev, { id: "main", name: projectFileName, kind: "preview" }];
     });
+    // Surface the preview when it first materialises. Without this the tab
+    // appears but the canvas stays on the Files tree and the user has to
+    // click it (founder/Gabi 2026-05-27: "a aba apareceu mas não abriu
+    // automático"). Only switch from the default Files tab, so later edits
+    // don't yank the user off a tab they navigated to on purpose.
+    setActiveCanvasTab((cur) => (cur === "files" ? "main" : cur));
   }, [iframeHtml, projectFileName]);
   // ─── Persistent canvas ─────────────────────────────────────────
   // What the <iframe srcDoc> attribute sees. Mirrors iframeHtml by

@@ -291,8 +291,12 @@ function loadBaseline() {
 }
 
 function offenderKey(o) {
+  // Key by file + exact text only — NOT line number. A line-numbered key
+  // breaks the whole baseline whenever an edit shifts lines (every offender
+  // below the edit looks "new"), which fails CI on unrelated changes. Text +
+  // file is stable across refactors and is what we actually want to whitelist.
   const rel = path.relative(ROOT, o.file);
-  return `${rel}:${o.line}\t${o.text}`;
+  return `${rel}\t${o.text}`;
 }
 
 function writeBaseline(offenders) {
@@ -300,7 +304,7 @@ function writeBaseline(offenders) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const lines = [
     "# i18n-audit baseline — entries here are accepted as known offenders.",
-    "# Format: <relative-path>:<line>\\t<exact text>",
+    "# Format: <relative-path>\\t<exact text>  (line-independent — survives edits)",
     "# Generated: " + new Date().toISOString(),
     "",
   ];

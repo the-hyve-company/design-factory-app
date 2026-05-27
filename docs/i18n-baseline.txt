@@ -1,522 +1,522 @@
 # i18n-audit baseline — entries here are accepted as known offenders.
-# Format: <relative-path>:<line>\t<exact text>
-# Generated: 2026-05-27T21:34:03.681Z
+# Format: <relative-path>\t<exact text>  (line-independent — survives edits)
+# Generated: 2026-05-27T23:23:08.082Z
 
-src/App.tsx:570	No DS matches
-src/App.tsx:570	. It may have been renamed or removed.
-src/App.tsx:572	Back to design systems
-src/components/AgentPicker.tsx:235	Switch CLI agent
-src/components/AgentPicker.tsx:304	Reescanear PATH
-src/components/AgentPicker.tsx:305	Reescanear PATH
-src/components/AskUserQuestion.tsx:161	Answered ·
-src/components/AttachDsModal.tsx:137	Close
-src/components/AudioTrack.tsx:138	s ·
-src/components/AudioTrack.tsx:141	Remove audio
-src/components/AudioTrack.tsx:149	decoding…
-src/components/ChatMessage.tsx:358	salvando…
-src/components/ChatMessage.tsx:365	A escrita no daemon falhou ou demorou demais. Mensagem salva localmente; será sincronizada quando possível.
-src/components/ChatMessage.tsx:366	salvo localmente
-src/components/ChatMessage.tsx:373	Não foi possível salvar este turno em disco nem no recovery local.
-src/components/ChatMessage.tsx:374	falha ao salvar
-src/components/ChatMessage.tsx:753	Tempo decorrido desde o início do turno
-src/components/ChatMessage.tsx:1268	remove attachment
-src/components/DFDSPanel.tsx:57	Settings · Components
-src/components/DFDSPanel.tsx:60	Live reference of every token + visual pattern the app uses. All hover / active states are real — try them.
-src/components/DFDSPanel.tsx:73	Color tokens
-src/components/DFDSPanel.tsx:76	Border radius
-src/components/DFDSPanel.tsx:77	Type scale
-src/components/DFDSPanel.tsx:78	Spacing
-src/components/DFDSPanel.tsx:79	Shadows
-src/components/DFDSPanel.tsx:81	Buttons
-src/components/DFDSPanel.tsx:84	Tactile (skeu)
-src/components/DFDSPanel.tsx:88	Inputs
-src/components/DFDSPanel.tsx:89	Toggles & switches
-src/components/DFDSPanel.tsx:92	Dropdowns
-src/components/DFDSPanel.tsx:95	Color picker
-src/components/DFDSPanel.tsx:99	Tabs
-src/components/DFDSPanel.tsx:103	Details / accordion
-src/components/DFDSPanel.tsx:107	Sidebar nav items
-src/components/DFDSPanel.tsx:111	Cards
-src/components/DFDSPanel.tsx:112	Pills & badges
-src/components/DFDSPanel.tsx:113	Status dots
-src/components/DFDSPanel.tsx:114	Progress & spinners
-src/components/DFDSPanel.tsx:115	Tooltips
-src/components/DFDSPanel.tsx:116	Keyboard shortcuts
-src/components/DFDSPanel.tsx:117	Modal / Dialog
-src/components/DFDSPanel.tsx:119	New Project layout
-src/components/DFDSPanel.tsx:123	Surface stack
-src/components/DFDSPanel.tsx:185	The quick brown fox
-src/components/DFDSPanel.tsx:236	Variants
-src/components/DFDSPanel.tsx:238	Primary
-src/components/DFDSPanel.tsx:239	Secondary
-src/components/DFDSPanel.tsx:240	Ghost
-src/components/DFDSPanel.tsx:241	Disabled
-src/components/DFDSPanel.tsx:242	Icon-only
-src/components/DFDSPanel.tsx:252	Icon + label
-src/components/DFDSPanel.tsx:255	Save
-src/components/DFDSPanel.tsx:259	Save copy
-src/components/DFDSPanel.tsx:275	States — click and hold
-src/components/DFDSPanel.tsx:277	Resting
-src/components/DFDSPanel.tsx:278	Hover (sim)
-src/components/DFDSPanel.tsx:279	Pressed (sim)
-src/components/DFDSPanel.tsx:286	Try me
-src/components/DFDSPanel.tsx:292	Sizes
-src/components/DFDSPanel.tsx:313	Text
-src/components/DFDSPanel.tsx:314	Project name
-src/components/DFDSPanel.tsx:316	Password (toggle)
-src/components/DFDSPanel.tsx:337	Search (with icon)
-src/components/DFDSPanel.tsx:343	Search projects
-src/components/DFDSPanel.tsx:346	Number
-src/components/DFDSPanel.tsx:349	Textarea
-src/components/DFDSPanel.tsx:350	Multi-line input
-src/components/DFDSPanel.tsx:352	Disabled
-src/components/DFDSPanel.tsx:353	Disabled input
-src/components/DFDSPanel.tsx:369	Switch
-src/components/DFDSPanel.tsx:371	Auto-save
-src/components/DFDSPanel.tsx:372	Loop preview
-src/components/DFDSPanel.tsx:373	Disabled
-src/components/DFDSPanel.tsx:377	Checkbox
-src/components/DFDSPanel.tsx:382	Option
-src/components/DFDSPanel.tsx:388	Radio (single-pick)
-src/components/DFDSPanel.tsx:393	Pick
-src/components/DFDSPanel.tsx:444	Plain dropdown
-src/components/DFDSPanel.tsx:455	With dot indicator (provider-style)
-src/components/DFDSPanel.tsx:482	Color badges (token chips)
-src/components/DFDSPanel.tsx:504	Two options
-src/components/DFDSPanel.tsx:512	Three options
-src/components/DFDSPanel.tsx:631	16:9 thumb
-src/components/DFDSPanel.tsx:634	Project card
-src/components/DFDSPanel.tsx:635	just now
-src/components/DFDSPanel.tsx:646	Bordered card
-src/components/DFDSPanel.tsx:647	bg-section · border-subtle · r-xl · shadow-card
-src/components/DFDSPanel.tsx:659	Status badges
-src/components/DFDSPanel.tsx:662	not set
-src/components/DFDSPanel.tsx:669	Counter
-src/components/DFDSPanel.tsx:677	Toolbar pill
-src/components/DFDSPanel.tsx:680	Active
-src/components/DFDSPanel.tsx:683	Idle
-src/components/DFDSPanel.tsx:712	Determinate
-src/components/DFDSPanel.tsx:731	Indeterminate / spinner
-src/components/DFDSPanel.tsx:740	loading…
-src/components/DFDSPanel.tsx:753	Native title attribute tooltip
-src/components/DFDSPanel.tsx:753	Hover (native)
-src/components/DFDSPanel.tsx:755	Hover (custom)
-src/components/DFDSPanel.tsx:832	Open modal
-src/components/DFDSPanel.tsx:849	Modal title
-src/components/DFDSPanel.tsx:852	Same anatomy as DsSetupModal / SkillImportModal / FullPromptModal: header (with close), scrollable body, footer with cancel + confirm buttons.
-src/components/DFDSPanel.tsx:856	Cancel
-src/components/DFDSPanel.tsx:857	Confirm
-src/components/DFDSPanel.tsx:878	new project
-src/components/DFDSPanel.tsx:879	What are we building?
-src/components/DFDSPanel.tsx:884	Name
-src/components/DFDSPanel.tsx:887	name-this-thing
-src/components/DFDSPanel.tsx:893	Format & direction
-src/components/DFDSPanel.tsx:895	Pick format + directions
-src/components/DFDSPanel.tsx:905	Design system
-src/components/DFDSPanel.tsx:913	Default
-src/components/DFDSPanel.tsx:914	4 tokens · folder
-src/components/DFDSPanel.tsx:921	Model
-src/components/DFDSPanel.tsx:936	Skill
-src/components/DFDSPanel.tsx:950	Initial prompt
-src/components/DFDSPanel.tsx:958	Describe what to create…
-src/components/DFDSPanel.tsx:977	Create project
-src/components/DFDSPanel.tsx:983	or start from existing HTML →
-src/components/DfModal.tsx:103	Close dialog
-src/components/DfToast.tsx:29	Notifications
-src/components/DsSetupModal.tsx:248	Design System · any input → design.md
-src/components/DsSetupModal.tsx:251	Novo design system
-src/components/DsSetupModal.tsx:259	Fechar
-src/components/DsSetupModal.tsx:491	Confirm the absolute path of the folder you just picked (browser can't read it directly):
-src/components/DsSetupModal.tsx:559	Folder
-src/components/DsSetupModal.tsx:567	Name
-src/components/DsSetupModal.tsx:571	e.g. My DS
-src/components/DsSetupModal.tsx:602	No DS-relevant files found in this folder. Try a different one.
-src/components/DsSetupModal.tsx:606	Will write to
-src/components/DsSetupModal.tsx:786	Not connected. Pick one:
-src/components/DsSetupModal.tsx:810	1. Open
-src/components/DsSetupModal.tsx:813	2. Enter this code:
-src/components/DsSetupModal.tsx:834	Copy
-src/components/DsSetupModal.tsx:837	waiting…
-src/components/DsSetupModal.tsx:845	device flow ·
-src/components/DsSetupModal.tsx:849	Or paste a Personal Access Token (scope
-src/components/DsSetupModal.tsx:856	ghp_…
-src/components/DsSetupModal.tsx:861	Connect
-src/components/DsSetupModal.tsx:931	Or paste any repo URL
-src/components/DsSetupModal.tsx:941	Select
-src/components/DsSetupModal.tsx:1065	File
-src/components/DsSetupModal.tsx:1073	Name
-src/components/DsSetupModal.tsx:1083	Preview
-src/components/DsSetupModal.tsx:1102	Will write to
-src/components/DsSetupModal.tsx:1102	design-systems/
-src/components/DsSetupModal.tsx:1162	Name
-src/components/DsSetupModal.tsx:1172	Paste
-src/components/DsSetupModal.tsx:1201	Will write to
-src/components/DsSetupModal.tsx:1201	design-systems/
-src/components/DsSetupModal.tsx:1420	Gerar preview ao terminar
-src/components/DsSetupModal.tsx:1434	Source ·
-src/components/DsSetupModal.tsx:1484	Claude
-src/components/DsSetupModal.tsx:1505	(sem modelos)
-src/components/DsSetupModal.tsx:1606	Capa do card
-src/components/DsSetupModal.tsx:1607	(opcional)
-src/components/EditDrawer.tsx:84	Edit · global
-src/components/EditDrawer.tsx:90	Close
-src/components/EditDrawer.tsx:97	Presets
-src/components/EditDrawer.tsx:126	Background
-src/components/EditDrawer.tsx:130	Text color
-src/components/EditDrawer.tsx:134	Page padding
-src/components/EditDrawer.tsx:138	Max content width
-src/components/EditDrawer.tsx:142	Base font size
-src/components/EditDrawer.tsx:146	Font family
-src/components/EditDrawer.tsx:154	Border radius
-src/components/EditDrawer.tsx:158	Shadow
-src/components/EditDrawer.tsx:177	Reset all
-src/components/EditDrawer.tsx:223	Clear
-src/components/ElementInspectorPanel.tsx:96	Element · selected
-src/components/ElementInspectorPanel.tsx:102	Close element inspector
-src/components/ElementInspectorPanel.tsx:103	Close (Esc)
-src/components/ElementInspectorPanel.tsx:127	Tag
-src/components/ElementInspectorPanel.tsx:139	Selector
-src/components/ElementInspectorPanel.tsx:161	Copy selector
-src/components/ElementInspectorPanel.tsx:164	Copy
-src/components/ElementInspectorPanel.tsx:170	Box
-src/components/ElementInspectorPanel.tsx:219	Text
-src/components/ElementInspectorPanel.tsx:237	Edit this element
-src/components/ElementInspectorPanel.tsx:247	Describe the change. E.g. 'make this orange and bold'.
-src/components/ElementInspectorPanel.tsx:267	Send to agent ·
-src/components/ErrorBoundary.tsx:64	render error
-src/components/ErrorBoundary.tsx:73	Something broke while rendering
-src/components/ErrorBoundary.tsx:106	Reload app
-src/components/ErrorBoundary.tsx:107	Back to home
-src/components/ErrorBoundary.tsx:108	Copy diagnostics
-src/components/ErrorToastDock.tsx:48	Dismiss
-src/components/FileManager.tsx:181	Close panel
-src/components/FileManager.tsx:198	File
-src/components/FileManager.tsx:205	Folder
-src/components/FileManager.tsx:208	Refresh
-src/components/FileManager.tsx:234	Loading…
-src/components/FileManager.tsx:253	Create folder
-src/components/FileManager.tsx:274	Create first file
-src/components/FileManager.tsx:296	Uploads & assets
-src/components/FileManager.tsx:310	Folders
-src/components/FileManager.tsx:635	Create (Enter)
-src/components/FileManager.tsx:638	Cancel (Esc)
-src/components/FileView.tsx:53	Binary file — preview unavailable
-src/components/FolderPickerModal.tsx:98	Close
-src/components/FolderPickerModal.tsx:127	Loading…
-src/components/FolderPickerModal.tsx:196	Empty folder
-src/components/FolderPickerModal.tsx:205	Pick:
-src/components/FolderPickerModal.tsx:208	Cancel
-src/components/FolderPickerModal.tsx:215	Use this folder
-src/components/FormatTaxonomyEditor.tsx:298	Prompt
-src/components/FormatTaxonomyEditor.tsx:304	Long-form instruction text that gets concatenated into the system prompt when this format is selected. Empty = use descriptor.
-src/components/FormatTaxonomyEditor.tsx:310	Editable for builtins too. Saved as user override, original ships in code.
-src/components/FullPromptModal.tsx:180	design factory · prompt audit
-src/components/FullPromptModal.tsx:181	Full project prompt
-src/components/FullPromptModal.tsx:183	Close
-src/components/FullPromptModal.tsx:193	tokens (rough)
-src/components/FullPromptModal.tsx:203	Close
-src/components/FullPromptModal.tsx:213	No prompt recorded for this project.
-src/components/FullPromptModal.tsx:224	Copy this section
-src/components/GeneratePreviewModal.tsx:108	Gerar preview do design system
-src/components/GeneratePreviewModal.tsx:126	Cancelar
-src/components/GeneratePreviewModal.tsx:153	vai ser enviado ao provider escolhido com um prompt fixo que pede uma página HTML completa aplicando todos os tokens, componentes e regras descritas. O resultado é salvo em
-src/components/GeneratePreviewModal.tsx:167	Provider
-src/components/GeneratePreviewModal.tsx:184	Carregando…
-src/components/GeneratePreviewModal.tsx:186	Claude Code (default)
-src/components/GeneratePreviewModal.tsx:205	Modelo
-src/components/GeneratePreviewModal.tsx:222	(sem modelos)
-src/components/GeneratePreviewModal.tsx:238	custom model id
-src/components/GeneratePreviewModal.tsx:258	Modelo customizado
-src/components/GeneratePreviewModal.tsx:263	ex: claude-sonnet-4-6
-src/components/InlineEditPanel.tsx:275	Inline edit ·
-src/components/InlineEditPanel.tsx:299	Text
-src/components/InlineEditPanel.tsx:313	Typography
-src/components/InlineEditPanel.tsx:314	Font
-src/components/InlineEditPanel.tsx:328	Weight
-src/components/InlineEditPanel.tsx:340	Size
-src/components/InlineEditPanel.tsx:355	Color
-src/components/InlineEditPanel.tsx:366	Align
-src/components/InlineEditPanel.tsx:378	Line Height
-src/components/InlineEditPanel.tsx:395	Tracking
-src/components/InlineEditPanel.tsx:412	Size
-src/components/InlineEditPanel.tsx:414	Width
-src/components/InlineEditPanel.tsx:427	Height
-src/components/InlineEditPanel.tsx:444	Box
-src/components/InlineEditPanel.tsx:445	Opacity
-src/components/InlineEditPanel.tsx:461	Padding
-src/components/InlineEditPanel.tsx:472	Margin
-src/components/InlineEditPanel.tsx:482	Border
-src/components/InlineEditPanel.tsx:519	Border Radius
-src/components/InlineEditPanel.tsx:553	Cancel
-src/components/NewProjectFormSkeu.tsx:974	See the compiled direction before starting
-src/components/NewProjectFormSkeu.tsx:975	Preview prompt
-src/components/NewProjectFormSkeu.tsx:1339	Model
-src/components/NewProjectFormSkeu.tsx:1416	Provider
-src/components/OriginGuardBanner.tsx:27	Origem não permitida
-src/components/OriginGuardBanner.tsx:30	Esta página está em
-src/components/OriginGuardBanner.tsx:31	, mas o daemon do Design Factory só aceita conexões de
-src/components/OriginGuardBanner.tsx:33	(ou pela app Tauri). Chamadas para o bridge vão falhar — chat, salvamento e geração ficam quebrados.
-src/components/OriginGuardBanner.tsx:40	Abrir em
-src/components/ProviderBanner.tsx:109	Apontar minha CLI
-src/components/ProviderBanner.tsx:112	Abrir Ajustes
-src/components/ProviderBanner.tsx:128	caminho do executável (ex: C:\\Users\\voce\\.local\\bin\\claude.exe)
-src/components/ProviderBanner.tsx:142	Dica: no terminal,
-src/components/ProviderBanner.tsx:143	where claude
-src/components/ProviderBanner.tsx:143	(Windows) ou
-src/components/ProviderBanner.tsx:143	which claude
-src/components/ProviderBanner.tsx:143	(Mac/Linux) mostra o caminho.
-src/components/ProviderTokenInline.tsx:329	vercel login
-src/components/ProviderTokenInline.tsx:452	gh auth login
-src/components/RatioChangeConfirmModal.tsx:47	Cancelar
-src/components/RatioChangeConfirmModal.tsx:65	Adaptar conteúdo
-src/components/RatioChangeConfirmModal.tsx:71	O conteúdo atual foi gerado para
-src/components/RatioChangeConfirmModal.tsx:72	). Para adaptar ao novo formato
-src/components/RatioChangeConfirmModal.tsx:73	), o Design Factory vai regenerar o HTML preservando texto, animações, cores e timing das scenes — apenas redimensionando o layout.
-src/components/RatioChangeConfirmModal.tsx:77	Esse processo demora 30s-2min e usa o provider/modelo selecionado. Você pode cancelar a qualquer momento.
-src/components/RatioRegenOverlay.tsx:72	Adaptando layout para
-src/components/RatioRegenOverlay.tsx:85	tokens gerados
-src/components/RatioRegenOverlay.tsx:103	Cancelar
-src/components/SceneInspector.tsx:68	scene ·
-src/components/SceneInspector.tsx:70	Close
-src/components/SceneInspector.tsx:87	Start
-src/components/SceneInspector.tsx:88	Length
-src/components/SceneInspector.tsx:89	Ends
-src/components/SceneInspector.tsx:100	Regenerate this scene
-src/components/SceneInspector.tsx:104	Refazer cena
-src/components/SceneInspector.tsx:111	Empty this scene (keeps slot, drops content)
-src/components/SceneInspector.tsx:115	Skip
-src/components/SceneInspector.tsx:123	Text
-src/components/SceneInspector.tsx:137	Click to fill find/replace
-src/components/SceneInspector.tsx:148	Find
-src/components/SceneInspector.tsx:156	Replace with
-src/components/SceneInspector.tsx:168	Replace
-src/components/SceneInspector.tsx:176	Refine in chat
-src/components/SceneInspector.tsx:185	Send
-src/components/SceneTimeline.tsx:171	Scene timeline
-src/components/SceneTimeline.tsx:216	Drag to retime · ripple-shifts later scenes
-src/components/SceneTimeline.tsx:230	Playhead — drag to scrub
-src/components/ShortcutsOverlay.tsx:54	Keyboard shortcuts
-src/components/ShortcutsOverlay.tsx:55	Press
-src/components/ShortcutsOverlay.tsx:55	anytime to toggle this list.
-src/components/SkillCreateModal.tsx:127	Discard unsaved skill?
-src/components/SkillCreateModal.tsx:195	Skill ·
-src/components/SkillCreateModal.tsx:198	Nova skill
-src/components/SkillCreateModal.tsx:204	Fechar
-src/components/SkillCreateModal.tsx:221	Identidade da skill
-src/components/SkillCreateModal.tsx:227	Name
-src/components/SkillCreateModal.tsx:232	Brand palette generator
-src/components/SkillCreateModal.tsx:244	Command
-src/components/SkillCreateModal.tsx:266	Type this in chat to activate. Built-ins:
-src/components/SkillCreateModal.tsx:269	Description
-src/components/SkillCreateModal.tsx:273	shown in slash menu · 1-2 lines
-src/components/SkillCreateModal.tsx:288	Instruções da skill
-src/components/SkillCreateModal.tsx:290	INSTRUÇÕES
-src/components/SkillCreateModal.tsx:296	Preview
-src/components/SkillCreateModal.tsx:307	You are…
-src/components/SkillCreateModal.tsx:336	You are…
-src/components/SkillCreateModal.tsx:349	Markdown supported. Min 20 characters, max 100KB. Keep it behavioral — "you are…", "when you X…" — not code.
-src/components/SkillCreateModal.tsx:381	Cancelar
-src/components/SkillDetailModal.tsx:50	Discard unsaved changes?
-src/components/SkillDetailModal.tsx:71	Discard unsaved changes?
-src/components/SkillDetailModal.tsx:144	Discard unsaved changes?
-src/components/SkillDetailModal.tsx:181	requires:
-src/components/SkillDetailModal.tsx:206	Discard unsaved changes?
-src/components/SkillDetailModal.tsx:212	Close
-src/components/SkillDetailModal.tsx:301	Name
-src/components/SkillDetailModal.tsx:302	Trigger
-src/components/SkillDetailModal.tsx:305	Description
-src/components/SkillDetailModal.tsx:313	Short summary shown in slash menu and cards
-src/components/SkillDetailModal.tsx:318	Description
-src/components/SkillDetailModal.tsx:320	Source
-src/components/SkillDetailModal.tsx:321	Path
-src/components/SkillDetailModal.tsx:322	Overrides
-src/components/SkillDetailModal.tsx:323	Version
-src/components/SkillDetailModal.tsx:324	Body hash
-src/components/SkillDetailModal.tsx:325	Size
-src/components/SkillDetailModal.tsx:335	Read-only. Edits to
-src/components/SkillDetailModal.tsx:336	skills happen in their source file.
-src/components/SkillDetailModal.tsx:358	Delete
-src/components/SkillDetailModal.tsx:373	Export .md
-src/components/SkillDetailModal.tsx:382	Edit
-src/components/SkillDetailModal.tsx:388	Cancel
-src/components/SkillImportModal.tsx:98	Import skill
-src/components/SkillImportModal.tsx:111	Upload
-src/components/SkillImportModal.tsx:112	From URL
-src/components/SkillImportModal.tsx:113	Scan folder
-src/components/SkillImportModal.tsx:254	Drop a
-src/components/SkillImportModal.tsx:255	SKILL.md
-src/components/SkillImportModal.tsx:255	.zip
-src/components/SkillImportModal.tsx:255	bundle here
-src/components/SkillImportModal.tsx:264	Browse
-src/components/SkillImportModal.tsx:323	Paste a URL to a
-src/components/SkillImportModal.tsx:324	SKILL.md
-src/components/SkillImportModal.tsx:324	on GitHub, Gist, or Pages. GitHub
-src/components/SkillImportModal.tsx:325	URLs are auto-converted to raw content.
-src/components/SkillImportModal.tsx:327	Imported skills aren't reviewed
-src/components/SkillImportModal.tsx:327	— check the preview before enabling.
-src/components/SkillImportModal.tsx:411	Pick folder…
-src/components/SkillImportModal.tsx:428	Found
-src/components/SkillImportModal.tsx:429	· click to preview + import
-src/components/SkillImportModal.tsx:497	← Back
-src/components/SkillImportModal.tsx:500	Preview before import
-src/components/SkillImportModal.tsx:517	Name
-src/components/SkillImportModal.tsx:533	Description
-src/components/SkillImportModal.tsx:554	warning · `
-src/components/SkillImportModal.tsx:555	` already used by
-src/components/SkillImportModal.tsx:555	· import will fail unless you pick a different command
-src/components/SkillImportModal.tsx:559	This skill is unreviewed. Read the instructions before enabling — skills run as system prompt context.
-src/components/SkillImportModal.tsx:588	Cancel
-src/components/SlashMenu.tsx:77	No matches
-src/components/TasteDialEditor.tsx:219	50 · neutral (no prompt)
-src/components/TasteDialEditor.tsx:276	● override
-src/components/TasteDialEditor.tsx:291	Restore default phrase
-src/components/TasteDialEditor.tsx:292	Reset
-src/components/TerminalDrawer.tsx:253	Terminal
-src/components/TerminalDrawer.tsx:266	Clear scrollback (process keeps running)
-src/components/TerminalDrawer.tsx:266	Clear
-src/components/TerminalDrawer.tsx:269	Copy selection (or full buffer if nothing selected)
-src/components/TerminalDrawer.tsx:269	Copy
-src/components/TerminalDrawer.tsx:272	Close terminal
-src/components/TextInspector.tsx:71	Text ·
-src/components/TextInspector.tsx:80	Close (Esc)
-src/components/TextInspector.tsx:81	Close text inspector
-src/components/TextInspector.tsx:97	(empty)
-src/components/TextInspector.tsx:105	Cancel
-src/components/TextInspector.tsx:113	Save
-src/components/ThemeToggle.tsx:26	Toggle theme
-src/components/TokensPanel.tsx:37	Settings · Tokens
-src/components/TokensPanel.tsx:38	Tokens
-src/components/TokensPanel.tsx:41	API keys saved here stay on your machine, chmod 600. The browser never holds the value — only `tokenSet:bool` is read back.
-src/components/TokensPanel.tsx:50	OpenAI API key
-src/components/TokensPanel.tsx:58	Gemini API key
-src/components/TokensPanel.tsx:61	AIza...
-src/components/TokensPanel.tsx:163	Clear saved
-src/components/TokensPanel.tsx:213	Anthropic API key
-src/components/TokensPanel.tsx:218	Used by the "Anthropic API" provider (BYOK direct API access). Get one at console.anthropic.com → API Keys.
-src/components/TokensPanel.tsx:249	Clear saved
-src/components/TokensPanel.tsx:307	Vercel publish
-src/components/TokensPanel.tsx:312	Used by the "Publish to Vercel" item in the Share/Export menu. Generate a token at vercel.com/account/tokens (scope: deployments). Team id is optional — only needed if you deploy under a team account.
-src/components/TokensPanel.tsx:330	team_... (optional)
-src/components/TokensPanel.tsx:352	Clear token
-src/components/ToolEventBubble.tsx:104	Input
-src/components/ToolEventBubble.tsx:163	Reason
-src/components/TurnTimelinePanel.tsx:145	Ctrl+Shift+T → toggle turn timeline
-src/components/TurnTimelinePanel.tsx:201	Copy timeline to clipboard
-src/components/TurnTimelinePanel.tsx:209	Close (Ctrl+Shift+T)
-src/components/TurnTimelinePanel.tsx:218	waiting for events…
-src/components/TurnTimelinePanel.tsx:269	recent:
-src/components/TweaksBridgePanel.tsx:162	Tweaks · live
-src/components/TweaksBridgePanel.tsx:169	Close tweaks bridge panel
-src/components/TweaksBridgePanel.tsx:170	Close
-src/components/TweaksBridgePanel.tsx:262	Reset
-src/components/TweaksBridgePanel.tsx:265	Export CSS
-src/components/VideoTab.tsx:779	Math.random
-src/components/VideoTab.tsx:824	composition preview
-src/components/VideoTab.tsx:1429	Replay
-src/components/VideoTab.tsx:1453	Para uma trilha editável: peça no chat
-src/components/VideoTab.tsx:1454	"regere usando o contrato (data-scene + script df-manifest)"
-src/components/dfds/ColorPickerPopover.tsx:130	#rrggbb
-src/components/dfds/ColorPickerPopover.tsx:138	Apply
-src/components/dfds/ColorPickerPopover.tsx:150	Reset to default
-src/screens/DsPreviewScreen.tsx:293	Back to home
-src/screens/DsPreviewScreen.tsx:294	Back to home
-src/screens/DsPreviewScreen.tsx:365	Settings
-src/screens/DsPreviewScreen.tsx:366	Settings
-src/screens/DsPreviewScreen.tsx:422	Loading design.md…
-src/screens/DsPreviewScreen.tsx:441	Can't reach this design system
-src/screens/DsPreviewScreen.tsx:447	GitHub-sourced DSes keep their
-src/screens/DsPreviewScreen.tsx:448	in an ephemeral cache that gets wiped between runs. Remove this entry and re-add the repo to regenerate.
-src/screens/DsPreviewScreen.tsx:458	Remove from list
-src/screens/DsPreviewScreen.tsx:464	Back to workspace
-src/screens/DsPreviewScreen.tsx:530	This DS has no content
-src/screens/DsPreviewScreen.tsx:533	The
-src/screens/DsPreviewScreen.tsx:535	exists but is empty — likely the original generation failed silently. Edit the file directly below, or remove this DS and create a new one.
-src/screens/DsPreviewScreen.tsx:543	Edit design.md
-src/screens/DsPreviewScreen.tsx:554	Remove from list
-src/screens/DsPreviewScreen.tsx:560	Back to workspace
-src/screens/DsPreviewScreen.tsx:607	Cancel
-src/screens/DsPreviewScreen.tsx:615	Save
-src/screens/DsPreviewScreen.tsx:657	Edit markdown
-src/screens/DsPreviewScreen.tsx:658	Edit markdown
-src/screens/DsPreviewScreen.tsx:673	Edit
-src/screens/DsPreviewScreen.tsx:752	Gerando preview com
-src/screens/DsPreviewScreen.tsx:760	s decorridos · roda em background, pode fechar tabs
-src/screens/DsPreviewScreen.tsx:768	Cancelar
-src/screens/DsPreviewScreen.tsx:781	Design system preview (stale while regenerating)
-src/screens/DsPreviewScreen.tsx:796	Carregando preview…
-src/screens/DsPreviewScreen.tsx:821	Falha ao gerar preview:
-src/screens/DsPreviewScreen.tsx:824	Tentar de novo
-src/screens/DsPreviewScreen.tsx:836	Design system preview
-src/screens/DsPreviewScreen.tsx:865	Ainda sem preview
-src/screens/DsPreviewScreen.tsx:868	O preview é um
-src/screens/DsPreviewScreen.tsx:869	gerado por um modelo de IA aplicando o seu
-src/screens/DsPreviewScreen.tsx:869	. Escolha o provider e o modelo no próximo passo.
-src/screens/DsPreviewScreen.tsx:872	Gerar Preview
-src/screens/DsPreviewScreen.tsx:887	Design system preview
-src/screens/EditorScreen.tsx:5840	Claude CLI not authenticated.
-src/screens/EditorScreen.tsx:5852	Dismiss auth banner
-src/screens/EditorScreen.tsx:5882	Project path not found:
-src/screens/EditorScreen.tsx:5903	Browse…
-src/screens/EditorScreen.tsx:5908	Dismiss missing path banner
-src/screens/EditorScreen.tsx:5994	Close
-src/screens/EditorScreen.tsx:6155	Resize chat column
-src/screens/EditorScreen.tsx:6176	No comments yet
-src/screens/EditorScreen.tsx:6179	Switch to Comment mode in the canvas toolbar, then click any element in the preview to pin a note.
-src/screens/EditorScreen.tsx:6199	Jump to element in preview
-src/screens/EditorScreen.tsx:6222	· sent
-src/screens/EditorScreen.tsx:6251	Click to edit
-src/screens/EditorScreen.tsx:6265	Delete comment
-src/screens/EditorScreen.tsx:6278	Send this comment to Claude
-src/screens/EditorScreen.tsx:6296	Send
-src/screens/EditorScreen.tsx:6321	Send
-src/screens/EditorScreen.tsx:6322	to Claude
-src/screens/EditorScreen.tsx:6328	Clear sent comments
-src/screens/EditorScreen.tsx:6330	Clear sent
-src/screens/EditorScreen.tsx:6516	in /
-src/screens/EditorScreen.tsx:6696	Elapsed time
-src/screens/EditorScreen.tsx:6698	Estimated output tokens
-src/screens/EditorScreen.tsx:6701	Tool calls (completed / total)
-src/screens/EditorScreen.tsx:6706	Provider · model
-src/screens/EditorScreen.tsx:6725	Cancel turn (Esc)
-src/screens/EditorScreen.tsx:6860	Detach design system
-src/screens/EditorScreen.tsx:7211	probe failed
-src/screens/EditorScreen.tsx:7221	No models configured.
-src/screens/EditorScreen.tsx:7406	Terminal
-src/screens/EditorScreen.tsx:7412	Files
-src/screens/EditorScreen.tsx:7425	Tweaks
-src/screens/EditorScreen.tsx:7460	Leave blank for a comprehensive set.
-src/screens/EditorScreen.tsx:7477	Cancel
-src/screens/EditorScreen.tsx:7487	Comment
-src/screens/EditorScreen.tsx:7517	Edit
-src/screens/EditorScreen.tsx:7538	Prompt
-src/screens/EditorScreen.tsx:7556	Present fullscreen (Esc to exit)
-src/screens/EditorScreen.tsx:7561	Present
-src/screens/EditorScreen.tsx:7621	Video editing is deferred to a later wave.
-src/screens/EditorScreen.tsx:7622	Close this tab to remove it from the project.
-src/screens/EditorScreen.tsx:7756	Describe what to create in the chat. Claude will generate your design.
-src/screens/EditorScreen.tsx:7792	Esc
-src/screens/EditorScreen.tsx:7795	Actions
-src/screens/EditorScreen.tsx:7822	Esc
-src/screens/EditorScreen.tsx:7969	Version history
-src/screens/EditorScreen.tsx:7971	named ·
-src/screens/EditorScreen.tsx:7978	Save current as...
-src/screens/EditorScreen.tsx:7984	No versions yet. Saves happen automatically on every generation.
-src/screens/EditorScreen.tsx:8007	· current
-src/screens/EditorScreen.tsx:8018	Restore
-src/screens/EditorScreen.tsx:8023	Delete version
-src/screens/EditorScreen.tsx:8050	Save version
-src/screens/EditorScreen.tsx:8051	Name this save so you can restore it later. Named versions are kept indefinitely; auto-saves are capped at 20.
-src/screens/EditorScreen.tsx:8058	e.g. before color rework
-src/screens/EditorScreen.tsx:8067	Cancel
-src/screens/EditorScreen.tsx:8068	Save
-src/screens/EditorScreen.tsx:8131	Pin a comment
-src/screens/EditorScreen.tsx:8153	What to note about this element...
-src/screens/EditorScreen.tsx:8166	⌘↵ to save · comments batch in the Comments tab
-src/screens/EditorScreen.tsx:8170	Cancel
-src/screens/EditorScreen.tsx:8173	Pin
-src/screens/HomeScreen.tsx:1219	Carregar mais (
-src/screens/HomeScreen.tsx:1220	restantes)
-src/screens/SkillCoverPreviewScreen.tsx:198	Preview · Skill covers
-src/screens/SkillCoverPreviewScreen.tsx:201	6 direções, 4 skills mockadas cada
-src/screens/SkillCoverPreviewScreen.tsx:204	Cada coluna é uma direção visual. Cada linha é a mesma skill renderizada em todas. Olha o conjunto e me diz qual letra (A-F).
-src/screens/SkillCoverPreviewScreen.tsx:274	Manda a letra (A, B, C, D, E ou F) — se quiser combinar (e.g. "C com cor de B"), descreve que aplico.
+src/App.tsx	No DS matches
+src/App.tsx	. It may have been renamed or removed.
+src/App.tsx	Back to design systems
+src/components/AgentPicker.tsx	Switch CLI agent
+src/components/AgentPicker.tsx	Reescanear PATH
+src/components/AgentPicker.tsx	Reescanear PATH
+src/components/AskUserQuestion.tsx	Answered ·
+src/components/AttachDsModal.tsx	Close
+src/components/AudioTrack.tsx	s ·
+src/components/AudioTrack.tsx	Remove audio
+src/components/AudioTrack.tsx	decoding…
+src/components/ChatMessage.tsx	salvando…
+src/components/ChatMessage.tsx	A escrita no daemon falhou ou demorou demais. Mensagem salva localmente; será sincronizada quando possível.
+src/components/ChatMessage.tsx	salvo localmente
+src/components/ChatMessage.tsx	Não foi possível salvar este turno em disco nem no recovery local.
+src/components/ChatMessage.tsx	falha ao salvar
+src/components/ChatMessage.tsx	Tempo decorrido desde o início do turno
+src/components/ChatMessage.tsx	remove attachment
+src/components/DFDSPanel.tsx	Settings · Components
+src/components/DFDSPanel.tsx	Live reference of every token + visual pattern the app uses. All hover / active states are real — try them.
+src/components/DFDSPanel.tsx	Color tokens
+src/components/DFDSPanel.tsx	Border radius
+src/components/DFDSPanel.tsx	Type scale
+src/components/DFDSPanel.tsx	Spacing
+src/components/DFDSPanel.tsx	Shadows
+src/components/DFDSPanel.tsx	Buttons
+src/components/DFDSPanel.tsx	Tactile (skeu)
+src/components/DFDSPanel.tsx	Inputs
+src/components/DFDSPanel.tsx	Toggles & switches
+src/components/DFDSPanel.tsx	Dropdowns
+src/components/DFDSPanel.tsx	Color picker
+src/components/DFDSPanel.tsx	Tabs
+src/components/DFDSPanel.tsx	Details / accordion
+src/components/DFDSPanel.tsx	Sidebar nav items
+src/components/DFDSPanel.tsx	Cards
+src/components/DFDSPanel.tsx	Pills & badges
+src/components/DFDSPanel.tsx	Status dots
+src/components/DFDSPanel.tsx	Progress & spinners
+src/components/DFDSPanel.tsx	Tooltips
+src/components/DFDSPanel.tsx	Keyboard shortcuts
+src/components/DFDSPanel.tsx	Modal / Dialog
+src/components/DFDSPanel.tsx	New Project layout
+src/components/DFDSPanel.tsx	Surface stack
+src/components/DFDSPanel.tsx	The quick brown fox
+src/components/DFDSPanel.tsx	Variants
+src/components/DFDSPanel.tsx	Primary
+src/components/DFDSPanel.tsx	Secondary
+src/components/DFDSPanel.tsx	Ghost
+src/components/DFDSPanel.tsx	Disabled
+src/components/DFDSPanel.tsx	Icon-only
+src/components/DFDSPanel.tsx	Icon + label
+src/components/DFDSPanel.tsx	Save
+src/components/DFDSPanel.tsx	Save copy
+src/components/DFDSPanel.tsx	States — click and hold
+src/components/DFDSPanel.tsx	Resting
+src/components/DFDSPanel.tsx	Hover (sim)
+src/components/DFDSPanel.tsx	Pressed (sim)
+src/components/DFDSPanel.tsx	Try me
+src/components/DFDSPanel.tsx	Sizes
+src/components/DFDSPanel.tsx	Text
+src/components/DFDSPanel.tsx	Project name
+src/components/DFDSPanel.tsx	Password (toggle)
+src/components/DFDSPanel.tsx	Search (with icon)
+src/components/DFDSPanel.tsx	Search projects
+src/components/DFDSPanel.tsx	Number
+src/components/DFDSPanel.tsx	Textarea
+src/components/DFDSPanel.tsx	Multi-line input
+src/components/DFDSPanel.tsx	Disabled
+src/components/DFDSPanel.tsx	Disabled input
+src/components/DFDSPanel.tsx	Switch
+src/components/DFDSPanel.tsx	Auto-save
+src/components/DFDSPanel.tsx	Loop preview
+src/components/DFDSPanel.tsx	Disabled
+src/components/DFDSPanel.tsx	Checkbox
+src/components/DFDSPanel.tsx	Option
+src/components/DFDSPanel.tsx	Radio (single-pick)
+src/components/DFDSPanel.tsx	Pick
+src/components/DFDSPanel.tsx	Plain dropdown
+src/components/DFDSPanel.tsx	With dot indicator (provider-style)
+src/components/DFDSPanel.tsx	Color badges (token chips)
+src/components/DFDSPanel.tsx	Two options
+src/components/DFDSPanel.tsx	Three options
+src/components/DFDSPanel.tsx	16:9 thumb
+src/components/DFDSPanel.tsx	Project card
+src/components/DFDSPanel.tsx	just now
+src/components/DFDSPanel.tsx	Bordered card
+src/components/DFDSPanel.tsx	bg-section · border-subtle · r-xl · shadow-card
+src/components/DFDSPanel.tsx	Status badges
+src/components/DFDSPanel.tsx	not set
+src/components/DFDSPanel.tsx	Counter
+src/components/DFDSPanel.tsx	Toolbar pill
+src/components/DFDSPanel.tsx	Active
+src/components/DFDSPanel.tsx	Idle
+src/components/DFDSPanel.tsx	Determinate
+src/components/DFDSPanel.tsx	Indeterminate / spinner
+src/components/DFDSPanel.tsx	loading…
+src/components/DFDSPanel.tsx	Native title attribute tooltip
+src/components/DFDSPanel.tsx	Hover (native)
+src/components/DFDSPanel.tsx	Hover (custom)
+src/components/DFDSPanel.tsx	Open modal
+src/components/DFDSPanel.tsx	Modal title
+src/components/DFDSPanel.tsx	Same anatomy as DsSetupModal / SkillImportModal / FullPromptModal: header (with close), scrollable body, footer with cancel + confirm buttons.
+src/components/DFDSPanel.tsx	Cancel
+src/components/DFDSPanel.tsx	Confirm
+src/components/DFDSPanel.tsx	new project
+src/components/DFDSPanel.tsx	What are we building?
+src/components/DFDSPanel.tsx	Name
+src/components/DFDSPanel.tsx	name-this-thing
+src/components/DFDSPanel.tsx	Format & direction
+src/components/DFDSPanel.tsx	Pick format + directions
+src/components/DFDSPanel.tsx	Design system
+src/components/DFDSPanel.tsx	Default
+src/components/DFDSPanel.tsx	4 tokens · folder
+src/components/DFDSPanel.tsx	Model
+src/components/DFDSPanel.tsx	Skill
+src/components/DFDSPanel.tsx	Initial prompt
+src/components/DFDSPanel.tsx	Describe what to create…
+src/components/DFDSPanel.tsx	Create project
+src/components/DFDSPanel.tsx	or start from existing HTML →
+src/components/DfModal.tsx	Close dialog
+src/components/DfToast.tsx	Notifications
+src/components/DsSetupModal.tsx	Design System · any input → design.md
+src/components/DsSetupModal.tsx	Novo design system
+src/components/DsSetupModal.tsx	Fechar
+src/components/DsSetupModal.tsx	Confirm the absolute path of the folder you just picked (browser can't read it directly):
+src/components/DsSetupModal.tsx	Folder
+src/components/DsSetupModal.tsx	Name
+src/components/DsSetupModal.tsx	e.g. My DS
+src/components/DsSetupModal.tsx	No DS-relevant files found in this folder. Try a different one.
+src/components/DsSetupModal.tsx	Will write to
+src/components/DsSetupModal.tsx	Not connected. Pick one:
+src/components/DsSetupModal.tsx	1. Open
+src/components/DsSetupModal.tsx	2. Enter this code:
+src/components/DsSetupModal.tsx	Copy
+src/components/DsSetupModal.tsx	waiting…
+src/components/DsSetupModal.tsx	device flow ·
+src/components/DsSetupModal.tsx	Or paste a Personal Access Token (scope
+src/components/DsSetupModal.tsx	ghp_…
+src/components/DsSetupModal.tsx	Connect
+src/components/DsSetupModal.tsx	Or paste any repo URL
+src/components/DsSetupModal.tsx	Select
+src/components/DsSetupModal.tsx	File
+src/components/DsSetupModal.tsx	Name
+src/components/DsSetupModal.tsx	Preview
+src/components/DsSetupModal.tsx	Will write to
+src/components/DsSetupModal.tsx	design-systems/
+src/components/DsSetupModal.tsx	Name
+src/components/DsSetupModal.tsx	Paste
+src/components/DsSetupModal.tsx	Will write to
+src/components/DsSetupModal.tsx	design-systems/
+src/components/DsSetupModal.tsx	Gerar preview ao terminar
+src/components/DsSetupModal.tsx	Source ·
+src/components/DsSetupModal.tsx	Claude
+src/components/DsSetupModal.tsx	(sem modelos)
+src/components/DsSetupModal.tsx	Capa do card
+src/components/DsSetupModal.tsx	(opcional)
+src/components/EditDrawer.tsx	Edit · global
+src/components/EditDrawer.tsx	Close
+src/components/EditDrawer.tsx	Presets
+src/components/EditDrawer.tsx	Background
+src/components/EditDrawer.tsx	Text color
+src/components/EditDrawer.tsx	Page padding
+src/components/EditDrawer.tsx	Max content width
+src/components/EditDrawer.tsx	Base font size
+src/components/EditDrawer.tsx	Font family
+src/components/EditDrawer.tsx	Border radius
+src/components/EditDrawer.tsx	Shadow
+src/components/EditDrawer.tsx	Reset all
+src/components/EditDrawer.tsx	Clear
+src/components/ElementInspectorPanel.tsx	Element · selected
+src/components/ElementInspectorPanel.tsx	Close element inspector
+src/components/ElementInspectorPanel.tsx	Close (Esc)
+src/components/ElementInspectorPanel.tsx	Tag
+src/components/ElementInspectorPanel.tsx	Selector
+src/components/ElementInspectorPanel.tsx	Copy selector
+src/components/ElementInspectorPanel.tsx	Copy
+src/components/ElementInspectorPanel.tsx	Box
+src/components/ElementInspectorPanel.tsx	Text
+src/components/ElementInspectorPanel.tsx	Edit this element
+src/components/ElementInspectorPanel.tsx	Describe the change. E.g. 'make this orange and bold'.
+src/components/ElementInspectorPanel.tsx	Send to agent ·
+src/components/ErrorBoundary.tsx	render error
+src/components/ErrorBoundary.tsx	Something broke while rendering
+src/components/ErrorBoundary.tsx	Reload app
+src/components/ErrorBoundary.tsx	Back to home
+src/components/ErrorBoundary.tsx	Copy diagnostics
+src/components/ErrorToastDock.tsx	Dismiss
+src/components/FileManager.tsx	Close panel
+src/components/FileManager.tsx	File
+src/components/FileManager.tsx	Folder
+src/components/FileManager.tsx	Refresh
+src/components/FileManager.tsx	Loading…
+src/components/FileManager.tsx	Create folder
+src/components/FileManager.tsx	Create first file
+src/components/FileManager.tsx	Uploads & assets
+src/components/FileManager.tsx	Folders
+src/components/FileManager.tsx	Create (Enter)
+src/components/FileManager.tsx	Cancel (Esc)
+src/components/FileView.tsx	Binary file — preview unavailable
+src/components/FolderPickerModal.tsx	Close
+src/components/FolderPickerModal.tsx	Loading…
+src/components/FolderPickerModal.tsx	Empty folder
+src/components/FolderPickerModal.tsx	Pick:
+src/components/FolderPickerModal.tsx	Cancel
+src/components/FolderPickerModal.tsx	Use this folder
+src/components/FormatTaxonomyEditor.tsx	Prompt
+src/components/FormatTaxonomyEditor.tsx	Long-form instruction text that gets concatenated into the system prompt when this format is selected. Empty = use descriptor.
+src/components/FormatTaxonomyEditor.tsx	Editable for builtins too. Saved as user override, original ships in code.
+src/components/FullPromptModal.tsx	design factory · prompt audit
+src/components/FullPromptModal.tsx	Full project prompt
+src/components/FullPromptModal.tsx	Close
+src/components/FullPromptModal.tsx	tokens (rough)
+src/components/FullPromptModal.tsx	Close
+src/components/FullPromptModal.tsx	No prompt recorded for this project.
+src/components/FullPromptModal.tsx	Copy this section
+src/components/GeneratePreviewModal.tsx	Gerar preview do design system
+src/components/GeneratePreviewModal.tsx	Cancelar
+src/components/GeneratePreviewModal.tsx	vai ser enviado ao provider escolhido com um prompt fixo que pede uma página HTML completa aplicando todos os tokens, componentes e regras descritas. O resultado é salvo em
+src/components/GeneratePreviewModal.tsx	Provider
+src/components/GeneratePreviewModal.tsx	Carregando…
+src/components/GeneratePreviewModal.tsx	Claude Code (default)
+src/components/GeneratePreviewModal.tsx	Modelo
+src/components/GeneratePreviewModal.tsx	(sem modelos)
+src/components/GeneratePreviewModal.tsx	custom model id
+src/components/GeneratePreviewModal.tsx	Modelo customizado
+src/components/GeneratePreviewModal.tsx	ex: claude-sonnet-4-6
+src/components/InlineEditPanel.tsx	Inline edit ·
+src/components/InlineEditPanel.tsx	Text
+src/components/InlineEditPanel.tsx	Typography
+src/components/InlineEditPanel.tsx	Font
+src/components/InlineEditPanel.tsx	Weight
+src/components/InlineEditPanel.tsx	Size
+src/components/InlineEditPanel.tsx	Color
+src/components/InlineEditPanel.tsx	Align
+src/components/InlineEditPanel.tsx	Line Height
+src/components/InlineEditPanel.tsx	Tracking
+src/components/InlineEditPanel.tsx	Size
+src/components/InlineEditPanel.tsx	Width
+src/components/InlineEditPanel.tsx	Height
+src/components/InlineEditPanel.tsx	Box
+src/components/InlineEditPanel.tsx	Opacity
+src/components/InlineEditPanel.tsx	Padding
+src/components/InlineEditPanel.tsx	Margin
+src/components/InlineEditPanel.tsx	Border
+src/components/InlineEditPanel.tsx	Border Radius
+src/components/InlineEditPanel.tsx	Cancel
+src/components/NewProjectFormSkeu.tsx	See the compiled direction before starting
+src/components/NewProjectFormSkeu.tsx	Preview prompt
+src/components/NewProjectFormSkeu.tsx	Model
+src/components/NewProjectFormSkeu.tsx	Provider
+src/components/OriginGuardBanner.tsx	Origem não permitida
+src/components/OriginGuardBanner.tsx	Esta página está em
+src/components/OriginGuardBanner.tsx	, mas o daemon do Design Factory só aceita conexões de
+src/components/OriginGuardBanner.tsx	(ou pela app Tauri). Chamadas para o bridge vão falhar — chat, salvamento e geração ficam quebrados.
+src/components/OriginGuardBanner.tsx	Abrir em
+src/components/ProviderBanner.tsx	Apontar minha CLI
+src/components/ProviderBanner.tsx	Abrir Ajustes
+src/components/ProviderBanner.tsx	caminho do executável (ex: C:\\Users\\voce\\.local\\bin\\claude.exe)
+src/components/ProviderBanner.tsx	Dica: no terminal,
+src/components/ProviderBanner.tsx	where claude
+src/components/ProviderBanner.tsx	(Windows) ou
+src/components/ProviderBanner.tsx	which claude
+src/components/ProviderBanner.tsx	(Mac/Linux) mostra o caminho.
+src/components/ProviderTokenInline.tsx	vercel login
+src/components/ProviderTokenInline.tsx	gh auth login
+src/components/RatioChangeConfirmModal.tsx	Cancelar
+src/components/RatioChangeConfirmModal.tsx	Adaptar conteúdo
+src/components/RatioChangeConfirmModal.tsx	O conteúdo atual foi gerado para
+src/components/RatioChangeConfirmModal.tsx	). Para adaptar ao novo formato
+src/components/RatioChangeConfirmModal.tsx	), o Design Factory vai regenerar o HTML preservando texto, animações, cores e timing das scenes — apenas redimensionando o layout.
+src/components/RatioChangeConfirmModal.tsx	Esse processo demora 30s-2min e usa o provider/modelo selecionado. Você pode cancelar a qualquer momento.
+src/components/RatioRegenOverlay.tsx	Adaptando layout para
+src/components/RatioRegenOverlay.tsx	tokens gerados
+src/components/RatioRegenOverlay.tsx	Cancelar
+src/components/SceneInspector.tsx	scene ·
+src/components/SceneInspector.tsx	Close
+src/components/SceneInspector.tsx	Start
+src/components/SceneInspector.tsx	Length
+src/components/SceneInspector.tsx	Ends
+src/components/SceneInspector.tsx	Regenerate this scene
+src/components/SceneInspector.tsx	Refazer cena
+src/components/SceneInspector.tsx	Empty this scene (keeps slot, drops content)
+src/components/SceneInspector.tsx	Skip
+src/components/SceneInspector.tsx	Text
+src/components/SceneInspector.tsx	Click to fill find/replace
+src/components/SceneInspector.tsx	Find
+src/components/SceneInspector.tsx	Replace with
+src/components/SceneInspector.tsx	Replace
+src/components/SceneInspector.tsx	Refine in chat
+src/components/SceneInspector.tsx	Send
+src/components/SceneTimeline.tsx	Scene timeline
+src/components/SceneTimeline.tsx	Drag to retime · ripple-shifts later scenes
+src/components/SceneTimeline.tsx	Playhead — drag to scrub
+src/components/ShortcutsOverlay.tsx	Keyboard shortcuts
+src/components/ShortcutsOverlay.tsx	Press
+src/components/ShortcutsOverlay.tsx	anytime to toggle this list.
+src/components/SkillCreateModal.tsx	Discard unsaved skill?
+src/components/SkillCreateModal.tsx	Skill ·
+src/components/SkillCreateModal.tsx	Nova skill
+src/components/SkillCreateModal.tsx	Fechar
+src/components/SkillCreateModal.tsx	Identidade da skill
+src/components/SkillCreateModal.tsx	Name
+src/components/SkillCreateModal.tsx	Brand palette generator
+src/components/SkillCreateModal.tsx	Command
+src/components/SkillCreateModal.tsx	Type this in chat to activate. Built-ins:
+src/components/SkillCreateModal.tsx	Description
+src/components/SkillCreateModal.tsx	shown in slash menu · 1-2 lines
+src/components/SkillCreateModal.tsx	Instruções da skill
+src/components/SkillCreateModal.tsx	INSTRUÇÕES
+src/components/SkillCreateModal.tsx	Preview
+src/components/SkillCreateModal.tsx	You are…
+src/components/SkillCreateModal.tsx	You are…
+src/components/SkillCreateModal.tsx	Markdown supported. Min 20 characters, max 100KB. Keep it behavioral — "you are…", "when you X…" — not code.
+src/components/SkillCreateModal.tsx	Cancelar
+src/components/SkillDetailModal.tsx	Discard unsaved changes?
+src/components/SkillDetailModal.tsx	Discard unsaved changes?
+src/components/SkillDetailModal.tsx	Discard unsaved changes?
+src/components/SkillDetailModal.tsx	requires:
+src/components/SkillDetailModal.tsx	Discard unsaved changes?
+src/components/SkillDetailModal.tsx	Close
+src/components/SkillDetailModal.tsx	Name
+src/components/SkillDetailModal.tsx	Trigger
+src/components/SkillDetailModal.tsx	Description
+src/components/SkillDetailModal.tsx	Short summary shown in slash menu and cards
+src/components/SkillDetailModal.tsx	Description
+src/components/SkillDetailModal.tsx	Source
+src/components/SkillDetailModal.tsx	Path
+src/components/SkillDetailModal.tsx	Overrides
+src/components/SkillDetailModal.tsx	Version
+src/components/SkillDetailModal.tsx	Body hash
+src/components/SkillDetailModal.tsx	Size
+src/components/SkillDetailModal.tsx	Read-only. Edits to
+src/components/SkillDetailModal.tsx	skills happen in their source file.
+src/components/SkillDetailModal.tsx	Delete
+src/components/SkillDetailModal.tsx	Export .md
+src/components/SkillDetailModal.tsx	Edit
+src/components/SkillDetailModal.tsx	Cancel
+src/components/SkillImportModal.tsx	Import skill
+src/components/SkillImportModal.tsx	Upload
+src/components/SkillImportModal.tsx	From URL
+src/components/SkillImportModal.tsx	Scan folder
+src/components/SkillImportModal.tsx	Drop a
+src/components/SkillImportModal.tsx	SKILL.md
+src/components/SkillImportModal.tsx	.zip
+src/components/SkillImportModal.tsx	bundle here
+src/components/SkillImportModal.tsx	Browse
+src/components/SkillImportModal.tsx	Paste a URL to a
+src/components/SkillImportModal.tsx	SKILL.md
+src/components/SkillImportModal.tsx	on GitHub, Gist, or Pages. GitHub
+src/components/SkillImportModal.tsx	URLs are auto-converted to raw content.
+src/components/SkillImportModal.tsx	Imported skills aren't reviewed
+src/components/SkillImportModal.tsx	— check the preview before enabling.
+src/components/SkillImportModal.tsx	Pick folder…
+src/components/SkillImportModal.tsx	Found
+src/components/SkillImportModal.tsx	· click to preview + import
+src/components/SkillImportModal.tsx	← Back
+src/components/SkillImportModal.tsx	Preview before import
+src/components/SkillImportModal.tsx	Name
+src/components/SkillImportModal.tsx	Description
+src/components/SkillImportModal.tsx	warning · `
+src/components/SkillImportModal.tsx	` already used by
+src/components/SkillImportModal.tsx	· import will fail unless you pick a different command
+src/components/SkillImportModal.tsx	This skill is unreviewed. Read the instructions before enabling — skills run as system prompt context.
+src/components/SkillImportModal.tsx	Cancel
+src/components/SlashMenu.tsx	No matches
+src/components/TasteDialEditor.tsx	50 · neutral (no prompt)
+src/components/TasteDialEditor.tsx	● override
+src/components/TasteDialEditor.tsx	Restore default phrase
+src/components/TasteDialEditor.tsx	Reset
+src/components/TerminalDrawer.tsx	Terminal
+src/components/TerminalDrawer.tsx	Clear scrollback (process keeps running)
+src/components/TerminalDrawer.tsx	Clear
+src/components/TerminalDrawer.tsx	Copy selection (or full buffer if nothing selected)
+src/components/TerminalDrawer.tsx	Copy
+src/components/TerminalDrawer.tsx	Close terminal
+src/components/TextInspector.tsx	Text ·
+src/components/TextInspector.tsx	Close (Esc)
+src/components/TextInspector.tsx	Close text inspector
+src/components/TextInspector.tsx	(empty)
+src/components/TextInspector.tsx	Cancel
+src/components/TextInspector.tsx	Save
+src/components/ThemeToggle.tsx	Toggle theme
+src/components/TokensPanel.tsx	Settings · Tokens
+src/components/TokensPanel.tsx	Tokens
+src/components/TokensPanel.tsx	API keys saved here stay on your machine, chmod 600. The browser never holds the value — only `tokenSet:bool` is read back.
+src/components/TokensPanel.tsx	OpenAI API key
+src/components/TokensPanel.tsx	Gemini API key
+src/components/TokensPanel.tsx	AIza...
+src/components/TokensPanel.tsx	Clear saved
+src/components/TokensPanel.tsx	Anthropic API key
+src/components/TokensPanel.tsx	Used by the "Anthropic API" provider (BYOK direct API access). Get one at console.anthropic.com → API Keys.
+src/components/TokensPanel.tsx	Clear saved
+src/components/TokensPanel.tsx	Vercel publish
+src/components/TokensPanel.tsx	Used by the "Publish to Vercel" item in the Share/Export menu. Generate a token at vercel.com/account/tokens (scope: deployments). Team id is optional — only needed if you deploy under a team account.
+src/components/TokensPanel.tsx	team_... (optional)
+src/components/TokensPanel.tsx	Clear token
+src/components/ToolEventBubble.tsx	Input
+src/components/ToolEventBubble.tsx	Reason
+src/components/TurnTimelinePanel.tsx	Ctrl+Shift+T → toggle turn timeline
+src/components/TurnTimelinePanel.tsx	Copy timeline to clipboard
+src/components/TurnTimelinePanel.tsx	Close (Ctrl+Shift+T)
+src/components/TurnTimelinePanel.tsx	waiting for events…
+src/components/TurnTimelinePanel.tsx	recent:
+src/components/TweaksBridgePanel.tsx	Tweaks · live
+src/components/TweaksBridgePanel.tsx	Close tweaks bridge panel
+src/components/TweaksBridgePanel.tsx	Close
+src/components/TweaksBridgePanel.tsx	Reset
+src/components/TweaksBridgePanel.tsx	Export CSS
+src/components/VideoTab.tsx	Math.random
+src/components/VideoTab.tsx	composition preview
+src/components/VideoTab.tsx	Replay
+src/components/VideoTab.tsx	Para uma trilha editável: peça no chat
+src/components/VideoTab.tsx	"regere usando o contrato (data-scene + script df-manifest)"
+src/components/dfds/ColorPickerPopover.tsx	#rrggbb
+src/components/dfds/ColorPickerPopover.tsx	Apply
+src/components/dfds/ColorPickerPopover.tsx	Reset to default
+src/screens/DsPreviewScreen.tsx	Back to home
+src/screens/DsPreviewScreen.tsx	Back to home
+src/screens/DsPreviewScreen.tsx	Settings
+src/screens/DsPreviewScreen.tsx	Settings
+src/screens/DsPreviewScreen.tsx	Loading design.md…
+src/screens/DsPreviewScreen.tsx	Can't reach this design system
+src/screens/DsPreviewScreen.tsx	GitHub-sourced DSes keep their
+src/screens/DsPreviewScreen.tsx	in an ephemeral cache that gets wiped between runs. Remove this entry and re-add the repo to regenerate.
+src/screens/DsPreviewScreen.tsx	Remove from list
+src/screens/DsPreviewScreen.tsx	Back to workspace
+src/screens/DsPreviewScreen.tsx	This DS has no content
+src/screens/DsPreviewScreen.tsx	The
+src/screens/DsPreviewScreen.tsx	exists but is empty — likely the original generation failed silently. Edit the file directly below, or remove this DS and create a new one.
+src/screens/DsPreviewScreen.tsx	Edit design.md
+src/screens/DsPreviewScreen.tsx	Remove from list
+src/screens/DsPreviewScreen.tsx	Back to workspace
+src/screens/DsPreviewScreen.tsx	Cancel
+src/screens/DsPreviewScreen.tsx	Save
+src/screens/DsPreviewScreen.tsx	Edit markdown
+src/screens/DsPreviewScreen.tsx	Edit markdown
+src/screens/DsPreviewScreen.tsx	Edit
+src/screens/DsPreviewScreen.tsx	Gerando preview com
+src/screens/DsPreviewScreen.tsx	s decorridos · roda em background, pode fechar tabs
+src/screens/DsPreviewScreen.tsx	Cancelar
+src/screens/DsPreviewScreen.tsx	Design system preview (stale while regenerating)
+src/screens/DsPreviewScreen.tsx	Carregando preview…
+src/screens/DsPreviewScreen.tsx	Falha ao gerar preview:
+src/screens/DsPreviewScreen.tsx	Tentar de novo
+src/screens/DsPreviewScreen.tsx	Design system preview
+src/screens/DsPreviewScreen.tsx	Ainda sem preview
+src/screens/DsPreviewScreen.tsx	O preview é um
+src/screens/DsPreviewScreen.tsx	gerado por um modelo de IA aplicando o seu
+src/screens/DsPreviewScreen.tsx	. Escolha o provider e o modelo no próximo passo.
+src/screens/DsPreviewScreen.tsx	Gerar Preview
+src/screens/DsPreviewScreen.tsx	Design system preview
+src/screens/EditorScreen.tsx	Claude CLI not authenticated.
+src/screens/EditorScreen.tsx	Dismiss auth banner
+src/screens/EditorScreen.tsx	Project path not found:
+src/screens/EditorScreen.tsx	Browse…
+src/screens/EditorScreen.tsx	Dismiss missing path banner
+src/screens/EditorScreen.tsx	Close
+src/screens/EditorScreen.tsx	Resize chat column
+src/screens/EditorScreen.tsx	No comments yet
+src/screens/EditorScreen.tsx	Switch to Comment mode in the canvas toolbar, then click any element in the preview to pin a note.
+src/screens/EditorScreen.tsx	Jump to element in preview
+src/screens/EditorScreen.tsx	· sent
+src/screens/EditorScreen.tsx	Click to edit
+src/screens/EditorScreen.tsx	Delete comment
+src/screens/EditorScreen.tsx	Send this comment to Claude
+src/screens/EditorScreen.tsx	Send
+src/screens/EditorScreen.tsx	Send
+src/screens/EditorScreen.tsx	to Claude
+src/screens/EditorScreen.tsx	Clear sent comments
+src/screens/EditorScreen.tsx	Clear sent
+src/screens/EditorScreen.tsx	in /
+src/screens/EditorScreen.tsx	Elapsed time
+src/screens/EditorScreen.tsx	Estimated output tokens
+src/screens/EditorScreen.tsx	Tool calls (completed / total)
+src/screens/EditorScreen.tsx	Provider · model
+src/screens/EditorScreen.tsx	Cancel turn (Esc)
+src/screens/EditorScreen.tsx	Detach design system
+src/screens/EditorScreen.tsx	probe failed
+src/screens/EditorScreen.tsx	No models configured.
+src/screens/EditorScreen.tsx	Terminal
+src/screens/EditorScreen.tsx	Files
+src/screens/EditorScreen.tsx	Tweaks
+src/screens/EditorScreen.tsx	Leave blank for a comprehensive set.
+src/screens/EditorScreen.tsx	Cancel
+src/screens/EditorScreen.tsx	Comment
+src/screens/EditorScreen.tsx	Edit
+src/screens/EditorScreen.tsx	Prompt
+src/screens/EditorScreen.tsx	Present fullscreen (Esc to exit)
+src/screens/EditorScreen.tsx	Present
+src/screens/EditorScreen.tsx	Video editing is deferred to a later wave.
+src/screens/EditorScreen.tsx	Close this tab to remove it from the project.
+src/screens/EditorScreen.tsx	Describe what to create in the chat. Claude will generate your design.
+src/screens/EditorScreen.tsx	Esc
+src/screens/EditorScreen.tsx	Actions
+src/screens/EditorScreen.tsx	Esc
+src/screens/EditorScreen.tsx	Version history
+src/screens/EditorScreen.tsx	named ·
+src/screens/EditorScreen.tsx	Save current as...
+src/screens/EditorScreen.tsx	No versions yet. Saves happen automatically on every generation.
+src/screens/EditorScreen.tsx	· current
+src/screens/EditorScreen.tsx	Restore
+src/screens/EditorScreen.tsx	Delete version
+src/screens/EditorScreen.tsx	Save version
+src/screens/EditorScreen.tsx	Name this save so you can restore it later. Named versions are kept indefinitely; auto-saves are capped at 20.
+src/screens/EditorScreen.tsx	e.g. before color rework
+src/screens/EditorScreen.tsx	Cancel
+src/screens/EditorScreen.tsx	Save
+src/screens/EditorScreen.tsx	Pin a comment
+src/screens/EditorScreen.tsx	What to note about this element...
+src/screens/EditorScreen.tsx	⌘↵ to save · comments batch in the Comments tab
+src/screens/EditorScreen.tsx	Cancel
+src/screens/EditorScreen.tsx	Pin
+src/screens/HomeScreen.tsx	Carregar mais (
+src/screens/HomeScreen.tsx	restantes)
+src/screens/SkillCoverPreviewScreen.tsx	Preview · Skill covers
+src/screens/SkillCoverPreviewScreen.tsx	6 direções, 4 skills mockadas cada
+src/screens/SkillCoverPreviewScreen.tsx	Cada coluna é uma direção visual. Cada linha é a mesma skill renderizada em todas. Olha o conjunto e me diz qual letra (A-F).
+src/screens/SkillCoverPreviewScreen.tsx	Manda a letra (A, B, C, D, E ou F) — se quiser combinar (e.g. "C com cor de B"), descreve que aplico.
