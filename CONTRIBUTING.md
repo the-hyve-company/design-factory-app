@@ -144,9 +144,9 @@ Prefixes we use: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`.
 Scopes are the subsystem being touched: `providers`, `chat`, `runtime`,
 `ds`, `bridge`, etc.
 
-The `Agent-Id` trailer is mandatory — it's how we track whether a commit
-was written by a human or a specific coding agent in a pairing session.
-Use your GitHub handle if you're a human contributor.
+The `Agent-Id` trailer is optional but encouraged — it attributes whether
+a commit was written by a human or a specific coding agent. Use your
+GitHub handle if you're a human contributor.
 
 [cc]: https://www.conventionalcommits.org/
 

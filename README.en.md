@@ -151,7 +151,7 @@ A double-click app with an icon in your taskbar/dock. No terminal, no `npm`.
 **It's new and still rough** — expect bugs we're actively fixing.
 
 Download for your OS from the
-[Releases page](https://github.com/THE-HYVE-COMPANY/df-tauri-spike/releases/latest):
+[Releases page](https://github.com/the-hyve-company/design-factory/releases/latest):
 
 - **Windows:** `Design.Factory_<version>_x64-setup.exe`
 - **macOS (Apple Silicon):** `Design.Factory_<version>_aarch64.dmg`

@@ -1,0 +1,58 @@
+# Builds and publishes the Design Factory desktop installers (Windows + macOS)
+# when a version tag (v*) is pushed. Public-repo runners are free.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and publish (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write   # tauri-action publishes the installers to the GitHub Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]   # macos-latest = Apple Silicon (arm64)
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - uses: oven-sh/setup-bun@v2          # daemon → single-binary sidecar
+
+      - uses: dtolnay/rust-toolchain@stable # Tauri needs Rust
+
+      - run: npm ci
+
+      # Generate the app icons from the DF logo into src-tauri/icons/.
+      - run: npx --yes @tauri-apps/cli@^2 icon src/assets/logo-df.svg
+
+      # tauri-action runs the beforeBuildCommand (npm run build +
+      # scripts/build-daemon-bin.mjs), builds the app, and uploads the
+      # installers to the GitHub Release for the pushed tag.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: "Design Factory ${{ github.event.inputs.tag || github.ref_name }}"
+          releaseBody: |
+            Local-first, multi-provider AI design workspace. Desktop installers are attached below.
+
+            **The app is not code-signed yet**, so your OS will warn you:
+
+            - **Windows (SmartScreen):** "Windows protected your PC" → *More info* → *Run anyway*.
+            - **macOS (Gatekeeper):** right-click the app → *Open* → *Open*.
+
+            Some antivirus tools quarantine the freshly-compiled engine during install — pause protection or add an exclusion for the install folder, then reinstall. Want zero warnings? Run from source instead — see the README.
+          releaseDraft: false
+          prerelease: false

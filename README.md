@@ -153,7 +153,7 @@ Um app de duplo-clique, com ícone na barra de tarefas. Sem terminal, sem
 `npm`. **É novo e ainda instável** — espere bugs que estamos corrigindo.
 
 Baixe para o seu sistema na
-[página de Releases](https://github.com/THE-HYVE-COMPANY/df-tauri-spike/releases/latest):
+[página de Releases](https://github.com/the-hyve-company/design-factory/releases/latest):
 
 - **Windows:** `Design.Factory_<versão>_x64-setup.exe`
 - **macOS (Apple Silicon):** `Design.Factory_<versão>_aarch64.dmg`

@@ -1207,8 +1207,8 @@ export async function designSystemsDir(slug: string): Promise<string | null> {
 // ─── Skills registry (source-classified) ─────────────────────────────────
 //
 // Source: df (user-managed — <repoRoot>/skills/ canonical, with
-// <repoRoot>/.claude/skills/ as legacy compat), project (cwd/.claude or
-// squads/*/skills|agents), global (~/.claude/skills), builtin (DF actions).
+// <repoRoot>/.claude/skills/ as legacy compat), project (cwd/.claude),
+// global (~/.claude/skills), builtin (DF actions).
 
 export type SkillSource = "df" | "project" | "global" | "builtin";
 

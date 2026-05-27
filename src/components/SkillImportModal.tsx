@@ -14,7 +14,7 @@ import { parseSkillZip } from "@/lib/skill-zip-import";
 // Import skill modal — 3 sub-tabs:
 //   Upload .md   — drop or browse a local file
 //   From URL     — GitHub raw / Gist / Pages URL
-//   Scan folder  — walk a skills/, .claude/skills/, or squads/<name>/skills dir
+//   Scan folder  — walk a skills/ or .claude/skills/ dir
 //
 // Every path terminates in a preview → confirm flow so the user
 // always reviews the body before it lands in <repoRoot>/skills/.

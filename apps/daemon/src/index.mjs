@@ -4296,7 +4296,7 @@ const server = http.createServer(async (req, res) => {
       try { await run(["rev-parse", "--git-dir"]); }
       catch {
         await run(["init", "-b", "main"]);
-        await run(["config", "user.email", "design-factory@hyve.local"]).catch(() => {});
+        await run(["config", "user.email", "design-factory@localhost"]).catch(() => {});
         await run(["config", "user.name", "Design Factory"]).catch(() => {});
       }
       await run(["add", "-A"]).catch(() => {});
@@ -5256,8 +5256,8 @@ const server = http.createServer(async (req, res) => {
   // GET /vercel/projects/all — fans out: /v9/projects (personal) plus
   // /v9/projects?teamId=X for each team in /v2/teams. Returns a flat
   // list with `teamId`/`teamSlug`/`teamName` fields plus the team
-  // catalogue itself. — user fix: previously only personal
-  // projects came back, hiding the 6 projects in the `hyve-lab` team.
+  // catalogue itself. — fix: previously only personal projects came
+  // back, hiding projects that lived only inside a team.
   if (req.method === "GET" && req.url.startsWith("/vercel/projects/all")) {
     const cfg = await resolveVercelAuth();
     if (!cfg.token) {
@@ -5443,7 +5443,7 @@ const server = http.createServer(async (req, res) => {
   // ── Vercel: connected user profile ───────────────────────────
   // GET /vercel/user — returns { ok, username, email, name, avatar,
   // teamLabel } when a token is set. UI uses this to show "Conectado
-  // como @nik" + avatar in the Settings card and Publish dialog.
+  // como @you" + avatar in the Settings card and Publish dialog.
   if (req.method === "GET" && req.url === "/vercel/user") {
     const cfg = await resolveVercelAuth();
     if (!cfg.token) {

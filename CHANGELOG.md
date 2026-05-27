@@ -5,7 +5,11 @@ All notable changes to Design Factory are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] — 2026-05-27 — Initial public preview
+
+First open-source release of Design Factory under
+[Apache License 2.0](LICENSE). Local-first, multi-provider,
+model-agnostic.
 
 ### Fixed
 
@@ -35,12 +39,6 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
   spawned `ffmpeg`/`puppeteer`/`pty` children don't leak. Replaces the earlier
   idle-self-shutdown approach, which could terminate a long in-flight stream and
   leak subprocesses.
-
-## [1.0.0-beta.1] — Initial public preview
-
-First open-source release of Design Factory under
-[Apache License 2.0](LICENSE). Local-first, multi-provider,
-model-agnostic.
 
 ### Workspace
 
@@ -112,5 +110,4 @@ contract documented in `apps/daemon/src/providers/types.mjs`.
 - `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`,
   `GOVERNANCE.md`, and `docs/`.
 
-[Unreleased]: https://github.com/the-hyve-company/design-factory/compare/v1.0.0-beta.1...HEAD
-[1.0.0-beta.1]: https://github.com/the-hyve-company/design-factory/releases/tag/v1.0.0-beta.1
+[0.1.0]: https://github.com/the-hyve-company/design-factory/releases/tag/v0.1.0

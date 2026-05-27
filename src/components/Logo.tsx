@@ -7,9 +7,8 @@ interface LogoProps {
 }
 
 /**
- * DesignFactory — 8× lattice logo. Fonte canônica:
- * squads/_shared/brand/factory_8x.svg (HYVE brand repo). Preserved single-path
- * geometry; `fill="currentColor"` so o consumidor herda a cor via CSS.
+ * DesignFactory — 8× lattice logo. Single-path geometry;
+ * `fill="currentColor"` so o consumidor herda a cor via CSS.
  */
 export function Logo({ size = 28, className, style }: LogoProps) {
   return (
