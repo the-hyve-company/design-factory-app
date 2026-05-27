@@ -26,7 +26,18 @@ work with multiple models in the same project.
 
 ## Get started
 
-You need Node 20+ and at least one AI CLI or API key.
+First, install these two free programs (skip any you already have):
+
+- **Node.js** (version 20 or newer) — the engine that runs the app. Download it
+  from [nodejs.org](https://nodejs.org/) and click the big **LTS** button. Open
+  the downloaded file and click through to install.
+- **Git** — used to download and update the project. Get it from
+  [git-scm.com/downloads](https://git-scm.com/downloads).
+
+You also need at least one AI CLI (such as Claude Code) or an API key — that's
+what generates the designs.
+
+With both installed, open a terminal and run:
 
 ```bash
 git clone https://github.com/the-hyve-company/design-factory.git
@@ -40,8 +51,7 @@ the port is busy, it picks another and prints the URL.
 
 No terminal needed: after cloning, double-click `start.command` (macOS) or
 `start.bat` (Windows). The first run installs dependencies and opens the app. To
-update, use `update.command` / `update.bat`. You still need Node 20+ and Git
-installed.
+update, use `update.command` / `update.bat`.
 
 Once it opens, go to Settings → Providers. CLIs you already have logged in show
 as connected; BYOK keys are optional. Create a project, give it context,

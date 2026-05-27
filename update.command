@@ -12,8 +12,13 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "Updating Design Factory..."
-git pull
+echo "Updating Design Factory to the latest version..."
+# Hard-sync to the official latest instead of `git pull`. A plain pull fails
+# when local history diverges (e.g. after a maintainer rewrite); reset always
+# lands cleanly. Your generated work in projects/ is gitignored, so it is left
+# untouched.
+git fetch origin
+git reset --hard origin/main
 npm install
 echo "Done. Open start to launch the app."
 read -n 1 -s -r -p "Press any key to close."

@@ -26,7 +26,18 @@ trabalhar com múltiplos modelos em um mesmo projeto.
 
 ## Começar
 
-Você precisa de Node 20+ e de pelo menos uma CLI de IA ou chave de API.
+Antes de tudo, instale estes dois programas gratuitos (pule os que já tiver):
+
+- **Node.js** (versão 20 ou mais nova) — o motor que roda o app. Baixe em
+  [nodejs.org](https://nodejs.org/) e clique no botão grande **LTS**. Instale
+  abrindo o arquivo e clicando avançar até o fim.
+- **Git** — usado para baixar e atualizar o projeto. Baixe em
+  [git-scm.com/downloads](https://git-scm.com/downloads).
+
+Você também precisa de pelo menos uma CLI de IA (como o Claude Code) ou uma chave
+de API — é o que gera os designs.
+
+Com os dois instalados, abra o Terminal e rode:
 
 ```bash
 git clone https://github.com/the-hyve-company/design-factory.git
@@ -40,8 +51,7 @@ estiver ocupada, ele escolhe outra e mostra a URL.
 
 Sem terminal: depois de clonar, dê dois cliques em `start.command` (macOS) ou
 `start.bat` (Windows). A primeira execução instala as dependências e abre o app.
-Para atualizar, use `update.command` / `update.bat`. Ainda é preciso ter Node 20+
-e Git instalados.
+Para atualizar, use `update.command` / `update.bat`.
 
 Depois de abrir, vá em Configurações → Providers. As CLIs que você já tem
 logadas aparecem conectadas; chaves BYOK entram só se você quiser. Crie um
