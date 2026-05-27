@@ -59,6 +59,24 @@ update, use `update.command` / `update.bat`.
 > in the prompt. Double-click works normally after that. (Cloning with `git`
 > avoids the warning; downloading the `.zip` is what triggers macOS's block.)
 
+### Day to day (after install)
+
+Open a terminal **inside the project folder**: type `cd ` (with a space), drag
+the `design-factory` folder from your file browser into the terminal window, and
+press Enter. With the terminal in the folder, just copy:
+
+**Open Design Factory:**
+
+```bash
+npm run dev:web
+```
+
+**Update to the latest version:**
+
+```bash
+git fetch origin && git reset --hard origin/main && npm install
+```
+
 Once it opens, go to Settings → Providers. CLIs you already have logged in show
 as connected; BYOK keys are optional. Create a project, give it context,
 generate, then refine with tweaks, comments, and edits. Walkthrough in

@@ -59,6 +59,24 @@ Para atualizar, use `update.command` / `update.bat`.
 > de novo no aviso. Depois disso o duplo-clique funciona normal. (Clonar com `git`
 > evita esse aviso; baixar o `.zip` é que dispara o bloqueio do macOS.)
 
+### No dia a dia (depois de instalado)
+
+Abra o Terminal **dentro da pasta do projeto**: no Terminal, digite `cd ` (com um
+espaço), arraste a pasta `design-factory` do Finder pra dentro da janela e aperte
+Enter. Com o Terminal na pasta, é só copiar:
+
+**Abrir o Design Factory:**
+
+```bash
+npm run dev:web
+```
+
+**Atualizar para a versão mais nova:**
+
+```bash
+git fetch origin && git reset --hard origin/main && npm install
+```
+
 Depois de abrir, vá em Configurações → Providers. As CLIs que você já tem
 logadas aparecem conectadas; chaves BYOK entram só se você quiser. Crie um
 projeto, dê contexto, gere, e refine com tweaks, comentários e edits. Passo a
