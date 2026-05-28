@@ -3087,7 +3087,27 @@ const server = http.createServer(async (req, res) => {
           const rawText = upstreamData.body?.text || "";
           const html = stripHtmlFence(rawText);
           if (!html || !/<\s*html[\s>]/i.test(html)) {
-            throw new Error(`provider returned no recognizable HTML (got ${rawText.length}B)`);
+            // Dump the raw provider response next to design.md so the
+            // user can inspect WHY the extractor missed it. Common
+            // causes: provider used Write tool (response is prose),
+            // returned markdown analysis, or wrapped HTML in a fence
+            // the regex doesn't yet handle. Turns "got 65932B" from a
+            // black box into a debuggable artifact.
+            try {
+              await writeFile(
+                join(dsPath, ".preview-rawtext.txt"),
+                `# Raw provider response (validation failed)\n` +
+                `# provider: ${provider}\n# model: ${model}\n` +
+                `# bytes: ${rawText.length}\n` +
+                `# at: ${new Date().toISOString()}\n\n${rawText}`,
+                "utf8",
+              );
+            } catch {}
+            throw new Error(
+              `provider returned no recognizable HTML (got ${rawText.length}B). ` +
+              `Raw dump em .preview-rawtext.txt na pasta da DS. ` +
+              `Tenta outro modelo no picker.`,
+            );
           }
           await writeFile(join(dsPath, "preview.html"), html, "utf8");
         } catch (e) {

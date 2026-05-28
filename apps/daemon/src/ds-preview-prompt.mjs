@@ -83,12 +83,38 @@ Return the complete HTML now. Starting with <!DOCTYPE html>.`;
 export function stripHtmlFence(raw) {
   if (typeof raw !== "string") return "";
   let text = raw.trim();
-  // Strip a leading ```html or ``` fence.
-  const fenceMatch = text.match(/^```(?:html|HTML)?\s*\n([\s\S]*?)\n```\s*$/);
-  if (fenceMatch) text = fenceMatch[1].trim();
-  // Drop anything before <!DOCTYPE or <html. Some models prepend a
-  // single line like "Here's the HTML:" before the doctype.
+
+  // Path 1: response is a single ```html (or bare ```) fence covering
+  // the whole body. Earliest pattern — kept for callers that already
+  // produce clean responses without commentary.
+  const fullFenceMatch = text.match(/^```(?:html|HTML)?\s*\n([\s\S]*?)\n```\s*$/);
+  if (fullFenceMatch) text = fullFenceMatch[1].trim();
+
+  // Path 2: response has prose around a ```html ... ``` block somewhere
+  // in the middle. Founder repro 2026-05-28: claude returned 65KB of
+  // analysis + a fenced HTML block, the doctype-strip below missed it
+  // because the first <!DOCTYPE was deep inside the fence (after lots
+  // of preamble). Pull out the first fenced block whose body starts
+  // with <!DOCTYPE/<html — that's the deliverable.
+  if (!/<!DOCTYPE\s+html|<html[\s>]/i.test(text.slice(0, 200))) {
+    const fencedAnywhere = text.match(/```(?:html|HTML)?\s*\n([\s\S]*?)\n```/);
+    if (fencedAnywhere && /<!DOCTYPE\s+html|<html[\s>]/i.test(fencedAnywhere[1])) {
+      text = fencedAnywhere[1].trim();
+    }
+  }
+
+  // Path 3: still preceded by prose ("Here's the HTML:", a markdown
+  // analysis paragraph, …) — slice to the first doctype/<html.
   const doctypeIdx = text.search(/<!DOCTYPE\s+html|<html[\s>]/i);
   if (doctypeIdx > 0) text = text.slice(doctypeIdx);
+
+  // Trim trailing prose after </html> — some models add a closing
+  // commentary like "Let me know if you'd like adjustments." If the
+  // text doesn't end cleanly at </html>, truncate to the last </html>.
+  const lastHtmlClose = text.toLowerCase().lastIndexOf("</html>");
+  if (lastHtmlClose >= 0) {
+    text = text.slice(0, lastHtmlClose + "</html>".length);
+  }
+
   return text.trim();
 }
