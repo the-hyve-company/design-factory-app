@@ -23,6 +23,7 @@ import { slugFromPath } from "@/lib/project-files";
 import type { RatioId } from "@/runtime/hyperframes-invoker";
 import { parseDesignSystem } from "@/lib/ds-google";
 import { DsSetupModal, type DsEntry } from "@/components/DsSetupModal";
+import { DsModalLab } from "@/components/lab/DsModalLab";
 import { PadroesConfirmModal } from "@/components/PadroesConfirmModal";
 import { SkillCreateModal } from "@/components/SkillCreateModal";
 import { SkillImportModal } from "@/components/SkillImportModal";
@@ -48,6 +49,15 @@ import "@/styles/np-v8.css";
 // Canonical skeumorphic hero pattern (DNA reference). Provides
 // .skeu-hero + bezel depth tokens reused everywhere.
 import "@/styles/skeu-hero.css";
+
+// Modal-lab toggle (dev only). ?modalLab=1 swaps the DS / Skills modals for
+// the redesign directions so they can be compared live in dev:web. Off by
+// default — production renders the shipped modals.
+const MODAL_LAB = (() => {
+  if (typeof window === "undefined") return false;
+  try { return new URLSearchParams(window.location.search).get("modalLab") === "1"; }
+  catch { return false; }
+})();
 
 type DesignSystem = DsEntry;
 
@@ -1472,11 +1482,15 @@ export function HomeScreen({
       )}
 
       {showDsSetup && (
-        <DsSetupModal
-          onClose={() => setShowDsSetup(false)}
-          onAutoPersist={handleDsSaved}
-          onSaved={handleDsSaved}
-        />
+        MODAL_LAB ? (
+          <DsModalLab open onClose={() => setShowDsSetup(false)} />
+        ) : (
+          <DsSetupModal
+            onClose={() => setShowDsSetup(false)}
+            onAutoPersist={handleDsSaved}
+            onSaved={handleDsSaved}
+          />
+        )
       )}
 
       <DirectionModal

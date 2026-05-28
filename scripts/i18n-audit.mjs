@@ -50,8 +50,9 @@ const SKIP_FILE_PATTERNS = [
   /\/data\//,                        // canonical data labels (have i18n bridge)
   /\.test\.(tsx?|jsx?)$/,            // tests
   /\.spec\.(tsx?|jsx?)$/,            // specs
-  // Lab/dev surfaces — intentionally English/scratch-pad, not user-facing.
+  // Lab/dev surfaces — intentionally scratch-pad, not user-facing.
   /\/screens\/lab\//,
+  /\/components\/lab\//,            // modal-lab redesign directions (?modalLab=1)
   /NPCanvasShell|NPCanonicalPlus|NPPromptFirst|NPSplit/,
   /Lab\.tsx$/,                       // *Lab.tsx scratch pads
   /NewProjectLabScreen\.tsx$/,

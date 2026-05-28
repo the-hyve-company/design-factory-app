@@ -1,0 +1,247 @@
+/* ds-modal-lab.css — design-lab styling for the Design System modal
+ * redesign directions. Loaded only when ?modalLab=1. Reuses the New
+ * Project faceplate shell (np-modal.css) + cnp-begin button; this file
+ * adds the DS-specific tactile parts: source keys, the morphing input
+ * stage, the engraved engine picker, and the physical preview switch.
+ *
+ * Vocabulary mirrors the skeu language: engraved mono-uppercase labels,
+ * recessed bowls (inset shadow), embossed keys (outset), accent on the
+ * live/active member.
+ */
+
+/* ── Lab direction switcher (dev-only chrome at the top of the stage) ── */
+.dsl-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 14px;
+  border: 1px dashed var(--df-border-subtle);
+  border-radius: var(--df-r-sm);
+  background: color-mix(in srgb, var(--df-accent) 5%, transparent);
+}
+.dsl-switcher-tag {
+  font-family: var(--df-font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--df-text-faint);
+}
+.dsl-switcher-pill {
+  font-family: var(--df-font-mono);
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--df-border-subtle);
+  background: var(--df-bg-section);
+  color: var(--df-text-muted);
+  cursor: pointer;
+  transition: all var(--df-motion-quick) var(--df-ease-out);
+}
+.dsl-switcher-pill[data-active="true"] {
+  border-color: var(--df-accent);
+  color: var(--df-text-primary);
+  background: color-mix(in srgb, var(--df-accent) 12%, transparent);
+}
+
+/* ── Zone scaffold ───────────────────────────────────────────────── */
+.dsl-zone {
+  margin-bottom: 18px;
+}
+.dsl-engrave {
+  display: block;
+  font-family: var(--df-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--df-text-faint);
+  margin-bottom: 9px;
+  /* engraved: faint dark inset + light bottom highlight */
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--df-bg-base) 70%, transparent);
+}
+
+/* ── Source keys — tactile physical buttons, one lit ─────────────── */
+.dsl-keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.dsl-key {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 12px 11px;
+  border-radius: var(--df-r-sm);
+  border: 1px solid var(--df-border-subtle);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--df-surface-raised) 100%, white 3%),
+    var(--df-surface-raised)
+  );
+  /* embossed key: soft top light + bottom shadow */
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 6%, transparent),
+    0 1px 2px color-mix(in srgb, black 18%, transparent);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform var(--df-motion-quick) var(--df-ease-out),
+    border-color var(--df-motion-quick) var(--df-ease-out),
+    box-shadow var(--df-motion-quick) var(--df-ease-out);
+}
+.dsl-key:hover {
+  border-color: color-mix(in srgb, var(--df-accent) 40%, var(--df-border-subtle));
+}
+.dsl-key:active {
+  transform: translateY(1px);
+}
+.dsl-key[data-active="true"] {
+  border-color: var(--df-accent);
+  /* pressed-in + lit: inner shadow instead of outer, accent glow */
+  box-shadow:
+    inset 0 2px 4px color-mix(in srgb, black 28%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--df-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--df-accent) 8%, var(--df-surface-raised));
+}
+.dsl-key-glyph {
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.85;
+}
+.dsl-key[data-active="true"] .dsl-key-led {
+  background: var(--df-accent);
+  box-shadow: 0 0 6px var(--df-accent);
+}
+.dsl-key-led {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--df-text-faint) 50%, transparent);
+  transition: all var(--df-motion-quick) var(--df-ease-out);
+}
+.dsl-key-name {
+  font-size: var(--df-text-xs);
+  font-weight: 500;
+  color: var(--df-text-primary);
+}
+.dsl-key-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* ── Input bowl — recessed, morphs per source ────────────────────── */
+.dsl-bowl {
+  padding: 14px;
+  border-radius: var(--df-r-sm);
+  background: var(--df-bg-section);
+  /* recessed: inner shadow */
+  box-shadow:
+    inset 0 2px 6px color-mix(in srgb, black 22%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, white 4%, transparent);
+  border: 1px solid color-mix(in srgb, black 14%, var(--df-border-subtle));
+}
+.dsl-bowl-hint {
+  font-size: var(--df-text-xs);
+  color: var(--df-text-muted);
+  line-height: 1.5;
+}
+.dsl-input {
+  width: 100%;
+  background: var(--df-surface-raised);
+  border: 1px solid var(--df-border-subtle);
+  border-radius: var(--df-r-sm);
+  padding: 9px 11px;
+  color: var(--df-text-primary);
+  font-size: var(--df-text-sm);
+  font-family: var(--df-font-mono);
+}
+.dsl-input:focus {
+  outline: none;
+  border-color: var(--df-border-focus);
+}
+
+/* ── Engine row — engraved provider + model ──────────────────────── */
+.dsl-engine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.dsl-engine-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: var(--df-r-sm);
+  border: 1px solid var(--df-border-subtle);
+  background: var(--df-surface-raised);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+  font-size: var(--df-text-xs);
+  color: var(--df-text-primary);
+  cursor: pointer;
+}
+.dsl-engine-chip .dsl-engine-k {
+  font-family: var(--df-font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--df-text-faint);
+}
+
+/* ── Physical toggle switch (generate preview) ───────────────────── */
+.dsl-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 13px;
+  border-radius: var(--df-r-sm);
+  background: var(--df-surface-raised);
+  border: 1px solid var(--df-border-subtle);
+}
+.dsl-switch-copy { display: flex; flex-direction: column; gap: 2px; }
+.dsl-switch-title { font-size: var(--df-text-sm); color: var(--df-text-primary); }
+.dsl-switch-sub { font-size: var(--df-text-xs); color: var(--df-text-muted); }
+.dsl-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: var(--df-bg-section);
+  box-shadow: inset 0 2px 4px color-mix(in srgb, black 30%, transparent);
+  transition: background var(--df-motion-quick) var(--df-ease-out);
+  flex-shrink: 0;
+}
+.dsl-switch[data-on="true"] {
+  background: color-mix(in srgb, var(--df-accent) 75%, transparent);
+}
+.dsl-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, white 12%, var(--df-surface-raised)), var(--df-surface-raised));
+  box-shadow: 0 1px 3px color-mix(in srgb, black 40%, transparent);
+  transition: transform var(--df-motion-quick) var(--df-ease-out);
+}
+.dsl-switch[data-on="true"] .dsl-switch-knob {
+  transform: translateX(18px);
+}
+
+/* ── Footer / begin ──────────────────────────────────────────────── */
+.dsl-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.dsl-name-field {
+  flex: 1;
+}
