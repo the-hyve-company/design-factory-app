@@ -173,38 +173,74 @@
 .dsl-switch-copy { display: flex; flex-direction: column; gap: 2px; }
 .dsl-switch-title { font-size: var(--df-text-sm); color: var(--df-text-primary); }
 .dsl-switch-sub { font-size: var(--df-text-xs); color: var(--df-text-muted); }
+/* Physical skeu switch: recessed track + sliding knob + ON/OFF readout.
+   OFF reads as a dark recessed slot; ON fills bright accent with a glow
+   ring and the readout turns accent — unmistakably lit. */
 .dsl-switch {
-  position: relative;
-  width: 42px;
-  height: 24px;
-  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   border: none;
+  background: none;
+  padding: 0;
   cursor: pointer;
-  background: var(--df-bg-section);
-  box-shadow: inset 0 2px 4px color-mix(in srgb, black 30%, transparent);
-  transition: background var(--df-motion-quick) var(--df-ease-out);
   flex-shrink: 0;
 }
-.dsl-switch[data-on="true"] {
-  background: var(--df-accent);
+.dsl-switch-track {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--df-bg-base);
+  border: 1px solid color-mix(in srgb, black 18%, var(--df-border-subtle));
+  /* recessed slot */
   box-shadow:
-    inset 0 1px 2px color-mix(in srgb, black 25%, transparent),
-    0 0 10px color-mix(in srgb, var(--df-accent) 60%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--df-accent) 50%, transparent);
+    inset 0 2px 5px color-mix(in srgb, black 38%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, white 4%, transparent);
+  transition:
+    background var(--df-motion-quick) var(--df-ease-out),
+    box-shadow var(--df-motion-quick) var(--df-ease-out),
+    border-color var(--df-motion-quick) var(--df-ease-out);
+}
+.dsl-switch[data-on="true"] .dsl-switch-track {
+  background: var(--df-accent);
+  border-color: color-mix(in srgb, var(--df-accent) 70%, black);
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, black 30%, transparent),
+    inset 0 0 8px color-mix(in srgb, white 30%, transparent),
+    0 0 14px color-mix(in srgb, var(--df-accent) 70%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--df-accent) 55%, transparent);
 }
 .dsl-switch-knob {
   position: absolute;
   top: 3px;
   left: 3px;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
-  background: linear-gradient(180deg, color-mix(in srgb, white 12%, var(--df-surface-raised)), var(--df-surface-raised));
-  box-shadow: 0 1px 3px color-mix(in srgb, black 40%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, white 18%, var(--df-surface-raised)), var(--df-surface-raised));
+  box-shadow:
+    0 1px 3px color-mix(in srgb, black 45%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 14%, transparent);
   transition: transform var(--df-motion-quick) var(--df-ease-out);
 }
 .dsl-switch[data-on="true"] .dsl-switch-knob {
-  transform: translateX(18px);
+  transform: translateX(22px);
+  background: linear-gradient(180deg, #fff, color-mix(in srgb, white 80%, var(--df-accent)));
+}
+.dsl-switch-state {
+  font-family: var(--df-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--df-text-faint);
+  width: 24px;
+  text-align: left;
+  transition: color var(--df-motion-quick) var(--df-ease-out);
+}
+.dsl-switch[data-on="true"] .dsl-switch-state {
+  color: var(--df-accent);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--df-accent) 55%, transparent);
 }
 
 /* ── Footer / begin ──────────────────────────────────────────────── */
@@ -218,11 +254,15 @@
   flex: 1;
 }
 
-/* ── Card sizing — hug content instead of the 820px New Project ceiling ── */
+/* ── Card sizing — FIXED height so it doesn't jump as the source/engine
+ * morphs. Narrower than the 1100px New Project. Stage scrolls if needed. ── */
 .np-modal-card.dsl-card {
-  height: auto;
+  height: min(620px, calc(100vh - 56px));
   max-height: calc(100vh - 56px);
   max-width: 720px;
+}
+.np-modal-card.dsl-card .np-modal-stage {
+  overflow-y: auto;
 }
 
 /* Begin button reuses the New Project's .cnp-begin.cnp-begin--v8 (the real
