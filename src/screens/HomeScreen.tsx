@@ -2018,6 +2018,17 @@ function SkillsTabContent({
           open
           initialMode={showImport ? "import" : "create"}
           onClose={() => { setShowCreate(false); setShowImport(false); }}
+          registry={registryState}
+          onCreated={(skill) => {
+            setShowCreate(false);
+            flashToast(tf("home.skills.toast.saved", skill.name));
+            void rescan();
+          }}
+          onImported={(skill) => {
+            setShowImport(false);
+            flashToast(tf("home.skills.toast.imported", skill.name));
+            void rescan();
+          }}
         />
       )}
 

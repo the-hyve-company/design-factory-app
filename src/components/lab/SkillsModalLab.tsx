@@ -8,6 +8,8 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { SkillsDirectionA } from "@/components/lab/SkillsDirectionA";
+import type { Skill } from "@/lib/claude-bridge";
+import type { UseSkillRegistry } from "@/hooks/useSkillRegistry";
 import "@/styles/np-modal.css";
 import "@/styles/np-v8.css";
 import "@/styles/skeu-hero.css";
@@ -17,9 +19,12 @@ export interface SkillsModalLabProps {
   open: boolean;
   initialMode?: "create" | "import";
   onClose: () => void;
+  registry: UseSkillRegistry;
+  onCreated: (skill: Skill) => void;
+  onImported: (skill: Skill) => void;
 }
 
-export function SkillsModalLab({ open, initialMode = "create", onClose }: SkillsModalLabProps) {
+export function SkillsModalLab({ open, initialMode = "create", onClose, registry, onCreated, onImported }: SkillsModalLabProps) {
   if (!open) return null;
 
   return createPortal(
@@ -44,7 +49,13 @@ export function SkillsModalLab({ open, initialMode = "create", onClose }: Skills
         </header>
 
         <div className="np-modal-stage">
-          <SkillsDirectionA initialMode={initialMode} onClose={onClose} />
+          <SkillsDirectionA
+            initialMode={initialMode}
+            onClose={onClose}
+            registry={registry}
+            onCreated={onCreated}
+            onImported={onImported}
+          />
         </div>
       </div>
     </div>,

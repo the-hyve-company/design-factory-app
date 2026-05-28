@@ -5,6 +5,8 @@
 
 import { useState } from "react";
 import { ArrowRight, Folder, Link, Sparkles, Upload, type LucideIcon } from "lucide-react";
+import { installSkill, type CreateSkillInput, type Skill } from "@/lib/claude-bridge";
+import type { UseSkillRegistry } from "@/hooks/useSkillRegistry";
 
 type Mode = "create" | "import";
 type ImportSource = "upload" | "url" | "folder";
@@ -19,7 +21,15 @@ const IMPORT_SOURCES: Array<{ id: ImportSource; Icon: LucideIcon; name: string; 
   { id: "folder", Icon: Folder, name: "Pasta",  hint: "Escolha skills de uma pasta skills/ (ou .claude/skills/ legado).", placeholder: "~/projeto/skills" },
 ];
 
-export function SkillsDirectionA({ initialMode, onClose }: { initialMode: Mode; onClose: () => void }) {
+interface Props {
+  initialMode: Mode;
+  onClose: () => void;
+  registry: UseSkillRegistry;
+  onCreated: (skill: Skill) => void;
+  onImported: (skill: Skill) => void;
+}
+
+export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }: Props) {
   const [mode, setMode] = useState<Mode>(initialMode);
 
   // create state
@@ -34,17 +44,40 @@ export function SkillsDirectionA({ initialMode, onClose }: { initialMode: Mode; 
   const [importValue, setImportValue] = useState("");
   const activeSource = IMPORT_SOURCES.find((s) => s.id === source)!;
 
+  // submission shared state
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canCreate = name.trim().length > 0 && trigger.trim().length > 0 && body.trim().length > 0 && !saving;
+
   const onNameChange = (v: string) => {
     setName(v);
     if (!triggerEdited) setTrigger(v ? slugify(v) : "");
   };
 
-  const submit = () => {
-    // Presentational stub — real installSkill / import re-wires here.
+  const submit = async () => {
+    if (saving) return;
+    setError(null);
+    if (mode === "create") {
+      if (!canCreate) return;
+      setSaving(true);
+      const input: CreateSkillInput = {
+        name: name.trim(),
+        trigger: trigger.trim(),
+        description: description.trim() || null,
+        body,
+      };
+      const result = await installSkill(input);
+      setSaving(false);
+      if ("error" in result) { setError(result.error); return; }
+      onCreated(result);
+      onClose();
+      return;
+    }
+    // Import path — still presentational stub (re-wired in the next PR).
     // eslint-disable-next-line no-console
-    console.info("[skills-lab A] submit", mode === "create"
-      ? { mode, name, trigger, description, bodyLen: body.length }
-      : { mode, source, importValue });
+    console.info("[skills-lab A] import (stub)", { source, importValue });
+    void onImported;
     onClose();
   };
 
@@ -130,10 +163,24 @@ export function SkillsDirectionA({ initialMode, onClose }: { initialMode: Mode; 
       )}
 
       {/* Footer — premium begin */}
+      {error && (
+        <div className="dsl-zone" style={{ color: "var(--df-accent-danger)", fontSize: "var(--df-text-xs)" }} role="alert">
+          {error}
+        </div>
+      )}
+
       <div className="dsl-foot" style={{ justifyContent: "flex-end" }}>
-        <button type="button" className="cnp-begin cnp-begin--v8" onClick={submit}>
+        <button
+          type="button"
+          className={`cnp-begin cnp-begin--v8${saving ? " is-loading" : ""}`}
+          onClick={() => { void submit(); }}
+          disabled={mode === "create" ? !canCreate : saving}
+          aria-busy={saving}
+        >
           <span className="cnp-begin-led" aria-hidden="true" />
-          <span className="cnp-begin-label">{mode === "create" ? "Criar skill" : "Importar skill"}</span>
+          <span className="cnp-begin-label">
+            {saving ? (mode === "create" ? "Criando…" : "Importando…") : (mode === "create" ? "Criar skill" : "Importar skill")}
+          </span>
           <span className="cnp-begin-arrow" aria-hidden="true"><ArrowRight size={16} strokeWidth={2} /></span>
         </button>
       </div>
