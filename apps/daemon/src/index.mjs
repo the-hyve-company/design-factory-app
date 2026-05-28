@@ -714,6 +714,18 @@ function expandHomePath(input) {
   return path;
 }
 
+/** Where /git/shallow-clone stores cloned repos. Same shape as the
+ *  clone handler at /git/shallow-clone. The cache dir is daemon-owned
+ *  (UI can't write to it directly via /fs/write); we expose it as a
+ *  READ-only scope root so the DS importer's collectRelevantFiles
+ *  walker can list cloned files when the user picks GitHub as source.
+ *  Without this, the github source silently returns 0 design files
+ *  even when the clone succeeded — the listFolder bridge call hits
+ *  PATH_OUT_OF_SCOPE inside the cache dir. */
+function getGitCacheDir() {
+  return join(process.env.HOME || tmpdir(), ".design-factory-cache", "git");
+}
+
 function scopedRootPaths({ write = false } = {}) {
   const repoRoot = getRepoRoot();
   const roots = [
@@ -721,7 +733,13 @@ function scopedRootPaths({ write = false } = {}) {
     join(repoRoot, "design-systems"),
     getSkillsDir(),
   ];
-  if (!write) roots.push(join(repoRoot, "landing"));
+  if (!write) {
+    roots.push(join(repoRoot, "landing"));
+    // Read-only: daemon-managed git clone cache. Adding it under write
+    // would let the UI use /fs/write to drop arbitrary files into a
+    // clone, which is not a flow we support.
+    roots.push(getGitCacheDir());
+  }
   return roots;
 }
 
