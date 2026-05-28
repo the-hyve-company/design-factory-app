@@ -57,18 +57,27 @@ provider secrets; the daemon runs them. Canonical source:
 
 ## Get started
 
-First, install these two free programs (skip any you already have):
-
-- **Node.js** (version 20 or newer) — the engine that runs the app. Download it
-  from [nodejs.org](https://nodejs.org/) and click the big **LTS** button. Open
-  the downloaded file and click through to install.
-- **Git** — used to download and update the project. Get it from
-  [git-scm.com/downloads](https://git-scm.com/downloads).
+First, install **Node.js** (version 20 or newer) — the engine that runs the app.
+Download it from [nodejs.org](https://nodejs.org/) and click the big **LTS** button.
+Open the downloaded file and click through to install.
 
 You also need at least one AI CLI (such as Claude Code) or an API key — that's
 what generates the designs.
 
-With both installed, open a terminal and run:
+With Node installed, open a terminal and run:
+
+```bash
+npm create design-factory
+```
+
+The command downloads the project, installs dependencies and opens the app at
+`http://localhost:1420`. If the port is busy, it picks another and prints the URL.
+
+<details>
+<summary>Plan B (manual install)</summary>
+
+If `npm create design-factory` fails, install [Git](https://git-scm.com/downloads)
+as well and run:
 
 ```bash
 git clone https://github.com/the-hyve-company/design-factory.git
@@ -76,9 +85,7 @@ cd design-factory
 npm install
 npm run dev:web
 ```
-
-The launcher boots the app and opens your browser at `http://localhost:1420`. If
-the port is busy, it picks another and prints the URL.
+</details>
 
 ### Day to day (once installed)
 

@@ -58,18 +58,27 @@ secrets; o daemon controla a execução. Fonte canônica:
 
 ## Começar
 
-Antes de tudo, instale estes dois programas gratuitos (pule os que já tiver):
-
-- **Node.js** (versão 20 ou mais nova) — o motor que roda o app. Baixe em
-  [nodejs.org](https://nodejs.org/) e clique no botão grande **LTS**. Instale
-  abrindo o arquivo e clicando avançar até o fim.
-- **Git** — usado para baixar e atualizar o projeto. Baixe em
-  [git-scm.com/downloads](https://git-scm.com/downloads).
+Antes de tudo, instale o **Node.js** (versão 20 ou mais nova) — o motor que roda
+o app. Baixe em [nodejs.org](https://nodejs.org/) e clique no botão grande **LTS**.
+Instale abrindo o arquivo e clicando avançar até o fim.
 
 Você também precisa de pelo menos uma CLI de IA (como o Claude Code) ou uma chave
 de API — é o que gera os designs.
 
-Com os dois instalados, abra o Terminal e rode:
+Com o Node instalado, abra o Terminal e rode:
+
+```bash
+npm create design-factory
+```
+
+O comando baixa o projeto, instala dependências e sobe o app em
+`http://localhost:1420`. Se a porta estiver ocupada, ele escolhe outra e mostra a URL.
+
+<details>
+<summary>Plano B (instalação manual)</summary>
+
+Se `npm create design-factory` falhar, instale também o
+[Git](https://git-scm.com/downloads) e rode:
 
 ```bash
 git clone https://github.com/the-hyve-company/design-factory.git
@@ -77,9 +86,7 @@ cd design-factory
 npm install
 npm run dev:web
 ```
-
-O launcher sobe o app e abre o navegador em `http://localhost:1420`. Se a porta
-estiver ocupada, ele escolhe outra e mostra a URL.
+</details>
 
 ### No dia a dia (depois de instalado)
 
