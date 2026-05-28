@@ -47,6 +47,9 @@ function parseArgs(argv) {
     install: true,
     dev: true,
     force: false,
+    // git: try `git clone` when available (so future `git pull` works).
+    // false = force tarball mode (legacy behavior).
+    git: true,
   };
   const rest = argv.slice(2);
   for (let i = 0; i < rest.length; i++) {
@@ -60,6 +63,10 @@ function parseArgs(argv) {
       args.dev = false; // sem install não tem dev
     } else if (a === "--no-dev") {
       args.dev = false;
+    } else if (a === "--no-git") {
+      // Force tarball mode even when git is available. Useful for CI
+      // / smoke tests that want deterministic offline-ish behavior.
+      args.git = false;
     } else if (a === "--force" || a === "-f") {
       args.force = true;
     } else if (a === "--help" || a === "-h") {
@@ -85,6 +92,7 @@ ${C.bold}Opções:${C.reset}
   --branch <nome>    Branch do repo a baixar (default: main)
   --no-install       Pula \`npm install\` no fim
   --no-dev           Não roda \`npm run dev:web\` no fim
+  --no-git           Força modo tarball (sem .git/, sem \`git pull\` futuro)
   --force            Sobrescreve diretório existente
   -h, --help         Mostra esta ajuda
 
@@ -137,6 +145,34 @@ function downloadTarball(url, outPath) {
   });
 }
 
+/** Detect if `git` is available on PATH. Returns the version string on
+ *  success, null when the binary isn't found / errors out. Used to
+ *  decide between the git-clone path (preferred — gives the user a real
+ *  repo for future `git pull`) and the tarball fallback (worked from
+ *  v0.1.0 onwards but produces a flat folder with no `.git/`). */
+async function detectGit() {
+  return new Promise((resolveP) => {
+    try {
+      const child = spawn("git", ["--version"], {
+        stdio: ["ignore", "pipe", "pipe"],
+        shell: process.platform === "win32",
+      });
+      let out = "";
+      child.stdout?.on("data", (b) => { out += b.toString("utf8"); });
+      child.on("error", () => resolveP(null));
+      child.on("close", (code) => {
+        if (code !== 0) return resolveP(null);
+        const match = out.match(/git version (\S+)/);
+        resolveP(match ? match[1] : "unknown");
+      });
+      // Hard timeout so a slow git install doesn't hang the scaffolder.
+      setTimeout(() => { try { child.kill(); } catch {} resolveP(null); }, 3000);
+    } catch {
+      resolveP(null);
+    }
+  });
+}
+
 async function spawnAwait(cmd, args, opts = {}) {
   return new Promise((resolveP, rejectP) => {
     const child = spawn(cmd, args, {
@@ -165,7 +201,7 @@ async function main() {
   const targetDir = resolve(process.cwd(), args.dir);
   const dirName = basename(targetDir);
 
-  log(`${C.orange}${C.bold}Design Factory${C.reset} ${C.dim}— scaffolder v0.1.0${C.reset}\n`);
+  log(`${C.orange}${C.bold}Design Factory${C.reset} ${C.dim}— scaffolder v0.2.0${C.reset}\n`);
 
   // Verifica conflito com diretório existente.
   if (existsSync(targetDir)) {
@@ -183,39 +219,62 @@ async function main() {
     rmSync(targetDir, { recursive: true, force: true });
   }
 
-  mkdirSync(targetDir, { recursive: true });
-
-  // Download tarball.
-  const tarPath = pjoin(tmpdir(), `design-factory-${Date.now()}.tar.gz`);
-  const tarballUrl = `${TARBALL_BASE}/${args.branch}`;
-  log(`${C.cyan}→${C.reset} baixando ${REPO}@${args.branch}…`);
-  try {
-    await downloadTarball(tarballUrl, tarPath);
-  } catch (err) {
-    rmSync(targetDir, { recursive: true, force: true });
-    die(
-      `Falha ao baixar ${tarballUrl}\n` +
-        `Motivo: ${err.message}\n\n` +
-        `Verifique a conexão. Alternativa manual:\n` +
-        `  ${C.cyan}git clone https://github.com/${REPO}.git ${dirName}${C.reset}\n` +
-        `  ${C.cyan}cd ${dirName}${C.reset}\n` +
-        `  ${C.cyan}npm install${C.reset}\n` +
-        `  ${C.cyan}npm run dev:web${C.reset}`,
-    );
-  }
-
-  // Extract — strip:1 remove o top-level dir do tarball.
-  log(`${C.cyan}→${C.reset} extraindo em ${dirName}/`);
-  try {
-    await tarExtract({ file: tarPath, cwd: targetDir, strip: 1 });
-  } catch (err) {
-    rmSync(targetDir, { recursive: true, force: true });
-    die(`Falha ao extrair tarball: ${err.message}`);
-  } finally {
+  // Prefer git clone when available: gives the user a real repo so
+  // future updates work with `git pull`. Falls back to tarball if git
+  // isn't installed, or the user passed --no-git. Founder hit this:
+  // ran `npm create design-factory`, later tried `git pull`, got
+  // "not a git repository" — there was no `.git/` because tarball.
+  const gitVersion = args.git ? await detectGit() : null;
+  if (gitVersion) {
+    // git clone needs to OWN the target dir creation (it errors if the
+    // dir exists and isn't empty). We didn't pre-mkdir.
+    log(`${C.cyan}→${C.reset} clonando ${REPO}@${args.branch} via git ${C.dim}(${gitVersion})${C.reset}…`);
     try {
-      rmSync(tarPath, { force: true });
-    } catch {
-      /* ignore */
+      await spawnAwait("git", [
+        "clone",
+        "--depth=1",
+        "--branch", args.branch,
+        `https://github.com/${REPO}.git`,
+        targetDir,
+      ]);
+    } catch (err) {
+      rmSync(targetDir, { recursive: true, force: true });
+      die(
+        `Falha em \`git clone\`.\n` +
+          `Motivo: ${err.message}\n\n` +
+          `Alternativa: rode novamente com ${C.cyan}--no-git${C.reset} pra usar o tarball.`,
+      );
+    }
+  } else {
+    if (args.git) {
+      log(`${C.yellow}→${C.reset} git não detectado, caindo pro tarball ${C.dim}(\`git pull\` futuro não vai funcionar; reinstale git pra ter um repo updateable)${C.reset}`);
+    }
+    mkdirSync(targetDir, { recursive: true });
+    const tarPath = pjoin(tmpdir(), `design-factory-${Date.now()}.tar.gz`);
+    const tarballUrl = `${TARBALL_BASE}/${args.branch}`;
+    log(`${C.cyan}→${C.reset} baixando ${REPO}@${args.branch} via tarball…`);
+    try {
+      await downloadTarball(tarballUrl, tarPath);
+    } catch (err) {
+      rmSync(targetDir, { recursive: true, force: true });
+      die(
+        `Falha ao baixar ${tarballUrl}\n` +
+          `Motivo: ${err.message}\n\n` +
+          `Verifique a conexão. Alternativa manual:\n` +
+          `  ${C.cyan}git clone https://github.com/${REPO}.git ${dirName}${C.reset}\n` +
+          `  ${C.cyan}cd ${dirName}${C.reset}\n` +
+          `  ${C.cyan}npm install${C.reset}\n` +
+          `  ${C.cyan}npm run dev:web${C.reset}`,
+      );
+    }
+    log(`${C.cyan}→${C.reset} extraindo em ${dirName}/`);
+    try {
+      await tarExtract({ file: tarPath, cwd: targetDir, strip: 1 });
+    } catch (err) {
+      rmSync(targetDir, { recursive: true, force: true });
+      die(`Falha ao extrair tarball: ${err.message}`);
+    } finally {
+      try { rmSync(tarPath, { force: true }); } catch { /* ignore */ }
     }
   }
 
