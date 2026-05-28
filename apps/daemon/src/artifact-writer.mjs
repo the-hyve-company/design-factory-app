@@ -181,9 +181,21 @@ function slugForBackup(finalPath) {
   return base.replace(/[^A-Za-z0-9_.-]+/g, "-").slice(0, 60) || "artifact";
 }
 
+// Monotonic counter appended to the wall-clock timestamp. Without this,
+// two writes that land in the same millisecond produce identical backup
+// filenames — the second `writeFile()` silently overwrites the first and
+// the backup chain loses an entry. Caused a CI flake on the concurrency
+// test (5 parallel writes routinely collide on fast runners); see PR fix.
+// Reset on process restart is fine: ISO timestamp still places older
+// entries first across restarts, and within a process the counter is
+// strictly monotonic. Base36 padded to 6 chars sorts lexicographically
+// with the ISO prefix (one process won't reach 36^6 ≈ 2.1B writes).
+let backupSequence = 0;
+
 function timestampForBackup(now = new Date()) {
+  const seq = (backupSequence++).toString(36).padStart(6, "0");
   // ISO-8601 with `:` swapped for `-` so it survives Windows filesystems.
-  return now.toISOString().replace(/[:]/g, "-");
+  return now.toISOString().replace(/[:]/g, "-") + "-" + seq;
 }
 
 async function ensureDir(path) {

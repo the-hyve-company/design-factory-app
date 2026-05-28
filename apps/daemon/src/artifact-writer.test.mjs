@@ -336,6 +336,31 @@ describe("writeArtifactSafely — concurrency", () => {
   });
 });
 
+describe("timestampForBackup — uniqueness under collision pressure", () => {
+  it("produces distinct names for rapid-fire calls within the same millisecond", () => {
+    // Regression: ISO timestamp alone has ms precision, so concurrent
+    // writes (or just two writes ≤1ms apart) generate identical backup
+    // filenames and the second overwrites the first. CI runners hit this
+    // routinely on the concurrency test below; we lock it down here with
+    // a tight loop guaranteed to land in the same millisecond.
+    const seen = new Set();
+    const N = 5000;
+    for (let i = 0; i < N; i++) {
+      seen.add(__TEST_INTERNALS__.timestampForBackup());
+    }
+    expect(seen.size).toBe(N);
+  });
+
+  it("preserves lexicographic sort order with the sequence suffix", () => {
+    // The sort in pruneBackups() is ASCII lexicographic. The ISO timestamp
+    // must remain the dominant key so older entries still come first across
+    // ms boundaries; the seq suffix is only a within-ms tiebreaker.
+    const earlier = __TEST_INTERNALS__.timestampForBackup(new Date("2026-01-01T00:00:00.000Z"));
+    const later = __TEST_INTERNALS__.timestampForBackup(new Date("2026-12-31T23:59:59.999Z"));
+    expect(earlier < later).toBe(true);
+  });
+});
+
 describe("writeArtifactSafely — markdown / non-html types", () => {
   it("writes a markdown doc with skill-specific byte floor override", async () => {
     // type-aware Static P0 enforces a default 200-byte floor
