@@ -21,27 +21,37 @@ An open experiment offering a local workspace that makes context, direction,
 and taste more operable inside AI-assisted design. An open-source alternative
 to Claude Design and other closed AI-assisted design applications.
 
+---
+
 ## What ships in this version
 
-- configuration of formats, rules, commands, and prompts;
-- generation of editable HTML artifacts;
-- design-system ingestion and preview;
-- skill creation and import;
-- tweaks via CSS variables;
-- inline text editing and component property edits;
-- comments as structured direction;
-- version snapshots, file manager, and embedded terminal;
-- public documentation.
+| Area | State |
+| --- | --- |
+| Configuration of formats, rules, commands, and prompts | stable |
+| Generation of editable HTML artifacts | stable |
+| Design-system ingestion and preview | stable |
+| Skill creation and import | stable |
+| Tweaks via CSS variables | stable |
+| Inline text editing and component property edits | stable |
+| Comments as structured direction | stable |
+| Version snapshots and file manager | stable |
+| Public documentation | stable |
+| Embedded terminal | experimental |
 
-## Providers you can use inside the same project
+---
 
-- Claude Code
-- Codex
-- Gemini
-- Opencode
-- Kimi
-- OpenRouter
-- Ollama
+## Providers
+
+You can mix any combination inside the same project. Tokens live in
+`~/.config/design-factory/` or your environment — the browser never touches
+provider secrets; the daemon runs them. Canonical source:
+[docs/providers.md](docs/providers.md).
+
+| Class | Providers | Notes |
+| --- | --- | --- |
+| CLI agents | Claude Code · Codex · Gemini · Opencode · Kimi | the local daemon spawns the logged-in CLI |
+| BYOK APIs | Anthropic · OpenAI · Gemini · OpenRouter | keys stay local |
+| Local server | Ollama | offline |
 
 ---
 
@@ -70,21 +80,7 @@ npm run dev:web
 The launcher boots the app and opens your browser at `http://localhost:1420`. If
 the port is busy, it picks another and prints the URL.
 
-No terminal: after cloning, double-click `start.command` (macOS) or `start.bat`
-(Windows). The first run installs dependencies and opens the app. To update,
-use `update.command` / `update.bat`.
-
-> **macOS first-time gotcha:** if you see "cannot be opened because Apple cannot
-> verify it", that's just because the app is open-source and unsigned. **Right-
-> click** (or Control-click) `start.command` → **Open** → **Open** again on the
-> warning. After that, double-click works as usual. (Cloning with `git` avoids
-> this; the `.zip` download is what triggers macOS quarantine.)
-
 ### Day to day (once installed)
-
-Open the terminal **inside the project folder**: in Terminal, type `cd ` (with
-a space), drag the `design-factory` folder from Finder into the window, and
-press Enter. With the terminal in the folder, just copy:
 
 **Open Design Factory:**
 
@@ -102,33 +98,6 @@ After opening, go to Settings → Providers. CLIs you're already logged into sho
 as connected; BYOK keys are optional. Create a project, add context, generate,
 and refine with tweaks, comments, and edits. Step-by-step in
 [docs/quickstart.md](docs/quickstart.md).
-
----
-
-## Status
-
-Design Factory is early. The local path above is the tested, recommended one.
-
-| Area | State |
-| --- | --- |
-| HTML generation, projects, versions | stable |
-| Multi-provider picker (CLI / BYOK / local) | stable |
-| Design systems, tweaks, comments, inline edit | stable |
-| Embedded terminal | experimental |
-
----
-
-## Providers
-
-| Class | Examples | Notes |
-| --- | --- | --- |
-| CLI agents | Claude Code, Codex, Gemini, Opencode, Kimi | the local daemon spawns them |
-| BYOK APIs | Anthropic, OpenAI, Gemini, OpenRouter | keys stay local |
-| Local server | Ollama | offline |
-
-Tokens live in `~/.config/design-factory/` or your environment. The browser
-never touches provider secrets; the daemon runs them. Canonical source:
-[docs/providers.md](docs/providers.md).
 
 ---
 
