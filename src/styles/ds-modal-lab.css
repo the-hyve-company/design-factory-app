@@ -186,7 +186,11 @@
   flex-shrink: 0;
 }
 .dsl-switch[data-on="true"] {
-  background: color-mix(in srgb, var(--df-accent) 75%, transparent);
+  background: var(--df-accent);
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, black 25%, transparent),
+    0 0 10px color-mix(in srgb, var(--df-accent) 60%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--df-accent) 50%, transparent);
 }
 .dsl-switch-knob {
   position: absolute;
@@ -221,40 +225,7 @@
   max-width: 720px;
 }
 
-/* ── Begin button — self-contained tactile CTA (cnp-begin needs its --v8
- * context; out of it the base class renders bare). Accent-lit embossed. ── */
-.dsl-begin {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 11px 18px;
-  border-radius: var(--df-r-sm);
-  border: 1px solid var(--df-accent);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--df-accent) 24%, var(--df-surface-raised)),
-    color-mix(in srgb, var(--df-accent) 12%, var(--df-surface-raised))
-  );
-  color: var(--df-text-primary);
-  font-size: var(--df-text-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--df-accent) 28%, transparent),
-    0 2px 10px color-mix(in srgb, var(--df-accent) 22%, transparent);
-  transition:
-    transform var(--df-motion-quick) var(--df-ease-out),
-    filter var(--df-motion-quick) var(--df-ease-out);
-}
-.dsl-begin:hover { filter: brightness(1.08); }
-.dsl-begin:active { transform: translateY(1px); }
-.dsl-begin-led {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--df-accent);
-  box-shadow: 0 0 6px var(--df-accent);
-}
-.dsl-begin-arrow { font-size: 14px; opacity: 0.85; }
+/* Begin button reuses the New Project's .cnp-begin.cnp-begin--v8 (the real
+ * skeu CTA) so the two surfaces read as the same instrument. The foot keeps
+ * it from stretching full-width via justify. */
+.dsl-foot .cnp-begin.cnp-begin--v8 { margin-top: 22px; }

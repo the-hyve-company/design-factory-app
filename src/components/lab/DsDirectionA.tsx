@@ -133,10 +133,10 @@ export function DsDirectionA({ onClose }: { onClose: () => void }) {
             style={{ fontFamily: "var(--df-font-mono)" }}
           />
         </div>
-        <button type="button" className="dsl-begin" onClick={forge} style={{ marginTop: 22 }}>
-          <span className="dsl-begin-led" aria-hidden="true" />
-          <span>Forjar design.md</span>
-          <span className="dsl-begin-arrow" aria-hidden="true">→</span>
+        <button type="button" className="cnp-begin cnp-begin--v8" onClick={forge}>
+          <span className="cnp-begin-led" aria-hidden="true" />
+          <span className="cnp-begin-label">Forjar design.md</span>
+          <span className="cnp-begin-arrow" aria-hidden="true">→</span>
         </button>
       </div>
     </div>
