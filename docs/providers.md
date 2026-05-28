@@ -122,6 +122,13 @@ field. Agents do not need to detect this themselves — see
   itself, DF does not store the credential.
 - Env override: `DF_KIMI_BIN`
 - Default model: `kimi-latest` (auto-pick by Moonshot)
+- **Tested CLI versions:** `0.2.0 ≤ v < 0.3.0`. The adapter targets the
+  0.2.x flag contract (`-p <text>` prompt, `--output-format stream-json`).
+  Older `0.1.x` builds use a different CLI surface (`--print`,
+  `--input-format`) and will fail with `unknown option '--print'`.
+  Newer releases (0.3+) are untested — the daemon surfaces a hint in the
+  error message when the detected version is outside this window.
+  Upgrade with the install command above.
 
 ---
 
