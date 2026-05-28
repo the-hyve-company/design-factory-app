@@ -3,9 +3,13 @@
 // dsl-* tactile vocabulary from the DS lab. Presentational: submit is stubbed
 // (logs intent); real installSkill / import re-wires when this is chosen.
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowRight, Folder, Link, Sparkles, Upload, type LucideIcon } from "lucide-react";
-import { installSkill, type CreateSkillInput, type Skill } from "@/lib/claude-bridge";
+import {
+  installSkill, fetchUrlViaBridge, listFolder, readFileViaBridge,
+  parseSkillMarkdown, type CreateSkillInput, type Skill,
+} from "@/lib/claude-bridge";
+import { parseSkillZip } from "@/lib/skill-zip-import";
 import type { UseSkillRegistry } from "@/hooks/useSkillRegistry";
 
 type Mode = "create" | "import";
@@ -42,6 +46,7 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
   // import state
   const [source, setSource] = useState<ImportSource>("upload");
   const [importValue, setImportValue] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const activeSource = IMPORT_SOURCES.find((s) => s.id === source)!;
 
   // submission shared state
@@ -55,30 +60,112 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
     if (!triggerEdited) setTrigger(v ? slugify(v) : "");
   };
 
+  // Shared install path for imports — minimal version without the staging
+  // preview screen the old SkillImportModal had. The user can fine-tune the
+  // imported skill via Skill Detail after.
+  const installStaged = async (input: CreateSkillInput) => {
+    setSaving(true);
+    const result = await installSkill(input);
+    setSaving(false);
+    if ("error" in result) { setError(result.error); return; }
+    onImported(result);
+    onClose();
+  };
+
+  const handleFileUpload = async (file: File) => {
+    setError(null);
+    try {
+      if (file.name.toLowerCase().endsWith(".zip")) {
+        const parsed = parseSkillZip(new Uint8Array(await file.arrayBuffer()), file.name);
+        await installStaged(parsed.installInput);
+        return;
+      }
+      if (file.size > 200_000) { setError(`${file.name} é grande demais (máx 200KB para SKILL.md)`); return; }
+      const text = await file.text();
+      const parsed = parseSkillMarkdown(text);
+      const fallback = file.name.replace(/\.md$/i, "").replace(/[-_]/g, " ").trim();
+      await installStaged({
+        name: parsed.name ?? fallback,
+        trigger: parsed.trigger ?? "",
+        description: parsed.description,
+        body: parsed.body,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const submit = async () => {
     if (saving) return;
     setError(null);
     if (mode === "create") {
       if (!canCreate) return;
       setSaving(true);
-      const input: CreateSkillInput = {
+      const result = await installSkill({
         name: name.trim(),
         trigger: trigger.trim(),
         description: description.trim() || null,
         body,
-      };
-      const result = await installSkill(input);
+      });
       setSaving(false);
       if ("error" in result) { setError(result.error); return; }
       onCreated(result);
       onClose();
       return;
     }
-    // Import path — still presentational stub (re-wired in the next PR).
-    // eslint-disable-next-line no-console
-    console.info("[skills-lab A] import (stub)", { source, importValue });
-    void onImported;
-    onClose();
+    // Import — different action per source.
+    if (source === "upload") { fileInputRef.current?.click(); return; }
+    const raw = importValue.trim();
+    if (!raw) { setError(source === "url" ? "Cole uma URL." : "Cole o caminho da pasta."); return; }
+    setSaving(true);
+    try {
+      if (source === "url") {
+        const res = await fetchUrlViaBridge(raw);
+        if ("error" in res) throw new Error(res.error);
+        const md = res.html;
+        if (raw.toLowerCase().endsWith(".zip")) throw new Error("ZIP via URL ainda não — use Upload.");
+        const parsed = parseSkillMarkdown(md);
+        const fallback = raw.split("/").pop()?.replace(/\.md$/i, "").replace(/[-_]/g, " ").trim() ?? "";
+        await installStaged({
+          name: parsed.name ?? fallback,
+          trigger: parsed.trigger ?? "",
+          description: parsed.description,
+          body: parsed.body,
+        });
+        return;
+      }
+      // folder — walk + install the first SKILL.md found (depth ≤ 3).
+      const found: CreateSkillInput[] = [];
+      const walk = async (p: string, depth: number) => {
+        if (depth > 3 || found.length >= 1) return;
+        const r = await listFolder(p);
+        if (!r || "error" in r) return;
+        for (const e of r.entries) {
+          if (found.length >= 1) break;
+          if (e.isDir) {
+            if (/node_modules|\.git|dist|build/.test(e.name)) continue;
+            await walk(e.path, depth + 1);
+          } else if (e.name.toLowerCase().endsWith(".md") && e.size <= 200_000) {
+            const f = await readFileViaBridge(e.path);
+            if (!f?.isText) continue;
+            const parsed = parseSkillMarkdown(f.content);
+            if (!parsed.name) continue;
+            found.push({
+              name: parsed.name,
+              trigger: parsed.trigger ?? "",
+              description: parsed.description,
+              body: parsed.body,
+            });
+          }
+        }
+      };
+      await walk(raw, 0);
+      if (found.length === 0) throw new Error("Nenhuma SKILL.md encontrada nessa pasta.");
+      await installStaged(found[0]);
+    } catch (e) {
+      setSaving(false);
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   return (
@@ -146,7 +233,23 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
                 <div className="dsl-bowl-hint">
                   {activeSource.hint}
                   <div style={{ marginTop: 10 }}>
-                    <button className="dsl-engine-chip" type="button">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".md,.zip"
+                      style={{ display: "none" }}
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = "";
+                        if (f) await handleFileUpload(f);
+                      }}
+                    />
+                    <button
+                      className="dsl-engine-chip"
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={saving}
+                    >
                       <Upload size={14} strokeWidth={2} aria-hidden="true" /> Escolher .md ou .zip…
                     </button>
                   </div>
