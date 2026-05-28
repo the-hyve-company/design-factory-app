@@ -22,15 +22,12 @@ import { slugFromPath } from "@/lib/project-files";
 // brings the creatures back.
 import type { RatioId } from "@/runtime/hyperframes-invoker";
 import { parseDesignSystem } from "@/lib/ds-google";
-import { DsSetupModal, type DsEntry } from "@/components/DsSetupModal";
+import type { DsEntry } from "@/types/ds";
 import { DsModalLab } from "@/components/lab/DsModalLab";
 import { SkillsModalLab } from "@/components/lab/SkillsModalLab";
 import { SkillDetailLab } from "@/components/lab/SkillDetailLab";
 import { Settings } from "lucide-react";
 import { PadroesConfirmModal } from "@/components/PadroesConfirmModal";
-import { SkillCreateModal } from "@/components/SkillCreateModal";
-import { SkillImportModal } from "@/components/SkillImportModal";
-import { SkillDetailModal } from "@/components/SkillDetailModal";
 import { useSkillRegistry } from "@/hooks/useSkillRegistry";
 import { parseSkillZip } from "@/lib/skill-zip-import";
 import type { Project } from "@/hooks/useProjects";
@@ -52,21 +49,6 @@ import "@/styles/np-v8.css";
 // Canonical skeumorphic hero pattern (DNA reference). Provides
 // .skeu-hero + bezel depth tokens reused everywhere.
 import "@/styles/skeu-hero.css";
-
-// Modal-lab toggle (dev only). ?modalLab=1 swaps the DS / Skills modals for
-// the redesign directions so they can be compared live in dev:web. The flag
-// sticks in localStorage once seen, so it survives the dev:web auto-open
-// landing on a paramless URL and any in-app navigation. ?modalLab=0 clears it.
-// Off by default — production renders the shipped modals.
-const MODAL_LAB = (() => {
-  if (typeof window === "undefined") return false;
-  try {
-    const param = new URLSearchParams(window.location.search).get("modalLab");
-    if (param === "1") { window.localStorage?.setItem("DF_MODAL_LAB", "1"); return true; }
-    if (param === "0") { window.localStorage?.removeItem("DF_MODAL_LAB"); return false; }
-    return window.localStorage?.getItem("DF_MODAL_LAB") === "1";
-  } catch { return false; }
-})();
 
 type DesignSystem = DsEntry;
 
@@ -1155,7 +1137,7 @@ export function HomeScreen({
               )}
             </div>
           ) : rightTab === "skills" ? (
-            <SkillsTabContent cwd={defaultCwd} onCreateProject={onCreateProject} />
+            <SkillsTabContent cwd={defaultCwd} />
           ) : (
             /* Projects grid — 3-col centered, EntityCard pattern. */
             <div className="home-right-grid">
@@ -1477,15 +1459,7 @@ export function HomeScreen({
       )}
 
       {showDsSetup && (
-        MODAL_LAB ? (
-          <DsModalLab open onClose={() => setShowDsSetup(false)} onSaved={handleDsSaved} />
-        ) : (
-          <DsSetupModal
-            onClose={() => setShowDsSetup(false)}
-            onAutoPersist={handleDsSaved}
-            onSaved={handleDsSaved}
-          />
-        )
+        <DsModalLab open onClose={() => setShowDsSetup(false)} onSaved={handleDsSaved} />
       )}
 
       <DirectionModal
@@ -1689,13 +1663,7 @@ function formatRelativeTime(ts: number): string {
 // Import is folded into the New-skill modal as a tab.
 // Custom folder picker and Refresh moved to Settings > Skills.
 // Project+Your skills render in one grid with a subtle source chip per card.
-function SkillsTabContent({
-  cwd,
-  onCreateProject,
-}: {
-  cwd: string;
-  onCreateProject: HomeScreenProps["onCreateProject"];
-}) {
+function SkillsTabContent({ cwd }: { cwd: string }) {
   // Skills live at <repoRoot>/skills/ as the canonical location, with
   // <repoRoot>/.claude/skills/ kept read-only for backward
   // compatibility. The custom-folder pick and skills_custom_path
@@ -1797,26 +1765,6 @@ function SkillsTabContent({
     if (match && match !== selected) setSelected(match);
     else if (!match) setSelected(null);
   }, [bySource, selected]);
-
-  const handleTestInChat = (skill: Skill) => {
-    const slug = (skill.name || skill.trigger.replace(/^\//, ""))
-      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "skill-test";
-    const projectName = `test: ${skill.name}`;
-    const effectiveCwd = cwd || undefined;
-    const seedPrompt = `${skill.trigger}`;
-    // Use absolute workspace root when available; fall back to literal
-    // ~ only if the bridge never set defaultCwd (browser-only / degraded).
-    const scratchRoot = cwd ? `${cwd.replace(/\/$/, "")}/scratch` : "~/design-factory/scratch";
-    void onCreateProject(
-      projectName,
-      `${scratchRoot}/${slug}-${Date.now().toString(36)}`,
-      "hifi",
-      "prototype",
-      seedPrompt,
-      effectiveCwd,
-    );
-    setSelected(null);
-  };
 
   // Union of user-editable (df) and project (read-only) skills.
   // Global + builtin are advanced — hidden by default, accessible via Settings.
@@ -2012,8 +1960,8 @@ function SkillsTabContent({
         </div>
       )}
 
-      {/* Modal lab — unified create/import faceplate (dev only) */}
-      {MODAL_LAB && (showCreate || showImport) && (
+      {/* Unified create/import faceplate */}
+      {(showCreate || showImport) && (
         <SkillsModalLab
           open
           initialMode={showImport ? "import" : "create"}
@@ -2032,64 +1980,21 @@ function SkillsTabContent({
         />
       )}
 
-      {/* Create modal */}
-      {!MODAL_LAB && showCreate && (
-        <SkillCreateModal
-          registry={registryState}
-          onClose={() => setShowCreate(false)}
-          onSaved={(skill) => {
-            setShowCreate(false);
-            flashToast(tf("home.skills.toast.saved", skill.name));
-            void rescan();
-          }}
-        />
-      )}
-
-      {/* Import modal */}
-      {!MODAL_LAB && showImport && (
-        <SkillImportModal
-          registry={registryState}
-          onClose={() => setShowImport(false)}
-          onImported={(skill) => {
-            setShowImport(false);
-            flashToast(tf("home.skills.toast.imported", skill.name));
-            void rescan();
-          }}
-        />
-      )}
-
-      {/* Detail modal */}
+      {/* Skill detail */}
       {selected && (
-        MODAL_LAB ? (
-          <SkillDetailLab
-            skill={selected}
-            onClose={() => setSelected(null)}
-            onChanged={(next) => {
-              setSelected(next);
-              flashToast(tf("home.skills.toast.saved", next.name));
-              void rescan();
-            }}
-            onDeleted={() => {
-              flashToast(t("home.skills.toast.deleted"));
-              void rescan();
-            }}
-          />
-        ) : (
-          <SkillDetailModal
-            skill={selected}
-            onClose={() => setSelected(null)}
-            onChanged={(next) => {
-              setSelected(next);
-              flashToast(tf("home.skills.toast.saved", next.name));
-              void rescan();
-            }}
-            onDeleted={() => {
-              flashToast(t("home.skills.toast.deleted"));
-              void rescan();
-            }}
-            onTestInChat={handleTestInChat}
-          />
-        )
+        <SkillDetailLab
+          skill={selected}
+          onClose={() => setSelected(null)}
+          onChanged={(next) => {
+            setSelected(next);
+            flashToast(tf("home.skills.toast.saved", next.name));
+            void rescan();
+          }}
+          onDeleted={() => {
+            flashToast(t("home.skills.toast.deleted"));
+            void rescan();
+          }}
+        />
       )}
 
       <PadroesConfirmModal

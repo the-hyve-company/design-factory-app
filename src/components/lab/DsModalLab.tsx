@@ -10,7 +10,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { DsDirectionA } from "@/components/lab/DsDirectionA";
-import type { DsEntry } from "@/components/DsSetupModal";
+import type { DsEntry } from "@/types/ds";
 import "@/styles/np-modal.css";
 import "@/styles/np-v8.css";
 import "@/styles/skeu-hero.css";

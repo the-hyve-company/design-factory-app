@@ -18,7 +18,7 @@ import {
   buildFolderPrompt, buildGithubPrompt, buildUploadPrompt,
   invokeDsGeneration, looksLikeDesignMd,
 } from "@/runtime/ds-invoker";
-import type { DsEntry } from "@/components/DsSetupModal";
+import type { DsEntry } from "@/types/ds";
 
 type Source = "folder" | "github" | "upload" | "url";
 

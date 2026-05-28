@@ -6,7 +6,7 @@ import { EditorScreen } from "@/screens/EditorScreen";
 import { SettingsScreen } from "@/screens/SettingsScreen";
 import { SkillCoverPreviewScreen } from "@/screens/SkillCoverPreviewScreen";
 import { DsPreviewScreen } from "@/screens/DsPreviewScreen";
-import type { DsEntry } from "@/components/DsSetupModal";
+import type { DsEntry } from "@/types/ds";
 import { useProjects } from "@/hooks/useProjects";
 import { db, mkdirViaBridge, writeFile, readGlobalConfig, writeGlobalConfig, listDesignSystemsFromFilesystem } from "@/lib/claude-bridge";
 import { setLang, t as tFn, type Lang } from "@/i18n";

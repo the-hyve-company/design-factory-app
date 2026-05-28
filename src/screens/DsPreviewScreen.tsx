@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { readFileViaBridge, writeFile, gitShallowClone, db, BRIDGE_URL } from "@/lib/claude-bridge";
 import { parseDesignSystem, type ParsedDesignSystem } from "@/lib/ds-google";
 import { renderMarkdownSafe } from "@/lib/safe-markdown";
-import type { DsEntry } from "@/components/DsSetupModal";
+import type { DsEntry } from "@/types/ds";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GeneratePreviewModal } from "@/components/GeneratePreviewModal";
 import { TabCornerLeft, TabCornerRight } from "@/components/TabCorner";

@@ -20,7 +20,7 @@
 import { useEffect, useState } from "react";
 import { DfModal } from "@/components/DfModal";
 import { BRIDGE_URL } from "@/lib/claude-bridge";
-import type { DsEntry } from "@/components/DsSetupModal";
+import type { DsEntry } from "@/types/ds";
 import type { ProviderId } from "@/providers/types";
 import {
   defaultModelForProvider,
