@@ -51,12 +51,18 @@ import "@/styles/np-v8.css";
 import "@/styles/skeu-hero.css";
 
 // Modal-lab toggle (dev only). ?modalLab=1 swaps the DS / Skills modals for
-// the redesign directions so they can be compared live in dev:web. Off by
-// default — production renders the shipped modals.
+// the redesign directions so they can be compared live in dev:web. The flag
+// sticks in localStorage once seen, so it survives the dev:web auto-open
+// landing on a paramless URL and any in-app navigation. ?modalLab=0 clears it.
+// Off by default — production renders the shipped modals.
 const MODAL_LAB = (() => {
   if (typeof window === "undefined") return false;
-  try { return new URLSearchParams(window.location.search).get("modalLab") === "1"; }
-  catch { return false; }
+  try {
+    const param = new URLSearchParams(window.location.search).get("modalLab");
+    if (param === "1") { window.localStorage?.setItem("DF_MODAL_LAB", "1"); return true; }
+    if (param === "0") { window.localStorage?.removeItem("DF_MODAL_LAB"); return false; }
+    return window.localStorage?.getItem("DF_MODAL_LAB") === "1";
+  } catch { return false; }
 })();
 
 type DesignSystem = DsEntry;
