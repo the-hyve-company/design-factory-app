@@ -85,21 +85,23 @@ export function DsDirectionA({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* Engine — engraved provider + model (skip for upload, which is verbatim) */}
-      {source !== "upload" && (
-        <div className="dsl-zone">
-          <span className="dsl-engrave">motor de extração</span>
-          <div className="dsl-engine">
-            <button className="dsl-engine-chip" type="button">
-              <span className="dsl-engine-k">provider</span> Claude Code
-            </button>
-            <button className="dsl-engine-chip" type="button">
-              <span className="dsl-engine-k">modelo</span> default
-            </button>
-          </div>
+      {/* Engine — kept for ALL sources: even an as-is design.md needs a
+          provider to render the preview. */}
+      <div className="dsl-zone">
+        <span className="dsl-engrave">
+          {source === "upload" ? "motor do preview" : "motor de extração"}
+        </span>
+        <div className="dsl-engine">
+          <button className="dsl-engine-chip" type="button">
+            <span className="dsl-engine-k">provider</span> Claude Code
+          </button>
+          <button className="dsl-engine-chip" type="button">
+            <span className="dsl-engine-k">modelo</span> default
+          </button>
         </div>
-      )}
+      </div>
 
-      {/* Preview — physical switch */}
+      {/* Preview — physical skeu switch */}
       <div className="dsl-zone">
         <div className="dsl-switch-row">
           <div className="dsl-switch-copy">
@@ -114,7 +116,10 @@ export function DsDirectionA({ onClose }: { onClose: () => void }) {
             aria-label="Gerar preview visual"
             onClick={() => setGenPreview((v) => !v)}
           >
-            <span className="dsl-switch-knob" aria-hidden="true" />
+            <span className="dsl-switch-track" aria-hidden="true">
+              <span className="dsl-switch-knob" />
+            </span>
+            <span className="dsl-switch-state" aria-hidden="true">{genPreview ? "ON" : "OFF"}</span>
           </button>
         </div>
       </div>
