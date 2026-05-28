@@ -24,6 +24,7 @@ import type { RatioId } from "@/runtime/hyperframes-invoker";
 import { parseDesignSystem } from "@/lib/ds-google";
 import { DsSetupModal, type DsEntry } from "@/components/DsSetupModal";
 import { DsModalLab } from "@/components/lab/DsModalLab";
+import { SkillsModalLab } from "@/components/lab/SkillsModalLab";
 import { PadroesConfirmModal } from "@/components/PadroesConfirmModal";
 import { SkillCreateModal } from "@/components/SkillCreateModal";
 import { SkillImportModal } from "@/components/SkillImportModal";
@@ -2023,8 +2024,17 @@ function SkillsTabContent({
         </div>
       )}
 
+      {/* Modal lab — unified create/import faceplate (dev only) */}
+      {MODAL_LAB && (showCreate || showImport) && (
+        <SkillsModalLab
+          open
+          initialMode={showImport ? "import" : "create"}
+          onClose={() => { setShowCreate(false); setShowImport(false); }}
+        />
+      )}
+
       {/* Create modal */}
-      {showCreate && (
+      {!MODAL_LAB && showCreate && (
         <SkillCreateModal
           registry={registryState}
           onClose={() => setShowCreate(false)}
@@ -2037,7 +2047,7 @@ function SkillsTabContent({
       )}
 
       {/* Import modal */}
-      {showImport && (
+      {!MODAL_LAB && showImport && (
         <SkillImportModal
           registry={registryState}
           onClose={() => setShowImport(false)}

@@ -31,6 +31,8 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
+.dsl-keys--3 { grid-template-columns: repeat(3, 1fr); }
+.dsl-keys--2 { grid-template-columns: repeat(2, 1fr); }
 .dsl-key {
   display: flex;
   flex-direction: column;
@@ -130,6 +132,23 @@
   outline: none;
   border-color: var(--df-border-focus);
 }
+.dsl-textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  background: var(--df-surface-raised);
+  border: 1px solid var(--df-border-subtle);
+  border-radius: var(--df-r-sm);
+  padding: 10px 12px;
+  color: var(--df-text-primary);
+  font-size: var(--df-text-sm);
+  font-family: var(--df-font-mono);
+  line-height: 1.55;
+}
+.dsl-textarea:focus { outline: none; border-color: var(--df-border-focus); }
+/* compact field stack for the create form */
+.dsl-field { margin-bottom: 14px; }
+.dsl-field:last-child { margin-bottom: 0; }
 
 /* ── Engine row — engraved provider + model ──────────────────────── */
 .dsl-engine {
@@ -257,7 +276,7 @@
 /* ── Card sizing — FIXED height so it doesn't jump as the source/engine
  * morphs. Narrower than the 1100px New Project. Stage scrolls if needed. ── */
 .np-modal-card.dsl-card {
-  height: min(620px, calc(100vh - 56px));
+  height: min(680px, calc(100vh - 56px));
   max-height: calc(100vh - 56px);
   max-width: 720px;
 }
