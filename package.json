@@ -53,7 +53,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
+    "@babel/parser": "^7.29.2",
+    "@babel/traverse": "^7.29.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.6.0",
     "@types/react": "^18.3.3",
@@ -61,6 +62,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "@vitest/ui": "^4.1.5",
     "happy-dom": "^20.9.0",
+    "playwright": "^1.59.1",
     "typescript": "^5.5.3",
     "vite": "^7.3.3",
     "vitest": "^4.1.5"
