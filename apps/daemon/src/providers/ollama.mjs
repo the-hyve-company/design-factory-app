@@ -71,7 +71,11 @@ const ollama = {
       res.end(JSON.stringify({ error: "prompt required" }));
       return;
     }
-    const host = process.env.DF_OLLAMA_HOST || "http://localhost:11434";
+    // Default 127.0.0.1 over `localhost` — on Windows / Node 18+
+    // `localhost` may resolve to IPv6 (::1) but Ollama only listens
+    // on IPv4. Forcing IPv4 here avoids silent "ollama not detected"
+    // failures. Users with non-default setups override via DF_OLLAMA_HOST.
+    const host = process.env.DF_OLLAMA_HOST || "http://127.0.0.1:11434";
     const messages = [];
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
     messages.push({ role: "user", content: prompt });
@@ -164,7 +168,11 @@ const ollama = {
       res.end(JSON.stringify({ error: "prompt required" }));
       return;
     }
-    const host = process.env.DF_OLLAMA_HOST || "http://localhost:11434";
+    // Default 127.0.0.1 over `localhost` — on Windows / Node 18+
+    // `localhost` may resolve to IPv6 (::1) but Ollama only listens
+    // on IPv4. Forcing IPv4 here avoids silent "ollama not detected"
+    // failures. Users with non-default setups override via DF_OLLAMA_HOST.
+    const host = process.env.DF_OLLAMA_HOST || "http://127.0.0.1:11434";
     const messages = [];
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
     messages.push({ role: "user", content: prompt });

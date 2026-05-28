@@ -1,4 +1,4 @@
-import { streamOllama, ollamaOnce, fetchOllamaModels } from "@/lib/ollama-bridge";
+import { streamOllama, ollamaOnce, fetchOllamaStatus } from "@/lib/ollama-bridge";
 import type { LLMProvider } from "./types";
 
 // Ollama adapter — talks to a local Ollama server (default :11434) for fully
@@ -29,12 +29,43 @@ export const ollamaProvider: LLMProvider = {
   stream: streamOllama,
   once: ollamaOnce,
   async status() {
-    // Ollama isn't a CLI we shell out to — it's a server. Probe by listing
-    // models (the daemon endpoint catches connection errors).
-    const models = await fetchOllamaModels();
-    if (models.length === 0) {
-      return { status: "not-installed", version: null, detail: "Ollama server unreachable on :11434 or no models pulled" };
+    // Ollama isn't a CLI we shell out to — it's a server. Probe via the
+    // daemon (which tries 127.0.0.1 / localhost / [::1] in order). The
+    // detail message distinguishes the three real failure modes so the
+    // user knows what to fix instead of just seeing "not installed":
+    //
+    //   - server offline → "Server não respondeu em <hosts>. Abra o
+    //     Ollama desktop ou rode `ollama serve`."
+    //   - server up, no models → "Server respondendo mas sem modelos.
+    //     Rode `ollama pull llama3.2` (ou outro modelo)."
+    //   - server up, with models → connected.
+    //
+    // Pre-fix: founder reported "ollama aberto no pc e nao funciona" —
+    // hit the IPv6 vs IPv4 silent failure on Windows; daemon now tries
+    // IPv4 first so this surface should rarely show the unreachable
+    // branch, but when it does the message is actionable.
+    const s = await fetchOllamaStatus();
+    if (s.models.length > 0) {
+      const suffix = s.host ? ` · ${s.host}` : "";
+      return {
+        status: "connected",
+        version: `${s.models.length} model${s.models.length === 1 ? "" : "s"}${suffix}`,
+      };
     }
-    return { status: "connected", version: `${models.length} model${models.length === 1 ? "" : "s"}` };
+    if (s.error) {
+      const triedNote = s.triedHosts.length
+        ? `Tentei: ${s.triedHosts.join(", ")}. `
+        : "";
+      return {
+        status: "not-installed",
+        version: null,
+        detail: `Ollama não respondeu. ${triedNote}Abra o Ollama desktop ou rode \`ollama serve\`. (${s.error})`,
+      };
+    }
+    return {
+      status: "not-installed",
+      version: null,
+      detail: "Ollama respondeu mas sem modelos. Rode `ollama pull llama3.2` (ou outro modelo) primeiro.",
+    };
   },
 };

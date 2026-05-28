@@ -4737,6 +4737,40 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // Helper: try several common host forms for the local Ollama server
+  // and return the first one that answers /api/tags. Windows installs
+  // hit "Ollama doesn't detect" silently when the daemon's `localhost`
+  // resolves to IPv6 but Ollama listens on IPv4 — the daemon would
+  // probe ::1, Ollama would refuse, the UI showed "not installed" with
+  // no actionable hint. Trying 127.0.0.1 first, then localhost, then
+  // [::1] catches every realistic combo. Founder report 2026-05-28:
+  // "to com ollama aberto no pc e nao funciona, nao detecta".
+  //
+  // Total budget: ~1500ms (3 × 500ms). Cold-start forgiving without
+  // blocking /providers latency.
+  async function probeOllama() {
+    const override = process.env.DF_OLLAMA_HOST;
+    const hosts = override ? [override] : [
+      "http://127.0.0.1:11434",
+      "http://localhost:11434",
+      "http://[::1]:11434",
+    ];
+    const errors = [];
+    for (const host of hosts) {
+      try {
+        const r = await fetch(`${host}/api/tags`, { signal: AbortSignal.timeout(500) });
+        if (r.ok) {
+          const data = await r.json().catch(() => null);
+          return { ok: true, host, data, tried: hosts };
+        }
+        errors.push(`${host} → HTTP ${r.status}`);
+      } catch (e) {
+        errors.push(`${host} → ${(e && e.message) || String(e)}`);
+      }
+    }
+    return { ok: false, host: null, data: null, tried: hosts, error: errors.join(" · ") };
+  }
+
   // Helper: enrich a provider description with `available` based on
   // either PATH probe (CLIs) or token presence (APIs). Local server
   // providers (ollama) optimistically report true — real probing of
@@ -4776,13 +4810,12 @@ const server = http.createServer(async (req, res) => {
         available = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
       } else if (p.id === "ollama") {
         // Reachability probe — ollama is a local server on :11434, so a
-        // green dot must mean the server actually answers. A short timeout
-        // caps the /providers enrich latency; when ollama isn't running the
-        // connection is refused near-instantly anyway.
-        const host = process.env.DF_OLLAMA_HOST || "http://localhost:11434";
-        available = await fetch(`${host}/api/tags`, { signal: AbortSignal.timeout(800) })
-          .then((r) => r.ok)
-          .catch(() => false);
+        // green dot must mean the server actually answers. probeOllama()
+        // tries 127.0.0.1, localhost, and [::1] in order so a Windows
+        // install where `localhost` resolves to IPv6 but Ollama listens
+        // on IPv4 still shows green. 1500ms timeout total — cold-start
+        // forgiving without blocking the /providers payload too long.
+        available = (await probeOllama()).ok;
       }
     } catch {
       available = false;
@@ -4829,13 +4862,26 @@ const server = http.createServer(async (req, res) => {
   // and translate NDJSON line-by-line into the same SSE shape
   // the other adapters emit.
   if (req.method === "GET" && req.url === "/ollama/models") {
-    const host = process.env.DF_OLLAMA_HOST || "http://localhost:11434";
-    try {
-      const r = await fetch(`${host}/api/tags`, { signal: AbortSignal.timeout(2500) });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
+    const probe = await probeOllama();
+    if (!probe.ok) {
+      // Surface BOTH the empty list (so the UI's existing "0 models"
+      // branch still fires) AND the resolved diagnostic so the user
+      // can tell whether Ollama is offline (ECONNREFUSED), unreachable
+      // due to a host override (DF_OLLAMA_HOST set wrong), or just
+      // slow (Aborted/timeout).
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ models: Array.isArray(data.models) ? data.models.map((m) => ({ id: m.name, sub: m.details?.parameter_size || "" })) : [] }));
+      res.end(JSON.stringify({ models: [], error: probe.error, triedHosts: probe.tried }));
+      return;
+    }
+    try {
+      const data = probe.data;
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        models: Array.isArray(data?.models)
+          ? data.models.map((m) => ({ id: m.name, sub: m.details?.parameter_size || "" }))
+          : [],
+        host: probe.host,
+      }));
     } catch (e) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ models: [], error: String(e?.message || e) }));

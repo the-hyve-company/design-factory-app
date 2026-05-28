@@ -19,7 +19,12 @@ import "@/styles/ds-modal-lab.css";
 export interface DsModalLabProps {
   open: boolean;
   onClose: () => void;
-  onSaved: (entry: DsEntry) => void;
+  /** Called after the DS is persisted. The second arg lets the DS lab
+   *  signal intent: when the user saved with "Gerar preview visual" ON,
+   *  the caller can route the user to the DS detail Preview tab so the
+   *  in-flight generation has somewhere to surface (vs. the modal
+   *  closing into a silent grid card while the daemon runs for ~minute). */
+  onSaved: (entry: DsEntry, opts?: { openPreview?: boolean }) => void;
 }
 
 export function DsModalLab({ open, onClose, onSaved }: DsModalLabProps) {

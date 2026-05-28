@@ -67,7 +67,7 @@ async function collectRelevantFiles(root: string): Promise<Array<{ path: string;
   return out;
 }
 
-export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSaved: (entry: DsEntry) => void }) {
+export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSaved: (entry: DsEntry, opts?: { openPreview?: boolean }) => void }) {
   const [source, setSource] = useState<Source>("folder");
   const [value, setValue] = useState("");
   const [genPreview, setGenPreview] = useState(true);
@@ -131,7 +131,14 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
     };
     fireOptionalPreview(entry);
     setStatus("idle");
-    onSaved(entry);
+    // Forward intent: when preview was requested, the caller routes
+    // the user to the DS detail Preview tab so they actually SEE the
+    // generation in flight. Without this, the modal closes into the
+    // silent home grid while the daemon spends ~minute generating —
+    // user feedback: "marquei pra gerar preview ... se gerou preview
+    // nao foi pra o lugar certo" (the preview did land, just nothing
+    // surfaced the result loudly enough).
+    onSaved(entry, { openPreview: genPreview });
     onClose();
   };
 

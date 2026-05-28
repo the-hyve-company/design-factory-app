@@ -538,14 +538,20 @@ export function HomeScreen({
 
   const handleAddDesignSystem = () => setShowDsSetup(true);
 
-  // After the modal saves: persist, close, and land on the design-systems tab
-  // so the new card is visible in the grid. No second navigate to /ds/:slug —
-  // the user explicitly wants the DS to live inside the Home tab.
-  const handleDsSaved = (entry: DsEntry) => {
+  // After the modal saves: persist, close, and land on the design-systems
+  // tab so the new card is visible in the grid. When the user opted into
+  // "Gerar preview visual" the modal toggle, we also navigate into the DS
+  // detail Preview tab — that screen has the in-flight polling + "Gerando…"
+  // banner, while the home grid card is silent during the ~minute the
+  // daemon spends generating. Founder feedback: "se gerou preview nao foi
+  // pra o lugar certo" — the preview DID land on disk, but nothing in the
+  // home grid surfaced it; the auto-navigate gives the result a destination.
+  const handleDsSaved = (entry: DsEntry, opts?: { openPreview?: boolean }) => {
     const next = [entry, ...designSystems.filter((d) => d.path !== entry.path)];
     persistDesignSystems(next);
     setShowDsSetup(false);
     if (rightTab !== "design-systems") setRightTab("design-systems");
+    if (opts?.openPreview && onOpenDs) onOpenDs(entry);
   };
 
   // Removes a DS from the persisted list. Confirm dialog guards against

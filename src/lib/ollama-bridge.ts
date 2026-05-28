@@ -121,3 +121,42 @@ export async function fetchOllamaModels(): Promise<{ id: string; sub: string }[]
     return [];
   }
 }
+
+/** Detailed status — distinguishes server-offline from server-up-no-models.
+ *  The status() panel surfaces the specific failure so the user can act
+ *  (start Ollama vs. `ollama pull <model>`). */
+export interface OllamaStatus {
+  models: { id: string; sub: string }[];
+  /** Daemon-side error string when the probe failed (ECONNREFUSED,
+   *  timeout, or HTTP non-200). Null when models came back successfully. */
+  error: string | null;
+  /** Which host the daemon actually reached, when successful. Helps
+   *  diagnose DF_OLLAMA_HOST overrides + IPv4/IPv6/localhost issues. */
+  host: string | null;
+  /** Hosts the daemon attempted in order. Empty when DF_OLLAMA_HOST was
+   *  set (only one attempt). */
+  triedHosts: string[];
+}
+
+export async function fetchOllamaStatus(): Promise<OllamaStatus> {
+  try {
+    const res = await fetch(`${BRIDGE_URL}/ollama/models`);
+    if (!res.ok) {
+      return { models: [], error: `daemon HTTP ${res.status}`, host: null, triedHosts: [] };
+    }
+    const body = (await res.json()) as {
+      models?: { id: string; sub: string }[];
+      error?: string;
+      host?: string;
+      triedHosts?: string[];
+    };
+    return {
+      models: body.models ?? [],
+      error: body.error ?? null,
+      host: body.host ?? null,
+      triedHosts: body.triedHosts ?? [],
+    };
+  } catch (e) {
+    return { models: [], error: String(e), host: null, triedHosts: [] };
+  }
+}
