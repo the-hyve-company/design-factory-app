@@ -22,8 +22,23 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { detectKimiVersion, kimiVersionHint } from "./kimi-compat.mjs";
 
 const KIMI_BIN_ENV = "DF_KIMI_BIN";
+
+// Probe the installed kimi version on first error, cache, decorate
+// future error messages. Cheap (3s timeout, runs once, fire-and-forget on
+// the happy path). Awaited inside the error handlers so the hint shows up
+// in the first failing turn, not the second.
+async function buildKimiErrorPrefix(bin) {
+  try {
+    const v = await detectKimiVersion(bin);
+    const hint = kimiVersionHint(v);
+    return hint ? `${hint}\n` : "";
+  } catch {
+    return "";
+  }
+}
 
 function resolveBin() {
   return process.env[KIMI_BIN_ENV] || "kimi";
@@ -336,7 +351,7 @@ const kimi = {
       stderrBuf += chunk.toString("utf8");
     });
 
-    child.on("close", (code) => {
+    child.on("close", async (code) => {
       // kimi exit codes: 0 ok, 1 permanent fail, 75 transient (retry).
       if (code === 0 || code === null) {
         emitDone();
@@ -350,16 +365,20 @@ const kimi = {
       const cleaned = cleanStderr(stderrBuf).slice(0, 500);
       const stdoutTail = stdoutBuf.trim().slice(0, 200);
       const codeLabel = code === 75 ? "transient (retry suggested)" : `code ${code}`;
-      const errorText = cleaned || stdoutTail || `kimi exited ${codeLabel}`;
+      const baseError = cleaned || stdoutTail || `kimi exited ${codeLabel}`;
+      const prefix = await buildKimiErrorPrefix(kspawn.cmd);
+      const errorText = prefix + baseError;
       res.write(`event: log\ndata: ${JSON.stringify({ level: "warn", message: `kimi exit ${codeLabel}. stderr: ${cleaned.replace(/\n/g, " ⏎ ").slice(0, 240) || "(empty)"}` })}\n\n`);
       res.write(`event: error\ndata: ${JSON.stringify({ error: errorText })}\n\n`);
       res.end();
     });
 
-    child.on("error", (err) => {
+    child.on("error", async (err) => {
       if (closedTerminal) return;
       closedTerminal = true;
-      res.write(`event: error\ndata: ${JSON.stringify({ error: `kimi spawn error: ${String(err?.message || err)}` })}\n\n`);
+      const prefix = await buildKimiErrorPrefix(kspawn.cmd);
+      const errorText = `${prefix}kimi spawn error: ${String(err?.message || err)}`;
+      res.write(`event: error\ndata: ${JSON.stringify({ error: errorText })}\n\n`);
       res.end();
     });
   },
@@ -406,7 +425,7 @@ const kimi = {
     let err = "";
     child.stdout.on("data", (c) => { out += c.toString("utf8"); });
     child.stderr.on("data", (c) => { err += c.toString("utf8"); });
-    child.on("close", (code) => {
+    child.on("close", async (code) => {
       if (code === 0 && out.trim()) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ text: out.trim() }));
@@ -415,14 +434,17 @@ const kimi = {
         // for the same pattern. Keeps the error message readable.
         const RESUME_HINT_RX = /\n*\s*To resume this session:\s*kimi\s+-r\s+[a-f0-9-]+\s*$/i;
         const cleaned = err.replace(RESUME_HINT_RX, "").trim().slice(0, 1000);
+        const prefix = await buildKimiErrorPrefix(kspawn.cmd);
+        const errorText = prefix + (cleaned || `kimi exit ${code}`);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: cleaned || `kimi exit ${code}` }));
+        res.end(JSON.stringify({ error: errorText }));
       }
     });
-    child.on("error", (e) => {
+    child.on("error", async (e) => {
       if (!res.headersSent) {
+        const prefix = await buildKimiErrorPrefix(kspawn.cmd);
         res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: String(e?.message || e) }));
+        res.end(JSON.stringify({ error: prefix + String(e?.message || e) }));
       }
     });
   },
