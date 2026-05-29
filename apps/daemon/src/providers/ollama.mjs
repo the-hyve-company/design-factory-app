@@ -38,6 +38,21 @@ async function resolveModel(host, caller) {
   return "llama3.2:latest";
 }
 
+/** Turn a low-level fetch failure into an actionable message. Undici surfaces
+ *  a connection refusal as a bare "fetch failed", which hides the real cause
+ *  (Ollama not running, or listening on a different host/port). */
+function ollamaErrorMessage(err, host) {
+  const raw = String(err?.message || err);
+  const code = String(err?.cause?.code || err?.code || "");
+  const isConn =
+    raw === "fetch failed" ||
+    /ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|ETIMEDOUT|ECONNRESET|UND_ERR/.test(`${raw} ${code}`);
+  if (isConn) {
+    return `Ollama unreachable at ${host} — is it running? Start it with \`ollama serve\` (or set DF_OLLAMA_HOST if it listens elsewhere).`;
+  }
+  return raw;
+}
+
 /** @type {import("./types.mjs").ProviderAdapter} */
 const ollama = {
   id: "ollama",
@@ -147,7 +162,7 @@ const ollama = {
       res.end();
     } catch (err) {
       if (err?.name !== "AbortError") {
-        res.write(`event: error\ndata: ${JSON.stringify({ error: String(err?.message || err) })}\n\n`);
+        res.write(`event: error\ndata: ${JSON.stringify({ error: ollamaErrorMessage(err, host) })}\n\n`);
       }
       res.end();
     }
@@ -189,7 +204,7 @@ const ollama = {
       else res.end(JSON.stringify({ text: data.message?.content || "" }));
     } catch (err) {
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: String(err?.message || err) }));
+      res.end(JSON.stringify({ error: ollamaErrorMessage(err, host) }));
     }
   },
 };

@@ -156,6 +156,29 @@ export function defaultModelForProvider(id: ProviderId): string {
   return list[0]?.id ?? "";
 }
 
+/** True when the provider exposes a live-probed catalog (the static list is
+ *  then only a fallback). Mirrors the probe set in useLiveModelOptions so the
+ *  two never drift. Only `claude` is static-only. */
+export function providerHasLiveCatalog(id: ProviderId): boolean {
+  return id === "ollama" || id === "openrouter" || !!LIVE_MODEL_ENDPOINTS[id];
+}
+
+/** Model to select when (re)entering a provider. For live-catalog providers
+ *  the remembered id is trusted as-is — the static list does NOT contain the
+ *  models the user actually pulled / has access to (e.g. a freshly pulled
+ *  ollama `gemma`), so validating the remembered pick against it silently
+ *  reset live selections to the catalog default (ollama → "llama3.2").
+ *  Static-only providers (claude) still validate against their known list. */
+export function nextModelForProvider(id: ProviderId, remembered: string | null | undefined): string {
+  if (
+    remembered &&
+    (providerHasLiveCatalog(id) || getModelsForProvider(id).some((o) => o.id === remembered))
+  ) {
+    return remembered;
+  }
+  return defaultModelForProvider(id);
+}
+
 const ALL_PROVIDER_IDS: ProviderId[] = [
   "claude", "codex", "gemini", "gemini-api", "anthropic",
   "openai", "ollama", "openrouter", "opencode", "kimi",
@@ -217,7 +240,7 @@ export function useLiveModelOptions(provider: ProviderId): {
 
   useEffect(() => {
     const endpoint = LIVE_MODEL_ENDPOINTS[provider];
-    const hasLive = provider === "ollama" || provider === "openrouter" || !!endpoint;
+    const hasLive = providerHasLiveCatalog(provider);
     if (!hasLive) {
       setLive(null);
       setLoading(false);
