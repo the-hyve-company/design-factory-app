@@ -38,6 +38,7 @@ import { listProviders, getProvider, describeProvider } from "./providers/index.
 import { configPath, getConfigDir } from "./lib/config-dir.mjs";
 import { armHeartbeat } from "./lib/sse-heartbeat.mjs";
 import { buildDsPreviewPrompt, stripHtmlFence } from "./ds-preview-prompt.mjs";
+import { coerceDesignMd } from "./ds-coerce.mjs";
 import { installDfSkill as installDfSkillShared } from "./skills-install.mjs";
 
 const execFileP = promisify(execFile);
@@ -3080,22 +3081,14 @@ const server = http.createServer(async (req, res) => {
             throw new Error(upstreamData.body?.error || `provider ${provider} returned ${upstreamData.status}`);
           }
           const rawText = upstreamData.body?.text || "";
-          // Strip optional markdown code fence wrapping the whole body.
-          let md = rawText.trim();
-          const fenceMatch = md.match(/^```(?:markdown|md)?\s*\n([\s\S]*?)\n```\s*$/);
-          if (fenceMatch) md = fenceMatch[1].trim();
-
-          // Validate the response IS a design.md, not prose telling us
-          // it wrote one to disk. The model with --dangerously-skip-
-          // permissions sometimes ignores the no-tools rule and uses
-          // Write to save the file to its cwd, then returns a summary
-          // like "DESIGN.md is written at <path>. Here's what it covers:
-          // ..." — that prose would corrupt the design.md if we wrote
-          // it. A real design.md starts with `---` frontmatter or `#`
-          // heading; require one. Founder repro 2026-05-28.
-          const looksLikeMd =
-            /^---\s*\n[\s\S]*?\n---/m.test(md) || /^#\s+\S/m.test(md);
-          if (md.length < 40 || !looksLikeMd) {
+          // Coerce the raw response into a usable design.md — repairs the
+          // common Claude/opus quirk of omitting the closing `---`
+          // frontmatter fence (+ inline fences, short prose lead-in),
+          // then validates. Still rejects tool-use summary prose so a
+          // non-doc never gets written. See ds-coerce.mjs. Founder repro
+          // 2026-05-29 (10663B doc rejected for a missing closing fence).
+          const { md, ok: looksLikeMd } = coerceDesignMd(rawText);
+          if (!looksLikeMd) {
             // Dump the raw response so the user can inspect WHAT the
             // model returned. Common shapes: tool-use summary prose,
             // an apology / refusal, or a markdown explanation of what
