@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { BRIDGE_URL } from "@/lib/claude-bridge";
 import { fetchOllamaModels } from "@/lib/ollama-bridge";
 import { fetchOpenrouterModels } from "@/lib/openrouter-bridge";
 import type { ProviderId } from "./types";
@@ -14,63 +15,78 @@ export interface ModelOption {
   sub: string;
 }
 
+// Generic live-model fetch — every daemon /…/models endpoint speaks the
+// same { models: [{ id, sub }], error? } contract. Empty array on any
+// failure so the caller falls back to the minimal static catalog.
+async function fetchModelsVia(path: string): Promise<{ id: string; sub: string }[]> {
+  try {
+    const res = await fetch(`${BRIDGE_URL}${path}`);
+    if (!res.ok) return [];
+    const body = (await res.json()) as { models?: { id: string; sub: string }[] };
+    return body.models ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// Providers that fetch their catalog live from the daemon. ollama +
+// openrouter keep their dedicated bridge fns (handled in the hook); the
+// rest go through fetchModelsVia. codex/gemini (CLI) reuse the BYOK
+// endpoint of their underlying provider — they share the same catalog
+// and the daemon returns {error:'no-key'} (→ static fallback) when the
+// matching API key isn't configured. `claude` has NO live endpoint: its
+// ids are aliases (opus/sonnet/haiku) the CLI resolves on its own, so
+// the static list IS the contract, not a rotting catalog.
+const LIVE_MODEL_ENDPOINTS: Partial<Record<ProviderId, string>> = {
+  anthropic: "/anthropic/models",
+  openai: "/openai/models",
+  "gemini-api": "/gemini-api/models",
+  kimi: "/kimi/models",
+  opencode: "/opencode/models",
+  codex: "/openai/models",
+  gemini: "/gemini-api/models",
+};
+
+// claude CLI aliases — the CLI resolves these to the latest version on
+// the Anthropic API (opus→4.8, sonnet→4.6, haiku→4.5). Not a fallback:
+// these aliases ARE the picker contract for the claude provider.
 export const CLAUDE_MODEL_OPTIONS: ModelOption[] = [
-  { id: "opus",   label: "opus 4.7",   sub: "max quality" },
+  { id: "opus",   label: "opus 4.8",   sub: "max quality" },
   { id: "sonnet", label: "sonnet 4.6", sub: "balanced" },
   { id: "haiku",  label: "haiku 4.5",  sub: "fastest" },
 ];
 
-// Codex CLI doesn't expose `models` subcommand — these are IDs from
-// OpenAI's public catalog that codex accepts via `--model X`. Access
-// depends on the user's ChatGPT/OpenAI plan. If a model isn't in the
-// user's plan, OpenAI returns an error at request time.
-// Conservative list: only IDs confirmed shipped publicly. Use Custom
-// model input for anything else (e.g. private Codex tiers).
+// FALLBACK ONLY — codex live-fetches via /openai/models (it accepts the
+// OpenAI catalog through `--model X`). This minimal list shows only when
+// no OpenAI key is configured / the fetch fails. Custom input covers the
+// rest. Source of truth = the live OpenAI catalog.
 export const CODEX_MODEL_OPTIONS: ModelOption[] = [
-  { id: "default",     label: "default",      sub: "from codex CLI config" },
-  { id: "gpt-5",       label: "gpt-5",        sub: "OpenAI · flagship" },
-  { id: "gpt-4.1",     label: "gpt-4.1",      sub: "OpenAI · code" },
-  { id: "gpt-4o",      label: "gpt-4o",       sub: "OpenAI · multimodal" },
-  { id: "o3",          label: "o3",           sub: "OpenAI · reasoning" },
-  { id: "o3-mini",     label: "o3-mini",      sub: "OpenAI · fast reasoning" },
+  { id: "default", label: "default",  sub: "from codex CLI config" },
+  { id: "gpt-5.5", label: "gpt-5.5",  sub: "fallback · configure OpenAI key" },
 ];
 
-// Gemini CLI accepts model ids per Google's catalog. Access depends on
-// the user's tier (free key vs. paid). 2.5 family requires paid in some
-// regions; 1.5 family is broadly available on free tier. If a pick errors
-// with "no access", fall back to `default` (CLI config) or 1.5-flash.
-// Updated 2026-05-15: user asked for gemini-3.1-flash-lite. The 3.1
-// family shipped May 2026 (preview). Pricing for 3.1-flash-lite is
-// $0.25 in / $1.50 out per 1M; 2.5-flash-lite stays as the GA fallback
-// at $0.10/$0.40 with reliable free-tier quota.
+// FALLBACK ONLY — gemini (CLI) + gemini-api live-fetch via
+// /gemini-api/models (Google Generative Language API). This minimal list
+// shows only when no Gemini key is configured / the fetch fails.
 export const GEMINI_MODEL_OPTIONS: ModelOption[] = [
-  { id: "default",                  label: "default",                  sub: "from gemini CLI config (safest)" },
-  { id: "gemini-3.1-flash-lite",    label: "gemini-3.1-flash-lite",    sub: "preview · newest · paid" },
-  { id: "gemini-2.5-flash-lite",    label: "gemini-2.5-flash-lite",    sub: "GA · cheapest · free tier" },
-  { id: "gemini-2.5-pro",           label: "gemini-2.5-pro",           sub: "max quality · paid" },
-  { id: "gemini-2.5-flash",         label: "gemini-2.5-flash",         sub: "fast · paid tier" },
-  { id: "gemini-1.5-flash",         label: "gemini-1.5-flash",         sub: "older · widely available" },
+  { id: "default",            label: "default",            sub: "from gemini CLI config (safest)" },
+  { id: "gemini-3.5-flash",   label: "gemini-3.5-flash",   sub: "fallback · configure Gemini key" },
 ];
 
+// FALLBACK ONLY — anthropic BYOK live-fetches via /anthropic/models.
+// This minimal list shows only when no Anthropic key is configured /
+// the fetch fails. claude-opus-4-8 is the current frontier (2026-05-28).
 export const ANTHROPIC_API_MODEL_OPTIONS: ModelOption[] = [
-  { id: "default",                   label: "default",                sub: "sonnet 4.6" },
-  { id: "claude-opus-4-7",           label: "opus 4.7",               sub: "max quality" },
-  { id: "claude-sonnet-4-6",         label: "sonnet 4.6",             sub: "balanced" },
-  { id: "claude-haiku-4-5-20251001", label: "haiku 4.5",              sub: "fastest" },
+  { id: "claude-opus-4-8",   label: "opus 4.8",   sub: "fallback · configure Anthropic key" },
+  { id: "claude-sonnet-4-6", label: "sonnet 4.6", sub: "fallback" },
 ];
 
-// OpenAI API (BYOK) — uses the OpenAI HTTP API directly. Same shipped
-// catalog as the Codex CLI accepts; copied here so the picker can render
-// the right list when the provider is `openai` instead of inheriting
-// the Claude fallback.
+// FALLBACK ONLY — openai BYOK live-fetches via /openai/models. This
+// minimal list shows only when no OpenAI key is configured / the fetch
+// fails. gpt-5.5 is the current flagship (May 2026).
 export const OPENAI_API_MODEL_OPTIONS: ModelOption[] = [
-  { id: "default", label: "default", sub: "gpt-5 (auto)" },
-  { id: "gpt-5",      label: "gpt-5",      sub: "OpenAI · flagship" },
-  { id: "gpt-4.1",    label: "gpt-4.1",    sub: "OpenAI · code" },
-  { id: "gpt-4o",     label: "gpt-4o",     sub: "OpenAI · multimodal" },
-  { id: "gpt-4o-mini",label: "gpt-4o-mini",sub: "OpenAI · cheap" },
-  { id: "o3",         label: "o3",         sub: "OpenAI · reasoning" },
-  { id: "o3-mini",    label: "o3-mini",    sub: "OpenAI · fast reasoning" },
+  { id: "gpt-5.5", label: "gpt-5.5", sub: "fallback · configure OpenAI key" },
+  { id: "gpt-5.4", label: "gpt-5.4", sub: "fallback" },
 ];
 
 // Gemini API (BYOK) — reuses the Gemini CLI catalog; same model ids
@@ -102,36 +118,23 @@ export const OPENROUTER_MODEL_OPTIONS: ModelOption[] = [
   { id: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B (free)",  sub: "Meta · free tier" },
 ];
 
-// opencode routes through its own provider config — model id format is
-// `provider/model-id`. Each requires a corresponding API key configured
-// inside opencode (~/.config/opencode/auth.json). Conservative list of
-// public, shipping models. Custom input is the safety valve.
-// opencode 1.15+: model id format is provider/model. Catalog depends
-// on which auth credentials the user added via `opencode auth login`.
-// Default = openai/gpt-5.4-mini-fast (cheapest + ChatGPT-OAuth-safe).
-// Users with Anthropic / OpenRouter creds can pick those families.
+// FALLBACK ONLY — opencode live-fetches via `opencode models` (shell-out
+// → /opencode/models), emitting the real provider/model catalog from the
+// user's configured providers (Models.dev registry). This minimal list
+// shows only when the CLI is unavailable / the command fails.
 export const OPENCODE_MODEL_OPTIONS: ModelOption[] = [
-  { id: "default",                       label: "default",                 sub: "openai/gpt-5.4-mini-fast" },
-  { id: "openai/gpt-5.4-mini-fast",      label: "GPT-5.4 mini fast",       sub: "OpenAI · cheapest" },
-  { id: "openai/gpt-5.4-mini",           label: "GPT-5.4 mini",            sub: "OpenAI · cheap" },
-  { id: "openai/gpt-5.4",                label: "GPT-5.4",                 sub: "OpenAI · balanced" },
-  { id: "openai/gpt-5.5",                label: "GPT-5.5",                 sub: "OpenAI · flagship" },
-  { id: "openai/gpt-5.3-codex",          label: "GPT-5.3 codex",           sub: "OpenAI · code" },
-  { id: "anthropic/claude-opus-4-7",     label: "Claude 4.7 Opus",         sub: "Anthropic · max" },
-  { id: "anthropic/claude-sonnet-4-6",   label: "Claude 4.6 Sonnet",       sub: "Anthropic · balanced" },
+  { id: "default",                     label: "default",          sub: "from opencode config" },
+  { id: "openai/gpt-5.4-mini",         label: "openai/gpt-5.4-mini",       sub: "fallback · run opencode auth" },
+  { id: "anthropic/claude-opus-4-8",   label: "anthropic/claude-opus-4-8", sub: "fallback" },
 ];
 
-// Kimi Code via Moonshot AI Platform (OpenAI-compatible). Models listed
-// here are conservative — Moonshot's API accepts more identifiers but
-// these are the publicly-documented coding-focused ones. Custom model
-// input is the safety valve for newer releases (e.g. kimi-k2.6 once
-// generally available).
+// FALLBACK ONLY — kimi BYOK live-fetches via /kimi/models (Moonshot,
+// OpenAI-compatible). This minimal list shows only when no Moonshot key
+// is configured / the fetch fails. kimi-k2.6 is current (Apr 2026);
+// kimi-latest + kimi-k2-0905-preview were discontinued (Jan/May 2026).
 export const KIMI_MODEL_OPTIONS: ModelOption[] = [
-  { id: "default",              label: "default",       sub: "kimi-latest (auto-pick)" },
-  { id: "kimi-latest",          label: "kimi-latest",   sub: "Moonshot · auto-routed" },
-  { id: "kimi-k2-0905-preview", label: "kimi-k2",       sub: "Moonshot · coding-focused" },
-  { id: "moonshot-v1-32k",      label: "moonshot-v1-32k", sub: "Moonshot · 32k ctx" },
-  { id: "moonshot-v1-128k",     label: "moonshot-v1-128k", sub: "Moonshot · 128k ctx" },
+  { id: "kimi-k2.6", label: "kimi-k2.6", sub: "fallback · configure Moonshot key" },
+  { id: "kimi-k2.5", label: "kimi-k2.5", sub: "fallback" },
 ];
 
 export function getModelsForProvider(id: ProviderId): ModelOption[] {
@@ -193,14 +196,17 @@ export function writeLastModel(id: ProviderId, model: string): void {
   } catch {}
 }
 
-/** Live model list with fallback to static catalog.
+/** Live model list with fallback to the minimal static catalog.
  *  - ollama: probes the local ollama server for actually-pulled models
  *  - openrouter: fetches the public model catalog (200+)
- *  - anything else: returns the static catalog
+ *  - anthropic/openai/gemini-api/kimi: BYOK /…/models via the daemon
+ *  - codex/gemini (CLI): reuse the underlying provider's BYOK endpoint
+ *  - opencode: shell-out `opencode models`
+ *  - claude: no live endpoint (aliases are the contract) → static
  *
  *  Live results win over static when the probe succeeds and returns rows.
- *  On failure or empty list, the static fallback is used so the picker
- *  never goes blank. */
+ *  On failure, empty list, or no API key, the static fallback is used so
+ *  the picker never goes blank — `source: "static"` lets the UI flag it. */
 export function useLiveModelOptions(provider: ProviderId): {
   options: ModelOption[];
   loading: boolean;
@@ -210,7 +216,9 @@ export function useLiveModelOptions(provider: ProviderId): {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (provider !== "ollama" && provider !== "openrouter") {
+    const endpoint = LIVE_MODEL_ENDPOINTS[provider];
+    const hasLive = provider === "ollama" || provider === "openrouter" || !!endpoint;
+    if (!hasLive) {
       setLive(null);
       setLoading(false);
       return;
@@ -219,7 +227,11 @@ export function useLiveModelOptions(provider: ProviderId): {
     setLoading(true);
     void (async () => {
       try {
-        const rows = provider === "ollama" ? await fetchOllamaModels() : await fetchOpenrouterModels();
+        const rows = provider === "ollama"
+          ? await fetchOllamaModels()
+          : provider === "openrouter"
+            ? await fetchOpenrouterModels()
+            : await fetchModelsVia(endpoint!);
         if (cancelled) return;
         // Probe returns { id, sub } — promote to ModelOption (label = id).
         const opts: ModelOption[] = rows.map((r) => ({ id: r.id, label: r.id, sub: r.sub }));

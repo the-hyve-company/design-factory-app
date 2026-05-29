@@ -455,6 +455,19 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
               listando…
             </span>
           )}
+          {!modelChoices.loading && modelChoices.source === "static" && provider !== "claude" && (
+            <span
+              title="Lista de fallback — configure a API key do provider em Configurações para ver os modelos ao vivo"
+              style={{
+                fontFamily: "var(--df-font-mono)",
+                fontSize: "10px",
+                color: "var(--df-text-faint)",
+                alignSelf: "center",
+              }}
+            >
+              fallback · configure key
+            </span>
+          )}
         </div>
       </div>
 

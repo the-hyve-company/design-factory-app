@@ -8,11 +8,7 @@
 // `tokenSet:bool + source`.
 
 import { useEffect, useState, useCallback } from "react";
-import {
-  getAnthropicTokenState,
-  saveAnthropicToken,
-  type AnthropicTokenState,
-} from "@/lib/anthropic-bridge";
+import { BRIDGE_URL } from "@/lib/claude-bridge";
 import {
   getVercelConfigState,
   getVercelUser,
@@ -25,14 +21,47 @@ import {
   ghGetUser,
   type GithubUserProfile,
 } from "@/lib/github-bridge";
-import {
-  getOpenrouterTokenStatus,
-  setOpenrouterToken,
-} from "@/lib/openrouter-bridge";
 import { CliInstallHint } from "@/components/CliInstallHint";
 import { useT } from "@/i18n";
 
-type Provider = "anthropic" | "openrouter";
+type Provider = "anthropic" | "openrouter" | "openai" | "gemini-api" | "kimi";
+
+// Every BYOK key round-trips through the daemon's GET/PUT /config/{service}
+// endpoints — same contract: GET → {tokenSet, source}; PUT {token} →
+// {ok, error?}. The browser never sees the token value back. provider id
+// → config service name (gemini-api stores under the shared "gemini" key).
+const CONFIG_SERVICE: Record<Provider, string> = {
+  anthropic: "anthropic",
+  openrouter: "openrouter",
+  openai: "openai",
+  "gemini-api": "gemini",
+  kimi: "kimi",
+};
+
+async function getTokenStatus(service: string): Promise<{ tokenSet: boolean; source: "env" | "disk" | null }> {
+  try {
+    const res = await fetch(`${BRIDGE_URL}/config/${service}`);
+    if (!res.ok) return { tokenSet: false, source: null };
+    return await res.json();
+  } catch {
+    return { tokenSet: false, source: null };
+  }
+}
+
+async function putToken(service: string, token: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${BRIDGE_URL}/config/${service}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    if (!res.ok) return { ok: false, error: body.error ?? `HTTP ${res.status}` };
+    return { ok: body.ok ?? true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
 
 interface InlineProviderTokenProps {
   provider: Provider;
@@ -49,24 +78,19 @@ export function InlineProviderToken({ provider, onSaved }: InlineProviderTokenPr
   const [flash, setFlash] = useState<"saved" | "cleared" | null>(null);
 
   const meta = META[provider];
+  const service = CONFIG_SERVICE[provider];
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      try {
-        const s = provider === "anthropic"
-          ? await getAnthropicTokenState()
-          : await getOpenrouterTokenStatus();
-        if (!cancelled) {
-          setTokenSet(s.tokenSet);
-          setSource((s as AnthropicTokenState).source ?? null);
-        }
-      } catch {
-        // leave defaults
+      const s = await getTokenStatus(service);
+      if (!cancelled) {
+        setTokenSet(s.tokenSet);
+        setSource(s.source ?? null);
       }
     })();
     return () => { cancelled = true; };
-  }, [provider]);
+  }, [service]);
 
   const validate = (value: string): string | null => {
     if (!value) return null;
@@ -82,18 +106,12 @@ export function InlineProviderToken({ provider, onSaved }: InlineProviderTokenPr
     setSaving(true);
     setError(null);
     try {
-      if (provider === "anthropic") {
-        const r = await saveAnthropicToken(trimmed);
-        if (!r.ok) { setError(r.error ?? t("provtok.save.failed")); setSaving(false); return; }
-      } else {
-        await setOpenrouterToken(trimmed);
-      }
+      const r = await putToken(service, trimmed);
+      if (!r.ok) { setError(r.error ?? t("provtok.save.failed")); setSaving(false); return; }
       setDraft("");
-      const next = provider === "anthropic"
-        ? await getAnthropicTokenState()
-        : await getOpenrouterTokenStatus();
+      const next = await getTokenStatus(service);
       setTokenSet(next.tokenSet);
-      setSource((next as AnthropicTokenState).source ?? null);
+      setSource(next.source ?? null);
       setFlash("saved");
       window.setTimeout(() => setFlash(null), 2200);
       onSaved?.();
@@ -108,16 +126,10 @@ export function InlineProviderToken({ provider, onSaved }: InlineProviderTokenPr
     setSaving(true);
     setError(null);
     try {
-      if (provider === "anthropic") {
-        await saveAnthropicToken("");
-      } else {
-        await setOpenrouterToken("");
-      }
-      const next = provider === "anthropic"
-        ? await getAnthropicTokenState()
-        : await getOpenrouterTokenStatus();
+      await putToken(service, "");
+      const next = await getTokenStatus(service);
       setTokenSet(next.tokenSet);
-      setSource((next as AnthropicTokenState).source ?? null);
+      setSource(next.source ?? null);
       setFlash("cleared");
       window.setTimeout(() => setFlash(null), 2200);
       onSaved?.();
@@ -197,6 +209,26 @@ const META: Record<Provider, { labelKey: string; envVar: string; placeholderKey:
     envVar: "OPENROUTER_API_KEY",
     placeholderKey: "provtok.placeholder.openrouter",
     docsUrl: "https://openrouter.ai/keys",
+  },
+  openai: {
+    labelKey: "provtok.label.openai",
+    envVar: "OPENAI_API_KEY",
+    placeholderKey: "provtok.placeholder.openai",
+    prefix: "sk-",
+    docsUrl: "https://platform.openai.com/api-keys",
+  },
+  "gemini-api": {
+    labelKey: "provtok.label.gemini",
+    envVar: "GEMINI_API_KEY",
+    placeholderKey: "provtok.placeholder.gemini",
+    docsUrl: "https://aistudio.google.com/apikey",
+  },
+  kimi: {
+    labelKey: "provtok.label.kimi",
+    envVar: "MOONSHOT_API_KEY",
+    placeholderKey: "provtok.placeholder.kimi",
+    prefix: "sk-",
+    docsUrl: "https://platform.moonshot.ai/console/api-keys",
   },
 };
 

@@ -203,7 +203,7 @@ export function GeneratePreviewModal({ entry, onClose, onSubmit }: Props) {
             letterSpacing: "var(--df-tracking-label)",
             textTransform: "uppercase",
           }}>
-            Modelo {liveModels.loading ? "· carregando…" : ""}
+            Modelo {liveModels.loading ? "· carregando…" : (liveModels.source === "static" && provider !== "claude" ? "· fallback (configure key)" : "")}
           </span>
           <select
             value={model}

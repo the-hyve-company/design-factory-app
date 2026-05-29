@@ -562,7 +562,6 @@ function ProvidersPanel({ defaultProvider, providerStatus, probing, onRefresh, o
                   : report?.status === "needs-auth"
                     ? t("settings.providers.status.needsauth")
                     : t("settings.providers.status.checking");
-            const isApiKey = type === "api";
             const tagLabel = type === "cli" ? t("settings.providers.tag.cli") : type === "api" ? t("settings.providers.tag.api") : t("settings.providers.tag.local");
 
             return (
@@ -593,7 +592,7 @@ function ProvidersPanel({ defaultProvider, providerStatus, probing, onRefresh, o
                   <div className="provider-v13-detail">
                     <p className="provider-v13-blurb">{p.meta.blurb}</p>
                     {report?.detail && !isConnected && <ProviderDetail detail={report.detail} />}
-                    {isApiKey && (p.meta.id === "anthropic" || p.meta.id === "openrouter") && (
+                    {(p.meta.id === "anthropic" || p.meta.id === "openrouter" || p.meta.id === "openai" || p.meta.id === "gemini-api" || p.meta.id === "kimi") && (
                       <InlineProviderToken provider={p.meta.id} onSaved={() => void onRefresh()} />
                     )}
                     <div className="provider-v13-actions">
