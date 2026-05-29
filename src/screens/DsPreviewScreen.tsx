@@ -45,6 +45,14 @@ export function DsPreviewScreen({ entry, onBack, onOpenSettings, theme, onThemeC
   const [extraction, setExtraction] = useState<GenerationState | null>(null);
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const generationAbortRef = useRef<AbortController | null>(null);
+  /** startedAt of a preview marker the user explicitly cancelled. The
+   *  chained-preview watcher below otherwise re-adopts any in-flight
+   *  .preview-generating.json it finds — including a stale one left by a
+   *  killed background process — which would resurrect the "Gerando…"
+   *  banner the instant the user dismissed it. Remembering the dismissed
+   *  marker's timestamp lets the watcher skip that exact one while still
+   *  picking up any genuinely new generation (different startedAt). */
+  const dismissedPreviewMarkerRef = useRef<number | null>(null);
   const previewPath = entry.previewPath || `${entry.path}/preview.html`;
 
   // Load preview.html via bridge whenever we enter the Preview tab OR
@@ -203,6 +211,82 @@ export function DsPreviewScreen({ entry, onBack, onOpenSettings, theme, onThemeC
     }, 4000);
     return () => clearInterval(handle);
   }, [generation, previewPath, entry.path]);
+
+  // Observe a CHAINED / server-started preview. After design.md
+  // extraction finishes, the daemon kicks a preview generation on its
+  // own (POST /ds/generate-design-md with generatePreviewAfter), writing
+  // .preview-generating.json server-side. That path never runs through
+  // startGeneration() and the mount-restore effect already fired (before
+  // the marker existed, while design.md was still extracting), so without
+  // this watcher the UI sits on the "Ainda sem preview" CTA even though a
+  // preview is actively generating — or already landed — on disk.
+  //
+  // Runs only when nothing else owns the preview state: no generation we
+  // already track, no preview loaded, and extraction no longer in flight.
+  // The !extraction gate hands off cleanly — the extraction poll clears
+  // `extraction` the moment design.md completes, then this watcher takes
+  // over within a tick and catches the chained marker whenever it lands
+  // (covering the small race where the daemon clears the design.md marker
+  // just before writing the preview one). As soon as it adopts a marker /
+  // result it flips the relevant state and its own guard stops it.
+  useEffect(() => {
+    if (generation || previewHtml || extraction) return;
+    const generatingPath = `${entry.path}/.preview-generating.json`;
+    const errorPath = `${entry.path}/.preview-error.json`;
+    let cancelled = false;
+
+    const probe = () => {
+      // preview.html wins — a chained generation already finished.
+      readFileViaBridge(previewPath)
+        .then((f) => {
+          if (cancelled) return null;
+          if (f?.content) {
+            setPreviewHtml(f.content);
+            setTab("preview");
+            return null;
+          }
+          // In-flight marker → adopt it as our generation state so the
+          // banner shows and the preview polling effect above takes over.
+          return readFileViaBridge(generatingPath).then((gen) => {
+            if (cancelled) return;
+            if (!gen?.content) {
+              // No marker — surface a leftover error if one exists so a
+              // failed chain isn't silently swallowed.
+              return readFileViaBridge(errorPath).then((errF) => {
+                if (cancelled || !errF?.content) return;
+                try {
+                  const parsed = JSON.parse(errF.content);
+                  setGenerationError(parsed?.error || "Erro desconhecido");
+                } catch {
+                  setGenerationError(errF.content.slice(0, 200));
+                }
+                setTab("preview");
+              });
+            }
+            try {
+              const parsed = JSON.parse(gen.content);
+              const startedAt = parsed?.startedAt ? Date.parse(parsed.startedAt) : Date.now();
+              const startedAtMs = Number.isFinite(startedAt) ? startedAt : Date.now();
+              // Skip a marker the user already dismissed (stale orphan
+              // from a killed background run) — otherwise cancelling just
+              // resurrects the banner on the next probe.
+              if (dismissedPreviewMarkerRef.current === startedAtMs) return;
+              setGeneration({
+                provider: parsed?.provider || "unknown",
+                model: parsed?.model || "default",
+                startedAt: startedAtMs,
+              });
+              setTab("preview");
+            } catch {}
+          });
+        })
+        .catch(() => {});
+    };
+
+    probe(); // immediate first check, then poll
+    const handle = setInterval(probe, 4000);
+    return () => { cancelled = true; clearInterval(handle); };
+  }, [generation, previewHtml, extraction, entry.path, previewPath]);
 
   // Kick off a generation. The endpoint is fire-and-forget — daemon
   // returns 202 immediately and writes the result file when done.
@@ -630,6 +714,10 @@ export function DsPreviewScreen({ entry, onBack, onOpenSettings, theme, onThemeC
                 onGenerate={() => setGenModalOpen(true)}
                 onCancelGeneration={() => {
                   generationAbortRef.current?.abort();
+                  // Remember this marker so the chained-preview watcher
+                  // doesn't immediately re-adopt it (e.g. a stale orphan
+                  // from a killed background run).
+                  if (generation) dismissedPreviewMarkerRef.current = generation.startedAt;
                   setGeneration(null);
                 }}
               />
