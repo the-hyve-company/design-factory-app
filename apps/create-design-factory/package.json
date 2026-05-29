@@ -1,6 +1,6 @@
 {
   "name": "create-design-factory",
-  "version": "0.2.0",
+  "version": "1.1.0",
   "description": "Scaffolder for Design Factory — local-first AI design workspace.",
   "type": "module",
   "bin": {

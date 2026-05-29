@@ -649,7 +649,10 @@ export function DsPreviewScreen({ entry, onBack, onOpenSettings, theme, onThemeC
               <>
                 {(extraction || extractionError) && (
                   <div style={{
-                    margin: "0 0 18px",
+                    maxWidth: 820,
+                    width: "100%",
+                    boxSizing: "border-box",
+                    margin: "0 auto 18px",
                     padding: "14px 18px",
                     border: "1px solid var(--df-border-subtle)",
                     borderRadius: "var(--df-r-md)",
