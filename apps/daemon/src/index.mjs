@@ -35,6 +35,7 @@ import {
 // The dispatch loop below auto-routes; adding a provider = drop a file +
 // register in providers/index.mjs (no edits to this file's handlers).
 import { listProviders, getProvider, describeProvider } from "./providers/index.mjs";
+import { probeOllamaHost } from "./providers/ollama-host.mjs";
 import { configPath, getConfigDir } from "./lib/config-dir.mjs";
 import { armHeartbeat } from "./lib/sse-heartbeat.mjs";
 import { buildDsPreviewPrompt, stripHtmlFence } from "./ds-preview-prompt.mjs";
@@ -4804,38 +4805,16 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // Helper: try several common host forms for the local Ollama server
-  // and return the first one that answers /api/tags. Windows installs
-  // hit "Ollama doesn't detect" silently when the daemon's `localhost`
-  // resolves to IPv6 but Ollama listens on IPv4 — the daemon would
-  // probe ::1, Ollama would refuse, the UI showed "not installed" with
-  // no actionable hint. Trying 127.0.0.1 first, then localhost, then
-  // [::1] catches every realistic combo. Founder report 2026-05-28:
-  // "to com ollama aberto no pc e nao funciona, nao detecta".
-  //
-  // Total budget: ~1500ms (3 × 500ms). Cold-start forgiving without
-  // blocking /providers latency.
+  // Probe the local Ollama server across host forms (127.0.0.1 → localhost
+  // → [::1], or DF_OLLAMA_HOST) and return the first that answers /api/tags.
+  // Delegates to the shared resolver in providers/ollama-host.mjs so that
+  // DETECTION and the CHAT path always agree on the host. Before they shared
+  // one resolver, detection probed all three while chat hard-coded 127.0.0.1
+  // — Windows IPv6/IPv4 (and WSL/Docker) splits listed models from one host
+  // while generation "fetch failed" on another. Founder report 2026-05-28:
+  // "ollama aberto no pc e nao funciona, nao detecta".
   async function probeOllama() {
-    const override = process.env.DF_OLLAMA_HOST;
-    const hosts = override ? [override] : [
-      "http://127.0.0.1:11434",
-      "http://localhost:11434",
-      "http://[::1]:11434",
-    ];
-    const errors = [];
-    for (const host of hosts) {
-      try {
-        const r = await fetch(`${host}/api/tags`, { signal: AbortSignal.timeout(500) });
-        if (r.ok) {
-          const data = await r.json().catch(() => null);
-          return { ok: true, host, data, tried: hosts };
-        }
-        errors.push(`${host} → HTTP ${r.status}`);
-      } catch (e) {
-        errors.push(`${host} → ${(e && e.message) || String(e)}`);
-      }
-    }
-    return { ok: false, host: null, data: null, tried: hosts, error: errors.join(" · ") };
+    return probeOllamaHost();
   }
 
   // Helper: enrich a provider description with `available` based on

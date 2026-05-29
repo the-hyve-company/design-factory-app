@@ -19,6 +19,8 @@
 //
 // @file providers/ollama.mjs
 
+import { resolveOllamaHost } from "./ollama-host.mjs";
+
 /**
  * Resolve a usable model id. Caller-supplied wins. "default" / undefined
  * / null trigger /api/tags lookup. Last resort: "llama3.2:latest" so
@@ -86,11 +88,12 @@ const ollama = {
       res.end(JSON.stringify({ error: "prompt required" }));
       return;
     }
-    // Default 127.0.0.1 over `localhost` — on Windows / Node 18+
-    // `localhost` may resolve to IPv6 (::1) but Ollama only listens
-    // on IPv4. Forcing IPv4 here avoids silent "ollama not detected"
-    // failures. Users with non-default setups override via DF_OLLAMA_HOST.
-    const host = process.env.DF_OLLAMA_HOST || "http://127.0.0.1:11434";
+    // Resolve the working Ollama host (probes 127.0.0.1 → localhost → [::1],
+    // or DF_OLLAMA_HOST). Shared with detection so the model picker and the
+    // chat call always reach the same server — otherwise the picker could
+    // list models from one host while generation "fetch failed" on another.
+    // See providers/ollama-host.mjs.
+    const host = await resolveOllamaHost();
     const messages = [];
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
     messages.push({ role: "user", content: prompt });
@@ -113,7 +116,11 @@ const ollama = {
       const upstream = await fetch(`${host}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: resolvedModel, messages, stream: true }),
+        // think:false disables the reasoning channel on thinking-capable
+        // models (qwen3, deepseek-r1, gpt-oss…) so the answer arrives in
+        // message.content instead of being withheld as message.thinking —
+        // ignored by models that don't support it.
+        body: JSON.stringify({ model: resolvedModel, messages, stream: true, think: false }),
         signal: controller.signal,
       });
       if (!upstream.ok || !upstream.body) {
@@ -183,11 +190,12 @@ const ollama = {
       res.end(JSON.stringify({ error: "prompt required" }));
       return;
     }
-    // Default 127.0.0.1 over `localhost` — on Windows / Node 18+
-    // `localhost` may resolve to IPv6 (::1) but Ollama only listens
-    // on IPv4. Forcing IPv4 here avoids silent "ollama not detected"
-    // failures. Users with non-default setups override via DF_OLLAMA_HOST.
-    const host = process.env.DF_OLLAMA_HOST || "http://127.0.0.1:11434";
+    // Resolve the working Ollama host (probes 127.0.0.1 → localhost → [::1],
+    // or DF_OLLAMA_HOST). Shared with detection so the model picker and the
+    // chat call always reach the same server — otherwise the picker could
+    // list models from one host while generation "fetch failed" on another.
+    // See providers/ollama-host.mjs.
+    const host = await resolveOllamaHost();
     const messages = [];
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
     messages.push({ role: "user", content: prompt });
@@ -196,7 +204,7 @@ const ollama = {
       const upstream = await fetch(`${host}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: resolvedModel, messages, stream: false }),
+        body: JSON.stringify({ model: resolvedModel, messages, stream: false, think: false }),
       });
       const data = await upstream.json();
       res.writeHead(200, { "Content-Type": "application/json" });
