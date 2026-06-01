@@ -52,13 +52,17 @@ const LIVE_MODEL_ENDPOINTS: Partial<Record<ProviderId, string>> = {
   gemini: "/gemini-api/models",
 };
 
-// claude CLI aliases — the CLI resolves these to the latest version on
-// the Anthropic API (opus→4.8, sonnet→4.6, haiku→4.5). Not a fallback:
-// these aliases ARE the picker contract for the claude provider.
+// claude CLI aliases — the CLI resolves these to the latest version it
+// ships (opus → newest Opus, and so on). NOT a fallback: these aliases ARE
+// the picker contract for the claude provider. Labels carry NO version
+// number on purpose: hard-coding "opus 4.8" goes stale the moment the CLI
+// updates, and the picker then lies (showed an old version while the CLI
+// ran a newer one). The real resolved version is surfaced from what the
+// provider reports at runtime — see writeSeenVersion / enrichWithSeenVersion.
 export const CLAUDE_MODEL_OPTIONS: ModelOption[] = [
-  { id: "opus",   label: "opus 4.8",   sub: "max quality" },
-  { id: "sonnet", label: "sonnet 4.6", sub: "balanced" },
-  { id: "haiku",  label: "haiku 4.5",  sub: "fastest" },
+  { id: "opus",   label: "opus",   sub: "max quality" },
+  { id: "sonnet", label: "sonnet", sub: "balanced" },
+  { id: "haiku",  label: "haiku",  sub: "fastest" },
 ];
 
 // FALLBACK ONLY — codex live-fetches via /openai/models (it accepts the
@@ -224,6 +228,69 @@ export function writeLastModel(id: ProviderId, model: string): void {
   } catch {}
 }
 
+// ─── Seen-version enrichment ──────────────────────────────────────────
+// The claude catalog carries NO version numbers — the ids are aliases the
+// CLI resolves to the latest. To still surface which exact version
+// actually ran, we remember the real model id the provider reports at
+// runtime (the `meta` stream event → useClaude → EditorScreen), keyed by
+// (provider, selected alias). The picker then shows e.g. "opus · opus 4.8"
+// once a turn on that alias has completed. Live-catalog providers already
+// show the real ids, so this only matters for the static `claude` list.
+
+/** Event fired when a seen-version is written, so live pickers can refresh. */
+export const SEEN_VERSION_EVENT = "df:seen-version-changed";
+
+/** localStorage key for the last real model id seen for (provider, alias). */
+export function seenVersionKey(id: ProviderId, modelId: string): string {
+  return `df:seen-version:${id}:${modelId}`;
+}
+
+/** Read the last real model id reported for (provider, alias), if any. */
+export function readSeenVersion(id: ProviderId, modelId: string): string | null {
+  try {
+    return typeof localStorage !== "undefined"
+      ? localStorage.getItem(seenVersionKey(id, modelId))
+      : null;
+  } catch { return null; }
+}
+
+/** Persist the real model id the provider reported for (provider, alias). */
+export function writeSeenVersion(id: ProviderId, modelId: string, realModel: string): void {
+  if (!modelId || !realModel) return;
+  try {
+    if (typeof localStorage === "undefined") return;
+    const key = seenVersionKey(id, modelId);
+    if (localStorage.getItem(key) === realModel) return; // no-op — avoid event spam
+    localStorage.setItem(key, realModel);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(SEEN_VERSION_EVENT));
+    }
+  } catch {}
+}
+
+/** Extract a compact label from a real model id.
+ *  "claude-opus-4-8-20260115" → "opus 4.8"; "openai/gpt-5" → "gpt-5".
+ *  Falls back to the raw id (minus vendor prefix) when no pattern matches. */
+export function prettyModelVersion(realId: string): string {
+  if (!realId) return "";
+  const claude = realId.match(/claude-([a-z]+)-(\d+)-(\d+)/i);
+  if (claude) return `${claude[1]} ${claude[2]}.${claude[3]}`;
+  return realId.includes("/") ? realId.slice(realId.indexOf("/") + 1) : realId;
+}
+
+/** Annotate each option's `sub` with the real version last seen for it.
+ *  Pure read — safe to call on every render. Options without a recorded
+ *  real version (or that already show it) are returned untouched. */
+export function enrichWithSeenVersion(id: ProviderId, options: ModelOption[]): ModelOption[] {
+  return options.map((o) => {
+    const seen = readSeenVersion(id, o.id);
+    if (!seen) return o;
+    const v = prettyModelVersion(seen);
+    if (!v || o.label.includes(v) || (o.sub ?? "").includes(v)) return o;
+    return { ...o, sub: o.sub ? `${o.sub} · ${v}` : v };
+  });
+}
+
 /** Live model list with fallback to the minimal static catalog.
  *  - ollama: probes the local ollama server for actually-pulled models
  *  - openrouter: fetches the public model catalog (200+)
@@ -242,6 +309,17 @@ export function useLiveModelOptions(provider: ProviderId): {
 } {
   const [live, setLive] = useState<ModelOption[] | null>(null);
   const [loading, setLoading] = useState(false);
+  // Bumped when a real version is recorded, so the static claude catalog
+  // (which reads seen-versions from localStorage) re-renders with the
+  // freshly-resolved "opus 4.8" annotation without needing a remount.
+  const [seenTick, setSeenTick] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => setSeenTick((t) => t + 1);
+    window.addEventListener(SEEN_VERSION_EVENT, handler);
+    return () => window.removeEventListener(SEEN_VERSION_EVENT, handler);
+  }, []);
 
   useEffect(() => {
     const endpoint = LIVE_MODEL_ENDPOINTS[provider];
@@ -292,6 +370,12 @@ export function useLiveModelOptions(provider: ProviderId): {
     if (live && live.length > 0) {
       return { options: live, loading, source: "live" as const };
     }
-    return { options: getModelsForProvider(provider), loading, source: "static" as const };
-  }, [live, loading, provider]);
+    return {
+      options: enrichWithSeenVersion(provider, getModelsForProvider(provider)),
+      loading,
+      source: "static" as const,
+    };
+    // seenTick is intentionally a dep: it forces re-read of seen-versions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, loading, provider, seenTick]);
 }
