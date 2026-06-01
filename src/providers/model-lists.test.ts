@@ -6,12 +6,17 @@
 // (which for ollama is only [llama3.2, qwen2.5-coder, mistral]) and
 // resetting any live pick to the catalog default.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import {
   nextModelForProvider,
   providerHasLiveCatalog,
   defaultModelForProvider,
   getModelsForProvider,
+  CLAUDE_MODEL_OPTIONS,
+  prettyModelVersion,
+  readSeenVersion,
+  writeSeenVersion,
+  enrichWithSeenVersion,
 } from "./model-lists";
 
 describe("providerHasLiveCatalog", () => {
@@ -53,5 +58,61 @@ describe("nextModelForProvider", () => {
     expect(nextModelForProvider("claude", "gemma3:latest")).toBe(
       defaultModelForProvider("claude"),
     );
+  });
+});
+
+// ── Future-proof picker (2026-06-01): no stale version in the claude
+//    labels; the resolved version is surfaced from runtime instead. ──
+
+describe("claude catalog — aliases with no stale version numbers", () => {
+  it("uses bare aliases (the CLI resolves them to the latest version)", () => {
+    expect(CLAUDE_MODEL_OPTIONS.map((o) => o.id)).toEqual(["opus", "sonnet", "haiku"]);
+    // Labels must NOT hard-code a version — that was the bug (picker showed
+    // "opus 4.8" frozen while the CLI shipped something newer).
+    for (const o of CLAUDE_MODEL_OPTIONS) {
+      expect(o.label).not.toMatch(/\d+\.\d+/);
+    }
+  });
+});
+
+describe("prettyModelVersion — compact label from a real model id", () => {
+  it("parses dated Claude ids into 'family X.Y'", () => {
+    expect(prettyModelVersion("claude-opus-4-8-20260115")).toBe("opus 4.8");
+    expect(prettyModelVersion("claude-sonnet-4-6")).toBe("sonnet 4.6");
+  });
+  it("strips the vendor prefix for slash-style ids", () => {
+    expect(prettyModelVersion("anthropic/claude-3.5-sonnet")).toBe("claude-3.5-sonnet");
+  });
+  it("falls back to the raw id when no pattern matches", () => {
+    expect(prettyModelVersion("gpt-5.5")).toBe("gpt-5.5");
+    expect(prettyModelVersion("")).toBe("");
+  });
+});
+
+describe("seen-version persistence + enrichment", () => {
+  beforeEach(() => {
+    globalThis.localStorage.clear();
+  });
+
+  it("round-trips a real model id keyed by (provider, alias)", () => {
+    expect(readSeenVersion("claude", "opus")).toBeNull();
+    writeSeenVersion("claude", "opus", "claude-opus-4-8-20260115");
+    expect(readSeenVersion("claude", "opus")).toBe("claude-opus-4-8-20260115");
+    expect(readSeenVersion("claude", "sonnet")).toBeNull();
+  });
+
+  it("annotates the matching option's sub with the resolved version", () => {
+    writeSeenVersion("claude", "opus", "claude-opus-4-8-20260115");
+    const enriched = enrichWithSeenVersion("claude", getModelsForProvider("claude"));
+    expect(enriched.find((o) => o.id === "opus")?.sub).toContain("opus 4.8");
+    // Untouched when nothing was seen for that alias.
+    expect(enriched.find((o) => o.id === "sonnet")?.sub).toBe("balanced");
+  });
+
+  it("does not duplicate the version if it is already present", () => {
+    writeSeenVersion("claude", "opus", "claude-opus-4-8");
+    const once = enrichWithSeenVersion("claude", getModelsForProvider("claude")).find((o) => o.id === "opus")!;
+    const twice = enrichWithSeenVersion("claude", [once]).find((o) => o.id === "opus")!;
+    expect(twice.sub).toBe(once.sub);
   });
 });
