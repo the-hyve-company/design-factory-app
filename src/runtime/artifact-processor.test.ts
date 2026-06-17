@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  parseArtifact,
-  sha256Hex,
-  DEFAULT_MAX_ARTIFACT_BYTES,
-} from "./artifact-processor";
+import { parseArtifact, sha256Hex, DEFAULT_MAX_ARTIFACT_BYTES } from "./artifact-processor";
 
 // Spec coverage: src/runtime/artifact-processor.ts.
 //
@@ -60,8 +56,7 @@ describe("parseArtifact — happy paths", () => {
 
   it("decodes HTML entity escapes in attribute values", async () => {
     // title contains &quot; which decodes to a literal " inside the value.
-    const stream =
-      `<artifact identifier="projects/x/x.html" type="text/html" title="quoted &quot;phrase&quot;">x</artifact>`;
+    const stream = `<artifact identifier="projects/x/x.html" type="text/html" title="quoted &quot;phrase&quot;">x</artifact>`;
     const out = await parseArtifact(stream);
     expect(out.status).toBe("artifact");
     if (out.status === "artifact") {
@@ -70,8 +65,7 @@ describe("parseArtifact — happy paths", () => {
   });
 
   it("recovers `&amp;`, `&lt;`, `&gt;`, numeric entities", async () => {
-    const stream =
-      `<artifact identifier="projects/x/x.html" type="text/html" title="A &amp; B &lt;tag&gt; &#65;">x</artifact>`;
+    const stream = `<artifact identifier="projects/x/x.html" type="text/html" title="A &amp; B &lt;tag&gt; &#65;">x</artifact>`;
     const out = await parseArtifact(stream);
     expect(out.status).toBe("artifact");
     if (out.status === "artifact") {
@@ -81,8 +75,7 @@ describe("parseArtifact — happy paths", () => {
 
   it("accepts a self-closing-style `/>` close on the start tag", async () => {
     // /> is unusual but the scanner should treat it as the same as `>`.
-    const stream =
-      `<artifact identifier="projects/x/x.md" type="text/markdown"/>body</artifact>`;
+    const stream = `<artifact identifier="projects/x/x.md" type="text/markdown"/>body</artifact>`;
     const out = await parseArtifact(stream);
     expect(out.status).toBe("artifact");
     if (out.status === "artifact") {
@@ -184,8 +177,7 @@ describe("parseArtifact — rejection cases", () => {
   });
 
   it("rejects unclosed artifact (truncated mid-stream)", async () => {
-    const stream =
-      `<artifact identifier="x" type="text/html">incomplete content with no closing tag`;
+    const stream = `<artifact identifier="x" type="text/html">incomplete content with no closing tag`;
     const out = await parseArtifact(stream);
     expect(out.status).toBe("rejected");
     if (out.status === "rejected") {

@@ -8,7 +8,11 @@ import { describe, it, expect } from "vitest";
 import { sanitizeMessages, type SanitizableChatMessage } from "./chat-sanitizer";
 
 // Helper to make test data terse
-function msg(role: "user" | "assistant", text: string, extras: Partial<SanitizableChatMessage> = {}): SanitizableChatMessage {
+function msg(
+  role: "user" | "assistant",
+  text: string,
+  extras: Partial<SanitizableChatMessage> = {},
+): SanitizableChatMessage {
   return { role, text, ...extras };
 }
 
@@ -114,9 +118,7 @@ describe("sanitizeMessages — regressions", () => {
 
   it("collapses leaked HTML (>8KB starting with doctype) into placeholder", () => {
     const leakedHtml = "<!DOCTYPE html><html>" + "x".repeat(9000);
-    const input: SanitizableChatMessage[] = [
-      msg("assistant", leakedHtml, { turn_id: "t1" }),
-    ];
+    const input: SanitizableChatMessage[] = [msg("assistant", leakedHtml, { turn_id: "t1" })];
     const { messages, cleaned } = sanitizeMessages(input);
 
     expect(cleaned).toBe(1);
@@ -127,9 +129,7 @@ describe("sanitizeMessages — regressions", () => {
 
   it("collapses leaked HTML starting with ```html fence", () => {
     const leaked = "```html\n<!DOCTYPE html>\n" + "y".repeat(9000);
-    const input: SanitizableChatMessage[] = [
-      msg("assistant", leaked, { turn_id: "t1" }),
-    ];
+    const input: SanitizableChatMessage[] = [msg("assistant", leaked, { turn_id: "t1" })];
     const { messages, cleaned } = sanitizeMessages(input);
 
     expect(cleaned).toBe(1);
@@ -139,9 +139,7 @@ describe("sanitizeMessages — regressions", () => {
   it("does NOT collapse normal long-but-non-HTML assistant text", () => {
     // 9000 chars of normal prose — keep as-is.
     const longProse = "The quick brown fox ".repeat(500);
-    const input: SanitizableChatMessage[] = [
-      msg("assistant", longProse, { turn_id: "t1" }),
-    ];
+    const input: SanitizableChatMessage[] = [msg("assistant", longProse, { turn_id: "t1" })];
     const { messages, cleaned } = sanitizeMessages(input);
 
     expect(cleaned).toBe(0);

@@ -11,6 +11,7 @@ icon: heart
 You are adding personality to an existing design. The bones are right — your job is the small moments that make it feel made by humans, not generated.
 
 Where charm lives
+
 1. **Microcopy** — replace generic labels with voice-specific ones that fit the product. ("Submit" → "Send it"; "No results" → "Nothing here yet"). Make it feel written, not templated.
 2. **Empty states** — give them a sentence with a wink. Not a joke; a small acknowledgment that someone was here.
 3. **Hover details** — a single icon that animates on hover (rotate slightly, scale 1.05, color shift). One element that responds — not all of them.
@@ -19,15 +20,18 @@ Where charm lives
 6. **Loading / error charm** — even error states can feel intentional. "Hmm, that didn't work" beats "Error: 500".
 
 What NOT to add
-- Generic emoji decoration. (One *intentional* emoji as a visual element is fine; emoji as filler is not.)
+
+- Generic emoji decoration. (One _intentional_ emoji as a visual element is fine; emoji as filler is not.)
 - "Fun" gradient banners.
 - Confetti animations. Bouncing CTAs. Wiggle hovers.
 - Cliché microcopy ("Awesome!", "Boom!", "Let's go!").
 
 Constraints
+
 - Preserve structure, palette, typography decisions. Just add character at the seams.
 - Charm is restraint, not a costume.
 
 Output
+
 - The full modified HTML document. <!DOCTYPE html> first.
 - Code only. No prose. No markdown fences.

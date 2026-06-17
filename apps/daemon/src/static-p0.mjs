@@ -35,8 +35,14 @@ const JSON_TYPES = new Set(["application/json", "application/ld+json"]);
 const CSS_TYPES = new Set(["text/css"]);
 const JS_TYPES = new Set(["application/javascript", "text/javascript"]);
 const BINARY_TYPES = new Set([
-  "image/png", "image/jpeg", "image/webp", "image/avif",
-  "font/woff2", "font/woff", "font/ttf", "font/otf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/avif",
+  "font/woff2",
+  "font/woff",
+  "font/ttf",
+  "font/otf",
 ]);
 
 /**
@@ -68,11 +74,9 @@ export function validateArtifactStaticP0Full({ type, content, byteFloor }) {
   if (JS_TYPES.has(type)) return validateJs(content, byteFloor);
   if (TEXT_TYPES.has(type)) return validateText(content, byteFloor);
   if (BINARY_TYPES.has(type)) return validateBinary(content, byteFloor);
-  return fail(
-    "type-not-supported",
-    `Static P0 does not know how to validate type "${type}".`,
-    ["type-table"],
-  );
+  return fail("type-not-supported", `Static P0 does not know how to validate type "${type}".`, [
+    "type-table",
+  ]);
 }
 
 // ─── HTML ────────────────────────────────────────────────────────────────
@@ -156,8 +160,9 @@ function validateJson(content, byteFloor) {
   const bytes = Buffer.byteLength(content, "utf8");
   if (bytes < floor) return failBelowMin(bytes, floor, checks);
   checks.push("json-parse");
-  try { JSON.parse(content); }
-  catch (err) {
+  try {
+    JSON.parse(content);
+  } catch (err) {
     return fail("invalid-json", err && err.message ? err.message : String(err), checks);
   }
   return pass(checks);
@@ -287,22 +292,41 @@ function findFirstDuplicateId(content) {
  * CSS brace balance, ignoring strings and /* … *\/ comments.
  */
 function checkBalancedBraces(content) {
-  let opens = 0, closes = 0, i = 0;
+  let opens = 0,
+    closes = 0,
+    i = 0;
   let inComment = false;
   let inString = null;
   while (i < content.length) {
     const ch = content[i];
     if (inComment) {
-      if (ch === "*" && content[i + 1] === "/") { inComment = false; i += 2; continue; }
-      i++; continue;
+      if (ch === "*" && content[i + 1] === "/") {
+        inComment = false;
+        i += 2;
+        continue;
+      }
+      i++;
+      continue;
     }
     if (inString) {
-      if (ch === "\\" && i + 1 < content.length) { i += 2; continue; }
+      if (ch === "\\" && i + 1 < content.length) {
+        i += 2;
+        continue;
+      }
       if (ch === inString) inString = null;
-      i++; continue;
+      i++;
+      continue;
     }
-    if (ch === "/" && content[i + 1] === "*") { inComment = true; i += 2; continue; }
-    if (ch === '"' || ch === "'") { inString = ch; i++; continue; }
+    if (ch === "/" && content[i + 1] === "*") {
+      inComment = true;
+      i += 2;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      inString = ch;
+      i++;
+      continue;
+    }
     if (ch === "{") opens++;
     else if (ch === "}") closes++;
     i++;

@@ -4,12 +4,7 @@
 //
 // Provider Handoff Layer v1, spec §4.3.
 
-import {
-  ArtifactStateSchema,
-  type ArtifactState,
-  safeRead,
-  safeWriteOrThrow,
-} from "@/lib/schemas";
+import { ArtifactStateSchema, type ArtifactState, safeRead, safeWriteOrThrow } from "@/lib/schemas";
 // See provider-sessions.ts for the same fix: import the canonical
 // BRIDGE_URL instead of re-deriving with the wrong window key.
 import { BRIDGE_URL } from "@/lib/claude-bridge";
@@ -27,9 +22,7 @@ export function makeInitialArtifactState(primaryPath: string): ArtifactState {
 
 export async function readArtifactState(slug: string): Promise<ArtifactState | null> {
   try {
-    const r = await fetch(
-      `${BRIDGE_URL}/fs/artifact-state?slug=${encodeURIComponent(slug)}`,
-    );
+    const r = await fetch(`${BRIDGE_URL}/fs/artifact-state?slug=${encodeURIComponent(slug)}`);
     if (!r.ok) return null;
     const data = (await r.json().catch(() => null)) as { state?: unknown } | null;
     if (!data?.state) return null;
@@ -39,10 +32,7 @@ export async function readArtifactState(slug: string): Promise<ArtifactState | n
   }
 }
 
-export async function writeArtifactState(
-  slug: string,
-  state: ArtifactState,
-): Promise<boolean> {
+export async function writeArtifactState(slug: string, state: ArtifactState): Promise<boolean> {
   try {
     safeWriteOrThrow(ArtifactStateSchema, state, `writeArtifactState(${slug})`);
     const r = await fetch(`${BRIDGE_URL}/fs/artifact-state`, {
@@ -62,8 +52,8 @@ export async function bumpArtifactVersion(
   slug: string,
   patch: { primary_path?: string; byte_size?: number } = {},
 ): Promise<ArtifactState> {
-  const current = (await readArtifactState(slug)) ??
-    makeInitialArtifactState(patch.primary_path ?? "index.html");
+  const current =
+    (await readArtifactState(slug)) ?? makeInitialArtifactState(patch.primary_path ?? "index.html");
   const next: ArtifactState = {
     ...current,
     primary_path: patch.primary_path ?? current.primary_path,

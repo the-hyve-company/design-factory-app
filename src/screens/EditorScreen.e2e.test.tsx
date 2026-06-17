@@ -67,7 +67,9 @@ vi.mock("@/hooks/useSkillRegistry", () => ({
 }));
 
 vi.mock("@/runtime/verbs/registry", async () => {
-  const actual = await vi.importActual<typeof import("@/runtime/verbs/registry")>("@/runtime/verbs/registry");
+  const actual = await vi.importActual<typeof import("@/runtime/verbs/registry")>(
+    "@/runtime/verbs/registry",
+  );
   return {
     ...actual,
     loadAllVerbs: vi.fn(async () => [
@@ -132,7 +134,11 @@ vi.mock("@/lib/claude-bridge", async () => {
   const actual = await vi.importActual<typeof import("@/lib/claude-bridge")>("@/lib/claude-bridge");
   return {
     ...actual,
-    refreshBridgeStatus: vi.fn(async () => ({ available: true, url: "http://127.0.0.1:1421", checkedAt: Date.now() })),
+    refreshBridgeStatus: vi.fn(async () => ({
+      available: true,
+      url: "http://127.0.0.1:1421",
+      checkedAt: Date.now(),
+    })),
     readGlobalConfig: vi.fn(async () => ({})),
     writeGlobalConfig: vi.fn(async () => ({})),
     readProjectMeta: vi.fn(async () => null),
@@ -146,7 +152,10 @@ vi.mock("@/lib/claude-bridge", async () => {
     readChatSnapshot: vi.fn(async () => null),
     writeChatSnapshot: vi.fn(async () => true),
     appendChatTurn: vi.fn(async () => true),
-    fetchWorkspaceInfo: vi.fn(async () => ({ repoRoot: "/tmp/df", projectsDir: "/tmp/df/projects" })),
+    fetchWorkspaceInfo: vi.fn(async () => ({
+      repoRoot: "/tmp/df",
+      projectsDir: "/tmp/df/projects",
+    })),
     readFileViaBridge: vi.fn(async () => null),
     listFolder: vi.fn(async () => ({ path: "/tmp/df-smoke", entries: [] })),
     pathExists: vi.fn(async () => true),
@@ -185,7 +194,10 @@ describe("EditorScreen happy path", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({}), { status: 404 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({}), { status: 404 })),
+    );
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
     host = document.createElement("div");
     document.body.appendChild(host);
@@ -227,9 +239,9 @@ describe("EditorScreen happy path", () => {
 
     await act(async () => {
       changeTextarea(textarea!, "Make a precise public launch page");
-      host.querySelector<HTMLButtonElement>("button.chat-input-send")!.dispatchEvent(
-        new MouseEvent("click", { bubbles: true }),
-      );
+      host
+        .querySelector<HTMLButtonElement>("button.chat-input-send")!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
     await waitFor(() => {

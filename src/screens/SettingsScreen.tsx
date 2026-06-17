@@ -42,30 +42,23 @@ interface SettingsScreenProps {
 // Appearance refactor — editorial layout with Direções
 // block + 4 subgroups (Tema, Cores, Idioma, Tema editor avançado as
 // disclosure). Skeu reduced. Mirrors Padrões pattern.
-type NavItem =
-  | "providers"
-  | "appearance"
-  | "defaults";
+type NavItem = "providers" | "appearance" | "defaults";
 
-const VALID_NAV: NavItem[] = [
-  "providers",
-  "appearance",
-  "defaults",
-];
+const VALID_NAV: NavItem[] = ["providers", "appearance", "defaults"];
 
 /** Legacy slugs surface as /settings/canvas, /settings/formats,
  *  /settings/rules, /settings/built-ins, /settings/commands, and
  *  /settings/insumos (PT slug retired 2026-05-18). All redirect to
  *  /settings/defaults with the desired sub-tab stashed. */
 const LEGACY_DEFAULTS_TAB: Record<string, InsumoTab> = {
-  canvas:      "canvas",
-  formats:     "formats",
-  rules:       "rules",
-  taste:       "taste",
-  commands:    "commands",
-  prompts:     "prompts",
+  canvas: "canvas",
+  formats: "formats",
+  rules: "rules",
+  taste: "taste",
+  commands: "commands",
+  prompts: "prompts",
   "built-ins": "prompts",
-  insumos:     "canvas",
+  insumos: "canvas",
 };
 
 function parseSection(raw: string | undefined): NavItem {
@@ -85,7 +78,14 @@ function parseInsumosTab(raw: string | undefined): InsumoTab {
 
 // Built-in prompt definitions moved to BuiltinPromptsPanel.
 
-export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, section, onSectionChange }: SettingsScreenProps) {
+export function SettingsScreen({
+  theme,
+  onThemeChange,
+  onBack,
+  returnLabel,
+  section,
+  onSectionChange,
+}: SettingsScreenProps) {
   const { t, lang } = useT();
   const nav: NavItem = parseSection(section);
   // when section URL is "canvas"|"formats"|"rules" we resolve to
@@ -111,7 +111,10 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
     onSectionChange?.(next);
   };
   const [defaultProvider, setDefaultProvider] = useState<ProviderId>("claude");
-  const [providerStatus, setProviderStatus] = useState<Record<ProviderId, ProviderStatusReport> | null>(null);
+  const [providerStatus, setProviderStatus] = useState<Record<
+    ProviderId,
+    ProviderStatusReport
+  > | null>(null);
   const [probing, setProbing] = useState(false);
   const [accentColor, setAccentColor] = useState<string>("#8ab06b");
 
@@ -130,8 +133,8 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
       // Filesystem config is canonical — DB mirror used only if bridge is
       // offline / Tauri hasn't wired /config yet.
       const fromFs = await readGlobalConfig();
-      const raw = fromFs?.default_provider
-        ?? (await db.getSetting("default_provider").catch(() => null));
+      const raw =
+        fromFs?.default_provider ?? (await db.getSetting("default_provider").catch(() => null));
       if (raw === "claude") setDefaultProvider(raw);
       // Built-in prompt overrides: filesystem stores them together under
       // builtin_prompts; DB still uses the old per-key format
@@ -205,7 +208,9 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
             className="settings-back"
             title={t("settings.back")}
             style={{
-              display: "flex", alignItems: "center", gap: 8,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
               padding: "10px 14px",
               margin: "8px 10px 10px",
               background: "transparent",
@@ -217,10 +222,26 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
               cursor: "pointer",
               textAlign: "left",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--df-interactive-hover)"; e.currentTarget.style.color = "var(--df-text-primary)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--df-text-secondary)"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--df-interactive-hover)";
+              e.currentTarget.style.color = "var(--df-text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--df-text-secondary)";
+            }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ flexShrink: 0 }}
+            >
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
             </svg>
@@ -232,7 +253,6 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
 
         {/* MAIN */}
         <main className="settings-main">
-
           {nav === "providers" && (
             <ProvidersPanel
               defaultProvider={defaultProvider}
@@ -247,14 +267,13 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
             />
           )}
 
-
-
           {nav === "appearance" && (
-            <section className="settings-page appearance-panel" aria-label={t("settings.appearance.title")}>
+            <section
+              className="settings-page appearance-panel"
+              aria-label={t("settings.appearance.title")}
+            >
               <h1 className="settings-title">{t("settings.appearance.title")}</h1>
-              <p className="settings-group-sub">
-                {t("settings.appearance.subtitle")}
-              </p>
+              <p className="settings-group-sub">{t("settings.appearance.subtitle")}</p>
 
               {/* Directions block dropped from Settings pages.
                   Strings preserved in i18n for potential reuse. */}
@@ -265,14 +284,30 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
                   <h2 className="appearance-group-title">{t("settings.appearance.theme.title")}</h2>
                 </div>
                 <p className="appearance-group-sub">{t("settings.appearance.theme.subtitle")}</p>
-                <div className="appearance-theme-toggle" role="group" aria-label={t("settings.appearance.theme.title")}>
+                <div
+                  className="appearance-theme-toggle"
+                  role="group"
+                  aria-label={t("settings.appearance.theme.title")}
+                >
                   <button
                     type="button"
                     className="appearance-theme-chip"
                     aria-pressed={theme === "dark"}
-                    onClick={() => { if (theme !== "dark") onThemeChange("dark"); }}
+                    onClick={() => {
+                      if (theme !== "dark") onThemeChange("dark");
+                    }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
                       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                     </svg>
                     <span>{t("settings.appearance.theme.dark")}</span>
@@ -281,9 +316,21 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
                     type="button"
                     className="appearance-theme-chip"
                     aria-pressed={theme === "light"}
-                    onClick={() => { if (theme !== "light") onThemeChange("light"); }}
+                    onClick={() => {
+                      if (theme !== "light") onThemeChange("light");
+                    }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
                       <circle cx="12" cy="12" r="4" />
                       <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
                     </svg>
@@ -295,7 +342,9 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
               {/* ── 2. Cores (accent color) ─────────────────────────── */}
               <div className="appearance-group">
                 <div className="appearance-group-head">
-                  <h2 className="appearance-group-title">{t("settings.appearance.accent.title")}</h2>
+                  <h2 className="appearance-group-title">
+                    {t("settings.appearance.accent.title")}
+                  </h2>
                 </div>
                 <p className="appearance-group-sub">{t("settings.appearance.accent.body")}</p>
 
@@ -318,7 +367,9 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
               {/* ── 3. Idioma — app-wide language toggle ────────────── */}
               <div className="appearance-group">
                 <div className="appearance-group-head">
-                  <h2 className="appearance-group-title">{t("settings.appearance.language.title")}</h2>
+                  <h2 className="appearance-group-title">
+                    {t("settings.appearance.language.title")}
+                  </h2>
                 </div>
                 <p className="appearance-group-sub">{t("settings.appearance.language.subtitle")}</p>
                 <div
@@ -330,16 +381,15 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
                     // `xx` is the pseudo-locale: DEV-only debug option that
                     // wraps every translated string with ⟨…⟩ markers.
                     const showDebug = import.meta.env.DEV;
-                    return showDebug
-                      ? (["pt", "en", "xx"] as const)
-                      : (["pt", "en"] as const);
+                    return showDebug ? (["pt", "en", "xx"] as const) : (["pt", "en"] as const);
                   })().map((opt) => {
                     const active = lang === opt;
-                    const labelKey = opt === "pt"
-                      ? "settings.appearance.language.pt"
-                      : opt === "en"
-                      ? "settings.appearance.language.en"
-                      : "settings.appearance.language.xx";
+                    const labelKey =
+                      opt === "pt"
+                        ? "settings.appearance.language.pt"
+                        : opt === "en"
+                          ? "settings.appearance.language.en"
+                          : "settings.appearance.language.xx";
                     return (
                       <button
                         key={opt}
@@ -374,16 +424,13 @@ export function SettingsScreen({ theme, onThemeChange, onBack, returnLabel, sect
               }}
             />
           )}
-
         </main>
       </div>
-
     </div>
   );
 }
 
 // ─── Providers helpers ─────────────────────────────────────────────────────
-
 
 function ProviderDetail({ detail }: { detail: string }) {
   const { t } = useT();
@@ -415,16 +462,18 @@ function ProviderDetail({ detail }: { detail: string }) {
   };
 
   return (
-    <div style={{
-      fontSize: "var(--df-text-xs)",
-      color: "var(--df-text-muted)",
-      background: "var(--df-surface-elevated)",
-      border: "1px solid var(--df-border-subtle)",
-      borderRadius: "var(--df-r-sm)",
-      padding: "8px 10px",
-      marginBottom: 10,
-      lineHeight: 1.5,
-    }}>
+    <div
+      style={{
+        fontSize: "var(--df-text-xs)",
+        color: "var(--df-text-muted)",
+        background: "var(--df-surface-elevated)",
+        border: "1px solid var(--df-border-subtle)",
+        borderRadius: "var(--df-r-sm)",
+        padding: "8px 10px",
+        marginBottom: 10,
+        lineHeight: 1.5,
+      }}
+    >
       {parts.map((part, i) =>
         part.kind === "text" ? (
           <span key={i}>{part.value}</span>
@@ -433,15 +482,18 @@ function ProviderDetail({ detail }: { detail: string }) {
             key={i}
             type="button"
             onClick={() => void handleCopy(part.value)}
-            title={copied === part.value ? t("settings.providers.copy.copied") : t("settings.providers.copy.title")}
+            title={
+              copied === part.value
+                ? t("settings.providers.copy.copied")
+                : t("settings.providers.copy.title")
+            }
             style={{
               display: "inline-block",
               fontFamily: "var(--df-font-mono)",
               fontSize: 11,
               color: "var(--df-text-primary)",
-              background: copied === part.value
-                ? "rgba(220,234,208,0.26)"
-                : "var(--df-surface-raised)",
+              background:
+                copied === part.value ? "rgba(220,234,208,0.26)" : "var(--df-surface-raised)",
               border: "1px solid var(--df-border-subtle)",
               borderRadius: 4,
               padding: "1px 6px",
@@ -450,9 +502,10 @@ function ProviderDetail({ detail }: { detail: string }) {
               verticalAlign: "baseline",
             }}
           >
-            {copied === part.value ? `${t("settings.providers.copy.copied").toLowerCase()} · ` : ""}{part.value}
+            {copied === part.value ? `${t("settings.providers.copy.copied").toLowerCase()} · ` : ""}
+            {part.value}
           </button>
-        )
+        ),
       )}
     </div>
   );
@@ -487,15 +540,27 @@ interface ProvidersPanelProps {
   onSetDefault: (id: ProviderId) => void;
 }
 
-function ProvidersPanel({ defaultProvider, providerStatus, probing, onRefresh, onSetDefault }: ProvidersPanelProps) {
+function ProvidersPanel({
+  defaultProvider,
+  providerStatus,
+  probing,
+  onRefresh,
+  onSetDefault,
+}: ProvidersPanelProps) {
   const { t, tf } = useT();
   const [expandedId, setExpandedId] = useState<ProviderId | null>(null);
 
   // Categorize providers via meta.id whitelists. Used to label each row.
   const PROVIDER_TYPE: Record<string, "cli" | "api" | "local"> = {
-    claude: "cli", codex: "cli", gemini: "cli", opencode: "cli", kimi: "cli",
-    anthropic: "api", openai: "api",
-    "gemini-api": "api", openrouter: "api",
+    claude: "cli",
+    codex: "cli",
+    gemini: "cli",
+    opencode: "cli",
+    kimi: "cli",
+    anthropic: "api",
+    openai: "api",
+    "gemini-api": "api",
+    openrouter: "api",
     ollama: "local",
   };
 
@@ -503,8 +568,15 @@ function ProvidersPanel({ defaultProvider, providerStatus, probing, onRefresh, o
   // registry. V1 beta roster (10 entries). Removed in cleanup
   // 2026-05-15: cursor, copilot, qwen, deepseek.
   const VISIBLE_IN_SETTINGS = new Set([
-    "claude", "codex", "gemini", "opencode",
-    "kimi", "anthropic", "openai", "gemini-api", "openrouter",
+    "claude",
+    "codex",
+    "gemini",
+    "opencode",
+    "kimi",
+    "anthropic",
+    "openai",
+    "gemini-api",
+    "openrouter",
     "ollama",
   ]);
 
@@ -556,33 +628,68 @@ function ProvidersPanel({ defaultProvider, providerStatus, probing, onRefresh, o
             const type = PROVIDER_TYPE[p.meta.id] ?? "cli";
             const statusLabel =
               report?.status === "connected"
-                ? (report.version ? `${t("settings.providers.status.ready")} · v${report.version}` : t("settings.providers.status.ready"))
+                ? report.version
+                  ? `${t("settings.providers.status.ready")} · v${report.version}`
+                  : t("settings.providers.status.ready")
                 : report?.status === "not-installed"
                   ? t("settings.providers.status.notinstalled")
                   : report?.status === "needs-auth"
                     ? t("settings.providers.status.needsauth")
                     : t("settings.providers.status.checking");
-            const tagLabel = type === "cli" ? t("settings.providers.tag.cli") : type === "api" ? t("settings.providers.tag.api") : t("settings.providers.tag.local");
+            const tagLabel =
+              type === "cli"
+                ? t("settings.providers.tag.cli")
+                : type === "api"
+                  ? t("settings.providers.tag.api")
+                  : t("settings.providers.tag.local");
 
             return (
-              <div key={p.meta.id} className={`provider-v13${active ? " is-active" : ""}${expanded ? " is-expanded" : ""}`}>
+              <div
+                key={p.meta.id}
+                className={`provider-v13${active ? " is-active" : ""}${expanded ? " is-expanded" : ""}`}
+              >
                 <button
                   type="button"
                   className="provider-v13-row"
                   onClick={() => setExpandedId(expanded ? null : p.meta.id)}
                   aria-expanded={expanded}
                 >
-                  <span className={`provider-dot${isConnected ? " is-on" : ""}`} aria-hidden="true" />
+                  <span
+                    className={`provider-dot${isConnected ? " is-on" : ""}`}
+                    aria-hidden="true"
+                  />
                   <span className="provider-v13-name">{p.meta.label}</span>
-                  <span className={`provider-v13-tag provider-v13-tag--${type}`} aria-label={tf("settings.providers.tag.aria", tagLabel)}>
+                  <span
+                    className={`provider-v13-tag provider-v13-tag--${type}`}
+                    aria-label={tf("settings.providers.tag.aria", tagLabel)}
+                  >
                     {tagLabel}
                   </span>
-                  {active && <span className="provider-default-pill">{t("settings.providers.default.pill")}</span>}
-                  <span className={`provider-status provider-status--${report?.status ?? "unknown"}`}>
+                  {active && (
+                    <span className="provider-default-pill">
+                      {t("settings.providers.default.pill")}
+                    </span>
+                  )}
+                  <span
+                    className={`provider-status provider-status--${report?.status ?? "unknown"}`}
+                  >
                     {statusLabel}
                   </span>
                   <span className="provider-v13-chev" aria-hidden="true">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expanded ? "rotate(180deg)" : "none", transition: "transform 160ms var(--df-ease-out)" }}>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{
+                        transform: expanded ? "rotate(180deg)" : "none",
+                        transition: "transform 160ms var(--df-ease-out)",
+                      }}
+                    >
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </span>
@@ -592,7 +699,11 @@ function ProvidersPanel({ defaultProvider, providerStatus, probing, onRefresh, o
                   <div className="provider-v13-detail">
                     <p className="provider-v13-blurb">{p.meta.blurb}</p>
                     {report?.detail && !isConnected && <ProviderDetail detail={report.detail} />}
-                    {(p.meta.id === "anthropic" || p.meta.id === "openrouter" || p.meta.id === "openai" || p.meta.id === "gemini-api" || p.meta.id === "kimi") && (
+                    {(p.meta.id === "anthropic" ||
+                      p.meta.id === "openrouter" ||
+                      p.meta.id === "openai" ||
+                      p.meta.id === "gemini-api" ||
+                      p.meta.id === "kimi") && (
                       <InlineProviderToken provider={p.meta.id} onSaved={() => void onRefresh()} />
                     )}
                     <div className="provider-v13-actions">
@@ -603,10 +714,16 @@ function ProvidersPanel({ defaultProvider, providerStatus, probing, onRefresh, o
                           e.stopPropagation();
                           onSetDefault(p.meta.id);
                         }}
-                        title={!isConnected ? t("settings.providers.cta.unavailable.title") : undefined}
+                        title={
+                          !isConnected ? t("settings.providers.cta.unavailable.title") : undefined
+                        }
                         style={{ fontSize: "var(--df-text-xs)", minWidth: 96 }}
                       >
-                        {active ? t("settings.providers.cta.selected") : isConnected ? t("settings.providers.cta.usethis") : t("settings.providers.cta.unavailable")}
+                        {active
+                          ? t("settings.providers.cta.selected")
+                          : isConnected
+                            ? t("settings.providers.cta.usethis")
+                            : t("settings.providers.cta.unavailable")}
                       </button>
                     </div>
                   </div>
@@ -622,4 +739,3 @@ function ProvidersPanel({ defaultProvider, providerStatus, probing, onRefresh, o
     </section>
   );
 }
-

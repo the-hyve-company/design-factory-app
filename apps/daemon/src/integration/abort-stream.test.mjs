@@ -48,7 +48,7 @@ const ADAPTERS_WITH_STREAM = [
 // Adapters that delegate abort wiring entirely to a shared helper in
 // index.mjs. They pass req/res through; the helper owns the close.
 const DELEGATED_ABORT = [
-  "anthropic.mjs",  // delegates to pipeAnthropicStream
+  "anthropic.mjs", // delegates to pipeAnthropicStream
 ];
 
 describe("abort-mid-stream contract — all adapters wire req.on('close')", () => {
@@ -76,8 +76,10 @@ describe("abort-mid-stream contract — all adapters wire req.on('close')", () =
         offenders.push(file);
       }
     }
-    expect(offenders, `Adapters missing req.on('close') in stream(): ${offenders.join(", ")}`)
-      .toEqual([]);
+    expect(
+      offenders,
+      `Adapters missing req.on('close') in stream(): ${offenders.join(", ")}`,
+    ).toEqual([]);
   });
 
   it("every CLI-spawning adapter calls child.kill on abort", () => {
@@ -85,9 +87,7 @@ describe("abort-mid-stream contract — all adapters wire req.on('close')", () =
     // API providers use fetch + AbortController — abort = controller.abort()
     // (already covered by anthropic / openrouter / qwen / deepseek wiring;
     // verified via fetch signal pattern below).
-    const CLI_ADAPTERS = [
-      "claude.mjs", "codex.mjs", "gemini.mjs", "opencode.mjs", "kimi.mjs",
-    ];
+    const CLI_ADAPTERS = ["claude.mjs", "codex.mjs", "gemini.mjs", "opencode.mjs", "kimi.mjs"];
     const offenders = [];
     for (const file of CLI_ADAPTERS) {
       const src = readFileSync(join(PROVIDERS_DIR, file), "utf8");
@@ -97,8 +97,7 @@ describe("abort-mid-stream contract — all adapters wire req.on('close')", () =
         offenders.push(file);
       }
     }
-    expect(offenders, `CLI adapters missing child.kill: ${offenders.join(", ")}`)
-      .toEqual([]);
+    expect(offenders, `CLI adapters missing child.kill: ${offenders.join(", ")}`).toEqual([]);
   });
 
   it("API adapters use AbortController for upstream cancellation", () => {
@@ -114,8 +113,10 @@ describe("abort-mid-stream contract — all adapters wire req.on('close')", () =
         offenders.push(file);
       }
     }
-    expect(offenders, `API adapters missing AbortController wiring: ${offenders.join(", ")}`)
-      .toEqual([]);
+    expect(
+      offenders,
+      `API adapters missing AbortController wiring: ${offenders.join(", ")}`,
+    ).toEqual([]);
   });
 
   it("anthropic adapter delegates abort to pipeAnthropicStream", () => {

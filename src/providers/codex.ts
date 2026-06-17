@@ -18,8 +18,8 @@ export const codexProvider: LLMProvider = {
     binary: "codex",
   },
   capabilities: {
-    tools: true,        // command_execution / Bash
-    mcp: false,         // codex doesn't load MCP servers
+    tools: true, // command_execution / Bash
+    mcp: false, // codex doesn't load MCP servers
     nativeSkills: false,
     nativeAgents: false,
     streamJson: true,

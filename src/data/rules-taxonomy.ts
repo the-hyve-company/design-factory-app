@@ -53,13 +53,13 @@ export const RuleArraySchema = z.array(RuleSchema);
 
 export const RULE_CATEGORIES: ReadonlyArray<RuleCategoryMeta> = Object.freeze([
   { id: "anti-slop", label: "Anti-slop", hint: "explicit don'ts" },
-  { id: "tone",      label: "Tone",      hint: "overall feel" },
-  { id: "motion",    label: "Motion",    hint: "how it moves" },
-  { id: "color",     label: "Color",     hint: "palette intent" },
-  { id: "language",  label: "Language",  hint: "primary language" },
-  { id: "voice",     label: "Voice",     hint: "writing register" },
-  { id: "layout",    label: "Layout",    hint: "structural intent" },
-  { id: "custom",    label: "Custom",    hint: "your additions" },
+  { id: "tone", label: "Tone", hint: "overall feel" },
+  { id: "motion", label: "Motion", hint: "how it moves" },
+  { id: "color", label: "Color", hint: "palette intent" },
+  { id: "language", label: "Language", hint: "primary language" },
+  { id: "voice", label: "Voice", hint: "writing register" },
+  { id: "layout", label: "Layout", hint: "structural intent" },
+  { id: "custom", label: "Custom", hint: "your additions" },
 ]);
 
 // ─── Defaults — 5 canonical builtin rules ─────────────────────────────
@@ -132,11 +132,11 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     title: "No placeholder text",
     category: "anti-slop",
     description:
-      "Lorem ipsum, \"Feature 1/2/3\", \"[TODO]\", \"Click here\", and " +
-      "\"Add your content here\" mark a draft as unfinished and waste " +
+      'Lorem ipsum, "Feature 1/2/3", "[TODO]", "Click here", and ' +
+      '"Add your content here" mark a draft as unfinished and waste ' +
       "the reader's attention. Write the actual labels and copy the " +
-      "surface needs — even rough realistic text (\"Inscrições abrem " +
-      "em março\") beats Latin filler because it stress-tests the " +
+      'surface needs — even rough realistic text ("Inscrições abrem ' +
+      'em março") beats Latin filler because it stress-tests the ' +
       "layout at real line lengths. When a slot genuinely has no " +
       "content yet, leave it empty (or marked with a data attribute " +
       "the pipeline catches) rather than ship visible filler strings.",
@@ -162,11 +162,11 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     title: "No fake or mock data",
     category: "anti-slop",
     description:
-      "\"User 1, User 2, User 3\" and \"$XX.XX\" make outputs read as " +
+      '"User 1, User 2, User 3" and "$XX.XX" make outputs read as ' +
       "low-effort templates. Use plausible realistic data: real-shape " +
-      "names (\"Ana Reis\", \"Marcus Tan\"), numbers that pattern like " +
+      'names ("Ana Reis", "Marcus Tan"), numbers that pattern like ' +
       "actual numbers (prices $24 / $89 / $1,240, not 1 / 2 / 3), " +
-      "dates relative to today (\"last week\", \"em março\"). When the " +
+      'dates relative to today ("last week", "em março"). When the ' +
       "domain matters (analytics, billing), follow that domain's " +
       "conventions so the surface reads as the working product it " +
       "claims to be.",
@@ -177,8 +177,8 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     title: "No AI tells in output",
     category: "anti-slop",
     description:
-      "\"I'd be happy to help\", \"Certainly!\", \"As an AI\", \"Here's " +
-      "what I can do\", \"Let me know if you need anything else\" leak " +
+      '"I\'d be happy to help", "Certainly!", "As an AI", "Here\'s ' +
+      'what I can do", "Let me know if you need anything else" leak ' +
       "the assistant's voice into product surfaces and make the work " +
       "feel scripted. Strip the helpful-assistant register entirely — " +
       "speak as the product or document itself. The user already " +
@@ -192,7 +192,7 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     category: "anti-slop",
     description:
       "Patterns like `catch(() => {})`, `?? defaultValue` without " +
-      "logging, and \"if it fails, show nothing\" turn bugs into " +
+      'logging, and "if it fails, show nothing" turn bugs into ' +
       "invisible degradation that costs days to debug. When something " +
       "fails, log the error with scope + attempted operation + actual " +
       "cause, then either surface a user-visible message or return a " +
@@ -206,8 +206,8 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     title: "No hedging in shipped output",
     category: "anti-slop",
     description:
-      "\"Talvez\", \"poderia ser\", \"ainda precisa de polish\", \"em uma " +
-      "próxima iteração\", \"para production-ready precisaríamos\" — " +
+      '"Talvez", "poderia ser", "ainda precisa de polish", "em uma ' +
+      'próxima iteração", "para production-ready precisaríamos" — ' +
       "these belong in design reviews, never in the surface a real " +
       "user reads. Make the call within the constraints, ship the " +
       "best version that fits, and move on. If something is genuinely " +
@@ -269,8 +269,8 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
       "runs, copy that reads end-to-end — not a partial draft with a " +
       "list of remaining items. When the scope is too large to " +
       "finish in one pass, narrow the scope: a smaller surface shipped " +
-      "whole beats a larger surface half-built. \"Working at smaller " +
-      "scope\" is the kind of edit a maintainer can actually merge.",
+      'whole beats a larger surface half-built. "Working at smaller ' +
+      'scope" is the kind of edit a maintainer can actually merge.',
     builtin: true,
   },
   {
@@ -279,9 +279,9 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     category: "tone",
     description:
       "Don't describe what a feature does in copy (\"intelligent " +
-      "suggestions appear as you type\"); demonstrate it with the " +
-      "working interface itself. Don't claim a product is \"fast\" or " +
-      "\"intuitive\" — let the affordances speak. In documentation, " +
+      'suggestions appear as you type"); demonstrate it with the ' +
+      'working interface itself. Don\'t claim a product is "fast" or ' +
+      '"intuitive" — let the affordances speak. In documentation, ' +
       "lead with a runnable example, then explain why it works. The " +
       "demo carries weight; the adjective doesn't.",
     builtin: true,
@@ -338,8 +338,8 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
       "When the project already defines colours (tokens.css, a DS, a " +
       "brand guide), build new components from the existing scale: " +
       "derive tints, shades, and accents from the established hues " +
-      "rather than introducing fresh ones. Adding \"just one new " +
-      "colour\" per feature fragments visual identity until nothing " +
+      'rather than introducing fresh ones. Adding "just one new ' +
+      'colour" per feature fragments visual identity until nothing ' +
       "reads as a system. When you genuinely need a new hue, expand " +
       "the palette with a full scale (10 steps, light → dark) and " +
       "document it alongside the existing ones — never one orphan " +
@@ -353,8 +353,8 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     description:
       "Body text needs at least 4.5:1 contrast against its background; " +
       "large text (≥18pt or ≥14pt bold) needs 3:1. Check actual pairs " +
-      "in both light and dark themes before shipping — \"looks fine " +
-      "on my screen\" is not a green light. When a brand colour fails " +
+      'in both light and dark themes before shipping — "looks fine ' +
+      'on my screen" is not a green light. When a brand colour fails ' +
       "contrast for text, keep it as a decorative accent (a LED, a " +
       "dot, an underline) and use a higher-contrast neutral for the " +
       "actual letters.",
@@ -427,8 +427,8 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     description:
       "Write at the register of a focused colleague explaining " +
       "something concrete — not the register of a marketing brochure " +
-      "or a corporate memo. No \"leverage\", no \"enable\", no " +
-      "\"robust\", no \"world-class\". Short sentences that name the " +
+      'or a corporate memo. No "leverage", no "enable", no ' +
+      '"robust", no "world-class". Short sentences that name the ' +
       "thing directly. The reader is smart and busy; respect both.",
     builtin: true,
   },
@@ -437,13 +437,13 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     title: "No marketing speak",
     category: "voice",
     description:
-      "Banned vocabulary: \"leverage\", \"synergy\", \"revolutionary\", " +
-      "\"world-class\", \"next-generation\", \"game-changing\", \"best-" +
-      "in-class\", \"cutting-edge\", \"robust\", \"seamless\", " +
-      "\"intuitive\", \"delightful\", \"powerful\". These words signal " +
+      'Banned vocabulary: "leverage", "synergy", "revolutionary", ' +
+      '"world-class", "next-generation", "game-changing", "best-' +
+      'in-class", "cutting-edge", "robust", "seamless", ' +
+      '"intuitive", "delightful", "powerful". These words signal ' +
       "the writer doesn't know how to describe what they're claiming. " +
-      "Replace each with concrete specifics: \"powerful editor\" → " +
-      "\"edits files locally with autosave at 1s intervals\".",
+      'Replace each with concrete specifics: "powerful editor" → ' +
+      '"edits files locally with autosave at 1s intervals".',
     builtin: true,
   },
   {
@@ -452,11 +452,11 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     category: "voice",
     description:
       "Numbers, examples, and named entities beat adjectives every " +
-      "time. \"Fast\" becomes \"loads in under 300ms\"; \"popular\" " +
-      "becomes \"used by 1,200 teams\"; \"easy\" becomes \"three " +
+      'time. "Fast" becomes "loads in under 300ms"; "popular" ' +
+      'becomes "used by 1,200 teams"; "easy" becomes "three ' +
       "keystrokes from cold start\". When you can't quantify, name a " +
-      "specific instance: \"the kind of edit you do in passes one " +
-      "and two\" beats \"supports complex edits\". Vagueness is the " +
+      'specific instance: "the kind of edit you do in passes one ' +
+      'and two" beats "supports complex edits". Vagueness is the ' +
       "easy default — specificity is the discipline.",
     builtin: true,
   },
@@ -543,7 +543,10 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
 //   - _categoryLabelOverrides: rename overrides for builtin categories.
 // Disabled builtins are not deletable but can be hidden via _disabledIds.
 
-let _builtinOverrides: Map<string, Partial<Pick<Rule, "title" | "description" | "category">>> = new Map();
+let _builtinOverrides: Map<
+  string,
+  Partial<Pick<Rule, "title" | "description" | "category">>
+> = new Map();
 let _userRules: Rule[] = [];
 let _disabledIds: Set<string> = new Set();
 let _customRuleCategories: RuleCategoryMeta[] = [];
@@ -553,16 +556,29 @@ let _categoryLabelOverrides: Map<string, string> = new Map();
 let _hiddenBuiltinRules: Set<string> = new Set();
 let _hiddenBuiltinCategories: Set<string> = new Set();
 
-export function getBuiltinOverrides(): Record<string, Partial<Pick<Rule, "title" | "description" | "category">>> {
+export function getBuiltinOverrides(): Record<
+  string,
+  Partial<Pick<Rule, "title" | "description" | "category">>
+> {
   return Object.fromEntries(_builtinOverrides);
 }
-export function setBuiltinOverrides(map: Record<string, Partial<Pick<Rule, "title" | "description" | "category">>>): void {
+export function setBuiltinOverrides(
+  map: Record<string, Partial<Pick<Rule, "title" | "description" | "category">>>,
+): void {
   _builtinOverrides = new Map(Object.entries(map));
 }
-export function getHiddenBuiltinRuleIds(): string[] { return [..._hiddenBuiltinRules]; }
-export function setHiddenBuiltinRuleIds(ids: string[]): void { _hiddenBuiltinRules = new Set(ids); }
-export function getHiddenBuiltinRuleCategoryIds(): string[] { return [..._hiddenBuiltinCategories]; }
-export function setHiddenBuiltinRuleCategoryIds(ids: string[]): void { _hiddenBuiltinCategories = new Set(ids); }
+export function getHiddenBuiltinRuleIds(): string[] {
+  return [..._hiddenBuiltinRules];
+}
+export function setHiddenBuiltinRuleIds(ids: string[]): void {
+  _hiddenBuiltinRules = new Set(ids);
+}
+export function getHiddenBuiltinRuleCategoryIds(): string[] {
+  return [..._hiddenBuiltinCategories];
+}
+export function setHiddenBuiltinRuleCategoryIds(ids: string[]): void {
+  _hiddenBuiltinCategories = new Set(ids);
+}
 export function getUserRules(): Rule[] {
   return _userRules.map((r) => ({ ...r }));
 }
@@ -681,7 +697,11 @@ function titleCase(s: string): string {
 
 /** Generate a stable id for a new user rule. */
 export function generateUserRuleId(category: string): string {
-  const safeCat = category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "custom";
+  const safeCat =
+    category
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "custom";
   const stamp = Date.now().toString(36);
   return `usr-${safeCat}-${stamp}`;
 }
@@ -725,14 +745,16 @@ const RulesExportSchema = z.object({
   schema: z.literal("df.rules.v1"),
   exportedAt: z.string().optional(),
   userRules: z.array(RuleSchema),
-  builtinOverrides: z.record(
-    z.string(),
-    z.object({
-      title: z.string().optional(),
-      description: z.string().optional(),
-      category: z.string().optional(),
-    }),
-  ).default({}),
+  builtinOverrides: z
+    .record(
+      z.string(),
+      z.object({
+        title: z.string().optional(),
+        description: z.string().optional(),
+        category: z.string().optional(),
+      }),
+    )
+    .default({}),
   disabledIds: z.array(z.string()).default([]),
   customRuleCategories: z.array(RuleCategoryMetaSchema).default([]),
   categoryLabelOverrides: z.record(z.string(), z.string()).default({}),

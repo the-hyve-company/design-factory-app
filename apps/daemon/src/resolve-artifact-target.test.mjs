@@ -4,10 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { realpathSync } from "node:fs";
 
-import {
-  resolveArtifactTarget,
-  __TEST_INTERNALS__,
-} from "./resolve-artifact-target.mjs";
+import { resolveArtifactTarget, __TEST_INTERNALS__ } from "./resolve-artifact-target.mjs";
 
 let projectsRoot;
 let slug;
@@ -82,14 +79,17 @@ describe("resolveArtifactTarget — happy paths", () => {
 
   it("override activeFile when it differs from primaryFile", () => {
     const variant = `projects/${slug}/variants/dark.html`;
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: variant,
-      currentActiveFile: variant,
-      existingFiles: {
-        [`projects/${slug}/index.html`]: { type: "text/html", role: "primary" },
-        [variant]: { type: "text/html", role: "variant" },
-      },
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: variant,
+        currentActiveFile: variant,
+        existingFiles: {
+          [`projects/${slug}/index.html`]: { type: "text/html", role: "primary" },
+          [variant]: { type: "text/html", role: "variant" },
+        },
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeUndefined();
     expect(r.role).toBe("primary"); // override semantics: activeFile match → primary path
     expect(r.previewAfterWrite).toBe(true);
@@ -97,9 +97,12 @@ describe("resolveArtifactTarget — happy paths", () => {
   });
 
   it("new variant under variants/", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/variants/new-take.html`,
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/variants/new-take.html`,
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeUndefined();
     expect(r.role).toBe("variant");
     expect(r.previewAfterWrite).toBe(true);
@@ -110,10 +113,13 @@ describe("resolveArtifactTarget — happy paths", () => {
   });
 
   it("new doc under docs/ does not move activeFile", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/docs/notes.md`,
-      requestedType: "text/markdown",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/docs/notes.md`,
+        requestedType: "text/markdown",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeUndefined();
     expect(r.role).toBe("doc");
     expect(r.previewAfterWrite).toBe(false);
@@ -121,10 +127,13 @@ describe("resolveArtifactTarget — happy paths", () => {
   });
 
   it("new prompt under prompts/", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/prompts/brief.txt`,
-      requestedType: "text/plain",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/prompts/brief.txt`,
+        requestedType: "text/plain",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeUndefined();
     expect(r.role).toBe("prompt");
     expect(r.previewAfterWrite).toBe(false);
@@ -132,29 +141,38 @@ describe("resolveArtifactTarget — happy paths", () => {
   });
 
   it("new data under data/", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/data/config.json`,
-      requestedType: "application/json",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/data/config.json`,
+        requestedType: "application/json",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeUndefined();
     expect(r.role).toBe("data");
     expect(r.previewAfterWrite).toBe(false);
   });
 
   it("new asset under assets/images/", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/assets/images/logo.png`,
-      requestedType: "image/png",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/assets/images/logo.png`,
+        requestedType: "image/png",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeUndefined();
     expect(r.role).toBe("asset");
     expect(r.previewAfterWrite).toBe(false);
   });
 
   it("normalises identifier without projects/ prefix", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: "variants/foo.html",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: "variants/foo.html",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeUndefined();
     expect(r.normalizedIdentifier).toBe(`projects/${slug}/variants/foo.html`);
     expect(r.role).toBe("variant");
@@ -169,28 +187,37 @@ describe("resolveArtifactTarget — intent semantics", () => {
   });
 
   it("intent=override against unknown path returns INTENT_PATH_CONFLICT", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/variants/never-seen.html`,
-      intent: "override",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/variants/never-seen.html`,
+        intent: "override",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeDefined();
     expect(r.error.code).toBe("INTENT_PATH_CONFLICT");
   });
 
   it("intent=variant for path inside variants/ passes", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/variants/dark.html`,
-      intent: "variant",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/variants/dark.html`,
+        intent: "variant",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeUndefined();
     expect(r.role).toBe("variant");
   });
 
   it("intent=doc for path inside variants/ returns INTENT_PATH_CONFLICT", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/variants/dark.html`,
-      intent: "doc",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/variants/dark.html`,
+        intent: "doc",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeDefined();
     expect(r.error.code).toBe("INTENT_PATH_CONFLICT");
   });
@@ -204,35 +231,47 @@ describe("resolveArtifactTarget — intent semantics", () => {
 
 describe("resolveArtifactTarget — path scope + ambiguity", () => {
   it("rejects path that escapes projectsRoot via ..", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/../../etc/passwd`,
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/../../etc/passwd`,
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeDefined();
     expect(r.error.code).toBe("PATH_OUT_OF_SCOPE");
   });
 
   it("rejects identifier referencing different project slug", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: "projects/other-project/index.html",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: "projects/other-project/index.html",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeDefined();
     expect(r.error.code).toBe("AMBIGUOUS_IDENTIFIER");
   });
 
   it("returns AMBIGUOUS_IDENTIFIER for top-level non-canonical name without intent or type hint", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/something.weird`,
-      requestedType: "",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/something.weird`,
+        requestedType: "",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeDefined();
     expect(r.error.code).toBe("AMBIGUOUS_IDENTIFIER");
   });
 
   it("uses type fallback when no folder hint and no intent", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/something.html`,
-      requestedType: "text/html",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/something.html`,
+        requestedType: "text/html",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeUndefined();
     // Top-level previewable but not canonical name → variant fallback.
     expect(r.role).toBe("variant");
@@ -241,10 +280,13 @@ describe("resolveArtifactTarget — path scope + ambiguity", () => {
 
 describe("resolveArtifactTarget — type/role mismatch", () => {
   it("rejects type=text/html in assets/ folder (asset role expected)", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/assets/scripts/foo.html`,
-      requestedType: "text/html",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/assets/scripts/foo.html`,
+        requestedType: "text/html",
+      }),
+      projectsRoot,
+    );
     // Path puts it as asset; type=text/html allowed only for primary/variant.
     // INVALID_ROLE because type is restricted by TYPE_TO_DEFAULT_ROLES.
     expect(r.error).toBeDefined();
@@ -252,19 +294,25 @@ describe("resolveArtifactTarget — type/role mismatch", () => {
   });
 
   it("rejects type=application/json in variants/ folder", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/variants/dark.json`,
-      requestedType: "application/json",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/variants/dark.json`,
+        requestedType: "application/json",
+      }),
+      projectsRoot,
+    );
     expect(r.error).toBeDefined();
     expect(r.error.code).toBe("INVALID_ROLE");
   });
 
   it("accepts svg in primary slot (svg is allowed for primary/variant/asset)", () => {
-    const r = resolveArtifactTarget(baseInput({
-      requestedIdentifier: `projects/${slug}/index.html`,
-      requestedType: "image/svg+xml",
-    }), projectsRoot);
+    const r = resolveArtifactTarget(
+      baseInput({
+        requestedIdentifier: `projects/${slug}/index.html`,
+        requestedType: "image/svg+xml",
+      }),
+      projectsRoot,
+    );
     // identifier matches primaryFile string → role=primary, svg is allowed for primary.
     expect(r.error).toBeUndefined();
     expect(r.role).toBe("primary");

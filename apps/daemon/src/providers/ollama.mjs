@@ -41,7 +41,9 @@ async function resolveModel(host, caller) {
     if (Array.isArray(models) && models.length > 0 && typeof models[0]?.name === "string") {
       return models[0].name;
     }
-  } catch { /* unreachable — fall through */ }
+  } catch {
+    /* unreachable — fall through */
+  }
   return "llama3.2:latest";
 }
 
@@ -96,8 +98,9 @@ const ollama = {
   async stream(req, res, deps) {
     const { readJson } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -131,7 +134,7 @@ const ollama = {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     });
     res.flushHeaders?.();
@@ -140,15 +143,23 @@ const ollama = {
     // bounce /api/chat as `400 "<model>" does not support chat`. Surface an
     // actionable error before the upstream call instead of the cryptic 400.
     if (!caps.chat) {
-      res.write(`event: error\ndata: ${JSON.stringify({ error: noChatMessage(resolvedModel) })}\n\n`);
+      res.write(
+        `event: error\ndata: ${JSON.stringify({ error: noChatMessage(resolvedModel) })}\n\n`,
+      );
       res.end();
       return;
     }
 
-    res.write(`event: log\ndata: ${JSON.stringify({ level: "info", message: `ollama chat model=${resolvedModel}${model && model !== "default" ? "" : " (auto-picked from /api/tags)"} · num_ctx=${numCtx}${think ? " · thinking" : ""}` })}\n\n`);
+    res.write(
+      `event: log\ndata: ${JSON.stringify({ level: "info", message: `ollama chat model=${resolvedModel}${model && model !== "default" ? "" : " (auto-picked from /api/tags)"} · num_ctx=${numCtx}${think ? " · thinking" : ""}` })}\n\n`,
+    );
 
     const controller = new AbortController();
-    req.on("close", () => { try { controller.abort(); } catch {} });
+    req.on("close", () => {
+      try {
+        controller.abort();
+      } catch {}
+    });
 
     try {
       const upstream = await fetch(`${host}/api/chat`, {
@@ -158,7 +169,13 @@ const ollama = {
         // (preamble + craft + output contract + current file + history) isn't
         // silently truncated before the model reads the user's actual ask.
         // think routes reasoning to message.thinking when enabled+supported.
-        body: JSON.stringify({ model: resolvedModel, messages, stream: true, think, options: { num_ctx: numCtx } }),
+        body: JSON.stringify({
+          model: resolvedModel,
+          messages,
+          stream: true,
+          think,
+          options: { num_ctx: numCtx },
+        }),
         signal: controller.signal,
       });
       if (!upstream.ok || !upstream.body) {
@@ -168,7 +185,9 @@ const ollama = {
         try {
           const errText = await upstream.text();
           if (isNoChatError(errText)) detail = noChatMessage(resolvedModel);
-        } catch { /* keep the generic HTTP status */ }
+        } catch {
+          /* keep the generic HTTP status */
+        }
         res.write(`event: error\ndata: ${JSON.stringify({ error: detail })}\n\n`);
         res.end();
         return;
@@ -188,7 +207,11 @@ const ollama = {
           buffer = buffer.slice(nl + 1);
           if (!line) continue;
           let v;
-          try { v = JSON.parse(line); } catch { continue; }
+          try {
+            v = JSON.parse(line);
+          } catch {
+            continue;
+          }
           if (v.message && typeof v.message.content === "string" && v.message.content.length > 0) {
             full += v.message.content;
             res.write(`event: text\ndata: ${JSON.stringify({ content: v.message.content })}\n\n`);
@@ -209,12 +232,16 @@ const ollama = {
       if (full) {
         res.write(`event: done\ndata: ${JSON.stringify({ content: full })}\n\n`);
       } else {
-        res.write(`event: error\ndata: ${JSON.stringify({ error: "ollama completed without text or artifact" })}\n\n`);
+        res.write(
+          `event: error\ndata: ${JSON.stringify({ error: "ollama completed without text or artifact" })}\n\n`,
+        );
       }
       res.end();
     } catch (err) {
       if (err?.name !== "AbortError") {
-        res.write(`event: error\ndata: ${JSON.stringify({ error: ollamaErrorMessage(err, host) })}\n\n`);
+        res.write(
+          `event: error\ndata: ${JSON.stringify({ error: ollamaErrorMessage(err, host) })}\n\n`,
+        );
       }
       res.end();
     }
@@ -223,8 +250,9 @@ const ollama = {
   async once(req, res, deps) {
     const { readJson } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -257,12 +285,20 @@ const ollama = {
       const upstream = await fetch(`${host}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: resolvedModel, messages, stream: false, think, options: { num_ctx: numCtx } }),
+        body: JSON.stringify({
+          model: resolvedModel,
+          messages,
+          stream: false,
+          think,
+          options: { num_ctx: numCtx },
+        }),
       });
       const data = await upstream.json();
       res.writeHead(200, { "Content-Type": "application/json" });
       if (!upstream.ok) {
-        const detail = isNoChatError(data?.error) ? noChatMessage(resolvedModel) : (data.error || `ollama HTTP ${upstream.status}`);
+        const detail = isNoChatError(data?.error)
+          ? noChatMessage(resolvedModel)
+          : data.error || `ollama HTTP ${upstream.status}`;
         res.end(JSON.stringify({ error: detail }));
       } else {
         res.end(JSON.stringify({ text: data.message?.content || "" }));

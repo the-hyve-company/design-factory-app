@@ -22,10 +22,7 @@
 import { describe, it, expect } from "vitest";
 import { DEFAULT_BUILTIN_RULES, getEffectiveRules } from "@/data/rules-taxonomy";
 import { DEFAULT_FORMAT_TAXONOMY, getEffectiveFormatTaxonomy } from "@/data/format-taxonomy";
-import {
-  buildCanonicalPlusSummary,
-  type CanonicalPlusInput,
-} from "./canonical-plus-prompt";
+import { buildCanonicalPlusSummary, type CanonicalPlusInput } from "./canonical-plus-prompt";
 import { buildArtifactContractBlock, shouldAppendArtifactContract } from "./output-contract";
 import { loadBuiltinVerbs } from "./verbs/registry";
 
@@ -55,12 +52,12 @@ describe("audit P1 / artifact contract", () => {
   });
 
   it("shouldAppendArtifactContract gates correctly by capability", () => {
-    expect(
-      shouldAppendArtifactContract({ capabilities: { fileWrite: "artifact" } as never }),
-    ).toBe(true);
-    expect(
-      shouldAppendArtifactContract({ capabilities: { fileWrite: "tool" } as never }),
-    ).toBe(false);
+    expect(shouldAppendArtifactContract({ capabilities: { fileWrite: "artifact" } as never })).toBe(
+      true,
+    );
+    expect(shouldAppendArtifactContract({ capabilities: { fileWrite: "tool" } as never })).toBe(
+      false,
+    );
   });
 });
 

@@ -116,11 +116,14 @@ export function PadroesConfirmModal({
             ref={confirmBtnRef}
             type="button"
             className={`padroes-confirm-btn padroes-confirm-btn--${tone}`}
-            onClick={() => { if (!busy) onConfirm(); }}
+            onClick={() => {
+              if (!busy) onConfirm();
+            }}
             disabled={busy}
             style={busy ? { opacity: 0.6, cursor: "progress" } : undefined}
           >
-            {confirmLabel ?? (tone === "danger" ? t("padroes.confirm.delete") : t("padroes.confirm.confirm"))}
+            {confirmLabel ??
+              (tone === "danger" ? t("padroes.confirm.delete") : t("padroes.confirm.confirm"))}
           </button>
         </div>
       </div>

@@ -25,7 +25,7 @@ export interface ScanParams {
 export const SCAN_DEFAULTS: ScanParams = {
   color: "rgba(107, 155, 209, 1)",
   gridSize: 14,
-  gridOpacity: 0.10,
+  gridOpacity: 0.1,
   scanThickness: 12,
   scanSpeedMs: 1900,
   scanOpacity: 0.95,
@@ -43,8 +43,10 @@ export function ShaderScan({ params = SCAN_DEFAULTS }: { params?: ScanParams }) 
           inset: 0,
           backgroundImage: `linear-gradient(${gridLine} 1px, transparent 1px), linear-gradient(90deg, ${gridLine} 1px, transparent 1px)`,
           backgroundSize: `${gridSize}px ${gridSize}px`,
-          maskImage: "linear-gradient(180deg, transparent 0%, black 30%, black 70%, transparent 100%)",
-          WebkitMaskImage: "linear-gradient(180deg, transparent 0%, black 30%, black 70%, transparent 100%)",
+          maskImage:
+            "linear-gradient(180deg, transparent 0%, black 30%, black 70%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(180deg, transparent 0%, black 30%, black 70%, transparent 100%)",
         }}
       />
       <div
@@ -168,7 +170,7 @@ export function ShaderAurora({ params = AURORA_DEFAULTS }: { params?: AuroraPara
           height: "240%",
           left: "30%",
           top: "-60%",
-          background: blob(color2, 0.50),
+          background: blob(color2, 0.5),
           filter: `blur(${blurPx}px)`,
           animation: `df-shader-aurora-b ${speedBMs}ms ease-in-out infinite`,
         }}
@@ -211,10 +213,22 @@ function dotPositions(count: number) {
   const dots: { x: number; y: number; d: number; delay: number }[] = [];
   // Halton sequence (base 2 / base 3) for a low-discrepancy spread
   for (let i = 1; i <= count; i++) {
-    let f = 1, x = 0; let n = i;
-    while (n > 0) { f /= 2; x += f * (n % 2); n = Math.floor(n / 2); }
-    let g = 1, y = 0; let m = i;
-    while (m > 0) { g /= 3; y += g * (m % 3); m = Math.floor(m / 3); }
+    let f = 1,
+      x = 0;
+    let n = i;
+    while (n > 0) {
+      f /= 2;
+      x += f * (n % 2);
+      n = Math.floor(n / 2);
+    }
+    let g = 1,
+      y = 0;
+    let m = i;
+    while (m > 0) {
+      g /= 3;
+      y += g * (m % 3);
+      m = Math.floor(m / 3);
+    }
     dots.push({ x: x * 96 + 2, y: y * 88 + 6, d: 0, delay: 0 });
   }
   return dots;
@@ -299,15 +313,22 @@ export function ShaderGlitch({ params = GLITCH_DEFAULTS }: { params?: GlitchPara
 export type VerbCategory = "evaluate" | "refine" | "direction" | "enhance" | "fix" | "export";
 export function VerbShader({ category }: { category: VerbCategory }) {
   switch (category) {
-    case "evaluate": return <ShaderScan />;
-    case "refine":   return <ShaderPolish />;
-    case "direction": return <ShaderAurora />;
-    case "enhance":  return <ShaderSparkle />;
-    case "fix":      return <ShaderGlitch />;
+    case "evaluate":
+      return <ShaderScan />;
+    case "refine":
+      return <ShaderPolish />;
+    case "direction":
+      return <ShaderAurora />;
+    case "enhance":
+      return <ShaderSparkle />;
+    case "fix":
+      return <ShaderGlitch />;
     // Export reuses the polish shader's calm geometry — render is a
     // terminal action, not a creative one. Keeps the visual language
     // consistent and avoids inventing a new shader for a single verb.
-    case "export":   return <ShaderPolish />;
-    default:         return <ShaderPolish />;
+    case "export":
+      return <ShaderPolish />;
+    default:
+      return <ShaderPolish />;
   }
 }

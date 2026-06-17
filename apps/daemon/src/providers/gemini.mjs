@@ -32,8 +32,9 @@ const gemini = {
   async stream(req, res, deps) {
     const { readJson, wireGeminiJson, spawn } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -64,13 +65,15 @@ const gemini = {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     });
     res.flushHeaders?.();
 
     const child = spawn(GEMINI_BIN, args, spawnOpts);
-    res.write(`event: log\ndata: ${JSON.stringify({ level: "info", message: `spawned ${GEMINI_BIN} --model=${model ?? "default"}${useResume ? ` --resume=${sessionId}` : ""}${cwd ? ` cwd=${cwd}` : ""}` })}\n\n`);
+    res.write(
+      `event: log\ndata: ${JSON.stringify({ level: "info", message: `spawned ${GEMINI_BIN} --model=${model ?? "default"}${useResume ? ` --resume=${sessionId}` : ""}${cwd ? ` cwd=${cwd}` : ""}` })}\n\n`,
+    );
     child.stdin.write(composed);
     child.stdin.end();
 
@@ -90,8 +93,9 @@ const gemini = {
   async once(req, res, deps) {
     const { readJson, spawn } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -113,8 +117,10 @@ const gemini = {
     child.stdin.end();
     let stdout = "";
     let stderr = "";
-    child.stdout.setEncoding("utf8"); child.stdout.on("data", (c) => (stdout += c));
-    child.stderr.setEncoding("utf8"); child.stderr.on("data", (c) => (stderr += c));
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (c) => (stdout += c));
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (c) => (stderr += c));
     child.on("close", (code) => {
       if (res.headersSent) return;
       res.writeHead(200, { "Content-Type": "application/json" });

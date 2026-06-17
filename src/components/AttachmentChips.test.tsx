@@ -132,10 +132,12 @@ describe("isHtmlAttachment — predicate", () => {
 
   it("returns true for .html extension regardless of mime", () => {
     expect(isHtmlAttachment(HTML_BY_EXT_ATT)).toBe(true);
-    expect(isHtmlAttachment({
-      ...IMAGE_ATT,
-      name: "weird.htm",
-    })).toBe(true);
+    expect(
+      isHtmlAttachment({
+        ...IMAGE_ATT,
+        name: "weird.htm",
+      }),
+    ).toBe(true);
   });
 
   it("returns false for non-HTML attachments", () => {

@@ -32,10 +32,10 @@
 export const DEFAULT_MAX_ARTIFACT_BYTES = 5 * 1024 * 1024; // 5 MB (§5).
 
 export type ArtifactRejectionReason =
-  | "multiple-artifacts"   // D23 — more than one <artifact> opens in the same turn.
-  | "unclosed-artifact"    // Provider truncated mid-stream; no </artifact>.
-  | "oversize"             // content body exceeds maxBytes.
-  | "invalid-attributes";  // missing identifier/type, malformed attribute syntax.
+  | "multiple-artifacts" // D23 — more than one <artifact> opens in the same turn.
+  | "unclosed-artifact" // Provider truncated mid-stream; no </artifact>.
+  | "oversize" // content body exceeds maxBytes.
+  | "invalid-attributes"; // missing identifier/type, malformed attribute syntax.
 
 export interface ArtifactBlock {
   /** Path inside the project, as declared by the provider in the start tag. */
@@ -58,7 +58,12 @@ export interface ArtifactBlock {
 export type ParseResult =
   | { status: "none"; cleanedText: string }
   | { status: "artifact"; artifact: ArtifactBlock; cleanedText: string }
-  | { status: "rejected"; reason: ArtifactRejectionReason; cleanedText: string; partial?: ArtifactBlock };
+  | {
+      status: "rejected";
+      reason: ArtifactRejectionReason;
+      cleanedText: string;
+      partial?: ArtifactBlock;
+    };
 
 export interface ParseOptions {
   /** Hard cap on artifact body size. Default 5 MB. */
@@ -70,8 +75,8 @@ interface AttributeMap {
 }
 
 interface StartTagMatch {
-  index: number;          // offset of `<`
-  endIndex: number;       // offset just past `>`
+  index: number; // offset of `<`
+  endIndex: number; // offset just past `>`
   attributes: AttributeMap;
 }
 
@@ -84,7 +89,10 @@ const ARTIFACT_CLOSE = "</artifact>";
  * invalid attribute syntax). The caller decides whether "malformed" means
  * "rejected" or "keep scanning".
  */
-function findStartTag(text: string, from: number): StartTagMatch | { malformed: true; index: number } | null {
+function findStartTag(
+  text: string,
+  from: number,
+): StartTagMatch | { malformed: true; index: number } | null {
   let cursor = from;
   while (cursor < text.length) {
     const open = text.indexOf(ARTIFACT_OPEN, cursor);
@@ -93,7 +101,12 @@ function findStartTag(text: string, from: number): StartTagMatch | { malformed: 
     // (and not, e.g., `<artifact-foo`).
     const next = text.charCodeAt(open + ARTIFACT_OPEN.length);
     const isTagBoundary =
-      next === 0x20 || next === 0x09 || next === 0x0a || next === 0x0d || next === 0x2f /* / */ || next === 0x3e /* > */;
+      next === 0x20 ||
+      next === 0x09 ||
+      next === 0x0a ||
+      next === 0x0d ||
+      next === 0x2f /* / */ ||
+      next === 0x3e; /* > */
     if (!isTagBoundary) {
       cursor = open + ARTIFACT_OPEN.length;
       continue;
@@ -122,7 +135,10 @@ function findStartTag(text: string, from: number): StartTagMatch | { malformed: 
  * Returns null if the tag is unterminated (no `>` before EOF) OR if a
  * value's opening quote never closes (truncation mid-attribute).
  */
-function scanStartTagAttributes(text: string, from: number): { attributes: AttributeMap; endIndex: number } | null {
+function scanStartTagAttributes(
+  text: string,
+  from: number,
+): { attributes: AttributeMap; endIndex: number } | null {
   const attrs: AttributeMap = {};
   let i = from;
   while (i < text.length) {
@@ -372,7 +388,9 @@ function bufferToHex(bytes: Uint8Array): string {
 // Adapted from public-domain reference (RFC 6234). Keeps the parser
 // runnable from contexts that disable WebCrypto (e.g. some test workers).
 function sha256JsFallback(message: string): string {
-  function rrotate(n: number, x: number) { return (x >>> n) | (x << (32 - n)); }
+  function rrotate(n: number, x: number) {
+    return (x >>> n) | (x << (32 - n));
+  }
   const K = new Uint32Array([
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -386,7 +404,7 @@ function sha256JsFallback(message: string): string {
   const bytes = new TextEncoder().encode(message);
   const bitLen = bytes.length * 8;
   // Pre-processing: append 0x80, then zeros, then 64-bit length.
-  const padLen = (56 - (bytes.length + 1) % 64 + 64) % 64;
+  const padLen = (56 - ((bytes.length + 1) % 64) + 64) % 64;
   const total = new Uint8Array(bytes.length + 1 + padLen + 8);
   total.set(bytes);
   total[bytes.length] = 0x80;
@@ -395,8 +413,14 @@ function sha256JsFallback(message: string): string {
   const view = new DataView(total.buffer);
   view.setUint32(total.length - 4, bitLen >>> 0, false);
   view.setUint32(total.length - 8, Math.floor(bitLen / 0x100000000), false);
-  let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a;
-  let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
+  let h0 = 0x6a09e667,
+    h1 = 0xbb67ae85,
+    h2 = 0x3c6ef372,
+    h3 = 0xa54ff53a;
+  let h4 = 0x510e527f,
+    h5 = 0x9b05688c,
+    h6 = 0x1f83d9ab,
+    h7 = 0x5be0cd19;
   for (let chunk = 0; chunk < total.length; chunk += 64) {
     const w = new Uint32Array(64);
     for (let i = 0; i < 16; i++) w[i] = view.getUint32(chunk + i * 4, false);
@@ -405,7 +429,14 @@ function sha256JsFallback(message: string): string {
       const s1 = rrotate(17, w[i - 2]!) ^ rrotate(19, w[i - 2]!) ^ (w[i - 2]! >>> 10);
       w[i] = (w[i - 16]! + s0 + w[i - 7]! + s1) >>> 0;
     }
-    let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+    let a = h0,
+      b = h1,
+      c = h2,
+      d = h3,
+      e = h4,
+      f = h5,
+      g = h6,
+      h = h7;
     for (let i = 0; i < 64; i++) {
       const S1 = rrotate(6, e) ^ rrotate(11, e) ^ rrotate(25, e);
       const ch = (e & f) ^ (~e & g);
@@ -413,16 +444,37 @@ function sha256JsFallback(message: string): string {
       const S0 = rrotate(2, a) ^ rrotate(13, a) ^ rrotate(22, a);
       const mj = (a & b) ^ (a & c) ^ (b & c);
       const t2 = (S0 + mj) >>> 0;
-      h = g; g = f; f = e; e = (d + t1) >>> 0;
-      d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+      h = g;
+      g = f;
+      f = e;
+      e = (d + t1) >>> 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (t1 + t2) >>> 0;
     }
-    h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0;
-    h4 = (h4 + e) >>> 0; h5 = (h5 + f) >>> 0; h6 = (h6 + g) >>> 0; h7 = (h7 + h) >>> 0;
+    h0 = (h0 + a) >>> 0;
+    h1 = (h1 + b) >>> 0;
+    h2 = (h2 + c) >>> 0;
+    h3 = (h3 + d) >>> 0;
+    h4 = (h4 + e) >>> 0;
+    h5 = (h5 + f) >>> 0;
+    h6 = (h6 + g) >>> 0;
+    h7 = (h7 + h) >>> 0;
   }
   function toHex32(n: number) {
     return ("00000000" + (n >>> 0).toString(16)).slice(-8);
   }
-  return toHex32(h0) + toHex32(h1) + toHex32(h2) + toHex32(h3) + toHex32(h4) + toHex32(h5) + toHex32(h6) + toHex32(h7);
+  return (
+    toHex32(h0) +
+    toHex32(h1) +
+    toHex32(h2) +
+    toHex32(h3) +
+    toHex32(h4) +
+    toHex32(h5) +
+    toHex32(h6) +
+    toHex32(h7)
+  );
 }
 
 /**
@@ -447,7 +499,10 @@ function stripArtifactRange(text: string, start: number, end: number): string {
  * is async). All other work is sync. Callers that need a strictly-sync
  * variant for tests can import `sha256Hex` separately and reconstruct.
  */
-export async function parseArtifact(streamText: string, opts: ParseOptions = {}): Promise<ParseResult> {
+export async function parseArtifact(
+  streamText: string,
+  opts: ParseOptions = {},
+): Promise<ParseResult> {
   if (typeof streamText !== "string") {
     return { status: "rejected", reason: "invalid-attributes", cleanedText: "" };
   }
@@ -462,7 +517,11 @@ export async function parseArtifact(streamText: string, opts: ParseOptions = {})
     // The daemon also nudges the model toward <artifact>; this is the
     // belt-and-suspenders client-side recovery.
     const fenceMatch = streamText.match(/```(?:html?|svg)\s*\n([\s\S]*?)\n```/i);
-    if (fenceMatch && fenceMatch[1] && /^\s*<(!doctype|html|svg|\?xml)/i.test(fenceMatch[1].trimStart())) {
+    if (
+      fenceMatch &&
+      fenceMatch[1] &&
+      /^\s*<(!doctype|html|svg|\?xml)/i.test(fenceMatch[1].trimStart())
+    ) {
       const content = fenceMatch[1];
       const byteSize = new TextEncoder().encode(content).byteLength;
       if (byteSize <= maxBytes && content.length >= 50) {

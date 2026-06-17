@@ -16,11 +16,7 @@ import {
   type VercelConfigState,
   type VercelUserProfile,
 } from "@/lib/vercel-bridge";
-import {
-  ghHasToken,
-  ghGetUser,
-  type GithubUserProfile,
-} from "@/lib/github-bridge";
+import { ghHasToken, ghGetUser, type GithubUserProfile } from "@/lib/github-bridge";
 import { CliInstallHint } from "@/components/CliInstallHint";
 import { useT } from "@/i18n";
 
@@ -38,7 +34,9 @@ const CONFIG_SERVICE: Record<Provider, string> = {
   kimi: "kimi",
 };
 
-async function getTokenStatus(service: string): Promise<{ tokenSet: boolean; source: "env" | "disk" | null }> {
+async function getTokenStatus(
+  service: string,
+): Promise<{ tokenSet: boolean; source: "env" | "disk" | null }> {
   try {
     const res = await fetch(`${BRIDGE_URL}/config/${service}`);
     if (!res.ok) return { tokenSet: false, source: null };
@@ -89,12 +87,15 @@ export function InlineProviderToken({ provider, onSaved }: InlineProviderTokenPr
         setSource(s.source ?? null);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [service]);
 
   const validate = (value: string): string | null => {
     if (!value) return null;
-    if (meta.prefix && !value.startsWith(meta.prefix)) return tf("provtok.must.start.with", meta.prefix);
+    if (meta.prefix && !value.startsWith(meta.prefix))
+      return tf("provtok.must.start.with", meta.prefix);
     if (value.length < 20) return t("provtok.too.short");
     return null;
   };
@@ -102,12 +103,19 @@ export function InlineProviderToken({ provider, onSaved }: InlineProviderTokenPr
   const handleSave = async () => {
     const trimmed = draft.trim();
     const v = validate(trimmed);
-    if (v) { setError(v); return; }
+    if (v) {
+      setError(v);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const r = await putToken(service, trimmed);
-      if (!r.ok) { setError(r.error ?? t("provtok.save.failed")); setSaving(false); return; }
+      if (!r.ok) {
+        setError(r.error ?? t("provtok.save.failed"));
+        setSaving(false);
+        return;
+      }
       setDraft("");
       const next = await getTokenStatus(service);
       setTokenSet(next.tokenSet);
@@ -147,7 +155,11 @@ export function InlineProviderToken({ provider, onSaved }: InlineProviderTokenPr
       <div style={headerStyle}>
         <span style={labelStyle}>{t(meta.labelKey)}</span>
         <span style={badgeStyle(tokenSet)}>
-          {tokenSet ? (source === "env" ? tf("provtok.from.env", meta.envVar) : t("provtok.saved.badge")) : t("provtok.notset")}
+          {tokenSet
+            ? source === "env"
+              ? tf("provtok.from.env", meta.envVar)
+              : t("provtok.saved.badge")
+            : t("provtok.notset")}
         </span>
       </div>
       <input
@@ -156,11 +168,18 @@ export function InlineProviderToken({ provider, onSaved }: InlineProviderTokenPr
         spellCheck={false}
         placeholder={tokenSet ? t("provtok.placeholder.replace") : t(meta.placeholderKey)}
         value={draft}
-        onChange={(e) => { setDraft(e.target.value); setError(null); }}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          setError(null);
+        }}
         style={inputStyle}
       />
       {error && <div style={errStyle}>{error}</div>}
-      {flash && <div style={okStyle}>{flash === "saved" ? t("provtok.savedflash") : t("provtok.cleared")}</div>}
+      {flash && (
+        <div style={okStyle}>
+          {flash === "saved" ? t("provtok.savedflash") : t("provtok.cleared")}
+        </div>
+      )}
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
         <button
           className="df-btn df-btn--primary"
@@ -180,12 +199,7 @@ export function InlineProviderToken({ provider, onSaved }: InlineProviderTokenPr
             {t("provtok.clear")}
           </button>
         )}
-        <a
-          href={meta.docsUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={linkStyle}
-        >
+        <a href={meta.docsUrl} target="_blank" rel="noreferrer" style={linkStyle}>
           {t("provtok.getkey")}
         </a>
       </div>
@@ -196,7 +210,10 @@ export function InlineProviderToken({ provider, onSaved }: InlineProviderTokenPr
 // Static metadata that doesn't change with language. Labels + placeholders
 // are i18n keys resolved at render time so the component flips with the
 // active language.
-const META: Record<Provider, { labelKey: string; envVar: string; placeholderKey: string; prefix?: string; docsUrl: string }> = {
+const META: Record<
+  Provider,
+  { labelKey: string; envVar: string; placeholderKey: string; prefix?: string; docsUrl: string }
+> = {
   anthropic: {
     labelKey: "provtok.label.anthropic",
     envVar: "ANTHROPIC_API_KEY",
@@ -252,7 +269,11 @@ const META: Record<Provider, { labelKey: string; envVar: string; placeholderKey:
 // function is preserved for a future polished surface.
 export function VercelPublishCard() {
   const { t, tf } = useT();
-  const [state, setState] = useState<VercelConfigState>({ tokenSet: false, teamId: "", teamSlug: "" });
+  const [state, setState] = useState<VercelConfigState>({
+    tokenSet: false,
+    teamId: "",
+    teamSlug: "",
+  });
   const [profile, setProfile] = useState<VercelUserProfile | null>(null);
   const [busy, setBusy] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -272,7 +293,9 @@ export function VercelPublishCard() {
     setBusy(false);
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const handleTest = async () => {
     setTesting(true);
@@ -317,12 +340,16 @@ export function VercelPublishCard() {
           <>
             <div className="provider-oauth-profile">
               <div className="provider-oauth-avatar" aria-hidden="true">
-                {profile.avatar
-                  ? <img src={profile.avatar} alt="" />
-                  : <span>{(profile.username || "?").slice(0, 1).toUpperCase()}</span>}
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt="" />
+                ) : (
+                  <span>{(profile.username || "?").slice(0, 1).toUpperCase()}</span>
+                )}
               </div>
               <div className="provider-oauth-id">
-                <span className="provider-oauth-name">{profile.name || profile.username || ""}</span>
+                <span className="provider-oauth-name">
+                  {profile.name || profile.username || ""}
+                </span>
                 <span className="provider-oauth-meta">
                   {profile.email || profile.username}
                   {profile.teamLabel ? ` · ${profile.teamLabel}` : ""}
@@ -331,11 +358,7 @@ export function VercelPublishCard() {
               </div>
             </div>
             <div className="provider-oauth-actions">
-              <button
-                className="df-btn df-btn--secondary"
-                onClick={handleTest}
-                disabled={testing}
-              >
+              <button className="df-btn df-btn--secondary" onClick={handleTest} disabled={testing}>
                 {testing ? t("provtok.vercel.test.testing") : t("provtok.vercel.test")}
               </button>
               <button
@@ -416,14 +439,17 @@ export function GithubProviderCard() {
     setBusy(false);
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const isConnected = profile?.ok;
-  const sourceLabel = tokenSource === "gh-cli"
-    ? t("provtok.gh.source.cli")
-    : tokenSource === "device-flow"
-      ? t("provtok.gh.source.device")
-      : "";
+  const sourceLabel =
+    tokenSource === "gh-cli"
+      ? t("provtok.gh.source.cli")
+      : tokenSource === "device-flow"
+        ? t("provtok.gh.source.device")
+        : "";
 
   return (
     <section className="settings-group" style={{ marginTop: 24 }}>
@@ -443,9 +469,11 @@ export function GithubProviderCard() {
           <>
             <div className="provider-oauth-profile">
               <div className="provider-oauth-avatar" aria-hidden="true">
-                {profile.avatar
-                  ? <img src={profile.avatar} alt="" />
-                  : <span>{(profile.login || "?").slice(0, 1).toUpperCase()}</span>}
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt="" />
+                ) : (
+                  <span>{(profile.login || "?").slice(0, 1).toUpperCase()}</span>
+                )}
               </div>
               <div className="provider-oauth-id">
                 <span className="provider-oauth-name">{profile.name || profile.login || ""}</span>
@@ -578,7 +606,9 @@ function badgeStyle(set: boolean): React.CSSProperties {
     fontSize: 10,
     color: set ? "var(--df-accent-ok, #5faa54)" : "var(--df-text-faint)",
     border: "1px solid var(--df-border-subtle)",
-    background: set ? "color-mix(in srgb, var(--df-accent-ok, #5faa54) 12%, transparent)" : "transparent",
+    background: set
+      ? "color-mix(in srgb, var(--df-accent-ok, #5faa54) 12%, transparent)"
+      : "transparent",
     padding: "2px 8px",
     borderRadius: 4,
     textTransform: "uppercase",

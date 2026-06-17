@@ -16,7 +16,10 @@ function assert(condition, message) {
 const pkg = JSON.parse(read("package.json"));
 const lock = JSON.parse(read("package-lock.json"));
 assert(pkg.license === "Apache-2.0", 'package.json license must be "Apache-2.0"');
-assert(lock.packages?.[""]?.license === "Apache-2.0", 'package-lock.json root license must be "Apache-2.0"');
+assert(
+  lock.packages?.[""]?.license === "Apache-2.0",
+  'package-lock.json root license must be "Apache-2.0"',
+);
 assert(read("LICENSE").includes("Apache License"), "LICENSE must contain Apache License text");
 assert(existsSync(join(root, "NOTICE")), "NOTICE must exist");
 assert(existsSync(join(root, "SECURITY.md")), "SECURITY.md must exist");

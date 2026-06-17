@@ -70,14 +70,21 @@ export const CanvasSelectionSchema = z.object({
 // ─── Defaults ─────────────────────────────────────────────────────────
 
 export const DEFAULT_CANVAS_PRESETS: ReadonlyArray<CanvasPreset> = Object.freeze([
-  { id: "free",        name: "Free",      ratio: "—",       width: 0,    height: 0,    hint: "no fixed canvas" },
-  { id: "1080-1080",   name: "Square",    ratio: "1:1",     width: 1080, height: 1080 },
-  { id: "1920-1080",   name: "Web Hero",  ratio: "16:9",    width: 1920, height: 1080 },
-  { id: "1080-1920",   name: "Story",     ratio: "9:16",    width: 1080, height: 1920 },
-  { id: "1080-1350",   name: "Portrait",  ratio: "4:5",     width: 1080, height: 1350 },
-  { id: "1200-630",    name: "OG Image",  ratio: "1.91:1",  width: 1200, height: 630 },
-  { id: "a4",          name: "Print A4",  ratio: "1:√2",    width: 210,  height: 297, unit: "mm" },
-  { id: "1080-canvas", name: "Card",      ratio: "1:1",     width: 1080, height: 1080, hint: "canvas marker" },
+  { id: "free", name: "Free", ratio: "—", width: 0, height: 0, hint: "no fixed canvas" },
+  { id: "1080-1080", name: "Square", ratio: "1:1", width: 1080, height: 1080 },
+  { id: "1920-1080", name: "Web Hero", ratio: "16:9", width: 1920, height: 1080 },
+  { id: "1080-1920", name: "Story", ratio: "9:16", width: 1080, height: 1920 },
+  { id: "1080-1350", name: "Portrait", ratio: "4:5", width: 1080, height: 1350 },
+  { id: "1200-630", name: "OG Image", ratio: "1.91:1", width: 1200, height: 630 },
+  { id: "a4", name: "Print A4", ratio: "1:√2", width: 210, height: 297, unit: "mm" },
+  {
+    id: "1080-canvas",
+    name: "Card",
+    ratio: "1:1",
+    width: 1080,
+    height: 1080,
+    hint: "canvas marker",
+  },
 ]);
 
 // ─── Runtime store (custom presets) ───────────────────────────────────
@@ -92,19 +99,28 @@ let _disabled: Set<string> = new Set();
 // keeps the row visible in Padrões so it can be re-enabled with the toggle).
 let _hiddenBuiltins: Set<string> = new Set();
 
-export function getCustomCanvasPresets(): CanvasPreset[] { return [..._customs]; }
-export function setCustomCanvasPresets(arr: CanvasPreset[]): void { _customs = [...arr]; }
-export function getDisabledCanvasPresetIds(): string[] { return [..._disabled]; }
-export function setDisabledCanvasPresetIds(ids: string[]): void { _disabled = new Set(ids); }
-export function getHiddenBuiltinCanvasIds(): string[] { return [..._hiddenBuiltins]; }
-export function setHiddenBuiltinCanvasIds(ids: string[]): void { _hiddenBuiltins = new Set(ids); }
+export function getCustomCanvasPresets(): CanvasPreset[] {
+  return [..._customs];
+}
+export function setCustomCanvasPresets(arr: CanvasPreset[]): void {
+  _customs = [...arr];
+}
+export function getDisabledCanvasPresetIds(): string[] {
+  return [..._disabled];
+}
+export function setDisabledCanvasPresetIds(ids: string[]): void {
+  _disabled = new Set(ids);
+}
+export function getHiddenBuiltinCanvasIds(): string[] {
+  return [..._hiddenBuiltins];
+}
+export function setHiddenBuiltinCanvasIds(ids: string[]): void {
+  _hiddenBuiltins = new Set(ids);
+}
 
 /** Default-or-custom merged catalog, filtered by enabled flag and hidden builtins. */
 export function getEffectiveCanvasPresets(): CanvasPreset[] {
-  const all = [
-    ...DEFAULT_CANVAS_PRESETS.filter((p) => !_hiddenBuiltins.has(p.id)),
-    ..._customs,
-  ];
+  const all = [...DEFAULT_CANVAS_PRESETS.filter((p) => !_hiddenBuiltins.has(p.id)), ..._customs];
   return all.filter((p) => !_disabled.has(p.id));
 }
 
@@ -176,9 +192,7 @@ export function describeSelection(
   if (!sel) return null;
   let base: string | null = null;
   if (sel.kind === "custom") {
-    base = sel.width && sel.height
-      ? `${sel.width}×${sel.height}`
-      : (i18n?.customWord ?? "Custom");
+    base = sel.width && sel.height ? `${sel.width}×${sel.height}` : (i18n?.customWord ?? "Custom");
   } else if (sel.kind === "preset" && sel.presetId) {
     const p = getCanvasPresetById(sel.presetId);
     base = p ? (i18n?.label(p) ?? p.name) : sel.presetId;

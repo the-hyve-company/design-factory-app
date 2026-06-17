@@ -10,9 +10,13 @@ interface Props {
 }
 
 const BRIDGE_WS =
-  (typeof import.meta !== "undefined" && (import.meta as { env?: { VITE_BRIDGE_URL?: string } }).env?.VITE_BRIDGE_URL
-    ? (import.meta as unknown as { env: { VITE_BRIDGE_URL: string } }).env.VITE_BRIDGE_URL.replace(/^http/, "ws")
-    : "ws://127.0.0.1:1421");
+  typeof import.meta !== "undefined" &&
+  (import.meta as { env?: { VITE_BRIDGE_URL?: string } }).env?.VITE_BRIDGE_URL
+    ? (import.meta as unknown as { env: { VITE_BRIDGE_URL: string } }).env.VITE_BRIDGE_URL.replace(
+        /^http/,
+        "ws",
+      )
+    : "ws://127.0.0.1:1421";
 
 type ConnState = "connecting" | "connected" | "disconnected" | "error";
 
@@ -30,7 +34,8 @@ export function TerminalDrawer({ onClose, inline }: Props) {
 
     // Resolve a CSS custom property to a string at construction time. xterm
     // accepts color strings, so we read tokens once at mount.
-    const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const css = (name: string) =>
+      getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     const term = new Terminal({
       convertEol: true,
       // User ask 2026-05-20: "texto ta todo espaçado, mal formatado, quero
@@ -135,13 +140,18 @@ export function TerminalDrawer({ onClose, inline }: Props) {
     // ─── Re-fit when the host becomes visible again. Tabs hidden via
     // display:none don't fire `resize`, so xterm's rows/cols can end up stale
     // after a switch. IntersectionObserver fires on visibility change.
-    const io = new IntersectionObserver((entries) => {
-      for (const ent of entries) {
-        if (ent.isIntersecting && ent.target === host) {
-          try { fit.fit(); } catch {}
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const ent of entries) {
+          if (ent.isIntersecting && ent.target === host) {
+            try {
+              fit.fit();
+            } catch {}
+          }
         }
-      }
-    }, { threshold: 0.01 });
+      },
+      { threshold: 0.01 },
+    );
     io.observe(host);
 
     // Re-fit on container size changes too. IntersectionObserver only fires
@@ -150,12 +160,16 @@ export function TerminalDrawer({ onClose, inline }: Props) {
     // rows after the parent container changes height. Users reported
     // "terminal cortando parte de baixo" 2026-04-27.
     const ro = new ResizeObserver(() => {
-      try { fit.fit(); } catch {}
+      try {
+        fit.fit();
+      } catch {}
     });
     ro.observe(host);
 
     const onResize = () => {
-      try { fit.fit(); } catch {}
+      try {
+        fit.fit();
+      } catch {}
     };
     window.addEventListener("resize", onResize);
 
@@ -163,8 +177,12 @@ export function TerminalDrawer({ onClose, inline }: Props) {
       window.removeEventListener("resize", onResize);
       io.disconnect();
       ro.disconnect();
-      try { ws.close(); } catch {}
-      try { term.dispose(); } catch {}
+      try {
+        ws.close();
+      } catch {}
+      try {
+        term.dispose();
+      } catch {}
     };
   }, []);
 
@@ -178,7 +196,9 @@ export function TerminalDrawer({ onClose, inline }: Props) {
     // Prefer the user's selection if any; fall back to the entire scrollback.
     const selection = term.getSelection();
     if (selection) {
-      try { await navigator.clipboard.writeText(selection); } catch {}
+      try {
+        await navigator.clipboard.writeText(selection);
+      } catch {}
       return;
     }
     // Walk the buffer and concatenate visible lines.
@@ -189,7 +209,9 @@ export function TerminalDrawer({ onClose, inline }: Props) {
       if (line) lines.push(line.translateToString(true));
     }
     const text = lines.join("\n").replace(/\n+$/, "");
-    try { await navigator.clipboard.writeText(text); } catch {}
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {}
   };
 
   // Grayscale brightness gradient — locked to terminal-fg (always
@@ -199,7 +221,7 @@ export function TerminalDrawer({ onClose, inline }: Props) {
   // terminal tokens keeps the status readable.
   const stateColor = {
     connecting: "rgba(215, 224, 204, 0.42)",
-    connected:  "rgba(215, 224, 204, 0.92)",
+    connected: "rgba(215, 224, 204, 0.92)",
     disconnected: "rgba(215, 224, 204, 0.55)",
     error: "var(--df-terminal-fg)",
   }[connState];
@@ -213,52 +235,73 @@ export function TerminalDrawer({ onClose, inline }: Props) {
 
   return (
     <div
-      style={inline ? {
-        flex: 1, minHeight: 0,
-        background: "var(--df-terminal-bg)",
-        display: "flex", flexDirection: "column",
-      } : {
-        position: "fixed",
-        left: 0, right: 0, bottom: 0,
-        height: 360,
-        background: "var(--df-terminal-bg)",
-        borderTop: "1px solid var(--df-border-subtle)",
-        boxShadow: "var(--df-shadow-lg)",
-        zIndex: 180,
-        display: "flex", flexDirection: "column",
-      }}
+      style={
+        inline
+          ? {
+              flex: 1,
+              minHeight: 0,
+              background: "var(--df-terminal-bg)",
+              display: "flex",
+              flexDirection: "column",
+            }
+          : {
+              position: "fixed",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 360,
+              background: "var(--df-terminal-bg)",
+              borderTop: "1px solid var(--df-border-subtle)",
+              boxShadow: "var(--df-shadow-lg)",
+              zIndex: 180,
+              display: "flex",
+              flexDirection: "column",
+            }
+      }
     >
       {/* Common-terminal style header — minimal, dark, monospace
        * status text. The skeu pill (which was disappearing in light
        * theme) and the recess frame around xterm are intentionally
        * absent here — the chrome is closer to Warp / iTerm than to
        * the rest of the DF skeu language. */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-        padding: "8px 14px",
-        borderBottom: "1px solid rgba(215, 224, 204, 0.08)",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: "8px 14px",
+          borderBottom: "1px solid rgba(215, 224, 204, 0.08)",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <span style={{
-            width: 7, height: 7,
-            borderRadius: "50%",
-            background: stateColor,
-            flexShrink: 0,
-          }} />
-          <span style={{
-            fontFamily: "var(--df-font-mono)",
-            fontSize: 11,
-            color: "rgba(215, 224, 204, 0.92)",
-            letterSpacing: "0.02em",
-          }}>
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: stateColor,
+              flexShrink: 0,
+            }}
+          />
+          <span
+            style={{
+              fontFamily: "var(--df-font-mono)",
+              fontSize: 11,
+              color: "rgba(215, 224, 204, 0.92)",
+              letterSpacing: "0.02em",
+            }}
+          >
             Terminal
           </span>
-          <span style={{
-            fontFamily: "var(--df-font-mono)",
-            fontSize: 10,
-            color: stateColor,
-            letterSpacing: "0.04em",
-          }}>
+          <span
+            style={{
+              fontFamily: "var(--df-font-mono)",
+              fontSize: 10,
+              color: stateColor,
+              letterSpacing: "0.04em",
+            }}
+          >
             · {stateLabel}
           </span>
         </div>
@@ -266,7 +309,10 @@ export function TerminalDrawer({ onClose, inline }: Props) {
           <MinimalBtn onClick={handleClear} title="Clear scrollback (process keeps running)">
             Clear
           </MinimalBtn>
-          <MinimalBtn onClick={handleCopy} title="Copy selection (or full buffer if nothing selected)">
+          <MinimalBtn
+            onClick={handleCopy}
+            title="Copy selection (or full buffer if nothing selected)"
+          >
             Copy
           </MinimalBtn>
           <MinimalBtn onClick={onClose} title="Close terminal" iconOnly>
@@ -277,13 +323,19 @@ export function TerminalDrawer({ onClose, inline }: Props) {
 
       {/* Terminal area — flat fill, no skeu recess, no margin. Closer to a
        * native terminal app: chrome on top, content fills the rest. */}
-      <div style={{
-        flex: 1, minHeight: 0,
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-      }}>
-        <div ref={hostRef} style={{ flex: 1, minHeight: 0, padding: "10px 14px 14px", overflow: "hidden" }} />
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          ref={hostRef}
+          style={{ flex: 1, minHeight: 0, padding: "10px 14px 14px", overflow: "hidden" }}
+        />
       </div>
     </div>
   );
@@ -293,11 +345,23 @@ export function TerminalDrawer({ onClose, inline }: Props) {
 // Inline SVG icons
 // ============================================================================
 
-interface IconProps { size?: number; color?: string }
+interface IconProps {
+  size?: number;
+  color?: string;
+}
 
 function XIcon({ size = 12, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>

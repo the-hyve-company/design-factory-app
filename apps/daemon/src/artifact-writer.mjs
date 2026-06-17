@@ -75,11 +75,16 @@ const locks = new Map();
 async function withFileLock(finalPath, fn) {
   const previous = locks.get(finalPath) || Promise.resolve();
   let release;
-  const next = new Promise((r) => { release = r; });
+  const next = new Promise((r) => {
+    release = r;
+  });
   // Important: store `next` BEFORE awaiting `previous`. That way a third
   // concurrent caller that arrives now will queue behind us, not behind
   // the holder we're about to replace.
-  locks.set(finalPath, previous.then(() => next));
+  locks.set(
+    finalPath,
+    previous.then(() => next),
+  );
 
   // Bound the wait — if the queue is jammed (caller held the lock too long
   // because of a hung exec), surface a structured-conflict instead of
@@ -89,8 +94,12 @@ async function withFileLock(finalPath, fn) {
   let timeoutId = null;
   const waited = await Promise.race([
     previous.then(() => "ok"),
-    new Promise((_, reject) => { timeoutId = setTimeout(() => reject(timeoutErr), LOCK_WAIT_MS); }),
-  ]).catch((err) => { throw err; });
+    new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(timeoutErr), LOCK_WAIT_MS);
+    }),
+  ]).catch((err) => {
+    throw err;
+  });
   if (timeoutId) clearTimeout(timeoutId);
   if (waited !== "ok") throw timeoutErr;
 
@@ -109,9 +118,11 @@ async function withFileLock(finalPath, fn) {
     if (current) {
       // Best-effort cleanup. If a third writer has already started, they
       // overwrote this slot before we got here.
-      Promise.resolve(current).then(() => {
-        if (locks.get(finalPath) === current) locks.delete(finalPath);
-      }).catch(() => locks.delete(finalPath));
+      Promise.resolve(current)
+        .then(() => {
+          if (locks.get(finalPath) === current) locks.delete(finalPath);
+        })
+        .catch(() => locks.delete(finalPath));
     }
   }
 }
@@ -127,7 +138,11 @@ async function withFileLock(finalPath, fn) {
  *
  * Returns `{ ok: true }` or `{ ok: false, reason }`.
  */
-export function validateArtifactStaticP0Minimal({ type, content, minBytes = DEFAULT_MIN_HTML_BYTES }) {
+export function validateArtifactStaticP0Minimal({
+  type,
+  content,
+  minBytes = DEFAULT_MIN_HTML_BYTES,
+}) {
   if (typeof content !== "string") {
     return { ok: false, reason: "content-not-string" };
   }
@@ -136,9 +151,7 @@ export function validateArtifactStaticP0Minimal({ type, content, minBytes = DEFA
     return { ok: false, reason: "empty-content" };
   }
   const isHtmlFamily =
-    type === "text/html" ||
-    type === "image/svg+xml" ||
-    type === "application/xhtml+xml";
+    type === "text/html" || type === "image/svg+xml" || type === "application/xhtml+xml";
 
   if (isHtmlFamily) {
     if (bytes < minBytes) {
@@ -164,14 +177,22 @@ function extensionForType(type, identifier) {
   if (fromPath) return fromPath;
   // Fall back to a tiny mime → ext map for the families we actually emit.
   switch (type) {
-    case "text/html": return "html";
-    case "image/svg+xml": return "svg";
-    case "text/markdown": return "md";
-    case "text/plain": return "txt";
-    case "application/json": return "json";
-    case "text/css": return "css";
-    case "application/javascript": return "js";
-    default: return "bin";
+    case "text/html":
+      return "html";
+    case "image/svg+xml":
+      return "svg";
+    case "text/markdown":
+      return "md";
+    case "text/plain":
+      return "txt";
+    case "application/json":
+      return "json";
+    case "text/css":
+      return "css";
+    case "application/javascript":
+      return "js";
+    default:
+      return "bin";
   }
 }
 
@@ -215,13 +236,15 @@ async function pruneBackups(backupDir, slug, ext) {
   } catch {
     return;
   }
-  const matching = entries
-    .filter((name) => name.endsWith(`-${slug}.${ext}`))
-    .sort(); // ISO timestamps sort lexicographically.
+  const matching = entries.filter((name) => name.endsWith(`-${slug}.${ext}`)).sort(); // ISO timestamps sort lexicographically.
   while (matching.length > BACKUP_RETENTION) {
     const old = matching.shift();
     if (!old) break;
-    try { await unlink(join(backupDir, old)); } catch { /* best-effort */ }
+    try {
+      await unlink(join(backupDir, old));
+    } catch {
+      /* best-effort */
+    }
   }
 }
 
@@ -316,8 +339,8 @@ export async function writeArtifactSafely({
   if (hashHintMismatch) {
     console.warn(
       `[artifact-writer] hash hint mismatch for ${slugSegment}: ` +
-      `client=${contentHash.slice(0, 12)}… recalc=${recalculatedHash.slice(0, 12)}… ` +
-      `(D28: trusting recalculated)`
+        `client=${contentHash.slice(0, 12)}… recalc=${recalculatedHash.slice(0, 12)}… ` +
+        `(D28: trusting recalculated)`,
     );
   }
 
@@ -400,7 +423,11 @@ export async function writeArtifactSafely({
 
     // ── Prune backups to retention cap. Best-effort, don't fail the write.
     if (backupPath) {
-      try { await pruneBackups(backupDir, slugForBackup(finalPath), ext); } catch { /* */ }
+      try {
+        await pruneBackups(backupDir, slugForBackup(finalPath), ext);
+      } catch {
+        /* */
+      }
     }
 
     return {

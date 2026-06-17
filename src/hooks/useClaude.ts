@@ -1,6 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 type UnlistenFn = () => void;
-import { invokeGenerateBase, invokeApplyStyle, invokeAddComponent, invokeEditorialVerb, type ProjectContext, type EditorialVerbInvocation } from "@/runtime/prompt-invoker";
+import {
+  invokeGenerateBase,
+  invokeApplyStyle,
+  invokeAddComponent,
+  invokeEditorialVerb,
+  type ProjectContext,
+  type EditorialVerbInvocation,
+} from "@/runtime/prompt-invoker";
 import type { SubAgentState } from "@/runtime/stream-parser";
 import type { StreamUsage, StreamResult, ToolCall, ToolResult } from "@/lib/claude-bridge";
 import type { ToolUseRecord } from "@/components/ChatMessage";
@@ -81,10 +88,26 @@ export interface UseClaudeReturn {
   // Actions — each accepts optional sideChannels so the caller can persist
   // session_id / surface auth failures without subscribing to the full hook
   // state.
-  generate: (prompt: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => Promise<void>;
-  applyStyle: (instruction: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => Promise<void>;
-  addComponent: (description: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => Promise<void>;
-  runVerb: (verb: EditorialVerbInvocation, ctx: ProjectContext, sideChannels?: StreamSideChannels) => Promise<void>;
+  generate: (
+    prompt: string,
+    ctx: ProjectContext,
+    sideChannels?: StreamSideChannels,
+  ) => Promise<void>;
+  applyStyle: (
+    instruction: string,
+    ctx: ProjectContext,
+    sideChannels?: StreamSideChannels,
+  ) => Promise<void>;
+  addComponent: (
+    description: string,
+    ctx: ProjectContext,
+    sideChannels?: StreamSideChannels,
+  ) => Promise<void>;
+  runVerb: (
+    verb: EditorialVerbInvocation,
+    ctx: ProjectContext,
+    sideChannels?: StreamSideChannels,
+  ) => Promise<void>;
   cancel: () => void;
   reset: () => void;
 }
@@ -183,214 +206,247 @@ export function useClaudeState(): UseClaudeReturn {
     setElapsedMs(0);
   }, [cancel]);
 
-  const runStream = useCallback(async (
-    invoker: (callbacks: Parameters<typeof invokeGenerateBase>[2]) => Promise<UnlistenFn>,
-    sideChannels?: StreamSideChannels,
-    /** Original user prompt — passed in so the end-of-stream suspicious-
-     *  done detector can decide whether a 4-char reply is legitimate
-     *  (trivial prompt) or a truncation. Empty by default; entry points
-     *  (generate/applyStyle/etc) populate it from their first arg. */
-    promptText?: string,
-  ) => {
-    if (status === "streaming") cancel();
-    setOutput("");
-    setError(null);
-    setSubAgents([]);
-    promptForRunRef.current = promptText ?? "";
-    toolCountRef.current = 0;
-    // Label progression — we want the wait to FEEL accurate. On Opus with
-    // extended thinking, first visible output can take 1-5 min. Keeping
-    // "starting..." up the whole time looks broken. Instead:
-    //   iniciando agente...   → spawn CLI, auth, cwd
-    //   pensando (thinking)…  → after 6s with no output (Opus extended
-    //                            thinking mode kicks in)
-    //   gerando código...     → first text event (CLI started writing)
-    //   trabalhando...        → first tool_call (Write/Edit fired)
-    setStreamLabel("starting agent...");
-    setStatus("streaming");
-    accumulatedRef.current = "";
-    firstEventSeenRef.current = false;
-    setTokens(0);
-    setTtftMs(null);
-    setModelName(null);
-    setUsage(null);
-    setResult(null);
-    setTools([]);
-    const start = Date.now();
-    setStartedAt(start);
-    setElapsedMs(0);
+  const runStream = useCallback(
+    async (
+      invoker: (callbacks: Parameters<typeof invokeGenerateBase>[2]) => Promise<UnlistenFn>,
+      sideChannels?: StreamSideChannels,
+      /** Original user prompt — passed in so the end-of-stream suspicious-
+       *  done detector can decide whether a 4-char reply is legitimate
+       *  (trivial prompt) or a truncation. Empty by default; entry points
+       *  (generate/applyStyle/etc) populate it from their first arg. */
+      promptText?: string,
+    ) => {
+      if (status === "streaming") cancel();
+      setOutput("");
+      setError(null);
+      setSubAgents([]);
+      promptForRunRef.current = promptText ?? "";
+      toolCountRef.current = 0;
+      // Label progression — we want the wait to FEEL accurate. On Opus with
+      // extended thinking, first visible output can take 1-5 min. Keeping
+      // "starting..." up the whole time looks broken. Instead:
+      //   iniciando agente...   → spawn CLI, auth, cwd
+      //   pensando (thinking)…  → after 6s with no output (Opus extended
+      //                            thinking mode kicks in)
+      //   gerando código...     → first text event (CLI started writing)
+      //   trabalhando...        → first tool_call (Write/Edit fired)
+      setStreamLabel("starting agent...");
+      setStatus("streaming");
+      accumulatedRef.current = "";
+      firstEventSeenRef.current = false;
+      setTokens(0);
+      setTtftMs(null);
+      setModelName(null);
+      setUsage(null);
+      setResult(null);
+      setTools([]);
+      const start = Date.now();
+      setStartedAt(start);
+      setElapsedMs(0);
 
-    // Auto-transition to a single short label after 6s. Opus extended
-    // thinking is silent for tens of seconds before the first event —
-    // staring at "iniciando agente..." misleads. Keep label terse; the
-    // elapsed counter beside it carries the wait info.
-    const thinkingTimer = window.setTimeout(() => {
-      if (!firstEventSeenRef.current) {
-        setStreamLabel("generating...");
-      }
-    }, 6000);
-
-    // Stream Lifecycle audit (post-#118): arm the idle watchdog. The
-    // first stream activity (text / tool_call / etc) bumps it; if the
-    // stream goes silent for STREAM_IDLE_TIMEOUT_MS the watchdog
-    // terminates the stream and flips status to "interrupted".
-    watchdogRef.current?.stop();
-    const watchdogStart = Date.now();
-    watchdogRef.current = createIdleWatchdog(() => {
-      const idleMs = Date.now() - watchdogStart;
-      // Cancel the in-flight transport (closes the SSE connection).
-      unlistenRef.current?.();
-      unlistenRef.current = null;
-      window.clearTimeout(thinkingTimer);
-      setStreamLabel("interrupted");
-      setStatus("interrupted");
-      sideChannels?.onInterrupted?.(idleMs);
-    });
-
-    let accumulated = "";
-
-    const unlisten = await invoker({
-      onText: (text) => {
-        watchdogRef.current?.bump();
-        accumulated += text;
-        accumulatedRef.current = accumulated;
-        setOutput(accumulated);
-        setTtftMs((cur) => (cur === null ? Date.now() - start : cur));
-        setTokens((cur) => Math.max(cur, Math.round(accumulated.length / 4)));
-        // Single ref-based gate: first event flips the label, that's it.
-        // No closure check. No live-state read. Bulletproof.
+      // Auto-transition to a single short label after 6s. Opus extended
+      // thinking is silent for tens of seconds before the first event —
+      // staring at "iniciando agente..." misleads. Keep label terse; the
+      // elapsed counter beside it carries the wait info.
+      const thinkingTimer = window.setTimeout(() => {
         if (!firstEventSeenRef.current) {
-          firstEventSeenRef.current = true;
-          window.clearTimeout(thinkingTimer);
           setStreamLabel("generating...");
         }
-      },
-      onMeta: (m) => {
-        watchdogRef.current?.bump();
-        if (m.model) setModelName(m.model);
-        if (typeof m.ttftMs === "number") setTtftMs(m.ttftMs);
-      },
-      onUsage: (u) => {
-        watchdogRef.current?.bump();
-        setUsage(u);
-        // Live token count from the API. This is the authoritative source
-        // (replaces the chars/4 estimate). message_delta usage events fire
-        // periodically during streaming.
-        if (typeof u.outputTokens === "number") {
-          setTokens((cur) => Math.max(cur, u.outputTokens!));
-        }
-      },
-      onResult: (r) => setResult(r),
-      onToolCall: (call: ToolCall) => {
-        watchdogRef.current?.bump();
-        recordTurn("tool", "tool_call", {
-          id: call.id, name: call.name,
-          file_path: (call.input?.file_path ?? call.input?.path) as string | undefined,
-          via: "useClaude",
-        });
-        // Dedup por id — se o mesmo tool_call fires 2× (content_block_stop +
-        // terminal message), não dupla o chip. Fix de duplicação 2026-04-23.
-        setTools((prev) => {
-          const existing = prev.findIndex((t) => t.id === call.id);
-          if (existing >= 0) {
-            const next = [...prev];
-            next[existing] = { ...next[existing], name: call.name, input: call.input };
-            return next;
+      }, 6000);
+
+      // Stream Lifecycle audit (post-#118): arm the idle watchdog. The
+      // first stream activity (text / tool_call / etc) bumps it; if the
+      // stream goes silent for STREAM_IDLE_TIMEOUT_MS the watchdog
+      // terminates the stream and flips status to "interrupted".
+      watchdogRef.current?.stop();
+      const watchdogStart = Date.now();
+      watchdogRef.current = createIdleWatchdog(() => {
+        const idleMs = Date.now() - watchdogStart;
+        // Cancel the in-flight transport (closes the SSE connection).
+        unlistenRef.current?.();
+        unlistenRef.current = null;
+        window.clearTimeout(thinkingTimer);
+        setStreamLabel("interrupted");
+        setStatus("interrupted");
+        sideChannels?.onInterrupted?.(idleMs);
+      });
+
+      let accumulated = "";
+
+      const unlisten = await invoker({
+        onText: (text) => {
+          watchdogRef.current?.bump();
+          accumulated += text;
+          accumulatedRef.current = accumulated;
+          setOutput(accumulated);
+          setTtftMs((cur) => (cur === null ? Date.now() - start : cur));
+          setTokens((cur) => Math.max(cur, Math.round(accumulated.length / 4)));
+          // Single ref-based gate: first event flips the label, that's it.
+          // No closure check. No live-state read. Bulletproof.
+          if (!firstEventSeenRef.current) {
+            firstEventSeenRef.current = true;
+            window.clearTimeout(thinkingTimer);
+            setStreamLabel("generating...");
           }
-          toolCountRef.current = prev.length + 1;
-          return [...prev, { id: call.id, name: call.name, input: call.input }];
-        });
-        // Same ref-based gate as onText — first event flips the label.
-        if (!firstEventSeenRef.current) {
-          firstEventSeenRef.current = true;
-          window.clearTimeout(thinkingTimer);
-          setStreamLabel("working...");
-        }
-        // Forward to the caller so EditorScreen can react to Write/Edit on the
-        // project's HTML file (open the tab, refresh the iframe). Without this,
-        // first-prompt generation (which uses Write tool) writes to disk but
-        // the iframe never picks it up — user reported "preciso abrir folder
-        // e clicar no html". Fix 2026-04-27.
-        sideChannels?.onToolCall?.(call);
-      },
-      onToolResult: (tr: ToolResult) => {
-        watchdogRef.current?.bump();
-        recordTurn("tool", "tool_result", {
-          id: tr.id, isError: tr.isError,
-          content_len: typeof tr.content === "string" ? tr.content.length : 0,
-          via: "useClaude",
-        });
-        setTools((prev) => prev.map((t) => t.id === tr.id ? { ...t, result: { content: tr.content, isError: tr.isError } } : t));
-      },
-      onSession: (sid: string) => {
-        sideChannels?.onSession?.(sid);
-      },
-      onAuthRequired: (detail: string) => {
-        sideChannels?.onAuthRequired?.(detail);
-      },
-      onDone: (fullText) => {
-        window.clearTimeout(thinkingTimer);
-        watchdogRef.current?.stop();
-        watchdogRef.current = null;
-        const finalText = fullText || accumulated;
-        recordTurn("client", "onDone", {
-          text_len: finalText?.length ?? 0,
-          tool_count: toolCountRef.current,
-          via: "useClaude",
-        });
-        setOutput(finalText);
-        setStreamLabel("done");
-        setStatus("done");
-        unlistenRef.current = null;
-        // Stream Lifecycle audit (post-#118): catch the case where the
-        // provider signals `done` but the response is suspiciously thin
-        // — 4-char "Você" with zero tools on a long prompt. Fires the
-        // sideChannel so EditorScreen can render a "resposta cortada"
-        // banner; we never auto-retry (auditor explicit ask).
-        if (
-          isSuspiciousDone({
-            text: finalText,
-            toolCount: toolCountRef.current,
-            promptText: promptForRunRef.current,
-          })
-        ) {
-          sideChannels?.onSuspiciousDone?.({
-            text: finalText,
-            toolCount: toolCountRef.current,
+        },
+        onMeta: (m) => {
+          watchdogRef.current?.bump();
+          if (m.model) setModelName(m.model);
+          if (typeof m.ttftMs === "number") setTtftMs(m.ttftMs);
+        },
+        onUsage: (u) => {
+          watchdogRef.current?.bump();
+          setUsage(u);
+          // Live token count from the API. This is the authoritative source
+          // (replaces the chars/4 estimate). message_delta usage events fire
+          // periodically during streaming.
+          if (typeof u.outputTokens === "number") {
+            setTokens((cur) => Math.max(cur, u.outputTokens!));
+          }
+        },
+        onResult: (r) => setResult(r),
+        onToolCall: (call: ToolCall) => {
+          watchdogRef.current?.bump();
+          recordTurn("tool", "tool_call", {
+            id: call.id,
+            name: call.name,
+            file_path: (call.input?.file_path ?? call.input?.path) as string | undefined,
+            via: "useClaude",
           });
-        }
-      },
-      onError: (err) => {
-        window.clearTimeout(thinkingTimer);
-        watchdogRef.current?.stop();
-        watchdogRef.current = null;
-        setError(err);
-        setStatus("error");
-        unlistenRef.current = null;
-      },
-    });
+          // Dedup por id — se o mesmo tool_call fires 2× (content_block_stop +
+          // terminal message), não dupla o chip. Fix de duplicação 2026-04-23.
+          setTools((prev) => {
+            const existing = prev.findIndex((t) => t.id === call.id);
+            if (existing >= 0) {
+              const next = [...prev];
+              next[existing] = { ...next[existing], name: call.name, input: call.input };
+              return next;
+            }
+            toolCountRef.current = prev.length + 1;
+            return [...prev, { id: call.id, name: call.name, input: call.input }];
+          });
+          // Same ref-based gate as onText — first event flips the label.
+          if (!firstEventSeenRef.current) {
+            firstEventSeenRef.current = true;
+            window.clearTimeout(thinkingTimer);
+            setStreamLabel("working...");
+          }
+          // Forward to the caller so EditorScreen can react to Write/Edit on the
+          // project's HTML file (open the tab, refresh the iframe). Without this,
+          // first-prompt generation (which uses Write tool) writes to disk but
+          // the iframe never picks it up — user reported "preciso abrir folder
+          // e clicar no html". Fix 2026-04-27.
+          sideChannels?.onToolCall?.(call);
+        },
+        onToolResult: (tr: ToolResult) => {
+          watchdogRef.current?.bump();
+          recordTurn("tool", "tool_result", {
+            id: tr.id,
+            isError: tr.isError,
+            content_len: typeof tr.content === "string" ? tr.content.length : 0,
+            via: "useClaude",
+          });
+          setTools((prev) =>
+            prev.map((t) =>
+              t.id === tr.id ? { ...t, result: { content: tr.content, isError: tr.isError } } : t,
+            ),
+          );
+        },
+        onSession: (sid: string) => {
+          sideChannels?.onSession?.(sid);
+        },
+        onAuthRequired: (detail: string) => {
+          sideChannels?.onAuthRequired?.(detail);
+        },
+        onDone: (fullText) => {
+          window.clearTimeout(thinkingTimer);
+          watchdogRef.current?.stop();
+          watchdogRef.current = null;
+          const finalText = fullText || accumulated;
+          recordTurn("client", "onDone", {
+            text_len: finalText?.length ?? 0,
+            tool_count: toolCountRef.current,
+            via: "useClaude",
+          });
+          setOutput(finalText);
+          setStreamLabel("done");
+          setStatus("done");
+          unlistenRef.current = null;
+          // Stream Lifecycle audit (post-#118): catch the case where the
+          // provider signals `done` but the response is suspiciously thin
+          // — 4-char "Você" with zero tools on a long prompt. Fires the
+          // sideChannel so EditorScreen can render a "resposta cortada"
+          // banner; we never auto-retry (auditor explicit ask).
+          if (
+            isSuspiciousDone({
+              text: finalText,
+              toolCount: toolCountRef.current,
+              promptText: promptForRunRef.current,
+            })
+          ) {
+            sideChannels?.onSuspiciousDone?.({
+              text: finalText,
+              toolCount: toolCountRef.current,
+            });
+          }
+        },
+        onError: (err) => {
+          window.clearTimeout(thinkingTimer);
+          watchdogRef.current?.stop();
+          watchdogRef.current = null;
+          setError(err);
+          setStatus("error");
+          unlistenRef.current = null;
+        },
+      });
 
-    unlistenRef.current = unlisten;
-    // ttftMs and streamLabel are no longer read inside; their reads were
-    // closure-stale across turns, which is why label transitions were
-    // broken. Both are now updated via functional setState above.
-  }, [status, cancel]);
+      unlistenRef.current = unlisten;
+      // ttftMs and streamLabel are no longer read inside; their reads were
+      // closure-stale across turns, which is why label transitions were
+      // broken. Both are now updated via functional setState above.
+    },
+    [status, cancel],
+  );
 
-  const generate = useCallback(async (prompt: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
-    await runStream((cbs) => invokeGenerateBase(prompt, ctx, cbs), sideChannels, prompt);
-  }, [runStream]);
+  const generate = useCallback(
+    async (prompt: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
+      await runStream((cbs) => invokeGenerateBase(prompt, ctx, cbs), sideChannels, prompt);
+    },
+    [runStream],
+  );
 
-  const applyStyle = useCallback(async (instruction: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
-    await runStream((cbs) => invokeApplyStyle(instruction, ctx, cbs), sideChannels, instruction);
-  }, [runStream]);
+  const applyStyle = useCallback(
+    async (instruction: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
+      await runStream((cbs) => invokeApplyStyle(instruction, ctx, cbs), sideChannels, instruction);
+    },
+    [runStream],
+  );
 
-  const addComponent = useCallback(async (description: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
-    await runStream((cbs) => invokeAddComponent(description, ctx, cbs), sideChannels, description);
-  }, [runStream]);
+  const addComponent = useCallback(
+    async (description: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
+      await runStream(
+        (cbs) => invokeAddComponent(description, ctx, cbs),
+        sideChannels,
+        description,
+      );
+    },
+    [runStream],
+  );
 
-  const runVerb = useCallback(async (verb: EditorialVerbInvocation, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
-    await runStream((cbs) => invokeEditorialVerb(verb, ctx, cbs), sideChannels, `/${verb.id} ${verb.args}`.trim());
-  }, [runStream]);
+  const runVerb = useCallback(
+    async (
+      verb: EditorialVerbInvocation,
+      ctx: ProjectContext,
+      sideChannels?: StreamSideChannels,
+    ) => {
+      await runStream(
+        (cbs) => invokeEditorialVerb(verb, ctx, cbs),
+        sideChannels,
+        `/${verb.id} ${verb.args}`.trim(),
+      );
+    },
+    [runStream],
+  );
 
   return {
     output,

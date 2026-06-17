@@ -19,7 +19,13 @@ interface Props {
   onConfirm: () => void;
 }
 
-export function RatioChangeConfirmModal({ open, oldRatio, targetRatio, onCancel, onConfirm }: Props) {
+export function RatioChangeConfirmModal({
+  open,
+  oldRatio,
+  targetRatio,
+  onCancel,
+  onConfirm,
+}: Props) {
   const oldDims = RATIO_DIMS[oldRatio];
   const newDims = RATIO_DIMS[targetRatio];
 
@@ -68,15 +74,29 @@ export function RatioChangeConfirmModal({ open, oldRatio, targetRatio, onCancel,
         </div>
       }
     >
-      <p style={{ fontSize: "var(--df-text-sm)", color: "var(--df-text-primary)", lineHeight: 1.6, margin: 0 }}>
-        O conteúdo atual foi gerado para <strong>{oldRatio}</strong> ({oldDims.label}).
-        Para adaptar ao novo formato <strong>{targetRatio}</strong> ({newDims.label}), o
-        Design Factory vai regenerar o HTML preservando texto, animações, cores e timing
-        das scenes — apenas redimensionando o layout.
+      <p
+        style={{
+          fontSize: "var(--df-text-sm)",
+          color: "var(--df-text-primary)",
+          lineHeight: 1.6,
+          margin: 0,
+        }}
+      >
+        O conteúdo atual foi gerado para <strong>{oldRatio}</strong> ({oldDims.label}). Para adaptar
+        ao novo formato <strong>{targetRatio}</strong> ({newDims.label}), o Design Factory vai
+        regenerar o HTML preservando texto, animações, cores e timing das scenes — apenas
+        redimensionando o layout.
       </p>
-      <p style={{ fontSize: "var(--df-text-sm)", color: "var(--df-text-muted)", lineHeight: 1.6, marginTop: 12 }}>
-        Esse processo demora 30s-2min e usa o provider/modelo selecionado. Você pode
-        cancelar a qualquer momento.
+      <p
+        style={{
+          fontSize: "var(--df-text-sm)",
+          color: "var(--df-text-muted)",
+          lineHeight: 1.6,
+          marginTop: 12,
+        }}
+      >
+        Esse processo demora 30s-2min e usa o provider/modelo selecionado. Você pode cancelar a
+        qualquer momento.
       </p>
     </DfModal>
   );

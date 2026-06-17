@@ -39,31 +39,29 @@ const ROOT = path.resolve(__dirname, "..");
 const SRC = path.join(ROOT, "src");
 const BASELINE_FILE = path.join(ROOT, "docs", "i18n-baseline.txt");
 
-const SKIP_DIRS = new Set([
-  "node_modules", "dist", "build", ".git", ".next", "coverage",
-]);
+const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".git", ".next", "coverage"]);
 
 // Files / paths we don't audit (canonical labels live here, generated maps,
 // tests, lab routes that are intentionally bilingual or English-by-design).
 const SKIP_FILE_PATTERNS = [
-  /\/i18n\//,                        // i18n tables themselves
-  /\/data\//,                        // canonical data labels (have i18n bridge)
-  /\.test\.(tsx?|jsx?)$/,            // tests
-  /\.spec\.(tsx?|jsx?)$/,            // specs
+  /\/i18n\//, // i18n tables themselves
+  /\/data\//, // canonical data labels (have i18n bridge)
+  /\.test\.(tsx?|jsx?)$/, // tests
+  /\.spec\.(tsx?|jsx?)$/, // specs
   // Lab/dev surfaces — intentionally scratch-pad, not user-facing.
   /\/screens\/lab\//,
-  /\/components\/lab\//,            // modal-lab redesign directions (?modalLab=1)
+  /\/components\/lab\//, // modal-lab redesign directions (?modalLab=1)
   /NPCanvasShell|NPCanonicalPlus|NPPromptFirst|NPSplit/,
-  /Lab\.tsx$/,                       // *Lab.tsx scratch pads
+  /Lab\.tsx$/, // *Lab.tsx scratch pads
   /NewProjectLabScreen\.tsx$/,
   /NewProjectRegionsLabScreen\.tsx$/,
   /NewProject(?:CanonicalPlus|Conv|Mood|PromptFirst|Spatial|Verb)Lab\.tsx$/,
   /NewProjectLabsHub\.tsx$/,
-  /\/screens\/DevScreen\.tsx$/,      // /dev internal scratchpad
+  /\/screens\/DevScreen\.tsx$/, // /dev internal scratchpad
   /\/screens\/ShowcaseScreen\.tsx$/, // showcase route — DS demo
-  /\/screens\/ShadersScreen\.tsx$/,  // shaders route — DS demo
-  /\/__tests__\//,                   // mocha-style tests
-  /\.d\.ts$/,                        // type defs
+  /\/screens\/ShadersScreen\.tsx$/, // shaders route — DS demo
+  /\/__tests__\//, // mocha-style tests
+  /\.d\.ts$/, // type defs
 ];
 
 // JSX attributes that surface user-facing text.
@@ -127,7 +125,7 @@ function isLikelyText(s) {
   }
 
   // Single dotted identifier or ALL_CAPS slug → likely a key/enum, not text.
-  if (/^[a-z][a-z0-9]*(\.[a-z0-9]+)+$/.test(trimmed)) return false;       // foo.bar.baz keys
+  if (/^[a-z][a-z0-9]*(\.[a-z0-9]+)+$/.test(trimmed)) return false; // foo.bar.baz keys
   if (/^[A-Z][A-Z0-9_]+$/.test(trimmed) && trimmed.length < 30) return false; // SCREAMING
 
   // CamelCase identifier (no spaces) → likely a className, role, etc.
@@ -138,7 +136,11 @@ function isLikelyText(s) {
   }
 
   // Class-y strings (common Tailwind patterns).
-  if (/(^|\s)(flex|grid|absolute|relative|text-|bg-|border-|rounded-|px-|py-|gap-|w-|h-)/.test(trimmed)) {
+  if (
+    /(^|\s)(flex|grid|absolute|relative|text-|bg-|border-|rounded-|px-|py-|gap-|w-|h-)/.test(
+      trimmed,
+    )
+  ) {
     if (trimmed.split(/\s+/).every((tok) => /^[a-z][a-z0-9-]*[:/]?[a-z0-9-]*$/i.test(tok))) {
       return false;
     }
@@ -317,11 +319,15 @@ function writeBaseline(offenders) {
 
 function reportText(offenders, baseline) {
   const lines = [];
-  let kept = 0, whitelisted = 0;
+  let kept = 0,
+    whitelisted = 0;
   for (const o of offenders.list) {
     const rel = path.relative(ROOT, o.file);
     const key = offenderKey(o);
-    if (baseline.has(key)) { whitelisted++; continue; }
+    if (baseline.has(key)) {
+      whitelisted++;
+      continue;
+    }
     kept++;
     lines.push(`${rel}:${o.line}:${o.col}  [${o.kind}]  ${JSON.stringify(o.text)}`);
   }
@@ -409,7 +415,9 @@ function main() {
 
   if (writeBaselineFlag) {
     writeBaseline(offenders);
-    process.stdout.write(`# Wrote ${offenders.list.length} entries to ${path.relative(ROOT, BASELINE_FILE)}\n`);
+    process.stdout.write(
+      `# Wrote ${offenders.list.length} entries to ${path.relative(ROOT, BASELINE_FILE)}\n`,
+    );
     process.exit(0);
   }
 

@@ -20,7 +20,10 @@ interface PreviewSandboxBadgeProps {
   warnIfPermissive?: boolean;
 }
 
-export function PreviewSandboxBadge({ sandbox, warnIfPermissive = false }: PreviewSandboxBadgeProps) {
+export function PreviewSandboxBadge({
+  sandbox,
+  warnIfPermissive = false,
+}: PreviewSandboxBadgeProps) {
   const tokens = sandbox.split(/\s+/).filter(Boolean);
   const isStrict = !tokens.includes("allow-same-origin");
   const isPermissive = tokens.includes("allow-same-origin");

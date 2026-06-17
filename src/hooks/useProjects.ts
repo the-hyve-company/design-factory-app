@@ -17,7 +17,13 @@ import { slugFromPath } from "@/lib/project-files";
 export type { DbProject as Project };
 
 function slugify(s: string): string {
-  return s.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 48) || "project";
+  return (
+    s
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
+      .slice(0, 48) || "project"
+  );
 }
 
 // Collapse multiple entries that point at the same folder (same slug), keeping
@@ -80,55 +86,59 @@ export function useProjects() {
     // For each folder: prefer .df/meta.json; fall back to DB metadata;
     // fall back to synthesized defaults. On any miss, write the meta.json
     // so subsequent loads stay filesystem-canonical.
-    const merged = await Promise.all(fsList.map(async (fs): Promise<DbProject> => {
-      dbSlugsSeen.add(fs.slug);
-      const meta = await readProjectMeta(fs.slug);
-      const dbEntry = dbBySlug.get(fs.slug);
-      if (meta) {
-        // meta.json wins. Refresh updated_at from disk mtime when newer so
-        // the grid sorts by real activity, not only the last metadata write.
-        const updatedAt = Math.max(meta.updated_at ?? 0, fs.mtime || 0);
-        return {
-          id: meta.id,
-          name: meta.name,
-          path: fs.path,
-          mode: meta.mode,
-          created_at: meta.created_at,
-          updated_at: updatedAt,
-        };
-      }
-      // No meta.json yet — migrate from DB if we have an entry, otherwise
-      // synthesize defaults. Either way, persist to meta.json.
-      const now = Date.now();
-      const synth: ProjectMeta = dbEntry
-        ? {
-            id: dbEntry.id,
-            name: dbEntry.name,
-            mode: dbEntry.mode,
-            created_at: dbEntry.created_at,
-            updated_at: Math.max(dbEntry.updated_at || 0, fs.mtime || now),
-          }
-        : {
-            id: crypto.randomUUID(),
-            name: fs.slug,
-            mode: "hifi",
-            created_at: fs.mtime || now,
-            updated_at: fs.mtime || now,
+    const merged = await Promise.all(
+      fsList.map(async (fs): Promise<DbProject> => {
+        dbSlugsSeen.add(fs.slug);
+        const meta = await readProjectMeta(fs.slug);
+        const dbEntry = dbBySlug.get(fs.slug);
+        if (meta) {
+          // meta.json wins. Refresh updated_at from disk mtime when newer so
+          // the grid sorts by real activity, not only the last metadata write.
+          const updatedAt = Math.max(meta.updated_at ?? 0, fs.mtime || 0);
+          return {
+            id: meta.id,
+            name: meta.name,
+            path: fs.path,
+            mode: meta.mode,
+            created_at: meta.created_at,
+            updated_at: updatedAt,
           };
-      void writeProjectMeta(fs.slug, synth).catch(warn("writeProjectMeta:fs.slug"));
-      // Keep the DB cache in sync for Tauri + quick reads.
-      if (!dbEntry) {
-        void db.createProject(synth.name, fs.path, synth.mode).catch(warn("createProject:reconcile-synth"));
-      }
-      return {
-        id: synth.id,
-        name: synth.name,
-        path: fs.path,
-        mode: synth.mode,
-        created_at: synth.created_at,
-        updated_at: synth.updated_at,
-      };
-    }));
+        }
+        // No meta.json yet — migrate from DB if we have an entry, otherwise
+        // synthesize defaults. Either way, persist to meta.json.
+        const now = Date.now();
+        const synth: ProjectMeta = dbEntry
+          ? {
+              id: dbEntry.id,
+              name: dbEntry.name,
+              mode: dbEntry.mode,
+              created_at: dbEntry.created_at,
+              updated_at: Math.max(dbEntry.updated_at || 0, fs.mtime || now),
+            }
+          : {
+              id: crypto.randomUUID(),
+              name: fs.slug,
+              mode: "hifi",
+              created_at: fs.mtime || now,
+              updated_at: fs.mtime || now,
+            };
+        void writeProjectMeta(fs.slug, synth).catch(warn("writeProjectMeta:fs.slug"));
+        // Keep the DB cache in sync for Tauri + quick reads.
+        if (!dbEntry) {
+          void db
+            .createProject(synth.name, fs.path, synth.mode)
+            .catch(warn("createProject:reconcile-synth"));
+        }
+        return {
+          id: synth.id,
+          name: synth.name,
+          path: fs.path,
+          mode: synth.mode,
+          created_at: synth.created_at,
+          updated_at: synth.updated_at,
+        };
+      }),
+    );
     // DB entries whose folder disappeared — remove them so they stop
     // haunting the UI.
     for (const [slug, entry] of dbBySlug) {
@@ -147,7 +157,9 @@ export function useProjects() {
   // rm's a folder in the terminal and expects the UI to catch up without
   // a full reload.
   useEffect(() => {
-    const onFocus = () => { void reconcile(); };
+    const onFocus = () => {
+      void reconcile();
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [reconcile]);
@@ -183,7 +195,7 @@ export function useProjects() {
       setProjects((prev) => [project, ...prev]);
       return project;
     },
-    []
+    [],
   );
 
   const touchProject = useCallback(async (id: string) => {
@@ -214,114 +226,136 @@ export function useProjects() {
    * filesystem delete fails so the UI can surface the error instead
    * of silently leaving an orphan folder that reappears on next focus.
    */
-  const removeProject = useCallback(async (id: string) => {
-    const proj = (await db.getProjects().catch(() => [])).find((p) => p.id === id)
-      ?? projects.find((p) => p.id === id);
-    const slug = proj ? slugFromPath(proj.path) : null;
-    if (!slug) throw new Error(`removeProject: couldn't resolve slug for id=${id}`);
-    const fsOk = await removeProjectFolder(slug);
-    if (!fsOk) {
-      throw new Error(`removeProject: bridge failed to rm -rf projects/${slug}`);
-    }
-    await db.deleteProject(id).catch(warn("deleteProject:removeProject"));
-    setProjects((prev) => prev.filter((p) => p.id !== id));
-  }, [projects]);
-
-  const renameProject = useCallback(async (id: string, name: string) => {
-    const next = name.trim();
-    if (!next) return;
-    const src = projects.find((p) => p.id === id);
-    if (!src) return;
-    if (next === src.name) return;
-
-    const oldSlug = slugFromPath(src.path);
-    const newSlug = slugify(next);
-    const cleanSrc = src.path.replace(/\/+$/, "");
-    const parent = cleanSrc.replace(/\/[^/]+$/, "") || cleanSrc;
-    const newPath = `${parent}/${newSlug}`;
-    const now = Date.now();
-
-    let finalPath = src.path;
-
-    // If the slug derived from the new name differs from the current
-    // folder slug, try to move the folder. The bridge's /fs/move-dir
-    // works on files too, so we can also rename the primary HTML file
-    // inside the new folder afterwards. If anything fails, fall back to
-    // a name-only rename so the user isn't blocked.
-    if (oldSlug && newSlug && oldSlug !== newSlug) {
-      const moved = await moveDirViaBridge(src.path, newPath).catch(() => false);
-      if (moved) {
-        finalPath = newPath;
-        // Best-effort rename of the primary HTML file inside the new folder.
-        const oldHtml = `${newPath}/${oldSlug}.html`;
-        const newHtml = `${newPath}/${newSlug}.html`;
-        await moveDirViaBridge(oldHtml, newHtml).catch(warn("moveDirViaBridge:rename-html"));
+  const removeProject = useCallback(
+    async (id: string) => {
+      const proj =
+        (await db.getProjects().catch(() => [])).find((p) => p.id === id) ??
+        projects.find((p) => p.id === id);
+      const slug = proj ? slugFromPath(proj.path) : null;
+      if (!slug) throw new Error(`removeProject: couldn't resolve slug for id=${id}`);
+      const fsOk = await removeProjectFolder(slug);
+      if (!fsOk) {
+        throw new Error(`removeProject: bridge failed to rm -rf projects/${slug}`);
       }
-    }
+      await db.deleteProject(id).catch(warn("deleteProject:removeProject"));
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+    },
+    [projects],
+  );
 
-    // Persist DB + meta with the (possibly new) path + the new name.
-    await db.updateProject(id, { name: next, path: finalPath }).catch(warn("updateProject:rename"));
-    setProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, name: next, path: finalPath, updated_at: now } : p)),
-    );
-    const finalSlug = slugFromPath(finalPath);
-    if (finalSlug) {
-      void writeProjectMeta(finalSlug, {
-        id: src.id,
-        name: next,
-        mode: src.mode,
-        created_at: src.created_at,
-        updated_at: now,
-      }).catch(warn("writeProjectMeta:rename"));
-    }
-  }, [projects]);
+  const renameProject = useCallback(
+    async (id: string, name: string) => {
+      const next = name.trim();
+      if (!next) return;
+      const src = projects.find((p) => p.id === id);
+      if (!src) return;
+      if (next === src.name) return;
+
+      const oldSlug = slugFromPath(src.path);
+      const newSlug = slugify(next);
+      const cleanSrc = src.path.replace(/\/+$/, "");
+      const parent = cleanSrc.replace(/\/[^/]+$/, "") || cleanSrc;
+      const newPath = `${parent}/${newSlug}`;
+      const now = Date.now();
+
+      let finalPath = src.path;
+
+      // If the slug derived from the new name differs from the current
+      // folder slug, try to move the folder. The bridge's /fs/move-dir
+      // works on files too, so we can also rename the primary HTML file
+      // inside the new folder afterwards. If anything fails, fall back to
+      // a name-only rename so the user isn't blocked.
+      if (oldSlug && newSlug && oldSlug !== newSlug) {
+        const moved = await moveDirViaBridge(src.path, newPath).catch(() => false);
+        if (moved) {
+          finalPath = newPath;
+          // Best-effort rename of the primary HTML file inside the new folder.
+          const oldHtml = `${newPath}/${oldSlug}.html`;
+          const newHtml = `${newPath}/${newSlug}.html`;
+          await moveDirViaBridge(oldHtml, newHtml).catch(warn("moveDirViaBridge:rename-html"));
+        }
+      }
+
+      // Persist DB + meta with the (possibly new) path + the new name.
+      await db
+        .updateProject(id, { name: next, path: finalPath })
+        .catch(warn("updateProject:rename"));
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, name: next, path: finalPath, updated_at: now } : p)),
+      );
+      const finalSlug = slugFromPath(finalPath);
+      if (finalSlug) {
+        void writeProjectMeta(finalSlug, {
+          id: src.id,
+          name: next,
+          mode: src.mode,
+          created_at: src.created_at,
+          updated_at: now,
+        }).catch(warn("writeProjectMeta:rename"));
+      }
+    },
+    [projects],
+  );
 
   /**
    * Duplicate a project: new DB entry + folder copy + associated chat
    * messages, html snapshot, versions, start-mode preference. New name
    * defaults to "{orig} copy" and the path sits alongside the original.
    */
-  const duplicateProject = useCallback(async (id: string): Promise<DbProject | null> => {
-    const src = projects.find((p) => p.id === id);
-    if (!src) return null;
-    const newName = `${src.name} copy`;
-    const cleanSrc = src.path.replace(/\/+$/, "");
-    const parent = cleanSrc.replace(/\/[^/]+$/, "") || cleanSrc;
-    const baseSlug = slugify(newName);
-    const suffix = Date.now().toString(36).slice(-4);
-    const newPath = `${parent}/${baseSlug}-${suffix}`;
-    const dup = await addProject(newName, newPath, src.mode);
-    copyDirViaBridge(src.path, dup.path).catch(warn("copyDirViaBridge:duplicate"));
-    const keys = [
-      `html:${src.id}`,
-      `versions:${src.id}`,
-      `startMode:${src.id}`,
-      `edit:${src.id}`,
-    ];
-    await Promise.all(keys.map(async (k) => {
-      const v = await db.getSetting(k).catch(() => null);
-      if (v != null) await db.setSetting(k.replace(src.id, dup.id), v).catch(warn("setSetting:k.replace(src.id,dup.id)"));
-    }));
-    const msgs = await db.getMessages(src.id).catch(() => []);
-    for (const m of msgs) {
-      await db.saveMessage(dup.id, m.role, m.content, m.is_design).catch(warn("saveMessage:dup"));
-    }
-    return dup;
-  }, [projects, addProject]);
+  const duplicateProject = useCallback(
+    async (id: string): Promise<DbProject | null> => {
+      const src = projects.find((p) => p.id === id);
+      if (!src) return null;
+      const newName = `${src.name} copy`;
+      const cleanSrc = src.path.replace(/\/+$/, "");
+      const parent = cleanSrc.replace(/\/[^/]+$/, "") || cleanSrc;
+      const baseSlug = slugify(newName);
+      const suffix = Date.now().toString(36).slice(-4);
+      const newPath = `${parent}/${baseSlug}-${suffix}`;
+      const dup = await addProject(newName, newPath, src.mode);
+      copyDirViaBridge(src.path, dup.path).catch(warn("copyDirViaBridge:duplicate"));
+      const keys = [
+        `html:${src.id}`,
+        `versions:${src.id}`,
+        `startMode:${src.id}`,
+        `edit:${src.id}`,
+      ];
+      await Promise.all(
+        keys.map(async (k) => {
+          const v = await db.getSetting(k).catch(() => null);
+          if (v != null)
+            await db
+              .setSetting(k.replace(src.id, dup.id), v)
+              .catch(warn("setSetting:k.replace(src.id,dup.id)"));
+        }),
+      );
+      const msgs = await db.getMessages(src.id).catch(() => []);
+      for (const m of msgs) {
+        await db.saveMessage(dup.id, m.role, m.content, m.is_design).catch(warn("saveMessage:dup"));
+      }
+      return dup;
+    },
+    [projects, addProject],
+  );
 
   /**
    * Move a project folder and update the DB path. If the source folder doesn't
    * exist on disk the DB still moves — useful when the user wants to retarget.
    */
-  const moveProject = useCallback(async (id: string, newPath: string) => {
-    const src = projects.find((p) => p.id === id);
-    if (!src) return;
-    if (src.path !== newPath) {
-      moveDirViaBridge(src.path, newPath).catch(warn("moveDirViaBridge:move"));
-    }
-    await db.updateProject(id, { path: newPath }).catch(warn("updateProject:move"));
-    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, path: newPath, updated_at: Date.now() } : p)));
-  }, [projects]);
+  const moveProject = useCallback(
+    async (id: string, newPath: string) => {
+      const src = projects.find((p) => p.id === id);
+      if (!src) return;
+      if (src.path !== newPath) {
+        moveDirViaBridge(src.path, newPath).catch(warn("moveDirViaBridge:move"));
+      }
+      await db.updateProject(id, { path: newPath }).catch(warn("updateProject:move"));
+      setProjects((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, path: newPath, updated_at: Date.now() } : p)),
+      );
+    },
+    [projects],
+  );
 
   return {
     projects,

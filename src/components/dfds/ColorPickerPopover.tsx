@@ -34,7 +34,14 @@ const DEFAULT_PRESETS = [
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
-export function ColorPickerPopover({ value, onChange, presets = DEFAULT_PRESETS, width, onReset, title }: Props) {
+export function ColorPickerPopover({
+  value,
+  onChange,
+  presets = DEFAULT_PRESETS,
+  width,
+  onReset,
+  title,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -79,7 +86,11 @@ export function ColorPickerPopover({ value, onChange, presets = DEFAULT_PRESETS,
             flex: "none",
           }}
         />
-        <span style={{ flex: 1, textAlign: "left", fontFamily: "var(--df-font-mono)", fontSize: 11 }}>{value}</span>
+        <span
+          style={{ flex: 1, textAlign: "left", fontFamily: "var(--df-font-mono)", fontSize: 11 }}
+        >
+          {value}
+        </span>
         <svg
           width="11"
           height="11"
@@ -89,7 +100,12 @@ export function ColorPickerPopover({ value, onChange, presets = DEFAULT_PRESETS,
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ opacity: 0.6, transform: open ? "rotate(180deg)" : "none", transition: "transform 120ms ease", flex: "none" }}
+          style={{
+            opacity: 0.6,
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform 120ms ease",
+            flex: "none",
+          }}
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -112,7 +128,10 @@ export function ColorPickerPopover({ value, onChange, presets = DEFAULT_PRESETS,
                   height: 22,
                   borderRadius: 4,
                   background: c,
-                  border: c === value ? "2px solid var(--df-text-primary)" : "1px solid var(--df-border-subtle)",
+                  border:
+                    c === value
+                      ? "2px solid var(--df-text-primary)"
+                      : "1px solid var(--df-border-subtle)",
                   cursor: "pointer",
                   padding: 0,
                 }}
@@ -216,7 +235,9 @@ function applyBtnStyle(active: boolean): React.CSSProperties {
     fontSize: 11,
     fontWeight: 600,
     cursor: active ? "pointer" : "not-allowed",
-    boxShadow: active ? "inset 0 1px 0 var(--df-skeu-top-light), 0 1px 2px rgba(0,0,0,0.18)" : "none",
+    boxShadow: active
+      ? "inset 0 1px 0 var(--df-skeu-top-light), 0 1px 2px rgba(0,0,0,0.18)"
+      : "none",
   };
 }
 

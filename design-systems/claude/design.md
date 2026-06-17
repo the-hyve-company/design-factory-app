@@ -342,6 +342,7 @@ The philosophy is graduated softness: sharper at small UI elements, rounder at c
 ## Do's and Don'ts
 
 **Do:**
+
 - Anchor every page on `{colors.canvas}` (#faf9f5). Pure white breaks the brand's warmth differentiation.
 - Use Copernicus serif at weight 400 with negative letter-spacing for every display token (`{typography.display-xl}` through `{typography.display-sm}`). The negative tracking is not optional.
 - Reserve `{colors.primary}` for primary CTAs and `{component.callout-card-coral}` full-bleed moments. Coral used elsewhere dilutes its voltage.
@@ -353,6 +354,7 @@ The philosophy is graduated softness: sharper at small UI elements, rounder at c
 - Keep `{typography.button}` and `{typography.nav-link}` in StyreneB / Inter. The sans body is the boundary; serifs never enter the UI layer.
 
 **Don't:**
+
 - Don't use cool gray or pure white for the page canvas. Cream is the differentiator.
 - Don't bold display type. Copernicus at weight 700 reads as bombastic; the system is locked at 400 for all display tokens.
 - Don't introduce cool blue, cyan, or saturated hues as accents. The coral is the sole brand voltage.

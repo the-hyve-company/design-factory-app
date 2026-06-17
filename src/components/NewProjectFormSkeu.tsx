@@ -72,7 +72,10 @@ import { CanvasModal } from "@/components/CanvasModal";
 import { FormatModal } from "@/components/FormatModal";
 import { RulesModal } from "@/components/RulesModal";
 import { PickerKey } from "@/components/PickerKey";
-import { NewProjectChatComposer, type ComposerAttachment } from "@/components/NewProjectChatComposer";
+import {
+  NewProjectChatComposer,
+  type ComposerAttachment,
+} from "@/components/NewProjectChatComposer";
 import { PromptConsole } from "@/components/PromptConsole";
 import { workspaceContextPreamble } from "@/runtime/prompt-invoker";
 import { assembleTurnBlocks, type TurnPreviewBlock } from "@/runtime/turn-pipeline";
@@ -97,14 +100,8 @@ import {
 } from "@/providers/model-lists";
 import { PROVIDERS, probeAllProviders } from "@/providers/registry";
 import type { ProviderId, ProviderStatusReport } from "@/providers/types";
-import {
-  describeSelection as describeCanvas,
-  type CanvasSelection,
-} from "@/data/canvas-presets";
-import {
-  describeFormatSelection,
-  type FormatSelection,
-} from "@/data/format-taxonomy";
+import { describeSelection as describeCanvas, type CanvasSelection } from "@/data/canvas-presets";
+import { describeFormatSelection, type FormatSelection } from "@/data/format-taxonomy";
 import {
   totalRuleCount,
   getUserRules,
@@ -194,12 +191,12 @@ interface DialSpec {
 // sem entrar em jargão visual). Voice/color seguem em Rules.
 // v7: dial copy now translates via i18n keys (dial.<id>.label/.low/.high).
 const DIALS: DialSpec[] = [
-  { id: "density",      i18nKey: "dial.density"      },
-  { id: "motion",       i18nKey: "dial.motion"       },
-  { id: "contrast",     i18nKey: "dial.contrast"     },
+  { id: "density", i18nKey: "dial.density" },
+  { id: "motion", i18nKey: "dial.motion" },
+  { id: "contrast", i18nKey: "dial.contrast" },
   { id: "interactions", i18nKey: "dial.interactions" },
-  { id: "surface",      i18nKey: "dial.surface"      },
-  { id: "originality",  i18nKey: "dial.originality"  },
+  { id: "surface", i18nKey: "dial.surface" },
+  { id: "originality", i18nKey: "dial.originality" },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────
@@ -219,11 +216,11 @@ function dialDescriptor(
   value: number,
   t: (key: string) => string,
 ): { word: string; pole: "extremeLow" | "softLow" | "mid" | "softHigh" | "extremeHigh" } {
-  if (value <= 12)  return { word: t(`${spec.i18nKey}.extremeLow`),  pole: "extremeLow" };
-  if (value <= 37)  return { word: t(`${spec.i18nKey}.softLow`),     pole: "softLow" };
-  if (value <= 62)  return { word: t("dial.balanced"),               pole: "mid" };
-  if (value <= 89)  return { word: t(`${spec.i18nKey}.softHigh`),    pole: "softHigh" };
-  return              { word: t(`${spec.i18nKey}.extremeHigh`),    pole: "extremeHigh" };
+  if (value <= 12) return { word: t(`${spec.i18nKey}.extremeLow`), pole: "extremeLow" };
+  if (value <= 37) return { word: t(`${spec.i18nKey}.softLow`), pole: "softLow" };
+  if (value <= 62) return { word: t("dial.balanced"), pole: "mid" };
+  if (value <= 89) return { word: t(`${spec.i18nKey}.softHigh`), pole: "softHigh" };
+  return { word: t(`${spec.i18nKey}.extremeHigh`), pole: "extremeHigh" };
 }
 
 /** Snap a raw 0-100 value to the closest of 0/25/50/75/100. */
@@ -253,10 +250,11 @@ export function activeTaste(
   taste: NewProjectFormPayload["taste"],
 ): Partial<NewProjectFormPayload["taste"]> {
   const out: Partial<NewProjectFormPayload["taste"]> = {};
-  (Object.entries(taste) as Array<[keyof NewProjectFormPayload["taste"], number]>)
-    .forEach(([k, v]) => {
+  (Object.entries(taste) as Array<[keyof NewProjectFormPayload["taste"], number]>).forEach(
+    ([k, v]) => {
       if (v !== 50) out[k] = v;
-    });
+    },
+  );
   return out;
 }
 
@@ -332,16 +330,13 @@ function Dial({ spec, value, onChange, t }: DialProps) {
     [onChange],
   );
 
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      const track = trackRef.current;
-      if (!track) return;
-      if (track.hasPointerCapture(e.pointerId)) {
-        track.releasePointerCapture(e.pointerId);
-      }
-    },
-    [],
-  );
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const track = trackRef.current;
+    if (!track) return;
+    if (track.hasPointerCapture(e.pointerId)) {
+      track.releasePointerCapture(e.pointerId);
+    }
+  }, []);
 
   // Keyboard navigation: arrow keys step between the 5 snap stops
   // (0/25/50/75/100), Home/End jump to extremes.
@@ -350,10 +345,11 @@ function Dial({ spec, value, onChange, t }: DialProps) {
       const stops = [0, 25, 50, 75, 100];
       const idx = stops.indexOf(snapTo5Stops(value));
       let next = value;
-      if (e.key === "ArrowLeft" || e.key === "ArrowDown")    next = stops[Math.max(0, idx - 1)];
-      else if (e.key === "ArrowRight" || e.key === "ArrowUp") next = stops[Math.min(stops.length - 1, idx + 1)];
+      if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = stops[Math.max(0, idx - 1)];
+      else if (e.key === "ArrowRight" || e.key === "ArrowUp")
+        next = stops[Math.min(stops.length - 1, idx + 1)];
       else if (e.key === "Home") next = 0;
-      else if (e.key === "End")  next = 100;
+      else if (e.key === "End") next = 100;
       else return;
       e.preventDefault();
       onChange(next);
@@ -468,7 +464,9 @@ export function NewProjectFormSkeu({
 
   // Provider + model.
   const [provider, setProvider] = useState<ProviderId>("claude");
-  const [model, setModel] = useState<string>(() => readLastModel("claude") ?? defaultModelForProvider("claude"));
+  const [model, setModel] = useState<string>(
+    () => readLastModel("claude") ?? defaultModelForProvider("claude"),
+  );
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const modelMenuRef = useRef<HTMLDivElement>(null);
   const [providerMenuOpen, setProviderMenuOpen] = useState(false);
@@ -478,13 +476,22 @@ export function NewProjectFormSkeu({
   // The probe is cheap (no model calls — just CLI version + token check)
   // but cache the result for the modal session to avoid re-probing on
   // every menu toggle.
-  const [providerStatus, setProviderStatus] = useState<Record<ProviderId, ProviderStatusReport> | null>(null);
+  const [providerStatus, setProviderStatus] = useState<Record<
+    ProviderId,
+    ProviderStatusReport
+  > | null>(null);
   useEffect(() => {
     let cancelled = false;
     void probeAllProviders()
-      .then((s) => { if (!cancelled) setProviderStatus(s); })
-      .catch(() => { /* leave as null → all LEDs grey */ });
-    return () => { cancelled = true; };
+      .then((s) => {
+        if (!cancelled) setProviderStatus(s);
+      })
+      .catch(() => {
+        /* leave as null → all LEDs grey */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // DS picker dropdown lives in the composer toolbar (replaces the
@@ -511,13 +518,21 @@ export function NewProjectFormSkeu({
       try {
         const content = await readFileViaBridge(ds.designMdPath);
         if (!content) return;
-        const text = typeof content === "string" ? content : (content as { content?: string })?.content ?? "";
+        const text =
+          typeof content === "string"
+            ? content
+            : ((content as { content?: string })?.content ?? "");
         const parsed = parseDesignSystem(text);
-        const hexes = parsed.colors.slice(0, 4).map((c) => c.hex).filter(Boolean);
+        const hexes = parsed.colors
+          .slice(0, 4)
+          .map((c) => c.hex)
+          .filter(Boolean);
         if (hexes.length > 0) {
           setDsSwatchCache((prev) => ({ ...prev, [ds.path]: hexes }));
         }
-      } catch { /* swallow */ }
+      } catch {
+        /* swallow */
+      }
     });
   }, [designSystems]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -619,15 +634,18 @@ export function NewProjectFormSkeu({
   const npEngineBlocks = useMemo<TurnPreviewBlock[]>(() => {
     if (!previewOpen) return [];
     const taste = {
-      density:      dialValues.density      ?? 50,
-      motion:       dialValues.motion       ?? 50,
-      contrast:     dialValues.contrast     ?? 50,
+      density: dialValues.density ?? 50,
+      motion: dialValues.motion ?? 50,
+      contrast: dialValues.contrast ?? 50,
       interactions: dialValues.interactions ?? 50,
-      surface:      dialValues.surface      ?? 50,
-      originality:  dialValues.originality  ?? 50,
+      surface: dialValues.surface ?? 50,
+      originality: dialValues.originality ?? 50,
     };
     const dirBlock = buildCanonicalPlusBlock({ format, rules, taste }, undefined);
-    const slug = (name.trim() || "untitled").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const slug = (name.trim() || "untitled")
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
     return assembleTurnBlocks(
       {
         userMessage: prompt.trim() || "(seu prompt)",
@@ -664,12 +682,12 @@ export function NewProjectFormSkeu({
     if (!canBegin) return;
     setSubmitError(null);
     const taste: NewProjectFormPayload["taste"] = {
-      density:      dialValues.density      ?? 50,
-      motion:       dialValues.motion       ?? 50,
-      contrast:     dialValues.contrast     ?? 50,
+      density: dialValues.density ?? 50,
+      motion: dialValues.motion ?? 50,
+      contrast: dialValues.contrast ?? 50,
       interactions: dialValues.interactions ?? 50,
-      surface:      dialValues.surface      ?? 50,
-      originality:  dialValues.originality  ?? 50,
+      surface: dialValues.surface ?? 50,
+      originality: dialValues.originality ?? 50,
     };
     const payload: NewProjectFormPayload = {
       name: name.trim(),
@@ -705,7 +723,20 @@ export function NewProjectFormSkeu({
     } finally {
       setSubmitting(false);
     }
-  }, [canBegin, name, prompt, canvas, format, rules, selectedDsPath, provider, model, attachments, dialValues, onCreate]);
+  }, [
+    canBegin,
+    name,
+    prompt,
+    canvas,
+    format,
+    rules,
+    selectedDsPath,
+    provider,
+    model,
+    attachments,
+    dialValues,
+    onCreate,
+  ]);
 
   // "Começar em branco" — open a blank project skipping the form (no prompt,
   // no canvas/format/rules/DS/attachments, neutral taste). Same name gate as
@@ -715,7 +746,12 @@ export function NewProjectFormSkeu({
     if (!canBegin) return;
     setSubmitError(null);
     const neutralTaste: NewProjectFormPayload["taste"] = {
-      density: 50, motion: 50, contrast: 50, interactions: 50, surface: 50, originality: 50,
+      density: 50,
+      motion: 50,
+      contrast: 50,
+      interactions: 50,
+      surface: 50,
+      originality: 50,
     };
     const payload: NewProjectFormPayload = {
       name: name.trim() || "Untitled",
@@ -785,10 +821,16 @@ export function NewProjectFormSkeu({
   }, [dialValues]);
 
   return (
-    <div className="cnp-card cnp-card--bare cnp-card--v4 cnp-card--v5" onKeyDown={handleFormKeyDown}>
+    <div
+      className="cnp-card cnp-card--bare cnp-card--v4 cnp-card--v5"
+      onKeyDown={handleFormKeyDown}
+    >
       {showHero && (
         <div className="cnp-hero">
-          <pre className="cnp-hero-ascii" aria-hidden="true">{`· · · · · · · · · · · · · · · · · · · · · · ·
+          <pre
+            className="cnp-hero-ascii"
+            aria-hidden="true"
+          >{`· · · · · · · · · · · · · · · · · · · · · · ·
 · · · · · · · · · · · · · · · · · · · · · · ·
 · · · · · · · · · · · · · · · · · · · · · · ·
 · · · · · · · · · · · · · · · · · · · · · · ·
@@ -796,19 +838,18 @@ export function NewProjectFormSkeu({
           <Logo size={26} className="cnp-hero-mark" />
           <div className="cnp-hero-copy">
             <div className="cnp-hero-kicker">{lang === "en" ? "new project" : "novo projeto"}</div>
-            <div className="cnp-hero-title">{lang === "en" ? "What are we building?" : "O que vamos construir?"}</div>
+            <div className="cnp-hero-title">
+              {lang === "en" ? "What are we building?" : "O que vamos construir?"}
+            </div>
           </div>
         </div>
       )}
 
       {/* ZONE 0 — NAME. v8: hidden when host (NewProjectModal v8) owns the
-        * faceplate title input. When standalone (lab route), keeps the v6
-        * borderless name hero so the lab page stays usable. */}
+       * faceplate title input. When standalone (lab route), keeps the v6
+       * borderless name hero so the lab page stays usable. */}
       {!isControlled && (
-        <section
-          className="cnp-zone cnp-zone--name"
-          aria-label={t("newproject.name.aria")}
-        >
+        <section className="cnp-zone cnp-zone--name" aria-label={t("newproject.name.aria")}>
           <div
             className={`cnp-name-hero cnp-name-hero--v6${nameTouched ? " is-active" : ""}`}
             data-name-touched={nameTouched ? "true" : "false"}
@@ -829,12 +870,15 @@ export function NewProjectFormSkeu({
       {/* ZONE 1 — PROMPT (hero, full width, ChatComposer com Modelo no rodapé). */}
       <section className="cnp-zone cnp-zone--prompt" aria-labelledby="cnp-zone-prompt">
         <header className="cnp-zone-header">
-          <span id="cnp-zone-prompt" className="cnp-zone-engrave">{t("newproject.engrave.prompt")}</span>
+          <span id="cnp-zone-prompt" className="cnp-zone-engrave">
+            {t("newproject.engrave.prompt")}
+          </span>
           {(prompt.length > 0 || attachments.length > 0) && (
             <span className="cnp-zone-meta">
               {prompt.length > 0 && `${prompt.length} ${t("newproject.prompt.chars")}`}
               {prompt.length > 0 && attachments.length > 0 && " · "}
-              {attachments.length > 0 && `${attachments.length} ${attachments.length === 1 ? t("newproject.prompt.attachment") : t("newproject.prompt.attachments")}`}
+              {attachments.length > 0 &&
+                `${attachments.length} ${attachments.length === 1 ? t("newproject.prompt.attachment") : t("newproject.prompt.attachments")}`}
             </span>
           )}
         </header>
@@ -850,12 +894,12 @@ export function NewProjectFormSkeu({
             hideHint={true}
             toolbarRight={
               /* User ask 2026-05-18: "3 dropdowns lado a lado, provider/
-                * modelo/design system" inside the modal. Provider was previously
-                * read-only (defaulted from the topbar picker on EditorScreen);
-                * adding the dropdown here lets the user pick which CLI/API
-                * to fire BEFORE the first prompt + persist it as the project
-                * default via the existing writeLastModel cascade. Order
-                * matches the user spec exactly: Provider → Modelo → DS. */
+               * modelo/design system" inside the modal. Provider was previously
+               * read-only (defaulted from the topbar picker on EditorScreen);
+               * adding the dropdown here lets the user pick which CLI/API
+               * to fire BEFORE the first prompt + persist it as the project
+               * default via the existing writeLastModel cascade. Order
+               * matches the user spec exactly: Provider → Modelo → DS. */
               <span className="cnp-composer-toolbar-cluster">
                 <ProviderRocker
                   provider={provider}
@@ -878,7 +922,11 @@ export function NewProjectFormSkeu({
                   model={model}
                   open={modelMenuOpen}
                   onToggle={() => setModelMenuOpen((s) => !s)}
-                  onPick={(id) => { setModel(id); writeLastModel(provider, id); setModelMenuOpen(false); }}
+                  onPick={(id) => {
+                    setModel(id);
+                    writeLastModel(provider, id);
+                    setModelMenuOpen(false);
+                  }}
                   menuRef={modelMenuRef}
                 />
                 <DsDropdown
@@ -890,9 +938,18 @@ export function NewProjectFormSkeu({
                   noDsAvailable={designSystems.length === 0}
                   open={dsDropdownOpen}
                   onToggle={() => setDsDropdownOpen((s) => !s)}
-                  onPick={(p) => { setSelectedDsPath(p); setDsDropdownOpen(false); }}
-                  onClear={() => { setSelectedDsPath(null); setDsDropdownOpen(false); }}
-                  onOpenModal={() => { setDsModalOpen(true); setDsDropdownOpen(false); }}
+                  onPick={(p) => {
+                    setSelectedDsPath(p);
+                    setDsDropdownOpen(false);
+                  }}
+                  onClear={() => {
+                    setSelectedDsPath(null);
+                    setDsDropdownOpen(false);
+                  }}
+                  onOpenModal={() => {
+                    setDsModalOpen(true);
+                    setDsDropdownOpen(false);
+                  }}
                   menuRef={dsDropdownRef}
                   t={t}
                 />
@@ -903,10 +960,13 @@ export function NewProjectFormSkeu({
       </section>
 
       {/* ZONE 2 + ZONE 3 — PROJETO (left) + TASTE (right)
-        * 3 picker keys (Canvas / Formato / Regras) standardised via
-        * <PickerKey> — same skeu bezel, same accent-dot LED, same
-        * stretch-to-fill column height. */}
-      <section className="cnp-zone cnp-zone--split" aria-label={lang === "en" ? "Project and taste" : "Projeto e taste"}>
+       * 3 picker keys (Canvas / Formato / Regras) standardised via
+       * <PickerKey> — same skeu bezel, same accent-dot LED, same
+       * stretch-to-fill column height. */}
+      <section
+        className="cnp-zone cnp-zone--split"
+        aria-label={lang === "en" ? "Project and taste" : "Projeto e taste"}
+      >
         <div className="cnp-split">
           {/* PROJETO column */}
           <div className="cnp-split-cell">
@@ -914,10 +974,10 @@ export function NewProjectFormSkeu({
               <span className="cnp-zone-engrave">{t("newproject.engrave.projeto")}</span>
             </header>
             {/* v9 (2026-05-05): picker labels Canvas/Formato/Regras
-              * REMOVED per user feedback: "canvas, formato e regras
-              * nao precisam do titulo pequeno em cima". The picker
-              * placeholders ("Escolher canvas" / etc) carry the meaning.
-              * DS row keeps its label for context (4 cards). */}
+             * REMOVED per user feedback: "canvas, formato e regras
+             * nao precisam do titulo pequeno em cima". The picker
+             * placeholders ("Escolher canvas" / etc) carry the meaning.
+             * DS row keeps its label for context (4 cards). */}
             <div className="cnp-zone-body cnp-stack">
               <div className="cnp-stack-row cnp-stack-row--unlabeled">
                 <PickerKey
@@ -992,12 +1052,7 @@ export function NewProjectFormSkeu({
       )}
 
       <div className="cnp-foot-row">
-        <button
-          type="button"
-          className="cnp-foot-reset"
-          onClick={reset}
-          disabled={submitting}
-        >
+        <button type="button" className="cnp-foot-reset" onClick={reset} disabled={submitting}>
           {t("newproject.foot.reset")}
         </button>
         <button
@@ -1012,19 +1067,23 @@ export function NewProjectFormSkeu({
         <button
           type="button"
           className="cnp-foot-reset"
-          onClick={() => { void handleBeginBlank(); }}
+          onClick={() => {
+            void handleBeginBlank();
+          }}
           disabled={!canBegin}
           title="Abre o projeto em branco — sem prompt, sem direção pré-definida."
         >
           Começar em branco
         </button>
         {/* v8: premium TE-tátil button — status LED + chevron arrow,
-          * no ⌘⏎ key indicator. ed: "queria um botao de iniciar
-          * projeto mais tatil e animado e sem essa tip de atalho". */}
+         * no ⌘⏎ key indicator. ed: "queria um botao de iniciar
+         * projeto mais tatil e animado e sem essa tip de atalho". */}
         <button
           type="button"
           className={`cnp-begin cnp-begin--v8${submitting ? " is-loading" : ""}`}
-          onClick={() => { void handleBegin(); }}
+          onClick={() => {
+            void handleBegin();
+          }}
           disabled={!canBegin}
           aria-label={t("newproject.foot.begin.aria")}
           aria-busy={submitting}
@@ -1033,15 +1092,17 @@ export function NewProjectFormSkeu({
           <span className="cnp-begin-label">
             {submitting ? t("newproject.foot.beginning") : t("newproject.foot.begin")}
           </span>
-          <span className="cnp-begin-arrow" aria-hidden="true">→</span>
+          <span className="cnp-begin-arrow" aria-hidden="true">
+            →
+          </span>
         </button>
       </div>
 
       {/* PROMPT CONSOLE — preview the compiled direction before starting.
-        * Per decision doc §5: lives in the New Project modal as inspector.
-        * User direction 2026-05-15: must surface EVERY personalization
-        * — DS, canvas, format, rules, taste, provider, attachments and
-        * the raw user prompt. Skeu chrome + i18n via useT. */}
+       * Per decision doc §5: lives in the New Project modal as inspector.
+       * User direction 2026-05-15: must surface EVERY personalization
+       * — DS, canvas, format, rules, taste, provider, attachments and
+       * the raw user prompt. Skeu chrome + i18n via useT. */}
       <PromptConsole
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
@@ -1052,16 +1113,14 @@ export function NewProjectFormSkeu({
         format={format}
         formatLabel={formatLabel ?? undefined}
         rules={rules}
-        ruleLabels={rules
-          .map((id) => getEffectiveRules().find((r) => r.id === id)?.title ?? id)
-        }
+        ruleLabels={rules.map((id) => getEffectiveRules().find((r) => r.id === id)?.title ?? id)}
         taste={activeTaste({
-          density:      dialValues.density      ?? 50,
-          motion:       dialValues.motion       ?? 50,
-          contrast:     dialValues.contrast     ?? 50,
+          density: dialValues.density ?? 50,
+          motion: dialValues.motion ?? 50,
+          contrast: dialValues.contrast ?? 50,
           interactions: dialValues.interactions ?? 50,
-          surface:      dialValues.surface      ?? 50,
-          originality:  dialValues.originality  ?? 50,
+          surface: dialValues.surface ?? 50,
+          originality: dialValues.originality ?? 50,
         })}
         provider={provider}
         model={model}
@@ -1072,7 +1131,10 @@ export function NewProjectFormSkeu({
         }))}
         systemPreamble={workspaceContextPreamble({
           projectId: name.trim() || "new-project",
-          projectPath: `projects/${(name.trim() || "untitled").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}`,
+          projectPath: `projects/${(name.trim() || "untitled")
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "")}`,
           primaryFile: "index.html",
           mode: "hifi",
           conversationHistory: [],
@@ -1080,10 +1142,15 @@ export function NewProjectFormSkeu({
           ...(selectedDsPath ? { designSystemPath: selectedDsPath } : {}),
         })}
         engineBlocks={npEngineBlocks}
-        onConfirm={canBegin ? () => { void handleBegin(); } : undefined}
+        onConfirm={
+          canBegin
+            ? () => {
+                void handleBegin();
+              }
+            : undefined
+        }
         confirmLabel={t("newproject.foot.begin")}
       />
-
 
       {/* CANVAS MODAL */}
       <CanvasModal
@@ -1122,29 +1189,33 @@ export function NewProjectFormSkeu({
           <div className="reg-ds-modal-grid">
             {designSystems.map((ds) => {
               const swatches = (dsSwatchCache[ds.path] ?? []).slice(0, 4);
-              const padded = [...swatches, ...Array(Math.max(0, 4 - swatches.length)).fill("var(--df-surface-raised)")];
+              const padded = [
+                ...swatches,
+                ...Array(Math.max(0, 4 - swatches.length)).fill("var(--df-surface-raised)"),
+              ];
               return (
                 <button
                   key={ds.path}
                   className={`reg-ds-modal-card${selectedDsPath === ds.path ? " is-on" : ""}`}
-                  onClick={() => { setSelectedDsPath(ds.path); setDsModalOpen(false); }}
+                  onClick={() => {
+                    setSelectedDsPath(ds.path);
+                    setDsModalOpen(false);
+                  }}
                 >
                   <div className="reg-ds-modal-swatchbar">
-                    {padded.map((sw, i) => <span key={i} style={{ background: sw, flex: 1 }} />)}
+                    {padded.map((sw, i) => (
+                      <span key={i} style={{ background: sw, flex: 1 }} />
+                    ))}
                   </div>
                   <div className="reg-ds-modal-name">{ds.name}</div>
                   {selectedDsPath === ds.path && (
-                    <div className="reg-ds-modal-check">
-                      ✓ {t("newproject.ds.modal.selected")}
-                    </div>
+                    <div className="reg-ds-modal-check">✓ {t("newproject.ds.modal.selected")}</div>
                   )}
                 </button>
               );
             })}
             {designSystems.length === 0 && (
-              <div className="reg-ds-modal-empty">
-                {t("newproject.ds.modal.empty")}
-              </div>
+              <div className="reg-ds-modal-empty">{t("newproject.ds.modal.empty")}</div>
             )}
           </div>
         </div>
@@ -1199,9 +1270,7 @@ export function DsDropdown({
   menuRef,
   t,
 }: DsDropdownProps) {
-  const selected = selectedDsPath
-    ? allCards.find((d) => d.path === selectedDsPath)
-    : null;
+  const selected = selectedDsPath ? allCards.find((d) => d.path === selectedDsPath) : null;
   const triggerLabel = selected
     ? selected.name
     : noDsAvailable
@@ -1274,20 +1343,29 @@ export function DsDropdown({
         aria-label={t("newproject.stack.ds")}
       >
         {/* LED — same skeu family as the ModelRocker reg-led. Lights up
-          * (accent fill + halo) when a DS is configured; recessed gray
-          * when not. Class-only state — see np-regions-lab.css `.reg-led`. */}
+         * (accent fill + halo) when a DS is configured; recessed gray
+         * when not. Class-only state — see np-regions-lab.css `.reg-led`. */}
         <span className={`reg-led${selected ? "" : " is-off"}`} aria-hidden />
         {selected && (
           <span className="cnp-ds-dropdown-swatches" aria-hidden>
-            {(swatchCache[selected.path] ?? []).slice(0, 4).concat(
-              Array(Math.max(0, 4 - (swatchCache[selected.path] ?? []).length)).fill("var(--df-surface-raised)"),
-            ).map((sw, i) => (
-              <span key={i} className="cnp-ds-dropdown-sw" style={{ background: sw }} />
-            ))}
+            {(swatchCache[selected.path] ?? [])
+              .slice(0, 4)
+              .concat(
+                Array(Math.max(0, 4 - (swatchCache[selected.path] ?? []).length)).fill(
+                  "var(--df-surface-raised)",
+                ),
+              )
+              .map((sw, i) => (
+                <span key={i} className="cnp-ds-dropdown-sw" style={{ background: sw }} />
+              ))}
           </span>
         )}
         <span className="cnp-ds-dropdown-label">{triggerLabel}</span>
-        {!noDsAvailable && <span className="cnp-ds-dropdown-caret" aria-hidden>▾</span>}
+        {!noDsAvailable && (
+          <span className="cnp-ds-dropdown-caret" aria-hidden>
+            ▾
+          </span>
+        )}
       </button>
 
       <SearchableDropdown<FsDesignSystem>
@@ -1342,7 +1420,16 @@ interface ModelRockerProps {
   compact?: boolean;
 }
 
-export function ModelRocker({ provider, model, open, onToggle, onPick, menuRef, anchor = "bottom-start", compact = false }: ModelRockerProps) {
+export function ModelRocker({
+  provider,
+  model,
+  open,
+  onToggle,
+  onPick,
+  menuRef,
+  anchor = "bottom-start",
+  compact = false,
+}: ModelRockerProps) {
   const { options: live } = useLiveModelOptions(provider);
   const fallback = getModelsForProvider(provider);
   const opts = live.length > 0 ? live : fallback;
@@ -1353,7 +1440,7 @@ export function ModelRocker({ provider, model, open, onToggle, onPick, menuRef, 
   // block.
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const items: SearchableDropdownItem<typeof opts[number]>[] = opts.map((m) => ({
+  const items: SearchableDropdownItem<(typeof opts)[number]>[] = opts.map((m) => ({
     id: m.id,
     label: m.label,
     sub: m.sub,
@@ -1383,7 +1470,9 @@ export function ModelRocker({ provider, model, open, onToggle, onPick, menuRef, 
       >
         <span className={`reg-led${selected ? "" : " is-off"}`} aria-hidden />
         <span className="cnp-ds-dropdown-label">{shortModelLabel(current?.label ?? model)}</span>
-        <span className="cnp-ds-dropdown-caret" aria-hidden>▾</span>
+        <span className="cnp-ds-dropdown-caret" aria-hidden>
+          ▾
+        </span>
       </button>
       <SearchableDropdown
         open={open}
@@ -1421,22 +1510,40 @@ interface ProviderRockerProps {
   statusByProvider: Record<ProviderId, ProviderStatusReport> | null;
 }
 
-export function ProviderRocker({ provider, open, onToggle, onPick, menuRef, statusByProvider }: ProviderRockerProps) {
+export function ProviderRocker({
+  provider,
+  open,
+  onToggle,
+  onPick,
+  menuRef,
+  statusByProvider,
+}: ProviderRockerProps) {
   const { t } = useT();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const current = PROVIDERS.find((p) => p.meta.id === provider);
 
-  const items: SearchableDropdownItem<typeof PROVIDERS[number]>[] = PROVIDERS.map((p) => {
+  const items: SearchableDropdownItem<(typeof PROVIDERS)[number]>[] = PROVIDERS.map((p) => {
     const status = statusByProvider?.[p.meta.id]?.status;
     // Compact sub-label: transport + status hint when not ready.
-    const transport = p.meta.id === "ollama" ? "Local"
-      : (p.meta.id === "anthropic" || p.meta.id === "openai" || p.meta.id === "gemini-api" || p.meta.id === "openrouter") ? "API"
-      : "CLI";
-    const statusHint = status === "connected" ? ""
-      : status === "needs-auth" ? " · auth required"
-      : status === "not-installed" ? " · not installed"
-      : status === "error" ? " · error"
-      : "";
+    const transport =
+      p.meta.id === "ollama"
+        ? "Local"
+        : p.meta.id === "anthropic" ||
+            p.meta.id === "openai" ||
+            p.meta.id === "gemini-api" ||
+            p.meta.id === "openrouter"
+          ? "API"
+          : "CLI";
+    const statusHint =
+      status === "connected"
+        ? ""
+        : status === "needs-auth"
+          ? " · auth required"
+          : status === "not-installed"
+            ? " · not installed"
+            : status === "error"
+              ? " · error"
+              : "";
     return {
       id: p.meta.id,
       label: p.meta.label,
@@ -1460,7 +1567,9 @@ export function ProviderRocker({ provider, open, onToggle, onPick, menuRef, stat
       >
         <span className="reg-led" aria-hidden />
         <span className="cnp-ds-dropdown-label">{current?.meta.label ?? provider}</span>
-        <span className="cnp-ds-dropdown-caret" aria-hidden>▾</span>
+        <span className="cnp-ds-dropdown-caret" aria-hidden>
+          ▾
+        </span>
       </button>
       <SearchableDropdown
         open={open}

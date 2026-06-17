@@ -41,7 +41,8 @@ function filterFormatGroups(
   lang: Lang,
 ): { filtered: FilteredFormatGroup[]; matched: Set<string> } {
   const q = query.trim().toLowerCase();
-  if (!q) return { filtered: taxonomy.map((c) => ({ cat: c, items: c.items })), matched: new Set() };
+  if (!q)
+    return { filtered: taxonomy.map((c) => ({ cat: c, items: c.items })), matched: new Set() };
   const matched = new Set<string>();
   const filtered: FilteredFormatGroup[] = taxonomy
     .map((c) => {
@@ -175,7 +176,9 @@ export function FormatModal({ open, initial, onClose, onApply }: FormatModalProp
             </button>
           </header>
           <div className="dmv2-search-wrap">
-            <span className="dmv2-search-glyph" aria-hidden>⌕</span>
+            <span className="dmv2-search-glyph" aria-hidden>
+              ⌕
+            </span>
             <input
               ref={searchRef}
               className="dmv2-search-input"
@@ -212,19 +215,10 @@ export function FormatModal({ open, initial, onClose, onApply }: FormatModalProp
               : tf("format.foot.empty", totalItems)}
           </span>
           <div className="dmv2-foot-actions">
-            <button
-              type="button"
-              className="dmv2-btn-text"
-              onClick={clear}
-              disabled={!draft}
-            >
+            <button type="button" className="dmv2-btn-text" onClick={clear} disabled={!draft}>
               {t("modal.clear")}
             </button>
-            <button
-              type="button"
-              className="dmv2-btn-primary"
-              onClick={apply}
-            >
+            <button type="button" className="dmv2-btn-primary" onClick={apply}>
               {t("modal.apply")}
             </button>
           </div>
@@ -235,11 +229,7 @@ export function FormatModal({ open, initial, onClose, onApply }: FormatModalProp
         {filtered.length === 0 && (
           <div className="dmv2-empty">
             <span>{tf("format.empty.search", query)}</span>
-            <button
-              type="button"
-              className="dmv2-btn-text"
-              onClick={() => setQuery("")}
-            >
+            <button type="button" className="dmv2-btn-text" onClick={() => setQuery("")}>
               {t("format.empty.clear")}
             </button>
           </div>
@@ -255,8 +245,8 @@ export function FormatModal({ open, initial, onClose, onApply }: FormatModalProp
               className={`dmv2-cat${isOpen ? " is-open" : ""}${isPickedCat ? " has-selected" : ""}`}
             >
               {/* v6: split <div class=dmv2-cat-head> with inner <button
-                * class=dmv2-cat-head-main> — same shape as RulesModal so
-                * collapse behavior is unified across modals. */}
+               * class=dmv2-cat-head-main> — same shape as RulesModal so
+               * collapse behavior is unified across modals. */}
               <div className="dmv2-cat-head">
                 <button
                   type="button"
@@ -266,11 +256,15 @@ export function FormatModal({ open, initial, onClose, onApply }: FormatModalProp
                   disabled={searchActive}
                 >
                   <span className="dmv2-cat-label">{formatCategoryLabel(cat, lang)}</span>
-                  {formatCategoryHint(cat, lang) && <span className="dmv2-cat-hint">{formatCategoryHint(cat, lang)}</span>}
+                  {formatCategoryHint(cat, lang) && (
+                    <span className="dmv2-cat-hint">{formatCategoryHint(cat, lang)}</span>
+                  )}
                   <span className="dmv2-cat-count">
                     {pickedInside > 0 ? `${pickedInside} / ${items.length}` : `${items.length}`}
                   </span>
-                  <span className="dmv2-cat-caret" aria-hidden>{isOpen ? "▾" : "▸"}</span>
+                  <span className="dmv2-cat-caret" aria-hidden>
+                    {isOpen ? "▾" : "▸"}
+                  </span>
                 </button>
               </div>
               {isOpen && (
@@ -289,9 +283,13 @@ export function FormatModal({ open, initial, onClose, onApply }: FormatModalProp
                         <span className="dmv2-row-check" aria-hidden>
                           <span className="dmv2-row-check-dot" />
                         </span>
-                        <span className="dmv2-row-label">{formatItemLabel(cat.id, item, lang)}</span>
+                        <span className="dmv2-row-label">
+                          {formatItemLabel(cat.id, item, lang)}
+                        </span>
                         {formatItemDescriptor(cat.id, item, lang) && (
-                          <span className="dmv2-row-desc">{formatItemDescriptor(cat.id, item, lang)}</span>
+                          <span className="dmv2-row-desc">
+                            {formatItemDescriptor(cat.id, item, lang)}
+                          </span>
                         )}
                       </button>
                     );

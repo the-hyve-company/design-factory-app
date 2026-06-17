@@ -49,7 +49,9 @@ export function GeneratePreviewModal({ entry, onClose, onSubmit }: Props) {
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [providersLoading, setProvidersLoading] = useState(true);
   const [provider, setProvider] = useState<ProviderId>("claude");
-  const [model, setModel] = useState<string>(() => readLastModel("claude") ?? defaultModelForProvider("claude"));
+  const [model, setModel] = useState<string>(
+    () => readLastModel("claude") ?? defaultModelForProvider("claude"),
+  );
 
   // Live model catalog for the picked provider — falls back to static
   // when the live probe doesn't apply (everything except ollama /
@@ -75,9 +77,15 @@ export function GeneratePreviewModal({ entry, onClose, onSubmit }: Props) {
           setModel(readLastModel(pid) ?? defaultModelForProvider(pid));
         }
       })
-      .catch(() => { /* fall through to defaults */ })
-      .finally(() => { if (!cancelled) setProvidersLoading(false); });
-    return () => { cancelled = true; };
+      .catch(() => {
+        /* fall through to defaults */
+      })
+      .finally(() => {
+        if (!cancelled) setProvidersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleProviderChange = (id: ProviderId) => {
@@ -148,23 +156,33 @@ export function GeneratePreviewModal({ entry, onClose, onSubmit }: Props) {
         </div>
       }
     >
-      <p style={{ fontSize: "var(--df-text-sm)", color: "var(--df-text-secondary)", lineHeight: 1.55, margin: 0, marginBottom: 18 }}>
+      <p
+        style={{
+          fontSize: "var(--df-text-sm)",
+          color: "var(--df-text-secondary)",
+          lineHeight: 1.55,
+          margin: 0,
+          marginBottom: 18,
+        }}
+      >
         O <code style={{ fontFamily: "var(--df-font-mono)" }}>design.md</code> de{" "}
-        <strong>{entry.name}</strong> vai ser enviado ao provider escolhido com um prompt
-        fixo que pede uma página HTML completa aplicando todos os tokens, componentes e
-        regras descritas. O resultado é salvo em{" "}
+        <strong>{entry.name}</strong> vai ser enviado ao provider escolhido com um prompt fixo que
+        pede uma página HTML completa aplicando todos os tokens, componentes e regras descritas. O
+        resultado é salvo em{" "}
         <code style={{ fontFamily: "var(--df-font-mono)" }}>{entry.path}/preview.html</code>.
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={{
-            fontFamily: "var(--df-font-mono)",
-            fontSize: 10,
-            color: "var(--df-text-muted)",
-            letterSpacing: "var(--df-tracking-label)",
-            textTransform: "uppercase",
-          }}>
+          <span
+            style={{
+              fontFamily: "var(--df-font-mono)",
+              fontSize: 10,
+              color: "var(--df-text-muted)",
+              letterSpacing: "var(--df-tracking-label)",
+              textTransform: "uppercase",
+            }}
+          >
             Provider
           </span>
           <select
@@ -196,14 +214,21 @@ export function GeneratePreviewModal({ entry, onClose, onSubmit }: Props) {
         </label>
 
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={{
-            fontFamily: "var(--df-font-mono)",
-            fontSize: 10,
-            color: "var(--df-text-muted)",
-            letterSpacing: "var(--df-tracking-label)",
-            textTransform: "uppercase",
-          }}>
-            Modelo {liveModels.loading ? "· carregando…" : (liveModels.source === "static" && provider !== "claude" ? "· fallback (configure key)" : "")}
+          <span
+            style={{
+              fontFamily: "var(--df-font-mono)",
+              fontSize: 10,
+              color: "var(--df-text-muted)",
+              letterSpacing: "var(--df-tracking-label)",
+              textTransform: "uppercase",
+            }}
+          >
+            Modelo{" "}
+            {liveModels.loading
+              ? "· carregando…"
+              : liveModels.source === "static" && provider !== "claude"
+                ? "· fallback (configure key)"
+                : ""}
           </span>
           <select
             value={model}
@@ -222,7 +247,8 @@ export function GeneratePreviewModal({ entry, onClose, onSubmit }: Props) {
             {modelOptions.length === 0 && <option value="">(sem modelos)</option>}
             {modelOptions.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.label}{m.sub ? ` · ${m.sub}` : ""}
+                {m.label}
+                {m.sub ? ` · ${m.sub}` : ""}
               </option>
             ))}
           </select>

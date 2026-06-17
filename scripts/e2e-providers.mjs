@@ -26,17 +26,19 @@ const MAX_RETRIES = Number(process.env.DF_E2E_RETRIES || 1);
 // short enough that any provider responds fast. The default model is what
 // each adapter picks when the picker is "default".
 const ALL_PROVIDERS = [
-  { id: "claude",      seed: "say only the word PONG" },
-  { id: "codex",       seed: "say only the word PONG" },
-  { id: "gemini-api",  seed: "say only the word PONG" },
-  { id: "openrouter",  seed: "say only the word PONG" },
+  { id: "claude", seed: "say only the word PONG" },
+  { id: "codex", seed: "say only the word PONG" },
+  { id: "gemini-api", seed: "say only the word PONG" },
+  { id: "openrouter", seed: "say only the word PONG" },
 ];
 // DF_E2E_PROVIDERS=claude,codex narrows the matrix for focused debugging.
 const PROVIDERS = process.env.DF_E2E_PROVIDERS
   ? ALL_PROVIDERS.filter((p) => process.env.DF_E2E_PROVIDERS.split(",").includes(p.id))
   : ALL_PROVIDERS;
 // DF_E2E_SCENARIOS=seed narrows scenarios too.
-const SCENARIO_FILTER = process.env.DF_E2E_SCENARIOS ? process.env.DF_E2E_SCENARIOS.split(",") : null;
+const SCENARIO_FILTER = process.env.DF_E2E_SCENARIOS
+  ? process.env.DF_E2E_SCENARIOS.split(",")
+  : null;
 
 // Scenarios to cover for every provider. Each scenario walks a different
 // real-world path through the UI:
@@ -58,8 +60,8 @@ const SCENARIO_FILTER = process.env.DF_E2E_SCENARIOS ? process.env.DF_E2E_SCENAR
 //               BUG-15 introduced. Asserts both projects respond cleanly.
 //   - refresh : create project (seed), wait for reply, F5 the page,
 //               assert chat hydrates with the prior user + assistant turns.
-const SCENARIOS = (["seed", "manual", "switch", "refresh"]).filter(
-  (s) => !SCENARIO_FILTER || SCENARIO_FILTER.includes(s)
+const SCENARIOS = ["seed", "manual", "switch", "refresh"].filter(
+  (s) => !SCENARIO_FILTER || SCENARIO_FILTER.includes(s),
 );
 
 // Ensure output dir exists
@@ -68,14 +70,20 @@ if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 const matrix = [];
 const startedAt = Date.now();
 
-function log(...args) { console.log(...args); }
-function logSection(title) { log(`\n${"━".repeat(8)} ${title} ${"━".repeat(8)}`); }
+function log(...args) {
+  console.log(...args);
+}
+function logSection(title) {
+  log(`\n${"━".repeat(8)} ${title} ${"━".repeat(8)}`);
+}
 
 async function probeBridge() {
   try {
     const res = await fetch(`${BRIDGE_URL}/healthz`, { signal: AbortSignal.timeout(3000) });
     return res.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 async function ensureAppReady() {
@@ -97,11 +105,11 @@ async function findEditorComposer(page) {
     'textarea[placeholder*="mensagem" i]',
     'textarea[placeholder*="ask" i]',
     'textarea[placeholder*="prompt" i]',
-    'textarea',
+    "textarea",
   ];
   for (const sel of sels) {
     const loc = page.locator(sel).first();
-    if (await loc.count() > 0 && await loc.isVisible().catch(() => false)) return loc;
+    if ((await loc.count()) > 0 && (await loc.isVisible().catch(() => false))) return loc;
   }
   return null;
 }
@@ -221,7 +229,12 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
   page.on("console", (msg) => {
     const text = msg.text();
     // Capture our diagnostic markers regardless of level.
-    if (text.includes("[DF-AS]") || text.includes("[DF-HS]") || text.includes("[DF-TP]") || text.includes("[DF-SVB]")) {
+    if (
+      text.includes("[DF-AS]") ||
+      text.includes("[DF-HS]") ||
+      text.includes("[DF-TP]") ||
+      text.includes("[DF-SVB]")
+    ) {
       dfTrace.push(text);
       return;
     }
@@ -250,7 +263,9 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
   page.on("requestfailed", (req) => {
     const u = req.url();
     if (u.startsWith(BRIDGE_URL)) {
-      networkErrors.push(`FAIL ${req.method()} ${u.replace(BRIDGE_URL, "")} — ${req.failure()?.errorText ?? "?"}`);
+      networkErrors.push(
+        `FAIL ${req.method()} ${u.replace(BRIDGE_URL, "")} — ${req.failure()?.errorText ?? "?"}`,
+      );
     }
   });
 
@@ -277,8 +292,12 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
     // Pre-seed localStorage so EditorScreen mounts with the right default_provider
     // BEFORE the auto-send effect runs. Avoids races with the async readGlobalConfig.
     await page.addInitScript((p) => {
-      try { localStorage.setItem("default_provider", JSON.stringify(p)); } catch {}
-      try { localStorage.setItem(`df:last-model:${p}`, "default"); } catch {}
+      try {
+        localStorage.setItem("default_provider", JSON.stringify(p));
+      } catch {}
+      try {
+        localStorage.setItem(`df:last-model:${p}`, "default");
+      } catch {}
     }, providerId);
 
     // The bridge URL is baked into the build via VITE_BRIDGE_URL. dev:web
@@ -303,7 +322,7 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
     let clicked = false;
     for (const sel of newProjectSelectors) {
       const btn = page.locator(sel).first();
-      if (await btn.count() > 0) {
+      if ((await btn.count()) > 0) {
         await btn.click({ timeout: 3000 }).catch(() => {});
         clicked = true;
         result.notes.push(`new-project clicked via: ${sel}`);
@@ -325,7 +344,7 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
       'textarea[placeholder*="surpreenda" i]',
       'textarea[placeholder*="descreva" i]',
       'textarea[placeholder*="prompt" i]',
-      'textarea',
+      "textarea",
     ];
     // For "manual" scenario, type just a single space — many of these
     // modals enable Criar projeto on length > 0. The composer of the
@@ -335,10 +354,12 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
     let typed = false;
     for (const sel of promptSelectors) {
       const ta = page.locator(sel).first();
-      if (await ta.count() > 0 && await ta.isVisible().catch(() => false)) {
+      if ((await ta.count()) > 0 && (await ta.isVisible().catch(() => false))) {
         await ta.fill(modalPrompt, { timeout: 3000 }).catch(() => {});
         typed = true;
-        result.notes.push(`modal prompt typed (${scenario === "manual" ? "placeholder" : "real"}): ${sel}`);
+        result.notes.push(
+          `modal prompt typed (${scenario === "manual" ? "placeholder" : "real"}): ${sel}`,
+        );
         break;
       }
     }
@@ -364,7 +385,7 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
     let submitted = false;
     for (const sel of submitSelectors) {
       const btn = page.locator(sel).first();
-      if (await btn.count() > 0 && await btn.isVisible().catch(() => false)) {
+      if ((await btn.count()) > 0 && (await btn.isVisible().catch(() => false))) {
         await btn.click({ timeout: 3000 }).catch(() => {});
         submitted = true;
         result.notes.push(`submit clicked via: ${sel}`);
@@ -399,13 +420,14 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
         'textarea[placeholder*="mensagem" i]',
         'textarea[placeholder*="ask" i]',
         'textarea[placeholder*="prompt" i]',
-        'textarea',
+        "textarea",
       ];
       let composer = null;
       for (const sel of editorComposerSelectors) {
         const loc = page.locator(sel).first();
-        if (await loc.count() > 0 && await loc.isVisible().catch(() => false)) {
-          composer = loc; break;
+        if ((await loc.count()) > 0 && (await loc.isVisible().catch(() => false))) {
+          composer = loc;
+          break;
         }
       }
       if (!composer) {
@@ -462,7 +484,8 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
     const followupOk = result.followupUserRendered && result.followupAssistantRendered;
     if (seedOk && followupOk) result.status = "ok";
     else if (seedOk && !followupOk) result.status = "followup-failed";
-    else if (result.userMessageRendered && !result.assistantMessageRendered) result.status = "stream-stalled";
+    else if (result.userMessageRendered && !result.assistantMessageRendered)
+      result.status = "stream-stalled";
     else result.status = "no-ui-render";
   } catch (e) {
     if (result.status === "unknown") result.status = "error";
@@ -475,8 +498,12 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
     result.dfTrace = dfTrace.slice(-40);
 
     const shotPath = join(OUT_DIR, `${providerId}-${scenario}.png`);
-    try { await page.screenshot({ path: shotPath, fullPage: true }); result.screenshot = shotPath; }
-    catch (e) { result.notes.push(`screenshot failed: ${e.message}`); }
+    try {
+      await page.screenshot({ path: shotPath, fullPage: true });
+      result.screenshot = shotPath;
+    } catch (e) {
+      result.notes.push(`screenshot failed: ${e.message}`);
+    }
 
     await ctx.close().catch(() => {});
   }
@@ -492,11 +519,17 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
 
   const bridgeUp = await probeBridge();
   log(`bridge /healthz: ${bridgeUp ? "✓" : "✗"}`);
-  if (!bridgeUp) { console.error("Bridge not reachable — start dev:web first."); process.exit(2); }
+  if (!bridgeUp) {
+    console.error("Bridge not reachable — start dev:web first.");
+    process.exit(2);
+  }
 
   const appUp = await ensureAppReady();
   log(`app reachable: ${appUp ? "✓" : "✗"}`);
-  if (!appUp) { console.error("App not reachable."); process.exit(2); }
+  if (!appUp) {
+    console.error("App not reachable.");
+    process.exit(2);
+  }
 
   const browser = await chromium.launch({ headless: true });
 
@@ -514,29 +547,39 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
       }
       r.retries = MAX_RETRIES;
       matrix.push(r);
-      log(`status: ${r.status} · seed.ai: ${r.assistantMessageRendered ? "Y" : "n"} · f.ai: ${r.followupAssistantRendered ? "Y" : "n"} · ${r.elapsedMs}ms`);
+      log(
+        `status: ${r.status} · seed.ai: ${r.assistantMessageRendered ? "Y" : "n"} · f.ai: ${r.followupAssistantRendered ? "Y" : "n"} · ${r.elapsedMs}ms`,
+      );
       if (r.assistantText) log(`seed response: ${r.assistantText.slice(0, 80)}`);
       if (r.followupText) log(`followup response: ${r.followupText.slice(0, 80)}`);
       if (r.notes.length) log(`notes: ${r.notes.slice(-4).join(" | ")}`);
-      if (r.consoleErrors.length) log(`console errors (${r.consoleErrors.length}): ${r.consoleErrors.slice(0, 3).join(" | ")}`);
-      if (r.networkErrors.length) log(`network errors (${r.networkErrors.length}): ${r.networkErrors.slice(0, 5).join(" | ")}`);
+      if (r.consoleErrors.length)
+        log(
+          `console errors (${r.consoleErrors.length}): ${r.consoleErrors.slice(0, 3).join(" | ")}`,
+        );
+      if (r.networkErrors.length)
+        log(
+          `network errors (${r.networkErrors.length}): ${r.networkErrors.slice(0, 5).join(" | ")}`,
+        );
     }
   }
 
   await browser.close();
 
   logSection("MATRIX");
-  console.table(matrix.map(r => ({
-    provider: r.provider,
-    scenario: r.scenario,
-    status: r.status,
-    "u": r.userMessageRendered ? "Y" : "n",
-    "ai": r.assistantMessageRendered ? "Y" : "n",
-    "f.u": r.followupUserRendered ? "Y" : "n",
-    "f.ai": r.followupAssistantRendered ? "Y" : "n",
-    ms: r.elapsedMs,
-    errs: r.consoleErrors.length + r.networkErrors.length,
-  })));
+  console.table(
+    matrix.map((r) => ({
+      provider: r.provider,
+      scenario: r.scenario,
+      status: r.status,
+      u: r.userMessageRendered ? "Y" : "n",
+      ai: r.assistantMessageRendered ? "Y" : "n",
+      "f.u": r.followupUserRendered ? "Y" : "n",
+      "f.ai": r.followupAssistantRendered ? "Y" : "n",
+      ms: r.elapsedMs,
+      errs: r.consoleErrors.length + r.networkErrors.length,
+    })),
+  );
 
   // Unique per-run artifact (timestamped) so concurrent/sequential runs can
   // never clobber each other's results — plus a `matrix.json` "latest" copy
@@ -548,11 +591,18 @@ async function runOneProvider(browser, providerId, seedPrompt, scenario = "seed"
   log(`\nFull report: ${join(OUT_DIR, `matrix-${runId}.json`)}`);
   log(`Screenshots: ${OUT_DIR}`);
 
-  const okCount = matrix.filter(r => r.status === "ok").length;
-  const fails = matrix.filter(r => r.status !== "ok").map(r => `${r.provider}/${r.scenario}(${r.status})`);
+  const okCount = matrix.filter((r) => r.status === "ok").length;
+  const fails = matrix
+    .filter((r) => r.status !== "ok")
+    .map((r) => `${r.provider}/${r.scenario}(${r.status})`);
   // Single unambiguous machine-greppable summary line.
-  log(`\nE2E_RESULT runId=${runId} ${okCount}/${matrix.length} ok${fails.length ? " FAIL=" + fails.join(",") : " ALL_GREEN"}`);
+  log(
+    `\nE2E_RESULT runId=${runId} ${okCount}/${matrix.length} ok${fails.length ? " FAIL=" + fails.join(",") : " ALL_GREEN"}`,
+  );
 
-  const allOk = matrix.every(r => r.status === "ok");
+  const allOk = matrix.every((r) => r.status === "ok");
   process.exit(allOk ? 0 : 1);
-})().catch((e) => { console.error("FATAL:", e); process.exit(3); });
+})().catch((e) => {
+  console.error("FATAL:", e);
+  process.exit(3);
+});

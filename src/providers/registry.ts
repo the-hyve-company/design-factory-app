@@ -44,7 +44,7 @@ export async function probeAllProviders(): Promise<Record<ProviderId, ProviderSt
       } catch (e) {
         return [p.meta.id, { status: "error" as const, detail: String(e) }] as const;
       }
-    })
+    }),
   );
   return Object.fromEntries(entries) as Record<ProviderId, ProviderStatusReport>;
 }

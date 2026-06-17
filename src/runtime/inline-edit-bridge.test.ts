@@ -127,13 +127,15 @@ describe("listenInlineEditFromIframe", () => {
 
     // Synthesize a message with event.source === iframe.contentWindow.
     // happy-dom gives us a real contentWindow.
-    window.dispatchEvent(new MessageEvent("message", {
-      data: {
-        source: INLINE_EDIT_BRIDGE_SOURCE_ID,
-        type: "df:inline-edit:deselect",
-      },
-      source: iframe.contentWindow,
-    }));
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          source: INLINE_EDIT_BRIDGE_SOURCE_ID,
+          type: "df:inline-edit:deselect",
+        },
+        source: iframe.contentWindow,
+      }),
+    );
 
     expect(handler).toHaveBeenCalledTimes(1);
     unsub();
@@ -150,10 +152,12 @@ describe("listenInlineEditFromIframe", () => {
       path: "h1[1]",
       text: "Hello edited",
     };
-    window.dispatchEvent(new MessageEvent("message", {
-      data: { source: INLINE_EDIT_BRIDGE_SOURCE_ID, ...payload },
-      source: iframe.contentWindow,
-    }));
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: { source: INLINE_EDIT_BRIDGE_SOURCE_ID, ...payload },
+        source: iframe.contentWindow,
+      }),
+    );
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler.mock.calls[0][0]).toMatchObject({
@@ -171,13 +175,15 @@ describe("listenInlineEditFromIframe", () => {
     const handler = vi.fn();
     const unsub = listenInlineEditFromIframe(iframe, handler);
 
-    window.dispatchEvent(new MessageEvent("message", {
-      data: {
-        source: INLINE_EDIT_BRIDGE_SOURCE_ID,
-        type: "df:inline-edit:deselect",
-      },
-      source: other.contentWindow,
-    }));
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          source: INLINE_EDIT_BRIDGE_SOURCE_ID,
+          type: "df:inline-edit:deselect",
+        },
+        source: other.contentWindow,
+      }),
+    );
 
     expect(handler).not.toHaveBeenCalled();
     unsub();
@@ -190,13 +196,15 @@ describe("listenInlineEditFromIframe", () => {
     const handler = vi.fn();
     const unsub = listenInlineEditFromIframe(iframe, handler);
 
-    window.dispatchEvent(new MessageEvent("message", {
-      data: {
-        source: "some-other-bridge",
-        type: "df:inline-edit:deselect",
-      },
-      source: iframe.contentWindow,
-    }));
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          source: "some-other-bridge",
+          type: "df:inline-edit:deselect",
+        },
+        source: iframe.contentWindow,
+      }),
+    );
 
     expect(handler).not.toHaveBeenCalled();
     unsub();
@@ -208,13 +216,15 @@ describe("listenInlineEditFromIframe", () => {
     const handler = vi.fn();
     const unsub = listenInlineEditFromIframe(iframe, handler);
     unsub();
-    window.dispatchEvent(new MessageEvent("message", {
-      data: {
-        source: INLINE_EDIT_BRIDGE_SOURCE_ID,
-        type: "df:inline-edit:deselect",
-      },
-      source: iframe.contentWindow,
-    }));
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          source: INLINE_EDIT_BRIDGE_SOURCE_ID,
+          type: "df:inline-edit:deselect",
+        },
+        source: iframe.contentWindow,
+      }),
+    );
     expect(handler).not.toHaveBeenCalled();
     iframe.remove();
   });

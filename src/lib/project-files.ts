@@ -51,7 +51,11 @@ export type ProjectFileRole = z.infer<typeof ProjectFileRoleSchema>;
  *
  * `assets/` matches recursively (e.g. `assets/images/foo.png`).
  */
-export const ROLE_FOLDER_HINTS: ReadonlyArray<{ folder: string; role: ProjectFileRole; recursive?: boolean }> = [
+export const ROLE_FOLDER_HINTS: ReadonlyArray<{
+  folder: string;
+  role: ProjectFileRole;
+  recursive?: boolean;
+}> = [
   { folder: "variants", role: "variant" },
   { folder: "docs", role: "doc" },
   { folder: "prompts", role: "prompt" },
@@ -254,5 +258,11 @@ export function isTypeRoleConsistent(type: string, role: ProjectFileRole): boole
  * Splitting on both separators (`[\\/]`) fixes the platform divergence.
  */
 export function slugFromPath(path: string): string {
-  return path.replace(/[\\/]+$/, "").split(/[\\/]/).filter(Boolean).pop() || "";
+  return (
+    path
+      .replace(/[\\/]+$/, "")
+      .split(/[\\/]/)
+      .filter(Boolean)
+      .pop() || ""
+  );
 }

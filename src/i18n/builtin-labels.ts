@@ -23,7 +23,10 @@
 
 import type { Lang } from "./strings";
 
-interface Pair { pt: string; en: string }
+interface Pair {
+  pt: string;
+  en: string;
+}
 
 /** Resolve a Pair to a string under the active lang.
  *  xx (debug pseudo-locale) wraps pt with ⟨…⟩ markers — same semantics as
@@ -37,18 +40,18 @@ function pick(p: Pair, lang: Lang): string {
 // ─── Canvas presets ────────────────────────────────────────────────────
 
 const CANVAS_PRESET_LABELS: Record<string, Pair> = {
-  "free":        { pt: "Livre",       en: "Free" },
-  "1080-1080":   { pt: "Quadrado",    en: "Square" },
-  "1920-1080":   { pt: "Hero web",    en: "Web Hero" },
-  "1080-1920":   { pt: "Story",       en: "Story" },
-  "1080-1350":   { pt: "Retrato",     en: "Portrait" },
-  "1200-630":    { pt: "OG Image",    en: "OG Image" },
-  "a4":          { pt: "Print A4",    en: "Print A4" },
-  "1080-canvas": { pt: "Card",        en: "Card" },
+  free: { pt: "Livre", en: "Free" },
+  "1080-1080": { pt: "Quadrado", en: "Square" },
+  "1920-1080": { pt: "Hero web", en: "Web Hero" },
+  "1080-1920": { pt: "Story", en: "Story" },
+  "1080-1350": { pt: "Retrato", en: "Portrait" },
+  "1200-630": { pt: "OG Image", en: "OG Image" },
+  a4: { pt: "Print A4", en: "Print A4" },
+  "1080-canvas": { pt: "Card", en: "Card" },
 };
 
 const CANVAS_PRESET_HINTS: Record<string, Pair> = {
-  "free":        { pt: "sem canvas fixo", en: "no fixed canvas" },
+  free: { pt: "sem canvas fixo", en: "no fixed canvas" },
   "1080-canvas": { pt: "marca de canvas", en: "canvas marker" },
 };
 
@@ -65,19 +68,19 @@ export function getBuiltinCanvasHint(id: string, lang: Lang): string | null {
 // ─── Format categories ─────────────────────────────────────────────────
 
 const FORMAT_CATEGORY_LABELS: Record<string, Pair> = {
-  "video":     { pt: "Vídeo",     en: "Video" },
-  "interface": { pt: "Interface", en: "Interface" },
-  "social":    { pt: "Social",    en: "Social" },
-  "print":     { pt: "Impressão", en: "Print" },
-  "other":     { pt: "Outros",    en: "Other" },
+  video: { pt: "Vídeo", en: "Video" },
+  interface: { pt: "Interface", en: "Interface" },
+  social: { pt: "Social", en: "Social" },
+  print: { pt: "Impressão", en: "Print" },
+  other: { pt: "Outros", en: "Other" },
 };
 
 const FORMAT_CATEGORY_HINTS: Record<string, Pair> = {
-  "video":     { pt: "saída em MP4 via render headless", en: "MP4 outputs via headless render" },
-  "interface": { pt: "telas estáticas · saída em HTML",  en: "static screens · HTML output" },
-  "social":    { pt: "para feed · com ratio fixo",       en: "feed-friendly · ratio-locked" },
-  "print":     { pt: "saída física · feel CMYK",         en: "physical output · CMYK feel" },
-  "other":     { pt: "sem categoria",                    en: "uncategorized" },
+  video: { pt: "saída em MP4 via render headless", en: "MP4 outputs via headless render" },
+  interface: { pt: "telas estáticas · saída em HTML", en: "static screens · HTML output" },
+  social: { pt: "para feed · com ratio fixo", en: "feed-friendly · ratio-locked" },
+  print: { pt: "saída física · feel CMYK", en: "physical output · CMYK feel" },
+  other: { pt: "sem categoria", en: "uncategorized" },
 };
 
 export function getBuiltinFormatCategoryLabel(catId: string, lang: Lang): string | null {
@@ -94,61 +97,69 @@ export function getBuiltinFormatCategoryHint(catId: string, lang: Lang): string 
 
 const FORMAT_ITEM_LABELS: Record<string, Pair> = {
   // Video
-  "video/explainer":    { pt: "Explicação",       en: "Explainer" },
-  "video/demo":         { pt: "Demo",             en: "Demo" },
-  "video/intro-outro":  { pt: "Intro / outro",    en: "Intro / outro" },
-  "video/transition":   { pt: "Transição",        en: "Transition" },
-  "video/brand-reel":   { pt: "Brand reel",       en: "Brand reel" },
+  "video/explainer": { pt: "Explicação", en: "Explainer" },
+  "video/demo": { pt: "Demo", en: "Demo" },
+  "video/intro-outro": { pt: "Intro / outro", en: "Intro / outro" },
+  "video/transition": { pt: "Transição", en: "Transition" },
+  "video/brand-reel": { pt: "Brand reel", en: "Brand reel" },
   // Interface
-  "interface/landing":       { pt: "Landing page",   en: "Landing page" },
-  "interface/dashboard":     { pt: "Dashboard",      en: "Dashboard" },
-  "interface/app-screen":    { pt: "Tela de app",    en: "App screen" },
-  "interface/email":         { pt: "E-mail",         en: "Email" },
-  "interface/documentation": { pt: "Documentação",   en: "Documentation" },
+  "interface/landing": { pt: "Landing page", en: "Landing page" },
+  "interface/dashboard": { pt: "Dashboard", en: "Dashboard" },
+  "interface/app-screen": { pt: "Tela de app", en: "App screen" },
+  "interface/email": { pt: "E-mail", en: "Email" },
+  "interface/documentation": { pt: "Documentação", en: "Documentation" },
   // Social
-  "social/post":          { pt: "Post",          en: "Post" },
-  "social/story":         { pt: "Story",         en: "Story" },
-  "social/reel":          { pt: "Reel",          en: "Reel" },
-  "social/thread":        { pt: "Thread",        en: "Thread" },
+  "social/post": { pt: "Post", en: "Post" },
+  "social/story": { pt: "Story", en: "Story" },
+  "social/reel": { pt: "Reel", en: "Reel" },
+  "social/thread": { pt: "Thread", en: "Thread" },
   "social/header-banner": { pt: "Banner de capa", en: "Header banner" },
   // Print
-  "print/poster":        { pt: "Pôster",         en: "Poster" },
-  "print/business-card": { pt: "Cartão",         en: "Business card" },
-  "print/brochure":      { pt: "Folder",         en: "Brochure" },
-  "print/flyer":         { pt: "Flyer",          en: "Flyer" },
+  "print/poster": { pt: "Pôster", en: "Poster" },
+  "print/business-card": { pt: "Cartão", en: "Business card" },
+  "print/brochure": { pt: "Folder", en: "Brochure" },
+  "print/flyer": { pt: "Flyer", en: "Flyer" },
   // Other
   "other/free": { pt: "Livre / sem definição", en: "Free / unspecified" },
 };
 
 const FORMAT_ITEM_DESCRIPTORS: Record<string, Pair> = {
-  "video/explainer":    { pt: "didático · denso",         en: "didactic · dense" },
-  "video/demo":         { pt: "passo a passo de feature", en: "feature walkthrough" },
-  "video/intro-outro":  { pt: "abertura/encerramento",    en: "branded bookend" },
-  "video/transition":   { pt: "ponte entre cenas",        en: "shot bridge" },
-  "video/brand-reel":   { pt: "loop · ambiente",          en: "loop · ambient" },
-  "interface/landing":       { pt: "hero · seções · CTA", en: "hero · sections · CTA" },
-  "interface/dashboard":     { pt: "denso · painéis",     en: "data dense · panels" },
-  "interface/app-screen":    { pt: "uma única tela",      en: "single view" },
-  "interface/email":         { pt: "HTML pra inbox",      en: "inbox-safe HTML" },
-  "interface/documentation": { pt: "referência longa",    en: "longform reference" },
-  "social/post":          { pt: "card de feed",                en: "feed card" },
-  "social/story":         { pt: "9:16 vertical",              en: "9:16 vertical" },
-  "social/reel":          { pt: "vídeo curto em loop",         en: "short video loop" },
-  "social/thread":        { pt: "narrativa em frames",         en: "multi-frame narrative" },
-  "social/header-banner": { pt: "perfil / canal",              en: "profile / channel art" },
-  "print/poster":        { pt: "parede · expositor",        en: "wall · display" },
-  "print/business-card": { pt: "85×55mm",                    en: "85×55mm" },
-  "print/brochure":      { pt: "dobras · multi-painéis",    en: "fold · multi-panel" },
-  "print/flyer":         { pt: "folha única",               en: "single sheet" },
-  "other/free":          { pt: "ainda sem compromisso",     en: "no commitment yet" },
+  "video/explainer": { pt: "didático · denso", en: "didactic · dense" },
+  "video/demo": { pt: "passo a passo de feature", en: "feature walkthrough" },
+  "video/intro-outro": { pt: "abertura/encerramento", en: "branded bookend" },
+  "video/transition": { pt: "ponte entre cenas", en: "shot bridge" },
+  "video/brand-reel": { pt: "loop · ambiente", en: "loop · ambient" },
+  "interface/landing": { pt: "hero · seções · CTA", en: "hero · sections · CTA" },
+  "interface/dashboard": { pt: "denso · painéis", en: "data dense · panels" },
+  "interface/app-screen": { pt: "uma única tela", en: "single view" },
+  "interface/email": { pt: "HTML pra inbox", en: "inbox-safe HTML" },
+  "interface/documentation": { pt: "referência longa", en: "longform reference" },
+  "social/post": { pt: "card de feed", en: "feed card" },
+  "social/story": { pt: "9:16 vertical", en: "9:16 vertical" },
+  "social/reel": { pt: "vídeo curto em loop", en: "short video loop" },
+  "social/thread": { pt: "narrativa em frames", en: "multi-frame narrative" },
+  "social/header-banner": { pt: "perfil / canal", en: "profile / channel art" },
+  "print/poster": { pt: "parede · expositor", en: "wall · display" },
+  "print/business-card": { pt: "85×55mm", en: "85×55mm" },
+  "print/brochure": { pt: "dobras · multi-painéis", en: "fold · multi-panel" },
+  "print/flyer": { pt: "folha única", en: "single sheet" },
+  "other/free": { pt: "ainda sem compromisso", en: "no commitment yet" },
 };
 
-export function getBuiltinFormatItemLabel(catId: string, itemId: string, lang: Lang): string | null {
+export function getBuiltinFormatItemLabel(
+  catId: string,
+  itemId: string,
+  lang: Lang,
+): string | null {
   const v = FORMAT_ITEM_LABELS[`${catId}/${itemId}`];
   return v ? pick(v, lang) : null;
 }
 
-export function getBuiltinFormatItemDescriptor(catId: string, itemId: string, lang: Lang): string | null {
+export function getBuiltinFormatItemDescriptor(
+  catId: string,
+  itemId: string,
+  lang: Lang,
+): string | null {
   const v = FORMAT_ITEM_DESCRIPTORS[`${catId}/${itemId}`];
   return v ? pick(v, lang) : null;
 }
@@ -167,43 +178,61 @@ export function getBuiltinFormatItemDescriptor(catId: string, itemId: string, la
 // the i18n table self-contained (no cross-file divergence audit).
 const RULE_TITLES: Record<string, Pair> = {
   // Anti-slop
-  "as-no-decorative-emojis":  { pt: "Sem emojis decorativos",          en: "No decorative emojis" },
-  "as-no-invented-decoration":{ pt: "Sem decoração inventada",          en: "No invented decoration" },
-  "as-no-placeholder-text":   { pt: "Sem texto-placeholder",            en: "No placeholder text" },
-  "as-no-external-assets":    { pt: "Sem assets externos",              en: "No external assets" },
-  "as-no-fake-data":          { pt: "Sem dados fake ou mock",           en: "No fake or mock data" },
-  "as-no-ai-tells":           { pt: "Sem voz de assistente no output",  en: "No AI tells in output" },
-  "as-no-silent-fallbacks":   { pt: "Sem fallback silencioso",          en: "No silent fallbacks" },
-  "as-no-hedging":            { pt: "Sem hedge no que foi entregue",    en: "No hedging in shipped output" },
+  "as-no-decorative-emojis": { pt: "Sem emojis decorativos", en: "No decorative emojis" },
+  "as-no-invented-decoration": { pt: "Sem decoração inventada", en: "No invented decoration" },
+  "as-no-placeholder-text": { pt: "Sem texto-placeholder", en: "No placeholder text" },
+  "as-no-external-assets": { pt: "Sem assets externos", en: "No external assets" },
+  "as-no-fake-data": { pt: "Sem dados fake ou mock", en: "No fake or mock data" },
+  "as-no-ai-tells": { pt: "Sem voz de assistente no output", en: "No AI tells in output" },
+  "as-no-silent-fallbacks": { pt: "Sem fallback silencioso", en: "No silent fallbacks" },
+  "as-no-hedging": { pt: "Sem hedge no que foi entregue", en: "No hedging in shipped output" },
   // Tone
-  "tn-read-ds-canon":         { pt: "Ler o canon do design system",     en: "Read design system canon first" },
-  "tn-one-detail-earns":      { pt: "Um detalhe que justifica a peça",  en: "One detail that earns the work" },
-  "tn-surgical-edits":        { pt: "Edições cirúrgicas primeiro",      en: "Surgical edits first" },
-  "tn-ship-complete":         { pt: "Entregar inteiro, não em pedaços", en: "Ship complete, not chunks" },
-  "tn-show-dont-tell":        { pt: "Mostrar, não descrever",            en: "Show, don't tell" },
+  "tn-read-ds-canon": { pt: "Ler o canon do design system", en: "Read design system canon first" },
+  "tn-one-detail-earns": {
+    pt: "Um detalhe que justifica a peça",
+    en: "One detail that earns the work",
+  },
+  "tn-surgical-edits": { pt: "Edições cirúrgicas primeiro", en: "Surgical edits first" },
+  "tn-ship-complete": { pt: "Entregar inteiro, não em pedaços", en: "Ship complete, not chunks" },
+  "tn-show-dont-tell": { pt: "Mostrar, não descrever", en: "Show, don't tell" },
   // Motion
-  "mo-honor-reduced-motion":  { pt: "Respeitar reduced-motion",          en: "Honor reduced motion" },
-  "mo-motion-serves-meaning": { pt: "Animação serve significado",        en: "Motion serves meaning" },
-  "mo-no-decorative-spinners":{ pt: "Sem spinner infinito decorativo",   en: "No infinite spinners as decoration" },
+  "mo-honor-reduced-motion": { pt: "Respeitar reduced-motion", en: "Honor reduced motion" },
+  "mo-motion-serves-meaning": { pt: "Animação serve significado", en: "Motion serves meaning" },
+  "mo-no-decorative-spinners": {
+    pt: "Sem spinner infinito decorativo",
+    en: "No infinite spinners as decoration",
+  },
   // Color
-  "co-honor-existing-palette":{ pt: "Honrar a paleta existente",         en: "Honor user's existing palette" },
-  "co-wcag-aa-on-text":       { pt: "WCAG AA em texto",                  en: "WCAG AA on text" },
-  "co-no-raw-black":          { pt: "Sem preto puro",                    en: "No raw black" },
-  "co-brand-color-sparingly": { pt: "Cor da marca com parcimônia",       en: "Brand color sparingly" },
+  "co-honor-existing-palette": {
+    pt: "Honrar a paleta existente",
+    en: "Honor user's existing palette",
+  },
+  "co-wcag-aa-on-text": { pt: "WCAG AA em texto", en: "WCAG AA on text" },
+  "co-no-raw-black": { pt: "Sem preto puro", en: "No raw black" },
+  "co-brand-color-sparingly": { pt: "Cor da marca com parcimônia", en: "Brand color sparingly" },
   // Language
-  "ln-match-user-language":   { pt: "Falar o idioma do usuário",         en: "Match user's language" },
-  "ln-utf8-strict":           { pt: "UTF-8 sempre",                      en: "UTF-8 strict" },
+  "ln-match-user-language": { pt: "Falar o idioma do usuário", en: "Match user's language" },
+  "ln-utf8-strict": { pt: "UTF-8 sempre", en: "UTF-8 strict" },
   // Voice
-  "vo-plain-register":        { pt: "Registro simples",                  en: "Plain register" },
-  "vo-no-marketing-speak":    { pt: "Sem marketing-speak",               en: "No marketing speak" },
-  "vo-concrete-over-abstract":{ pt: "Concreto, não abstrato",            en: "Concrete over abstract" },
+  "vo-plain-register": { pt: "Registro simples", en: "Plain register" },
+  "vo-no-marketing-speak": { pt: "Sem marketing-speak", en: "No marketing speak" },
+  "vo-concrete-over-abstract": { pt: "Concreto, não abstrato", en: "Concrete over abstract" },
   // Layout
-  "ly-no-card-bars":          { pt: "Sem barras decorativas em cards",   en: "No card bars or vertical accents" },
-  "ly-respect-viewport":      { pt: "Respeitar o viewport",              en: "Respect viewport" },
-  "ly-sticky-has-escape":     { pt: "Sticky sempre tem como fechar",     en: "Sticky elements have escape" },
-  "ly-optical-alignment":     { pt: "Alinhamento óptico",                en: "Optical alignment" },
+  "ly-no-card-bars": {
+    pt: "Sem barras decorativas em cards",
+    en: "No card bars or vertical accents",
+  },
+  "ly-respect-viewport": { pt: "Respeitar o viewport", en: "Respect viewport" },
+  "ly-sticky-has-escape": {
+    pt: "Sticky sempre tem como fechar",
+    en: "Sticky elements have escape",
+  },
+  "ly-optical-alignment": { pt: "Alinhamento óptico", en: "Optical alignment" },
   // Custom
-  "cu-tabular-nums":          { pt: "Tabular nums para dados numéricos", en: "Tabular nums for numerical data" },
+  "cu-tabular-nums": {
+    pt: "Tabular nums para dados numéricos",
+    en: "Tabular nums for numerical data",
+  },
 };
 
 // Full PT translations of the EN descriptions in rules-taxonomy.ts.
@@ -221,28 +250,28 @@ const RULE_DESCRIPTIONS: Record<string, Pair> = {
     en: "Adding gradients, glows, blurs, cursor torches, particle fields, or animated backgrounds without grounding in the project's design system creates inconsistency and dates the work the moment a real DS lands. Before reaching for a decorative effect, check the existing tokens and components — reuse what is already canonical, or fall back to functional emphasis (weight change, established palette colour, motion that signals state). When in doubt, omit; restraint reads as confidence.",
   },
   "as-no-placeholder-text": {
-    pt: "Lorem ipsum, \"Feature 1/2/3\", \"[TODO]\", \"Click here\" e \"Adicione conteúdo aqui\" marcam um draft como não-pronto e desperdiçam atenção do leitor. Escreva os labels e a copy real que a superfície precisa — mesmo texto provisório realista (\"Inscrições abrem em março\") supera filler em latim porque testa o layout em line-lengths reais. Quando um slot ainda não tem conteúdo definido, deixe vazio (ou marcado com data-attribute que o pipeline detecta) em vez de mostrar string de placeholder.",
-    en: "Lorem ipsum, \"Feature 1/2/3\", \"[TODO]\", \"Click here\", and \"Add your content here\" mark a draft as unfinished and waste the reader's attention. Write the actual labels and copy the surface needs — even rough realistic text (\"Inscrições abrem em março\") beats Latin filler because it stress-tests the layout at real line lengths. When a slot genuinely has no content yet, leave it empty (or marked with a data attribute the pipeline catches) rather than ship visible filler strings.",
+    pt: 'Lorem ipsum, "Feature 1/2/3", "[TODO]", "Click here" e "Adicione conteúdo aqui" marcam um draft como não-pronto e desperdiçam atenção do leitor. Escreva os labels e a copy real que a superfície precisa — mesmo texto provisório realista ("Inscrições abrem em março") supera filler em latim porque testa o layout em line-lengths reais. Quando um slot ainda não tem conteúdo definido, deixe vazio (ou marcado com data-attribute que o pipeline detecta) em vez de mostrar string de placeholder.',
+    en: 'Lorem ipsum, "Feature 1/2/3", "[TODO]", "Click here", and "Add your content here" mark a draft as unfinished and waste the reader\'s attention. Write the actual labels and copy the surface needs — even rough realistic text ("Inscrições abrem em março") beats Latin filler because it stress-tests the layout at real line lengths. When a slot genuinely has no content yet, leave it empty (or marked with a data attribute the pipeline catches) rather than ship visible filler strings.',
   },
   "as-no-external-assets": {
     pt: "Linkar pra CDNs externos (fonts.googleapis.com, unpkg, cdn.jsdelivr) ou hotlinkar imagens quebra a página offline, quando o CDN muda URLs e quando a rede está lenta. Embuta fontes via @font-face com data URIs base64, inline ícones SVG direto no markup, e mantenha imagens grandes sob a raiz do projeto referenciadas por caminhos relativos. O artefato precisa viajar como arquivo único auto-contido (ou pasta) — esse é o contrato.",
     en: "Linking to external CDNs (`fonts.googleapis.com`, `unpkg`, `cdn.jsdelivr`) or hotlinked images breaks the page offline, when the CDN rotates URLs, and when the network is slow. Inline fonts via `@font-face` with base64 data URIs, embed small images as base64 directly in markup, and keep larger media under the project root referenced by relative paths. The artifact must travel as a single self-contained file (or folder) — that is the contract.",
   },
   "as-no-fake-data": {
-    pt: "\"User 1, User 2, User 3\" e \"$XX,XX\" fazem o output parecer template barato. Use dados realistas plausíveis: nomes com cara de nome (\"Ana Reis\", \"Marcus Tan\"), números com padrão de número real (preços R$24 / R$89 / R$1.240, não 1 / 2 / 3), datas relativas a hoje (\"semana passada\", \"em março\"). Quando o domínio importa (analytics, billing), siga as convenções dele pra superfície ler como o produto real que ela diz ser.",
-    en: "\"User 1, User 2, User 3\" and \"$XX.XX\" make outputs read as low-effort templates. Use plausible realistic data: real-shape names (\"Ana Reis\", \"Marcus Tan\"), numbers that pattern like actual numbers (prices $24 / $89 / $1,240, not 1 / 2 / 3), dates relative to today (\"last week\", \"em março\"). When the domain matters (analytics, billing), follow that domain's conventions so the surface reads as the working product it claims to be.",
+    pt: '"User 1, User 2, User 3" e "$XX,XX" fazem o output parecer template barato. Use dados realistas plausíveis: nomes com cara de nome ("Ana Reis", "Marcus Tan"), números com padrão de número real (preços R$24 / R$89 / R$1.240, não 1 / 2 / 3), datas relativas a hoje ("semana passada", "em março"). Quando o domínio importa (analytics, billing), siga as convenções dele pra superfície ler como o produto real que ela diz ser.',
+    en: '"User 1, User 2, User 3" and "$XX.XX" make outputs read as low-effort templates. Use plausible realistic data: real-shape names ("Ana Reis", "Marcus Tan"), numbers that pattern like actual numbers (prices $24 / $89 / $1,240, not 1 / 2 / 3), dates relative to today ("last week", "em março"). When the domain matters (analytics, billing), follow that domain\'s conventions so the surface reads as the working product it claims to be.',
   },
   "as-no-ai-tells": {
-    pt: "\"Posso ajudar com isso\", \"Certo!\", \"Como um AI\", \"Aqui está o que posso fazer\", \"Me avise se precisar de mais\" vazam a voz do assistente em superfícies de produto e fazem o trabalho parecer scripted. Tire o registro de assistente-prestativo inteiro — fale como o produto ou documento em si. O usuário já sabe que está usando uma ferramenta; a ferramenta não precisa se apresentar a cada resposta.",
-    en: "\"I'd be happy to help\", \"Certainly!\", \"As an AI\", \"Here's what I can do\", \"Let me know if you need anything else\" leak the assistant's voice into product surfaces and make the work feel scripted. Strip the helpful-assistant register entirely — speak as the product or document itself. The user already knows they're using a tool; the tool doesn't need to introduce itself on every response.",
+    pt: '"Posso ajudar com isso", "Certo!", "Como um AI", "Aqui está o que posso fazer", "Me avise se precisar de mais" vazam a voz do assistente em superfícies de produto e fazem o trabalho parecer scripted. Tire o registro de assistente-prestativo inteiro — fale como o produto ou documento em si. O usuário já sabe que está usando uma ferramenta; a ferramenta não precisa se apresentar a cada resposta.',
+    en: '"I\'d be happy to help", "Certainly!", "As an AI", "Here\'s what I can do", "Let me know if you need anything else" leak the assistant\'s voice into product surfaces and make the work feel scripted. Strip the helpful-assistant register entirely — speak as the product or document itself. The user already knows they\'re using a tool; the tool doesn\'t need to introduce itself on every response.',
   },
   "as-no-silent-fallbacks": {
-    pt: "Padrões como catch(() => {}), ?? defaultValue sem log, e \"se falhar mostra nada\" transformam bugs em degradação invisível que custa dias pra debugar. Quando algo falha, logue o erro com escopo + operação tentada + causa real, e ou superfície uma mensagem visível pro usuário ou retorne um Result tipado que o caller é obrigado a tratar. Swallow silencioso só é aceitável quando você está filtrando falhas conhecidas-benignas, e o comentário acima do catch precisa explicar.",
-    en: "Patterns like `catch(() => {})`, `?? defaultValue` without logging, and \"if it fails, show nothing\" turn bugs into invisible degradation that costs days to debug. When something fails, log the error with scope + attempted operation + actual cause, then either surface a user-visible message or return a typed error result the caller has to handle. Silent swallow is acceptable only when you're filtering known-benign failures, and the comment above the catch must say so.",
+    pt: 'Padrões como catch(() => {}), ?? defaultValue sem log, e "se falhar mostra nada" transformam bugs em degradação invisível que custa dias pra debugar. Quando algo falha, logue o erro com escopo + operação tentada + causa real, e ou superfície uma mensagem visível pro usuário ou retorne um Result tipado que o caller é obrigado a tratar. Swallow silencioso só é aceitável quando você está filtrando falhas conhecidas-benignas, e o comentário acima do catch precisa explicar.',
+    en: 'Patterns like `catch(() => {})`, `?? defaultValue` without logging, and "if it fails, show nothing" turn bugs into invisible degradation that costs days to debug. When something fails, log the error with scope + attempted operation + actual cause, then either surface a user-visible message or return a typed error result the caller has to handle. Silent swallow is acceptable only when you\'re filtering known-benign failures, and the comment above the catch must say so.',
   },
   "as-no-hedging": {
-    pt: "\"Talvez\", \"poderia ser\", \"ainda precisa de polish\", \"em uma próxima iteração\", \"para production-ready precisaríamos\" — isso é coisa de design review, nunca da superfície que um usuário real vai ler. Faça a chamada dentro das constraints, entregue a melhor versão que couber, e siga. Se algo está genuinamente incompleto, diga uma vez no commit message ou changelog — nunca no output que vai pra usuário.",
-    en: "\"Talvez\", \"poderia ser\", \"ainda precisa de polish\", \"em uma próxima iteração\", \"para production-ready precisaríamos\" — these belong in design reviews, never in the surface a real user reads. Make the call within the constraints, ship the best version that fits, and move on. If something is genuinely incomplete, name it once in the commit message or changelog — never in the user-facing output itself.",
+    pt: '"Talvez", "poderia ser", "ainda precisa de polish", "em uma próxima iteração", "para production-ready precisaríamos" — isso é coisa de design review, nunca da superfície que um usuário real vai ler. Faça a chamada dentro das constraints, entregue a melhor versão que couber, e siga. Se algo está genuinamente incompleto, diga uma vez no commit message ou changelog — nunca no output que vai pra usuário.',
+    en: '"Talvez", "poderia ser", "ainda precisa de polish", "em uma próxima iteração", "para production-ready precisaríamos" — these belong in design reviews, never in the surface a real user reads. Make the call within the constraints, ship the best version that fits, and move on. If something is genuinely incomplete, name it once in the commit message or changelog — never in the user-facing output itself.',
   },
   "tn-read-ds-canon": {
     pt: "Antes de gerar qualquer UI, paleta ou variante de componente, leia a documentação do design system do projeto (design.md, arquivo de tokens, DESIGN-RULES ou equivalente). Improvisar cores, escala de spacing, ramp tipográfico ou radius quando o canon já define produz output que dá drift do resto do produto. Quando o projeto ainda não tem DS, estabeleça 3-5 tokens canônicos antes (uma escala neutra, um accent, dois tamanhos de texto, dois de spacing) e reuse.",
@@ -257,12 +286,12 @@ const RULE_DESCRIPTIONS: Record<string, Pair> = {
     en: "When asked to change one thing, change only that thing — don't refactor adjacent code, rename unrelated variables, tighten styling outside the scope, or add features the brief didn't ask for. Surgical edits keep diffs reviewable and respect the implicit contract that the rest of the file works. When you spot something else broken, file a separate follow-up — never land it as a side effect.",
   },
   "tn-ship-complete": {
-    pt: "Entregue um artefato funcionando — arquivo que abre, demo que roda, copy que se lê do começo ao fim — não um draft parcial com lista do que ainda falta. Quando o escopo é grande demais pra finalizar em uma pass, estreite o escopo: uma superfície menor entregue inteira vence uma maior pela metade. \"Funciona em escopo menor\" é o tipo de edit que um mantenedor consegue mergear de verdade.",
-    en: "Deliver a working artifact — a file that opens, a demo that runs, copy that reads end-to-end — not a partial draft with a list of remaining items. When the scope is too large to finish in one pass, narrow the scope: a smaller surface shipped whole beats a larger surface half-built. \"Working at smaller scope\" is the kind of edit a maintainer can actually merge.",
+    pt: 'Entregue um artefato funcionando — arquivo que abre, demo que roda, copy que se lê do começo ao fim — não um draft parcial com lista do que ainda falta. Quando o escopo é grande demais pra finalizar em uma pass, estreite o escopo: uma superfície menor entregue inteira vence uma maior pela metade. "Funciona em escopo menor" é o tipo de edit que um mantenedor consegue mergear de verdade.',
+    en: 'Deliver a working artifact — a file that opens, a demo that runs, copy that reads end-to-end — not a partial draft with a list of remaining items. When the scope is too large to finish in one pass, narrow the scope: a smaller surface shipped whole beats a larger surface half-built. "Working at smaller scope" is the kind of edit a maintainer can actually merge.',
   },
   "tn-show-dont-tell": {
-    pt: "Não descreva o que uma feature faz em copy (\"sugestões inteligentes aparecem enquanto você digita\"); demonstre com a interface funcionando. Não afirme que um produto é \"rápido\" ou \"intuitivo\" — deixe os affordances falarem. Em documentação, comece com um exemplo executável, depois explique por que funciona. A demo carrega peso; o adjetivo não.",
-    en: "Don't describe what a feature does in copy (\"intelligent suggestions appear as you type\"); demonstrate it with the working interface itself. Don't claim a product is \"fast\" or \"intuitive\" — let the affordances speak. In documentation, lead with a runnable example, then explain why it works. The demo carries weight; the adjective doesn't.",
+    pt: 'Não descreva o que uma feature faz em copy ("sugestões inteligentes aparecem enquanto você digita"); demonstre com a interface funcionando. Não afirme que um produto é "rápido" ou "intuitivo" — deixe os affordances falarem. Em documentação, comece com um exemplo executável, depois explique por que funciona. A demo carrega peso; o adjetivo não.',
+    en: 'Don\'t describe what a feature does in copy ("intelligent suggestions appear as you type"); demonstrate it with the working interface itself. Don\'t claim a product is "fast" or "intuitive" — let the affordances speak. In documentation, lead with a runnable example, then explain why it works. The demo carries weight; the adjective doesn\'t.',
   },
   "mo-honor-reduced-motion": {
     pt: "Envolva toda animação não-essencial em @media (prefers-reduced-motion: reduce) e forneça fallback estático ou um cross-fade muito mais curto. Distúrbios vestibulares tornam parallax, slide-in transitions e motion em autoplay fisicamente dolorosos pra uma fração relevante dos usuários. Animação essencial (progress de loading, focus ring) pode ficar; o resto precisa de alternativa parada.",
@@ -277,12 +306,12 @@ const RULE_DESCRIPTIONS: Record<string, Pair> = {
     en: "Indefinite spinners belong on real work whose duration you can't measure ahead of time. They don't belong on idle surfaces — a button with a permanent spin reads as broken or stuck, and trains users to ignore real loading states later. When a surface needs visual interest, use a static badge, a subtle pulse on a primary element, or content that breathes via typography — never perpetual rotation.",
   },
   "co-honor-existing-palette": {
-    pt: "Quando o projeto já define cores (tokens.css, um DS, guia de marca), construa componentes novos a partir da escala existente: derive tints, shades e accents dos hues estabelecidos em vez de introduzir novos. Adicionar \"só uma cor nova\" por feature fragmenta a identidade visual até nada ler como sistema. Quando você genuinamente precisa de um hue novo, expanda a paleta com a escala completa (10 stops do claro ao escuro) e documente junto às existentes — nunca um valor órfão.",
-    en: "When the project already defines colours (tokens.css, a DS, a brand guide), build new components from the existing scale: derive tints, shades, and accents from the established hues rather than introducing fresh ones. Adding \"just one new colour\" per feature fragments visual identity until nothing reads as a system. When you genuinely need a new hue, expand the palette with a full scale (10 steps, light → dark) and document it alongside the existing ones — never one orphan value.",
+    pt: 'Quando o projeto já define cores (tokens.css, um DS, guia de marca), construa componentes novos a partir da escala existente: derive tints, shades e accents dos hues estabelecidos em vez de introduzir novos. Adicionar "só uma cor nova" por feature fragmenta a identidade visual até nada ler como sistema. Quando você genuinamente precisa de um hue novo, expanda a paleta com a escala completa (10 stops do claro ao escuro) e documente junto às existentes — nunca um valor órfão.',
+    en: 'When the project already defines colours (tokens.css, a DS, a brand guide), build new components from the existing scale: derive tints, shades, and accents from the established hues rather than introducing fresh ones. Adding "just one new colour" per feature fragments visual identity until nothing reads as a system. When you genuinely need a new hue, expand the palette with a full scale (10 steps, light → dark) and document it alongside the existing ones — never one orphan value.',
   },
   "co-wcag-aa-on-text": {
-    pt: "Texto corrido precisa de pelo menos 4,5:1 de contraste contra o fundo; texto grande (≥18pt ou ≥14pt bold) precisa de 3:1. Cheque pares reais em ambos os temas (light e dark) antes de entregar — \"parece bom na minha tela\" não é OK. Quando uma cor da marca falha no contraste pra texto, mantenha como accent decorativo (LED, dot, underline) e use um neutro de contraste maior pra letras de fato.",
-    en: "Body text needs at least 4.5:1 contrast against its background; large text (≥18pt or ≥14pt bold) needs 3:1. Check actual pairs in both light and dark themes before shipping — \"looks fine on my screen\" is not a green light. When a brand colour fails contrast for text, keep it as a decorative accent (a LED, a dot, an underline) and use a higher-contrast neutral for the actual letters.",
+    pt: 'Texto corrido precisa de pelo menos 4,5:1 de contraste contra o fundo; texto grande (≥18pt ou ≥14pt bold) precisa de 3:1. Cheque pares reais em ambos os temas (light e dark) antes de entregar — "parece bom na minha tela" não é OK. Quando uma cor da marca falha no contraste pra texto, mantenha como accent decorativo (LED, dot, underline) e use um neutro de contraste maior pra letras de fato.',
+    en: 'Body text needs at least 4.5:1 contrast against its background; large text (≥18pt or ≥14pt bold) needs 3:1. Check actual pairs in both light and dark themes before shipping — "looks fine on my screen" is not a green light. When a brand colour fails contrast for text, keep it as a decorative accent (a LED, a dot, an underline) and use a higher-contrast neutral for the actual letters.',
   },
   "co-no-raw-black": {
     pt: "#000 puro lê como flat e datado contra qualquer superfície moderna — esmaga detalhe de sombra, quebra anti-aliasing de tipografia e não tem o undertone warm que tinta real tem. Use um warm charcoal (#1a1a17, oklch(0.18 0.005 80) ou equivalente no seu color space) pra texto e superfícies pesadas de tinta. Mesma lógica pra #fff puro — prefira um off-white (#fafaf7) pra fundos que devem ter cara de papel.",
@@ -301,16 +330,16 @@ const RULE_DESCRIPTIONS: Record<string, Pair> = {
     en: "Always output UTF-8 with full accent preservation. Don't use HTML entities for accented characters (`&aacute;` for á), don't fall back to ASCII transliteration, and don't store text as base64 when it should be UTF-8. The round-trip write → save → reload → render must leave acute, tilde, cedilla, and emoji intact. Box-drawing characters (`─ ┄ ━`) and arrow symbols are equally first-class — strip them only when the destination format truly can't carry them.",
   },
   "vo-plain-register": {
-    pt: "Escreva no registro de um colega focado explicando algo concreto — não no registro de folheto de marketing ou memo corporativo. Sem \"alavancar\", sem \"habilitar\", sem \"robusto\", sem \"world-class\". Frases curtas que nomeiam a coisa diretamente. O leitor é inteligente e ocupado; respeite ambos.",
-    en: "Write at the register of a focused colleague explaining something concrete — not the register of a marketing brochure or a corporate memo. No \"leverage\", no \"enable\", no \"robust\", no \"world-class\". Short sentences that name the thing directly. The reader is smart and busy; respect both.",
+    pt: 'Escreva no registro de um colega focado explicando algo concreto — não no registro de folheto de marketing ou memo corporativo. Sem "alavancar", sem "habilitar", sem "robusto", sem "world-class". Frases curtas que nomeiam a coisa diretamente. O leitor é inteligente e ocupado; respeite ambos.',
+    en: 'Write at the register of a focused colleague explaining something concrete — not the register of a marketing brochure or a corporate memo. No "leverage", no "enable", no "robust", no "world-class". Short sentences that name the thing directly. The reader is smart and busy; respect both.',
   },
   "vo-no-marketing-speak": {
-    pt: "Vocabulário banido: \"alavancar\", \"sinergia\", \"revolucionário\", \"world-class\", \"next-generation\", \"game-changing\", \"best-in-class\", \"cutting-edge\", \"robusto\", \"seamless\", \"intuitivo\", \"delightful\", \"poderoso\". Essas palavras sinalizam que quem escreve não sabe descrever o que está afirmando. Substitua cada uma por específicos concretos: \"editor poderoso\" → \"edita arquivos localmente com autosave a cada 1s\".",
-    en: "Banned vocabulary: \"leverage\", \"synergy\", \"revolutionary\", \"world-class\", \"next-generation\", \"game-changing\", \"best-in-class\", \"cutting-edge\", \"robust\", \"seamless\", \"intuitive\", \"delightful\", \"powerful\". These words signal the writer doesn't know how to describe what they're claiming. Replace each with concrete specifics: \"powerful editor\" → \"edits files locally with autosave at 1s intervals\".",
+    pt: 'Vocabulário banido: "alavancar", "sinergia", "revolucionário", "world-class", "next-generation", "game-changing", "best-in-class", "cutting-edge", "robusto", "seamless", "intuitivo", "delightful", "poderoso". Essas palavras sinalizam que quem escreve não sabe descrever o que está afirmando. Substitua cada uma por específicos concretos: "editor poderoso" → "edita arquivos localmente com autosave a cada 1s".',
+    en: 'Banned vocabulary: "leverage", "synergy", "revolutionary", "world-class", "next-generation", "game-changing", "best-in-class", "cutting-edge", "robust", "seamless", "intuitive", "delightful", "powerful". These words signal the writer doesn\'t know how to describe what they\'re claiming. Replace each with concrete specifics: "powerful editor" → "edits files locally with autosave at 1s intervals".',
   },
   "vo-concrete-over-abstract": {
-    pt: "Números, exemplos e entidades nomeadas vencem adjetivos sempre. \"Rápido\" vira \"carrega em menos de 300ms\"; \"popular\" vira \"usado por 1.200 times\"; \"fácil\" vira \"três teclas a partir do cold start\". Quando não dá pra quantificar, nomeie uma instância específica: \"o tipo de edit que você faz nas passes um e dois\" vence \"suporta edits complexos\". Vago é o default fácil — específico é a disciplina.",
-    en: "Numbers, examples, and named entities beat adjectives every time. \"Fast\" becomes \"loads in under 300ms\"; \"popular\" becomes \"used by 1,200 teams\"; \"easy\" becomes \"three keystrokes from cold start\". When you can't quantify, name a specific instance: \"the kind of edit you do in passes one and two\" beats \"supports complex edits\". Vagueness is the easy default — specificity is the discipline.",
+    pt: 'Números, exemplos e entidades nomeadas vencem adjetivos sempre. "Rápido" vira "carrega em menos de 300ms"; "popular" vira "usado por 1.200 times"; "fácil" vira "três teclas a partir do cold start". Quando não dá pra quantificar, nomeie uma instância específica: "o tipo de edit que você faz nas passes um e dois" vence "suporta edits complexos". Vago é o default fácil — específico é a disciplina.',
+    en: 'Numbers, examples, and named entities beat adjectives every time. "Fast" becomes "loads in under 300ms"; "popular" becomes "used by 1,200 teams"; "easy" becomes "three keystrokes from cold start". When you can\'t quantify, name a specific instance: "the kind of edit you do in passes one and two" beats "supports complex edits". Vagueness is the easy default — specificity is the discipline.',
   },
   "ly-no-card-bars": {
     pt: "Barras decorativas no topo, base ou lateral de um card não adicionam informação — fragmentam o card visualmente e datam o design rápido (o trope lê como SaaS dashboard de 2019). Pra sinalizar hierarquia ou status dentro de um card, use o conteúdo do próprio card: um heading maior, um dot colorido adjacente ao título, um background tonal. Quando precisar de divisor, use whitespace — não tinta.",
@@ -367,12 +396,20 @@ export function formatCategoryHint(cat: { id: string; hint?: string }, lang: Lan
 }
 
 /** Format item label with i18n fallback. */
-export function formatItemLabel(catId: string, item: { id: string; label: string }, lang: Lang): string {
+export function formatItemLabel(
+  catId: string,
+  item: { id: string; label: string },
+  lang: Lang,
+): string {
   return getBuiltinFormatItemLabel(catId, item.id, lang) ?? item.label;
 }
 
 /** Format item descriptor with i18n fallback. */
-export function formatItemDescriptor(catId: string, item: { id: string; descriptor?: string }, lang: Lang): string {
+export function formatItemDescriptor(
+  catId: string,
+  item: { id: string; descriptor?: string },
+  lang: Lang,
+): string {
   return getBuiltinFormatItemDescriptor(catId, item.id, lang) ?? item.descriptor ?? "";
 }
 

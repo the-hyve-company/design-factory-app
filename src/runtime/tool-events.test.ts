@@ -14,7 +14,11 @@ describe("normalizeToolEvent — Claude family", () => {
       {
         provider: "claude",
         kind: "tool_call",
-        raw: { id: "toolu_01", name: "Write", input: { file_path: "/a/b.html", content: "<html/>" } },
+        raw: {
+          id: "toolu_01",
+          name: "Write",
+          input: { file_path: "/a/b.html", content: "<html/>" },
+        },
       },
       { now: fixedNow },
     );
@@ -203,20 +207,17 @@ describe("normalizeToolEvent — Gemini", () => {
 });
 
 describe("normalizeToolEvent — providers without tool support", () => {
-  it.each(["ollama", "openrouter", "opencode"] as const)(
-    "returns null for %s",
-    (provider) => {
-      const ev = normalizeToolEvent(
-        {
-          provider,
-          kind: "tool_call",
-          raw: { id: "x", name: "Bash", input: { command: "ls" } },
-        },
-        { now: fixedNow },
-      );
-      expect(ev).toBeNull();
-    },
-  );
+  it.each(["ollama", "openrouter", "opencode"] as const)("returns null for %s", (provider) => {
+    const ev = normalizeToolEvent(
+      {
+        provider,
+        kind: "tool_call",
+        raw: { id: "x", name: "Bash", input: { command: "ls" } },
+      },
+      { now: fixedNow },
+    );
+    expect(ev).toBeNull();
+  });
 });
 
 describe("normalizeToolEvent — malformed input (graceful degrade)", () => {
@@ -256,7 +257,11 @@ describe("normalizeToolEvent — malformed input (graceful degrade)", () => {
     expect(() =>
       normalizeToolEvent(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { provider: "claude", kind: "tool_call", raw: { id: 123, name: { weird: true }, input: "not-an-object" } as any },
+        {
+          provider: "claude",
+          kind: "tool_call",
+          raw: { id: 123, name: { weird: true }, input: "not-an-object" } as any,
+        },
         { now: fixedNow },
       ),
     ).not.toThrow();
@@ -305,29 +310,23 @@ describe("fromBridgeToolCall / fromBridgeToolResult helpers", () => {
   });
 
   it("fromBridgeToolResult returns tool_result on success", () => {
-    const ev = fromBridgeToolResult(
-      { id: "z", isError: false, content: "ok" },
-      "codex",
-      { now: fixedNow },
-    );
+    const ev = fromBridgeToolResult({ id: "z", isError: false, content: "ok" }, "codex", {
+      now: fixedNow,
+    });
     expect(ev?.type).toBe("tool_result");
   });
 
   it("fromBridgeToolResult returns tool_error on failure", () => {
-    const ev = fromBridgeToolResult(
-      { id: "z", isError: true, content: "kaboom" },
-      "codex",
-      { now: fixedNow },
-    );
+    const ev = fromBridgeToolResult({ id: "z", isError: true, content: "kaboom" }, "codex", {
+      now: fixedNow,
+    });
     expect(ev?.type).toBe("tool_error");
   });
 
   it("fromBridgeToolCall returns null for providers without tool support", () => {
-    const ev = fromBridgeToolCall(
-      { id: "z", name: "Bash", input: {} },
-      "ollama",
-      { now: fixedNow },
-    );
+    const ev = fromBridgeToolCall({ id: "z", name: "Bash", input: {} }, "ollama", {
+      now: fixedNow,
+    });
     expect(ev).toBeNull();
   });
 });

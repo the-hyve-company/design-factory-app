@@ -32,13 +32,15 @@ export function parseQuestions(text: string): ParsedQuestion[] {
     const header = (body.match(/^header:\s*(.+)$/m)?.[1] ?? "").trim();
     const question = (body.match(/^question:\s*(.+)$/m)?.[1] ?? "").trim();
     const optionLines = body.match(/^-\s*label:\s*.+$/gm) ?? [];
-    const options = optionLines.map((line) => {
-      const match = line.match(/^-\s*label:\s*(.+?)(?:\s*\|\s*description:\s*(.+))?$/);
-      return {
-        label: (match?.[1] ?? "").trim(),
-        description: match?.[2]?.trim(),
-      };
-    }).filter((o) => o.label);
+    const options = optionLines
+      .map((line) => {
+        const match = line.match(/^-\s*label:\s*(.+?)(?:\s*\|\s*description:\s*(.+))?$/);
+        return {
+          label: (match?.[1] ?? "").trim(),
+          description: match?.[2]?.trim(),
+        };
+      })
+      .filter((o) => o.label);
     if (question && options.length > 0) {
       out.push({ header, question, options, raw });
     }
@@ -112,8 +114,8 @@ export function AskUserQuestion({ question, onPick, answered }: AskUserQuestionP
                 background: isPicked
                   ? "var(--df-interactive-selected)"
                   : hovered === opt.label && !answered
-                  ? "var(--df-interactive-hover)"
-                  : "var(--df-bg-section)",
+                    ? "var(--df-interactive-hover)"
+                    : "var(--df-bg-section)",
                 border: isPicked
                   ? "1px solid var(--df-border-focus)"
                   : "1px solid var(--df-border-subtle)",
@@ -121,7 +123,8 @@ export function AskUserQuestion({ question, onPick, answered }: AskUserQuestionP
                 color: isDim ? "var(--df-text-faint)" : "var(--df-text-primary)",
                 cursor: answered ? "default" : "pointer",
                 textAlign: "left",
-                transition: "background var(--df-motion-quick) var(--df-ease-out), border-color var(--df-motion-quick) var(--df-ease-out)",
+                transition:
+                  "background var(--df-motion-quick) var(--df-ease-out), border-color var(--df-motion-quick) var(--df-ease-out)",
                 opacity: isDim ? 0.55 : 1,
               }}
             >

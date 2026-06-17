@@ -26,7 +26,10 @@ function makeFs(files: Record<string, string | { binary: string }>): CollectSkil
         }
       }
       const entries = [...entriesMap.entries()].map(([name, meta]) => ({
-        name, path: norm + name, isDir: meta.isDir, size: meta.size,
+        name,
+        path: norm + name,
+        isDir: meta.isDir,
+        size: meta.size,
       }));
       return { entries };
     },
@@ -38,7 +41,10 @@ function makeFs(files: Record<string, string | { binary: string }>): CollectSkil
       }
       // binary — daemon would return `data:<mime>;base64,<b64>`
       return {
-        path: p, size: 100, mtime: 0, isText: false,
+        path: p,
+        size: 100,
+        mtime: 0,
+        isText: false,
         content: `data:application/octet-stream;base64,${content.binary}`,
       } as FsFile;
     },
@@ -55,8 +61,10 @@ function makeFs(files: Record<string, string | { binary: string }>): CollectSkil
         return m ? m[1].trim().replace(/^["'](.*)["']$/, "$1") : null;
       };
       return {
-        name: pick("name"), trigger: pick("trigger"),
-        description: pick("description"), body,
+        name: pick("name"),
+        trigger: pick("trigger"),
+        description: pick("description"),
+        body,
       };
     },
   };
@@ -110,11 +118,7 @@ describe("collectSkillFromFolder — multifile bundling", () => {
     });
     const result = await collectSkillFromFolder("/skill", fs);
     const extras = Object.keys(result.input.extraFiles!).sort();
-    expect(extras).toEqual([
-      "assets/diagram.svg",
-      "references/deep/api.md",
-      "references/intro.md",
-    ]);
+    expect(extras).toEqual(["assets/diagram.svg", "references/deep/api.md", "references/intro.md"]);
   });
 
   it("skips node_modules / .git / dist / build directories", async () => {

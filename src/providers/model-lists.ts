@@ -60,9 +60,9 @@ const LIVE_MODEL_ENDPOINTS: Partial<Record<ProviderId, string>> = {
 // ran a newer one). The real resolved version is surfaced from what the
 // provider reports at runtime — see writeSeenVersion / enrichWithSeenVersion.
 export const CLAUDE_MODEL_OPTIONS: ModelOption[] = [
-  { id: "opus",   label: "opus",   sub: "max quality" },
+  { id: "opus", label: "opus", sub: "max quality" },
   { id: "sonnet", label: "sonnet", sub: "balanced" },
-  { id: "haiku",  label: "haiku",  sub: "fastest" },
+  { id: "haiku", label: "haiku", sub: "fastest" },
 ];
 
 // FALLBACK ONLY — codex live-fetches via /openai/models (it accepts the
@@ -70,23 +70,23 @@ export const CLAUDE_MODEL_OPTIONS: ModelOption[] = [
 // no OpenAI key is configured / the fetch fails. Custom input covers the
 // rest. Source of truth = the live OpenAI catalog.
 export const CODEX_MODEL_OPTIONS: ModelOption[] = [
-  { id: "default", label: "default",  sub: "from codex CLI config" },
-  { id: "gpt-5.5", label: "gpt-5.5",  sub: "fallback · configure OpenAI key" },
+  { id: "default", label: "default", sub: "from codex CLI config" },
+  { id: "gpt-5.5", label: "gpt-5.5", sub: "fallback · configure OpenAI key" },
 ];
 
 // FALLBACK ONLY — gemini (CLI) + gemini-api live-fetch via
 // /gemini-api/models (Google Generative Language API). This minimal list
 // shows only when no Gemini key is configured / the fetch fails.
 export const GEMINI_MODEL_OPTIONS: ModelOption[] = [
-  { id: "default",            label: "default",            sub: "from gemini CLI config (safest)" },
-  { id: "gemini-3.5-flash",   label: "gemini-3.5-flash",   sub: "fallback · configure Gemini key" },
+  { id: "default", label: "default", sub: "from gemini CLI config (safest)" },
+  { id: "gemini-3.5-flash", label: "gemini-3.5-flash", sub: "fallback · configure Gemini key" },
 ];
 
 // FALLBACK ONLY — anthropic BYOK live-fetches via /anthropic/models.
 // This minimal list shows only when no Anthropic key is configured /
 // the fetch fails. claude-opus-4-8 is the current frontier (2026-05-28).
 export const ANTHROPIC_API_MODEL_OPTIONS: ModelOption[] = [
-  { id: "claude-opus-4-8",   label: "opus 4.8",   sub: "fallback · configure Anthropic key" },
+  { id: "claude-opus-4-8", label: "opus 4.8", sub: "fallback · configure Anthropic key" },
   { id: "claude-sonnet-4-6", label: "sonnet 4.6", sub: "fallback" },
 ];
 
@@ -108,9 +108,9 @@ export const GEMINI_API_MODEL_OPTIONS: ModelOption[] = GEMINI_MODEL_OPTIONS;
 // fetches the live list from the Ollama server via /ollama/models — these
 // constants are fallbacks for when the probe hasn't run yet.
 export const OLLAMA_MODEL_OPTIONS: ModelOption[] = [
-  { id: "llama3.2",       label: "llama3.2",       sub: "Meta · 3B / 8B" },
-  { id: "qwen2.5-coder",  label: "qwen2.5-coder",  sub: "Alibaba · code" },
-  { id: "mistral",        label: "mistral",        sub: "Mistral 7B" },
+  { id: "llama3.2", label: "llama3.2", sub: "Meta · 3B / 8B" },
+  { id: "qwen2.5-coder", label: "qwen2.5-coder", sub: "Alibaba · code" },
+  { id: "mistral", label: "mistral", sub: "Mistral 7B" },
 ];
 
 // OpenRouter has 200+ models. The picker fetches the live list via
@@ -119,12 +119,20 @@ export const OLLAMA_MODEL_OPTIONS: ModelOption[] = [
 // cheapest reliable model in catalog ($0.10/$0.40 per 1M, 1M ctx, no
 // free-tier 429 surprises).
 export const OPENROUTER_MODEL_OPTIONS: ModelOption[] = [
-  { id: "google/gemini-2.5-flash-lite",           label: "Gemini 2.5 Flash-Lite", sub: "Google · cheapest paid" },
-  { id: "google/gemini-2.5-flash",                label: "Gemini 2.5 Flash",      sub: "Google · balanced" },
-  { id: "anthropic/claude-3.5-sonnet",            label: "Claude 3.5 Sonnet",     sub: "Anthropic · paid" },
-  { id: "openai/gpt-4o-mini",                     label: "GPT-4o mini",           sub: "OpenAI · cheap" },
-  { id: "deepseek/deepseek-v3.2",                 label: "DeepSeek V3.2",         sub: "DeepSeek · cheap" },
-  { id: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3 70B (free)",  sub: "Meta · free tier" },
+  {
+    id: "google/gemini-2.5-flash-lite",
+    label: "Gemini 2.5 Flash-Lite",
+    sub: "Google · cheapest paid",
+  },
+  { id: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash", sub: "Google · balanced" },
+  { id: "anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet", sub: "Anthropic · paid" },
+  { id: "openai/gpt-4o-mini", label: "GPT-4o mini", sub: "OpenAI · cheap" },
+  { id: "deepseek/deepseek-v3.2", label: "DeepSeek V3.2", sub: "DeepSeek · cheap" },
+  {
+    id: "meta-llama/llama-3.3-70b-instruct:free",
+    label: "Llama 3.3 70B (free)",
+    sub: "Meta · free tier",
+  },
 ];
 
 // FALLBACK ONLY — opencode live-fetches via `opencode models` (shell-out
@@ -132,9 +140,9 @@ export const OPENROUTER_MODEL_OPTIONS: ModelOption[] = [
 // user's configured providers (Models.dev registry). This minimal list
 // shows only when the CLI is unavailable / the command fails.
 export const OPENCODE_MODEL_OPTIONS: ModelOption[] = [
-  { id: "default",                     label: "default",          sub: "from opencode config" },
-  { id: "openai/gpt-5.4-mini",         label: "openai/gpt-5.4-mini",       sub: "fallback · run opencode auth" },
-  { id: "anthropic/claude-opus-4-8",   label: "anthropic/claude-opus-4-8", sub: "fallback" },
+  { id: "default", label: "default", sub: "from opencode config" },
+  { id: "openai/gpt-5.4-mini", label: "openai/gpt-5.4-mini", sub: "fallback · run opencode auth" },
+  { id: "anthropic/claude-opus-4-8", label: "anthropic/claude-opus-4-8", sub: "fallback" },
 ];
 
 // FALLBACK ONLY — kimi BYOK live-fetches via /kimi/models (Moonshot,
@@ -178,7 +186,10 @@ export function providerHasLiveCatalog(id: ProviderId): boolean {
  *  ollama `gemma`), so validating the remembered pick against it silently
  *  reset live selections to the catalog default (ollama → "llama3.2").
  *  Static-only providers (claude) still validate against their known list. */
-export function nextModelForProvider(id: ProviderId, remembered: string | null | undefined): string {
+export function nextModelForProvider(
+  id: ProviderId,
+  remembered: string | null | undefined,
+): string {
   if (
     remembered &&
     (providerHasLiveCatalog(id) || getModelsForProvider(id).some((o) => o.id === remembered))
@@ -189,8 +200,16 @@ export function nextModelForProvider(id: ProviderId, remembered: string | null |
 }
 
 const ALL_PROVIDER_IDS: ProviderId[] = [
-  "claude", "codex", "gemini", "gemini-api", "anthropic",
-  "openai", "ollama", "openrouter", "opencode", "kimi",
+  "claude",
+  "codex",
+  "gemini",
+  "gemini-api",
+  "anthropic",
+  "openai",
+  "ollama",
+  "openrouter",
+  "opencode",
+  "kimi",
 ];
 
 /** True only when `model` belongs to a DIFFERENT provider's catalog and not
@@ -218,7 +237,9 @@ export function lastModelKey(id: ProviderId): string {
 export function readLastModel(id: ProviderId): string | null {
   try {
     return typeof localStorage !== "undefined" ? localStorage.getItem(lastModelKey(id)) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /** Persist the last-selected model for a provider. */
@@ -251,7 +272,9 @@ export function readSeenVersion(id: ProviderId, modelId: string): string | null 
     return typeof localStorage !== "undefined"
       ? localStorage.getItem(seenVersionKey(id, modelId))
       : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /** Persist the real model id the provider reported for (provider, alias). */
@@ -333,11 +356,12 @@ export function useLiveModelOptions(provider: ProviderId): {
     setLoading(true);
     void (async () => {
       try {
-        const rows = provider === "ollama"
-          ? await fetchOllamaModels()
-          : provider === "openrouter"
-            ? await fetchOpenrouterModels()
-            : await fetchModelsVia(endpoint!);
+        const rows =
+          provider === "ollama"
+            ? await fetchOllamaModels()
+            : provider === "openrouter"
+              ? await fetchOpenrouterModels()
+              : await fetchModelsVia(endpoint!);
         if (cancelled) return;
         // Probe returns { id, sub } (+ `chat` for ollama) — promote to
         // ModelOption (label = id). Ollama completion-only / embedding models
@@ -358,7 +382,9 @@ export function useLiveModelOptions(provider: ProviderId): {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [provider]);
 
   // Memoize the return value so consumers don't see a fresh object reference

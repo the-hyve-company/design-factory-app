@@ -18,20 +18,25 @@ describe("skill zip import parser", () => {
       "references/style.md": expect.any(String),
     });
 
-    const decoded = Buffer.from(parsed.installInput.extraFiles!["references/style.md"], "base64").toString("utf8");
+    const decoded = Buffer.from(
+      parsed.installInput.extraFiles!["references/style.md"],
+      "base64",
+    ).toString("utf8");
     expect(decoded).toContain("preserves the");
     expect(decoded).toContain("references/` subfolder verbatim");
   });
 
   it("uses the zip filename stem for flat archives without frontmatter name", () => {
     const zip = zipSync({
-      "SKILL.md": new TextEncoder().encode([
-        "---",
-        "trigger: \"/flat-skill\"",
-        "---",
-        "",
-        "Use this flat archive as a smoke skill body.",
-      ].join("\n")),
+      "SKILL.md": new TextEncoder().encode(
+        [
+          "---",
+          'trigger: "/flat-skill"',
+          "---",
+          "",
+          "Use this flat archive as a smoke skill body.",
+        ].join("\n"),
+      ),
     });
 
     const parsed = parseSkillZip(zip, "flat-skill.zip");

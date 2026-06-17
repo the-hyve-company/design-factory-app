@@ -198,10 +198,7 @@ export function injectTweaksListenerIntoHtml(html: string): string {
  * in that case rather than throwing, because the user dragging a
  * slider mid-reload should not crash the panel.
  */
-export function postTweaksToIframe(
-  iframe: HTMLIFrameElement,
-  msg: TweaksOutgoingMessage,
-): void {
+export function postTweaksToIframe(iframe: HTMLIFrameElement, msg: TweaksOutgoingMessage): void {
   const win = iframe.contentWindow;
   if (!win) return;
   win.postMessage(msg, "*");

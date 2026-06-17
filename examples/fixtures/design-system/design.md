@@ -12,13 +12,13 @@ production DS. Drop this into the importer to test the import flow.
 
 ## Palette
 
-| Token | OKLCH | Hex | Purpose |
-| --- | --- | --- | --- |
-| `--ds-ink` | `oklch(0.18 0.005 80)` | `#1a1a17` | Body ink |
-| `--ds-paper` | `oklch(0.97 0.005 80)` | `#fafaf7` | Background |
-| `--ds-muted` | `oklch(0.55 0.005 80)` | `#6b6b66` | Secondary text |
-| `--ds-line` | `rgba(26, 26, 23, 0.10)` | — | Hairlines |
-| `--ds-accent` | `oklch(0.55 0.21 270)` | `#4a3aff` | Single accent |
+| Token         | OKLCH                    | Hex       | Purpose        |
+| ------------- | ------------------------ | --------- | -------------- |
+| `--ds-ink`    | `oklch(0.18 0.005 80)`   | `#1a1a17` | Body ink       |
+| `--ds-paper`  | `oklch(0.97 0.005 80)`   | `#fafaf7` | Background     |
+| `--ds-muted`  | `oklch(0.55 0.005 80)`   | `#6b6b66` | Secondary text |
+| `--ds-line`   | `rgba(26, 26, 23, 0.10)` | —         | Hairlines      |
+| `--ds-accent` | `oklch(0.55 0.21 270)`   | `#4a3aff` | Single accent  |
 
 One neutral scale, one accent. Anything else is out of scope for
 this fixture.

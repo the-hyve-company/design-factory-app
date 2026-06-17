@@ -35,25 +35,26 @@ export interface PickerKeyProps {
  * component is intentionally thin — all skeu state lives in CSS so a
  * theme tweak doesn't require a TS edit.
  */
-export const PickerKey = forwardRef<HTMLButtonElement, PickerKeyProps>(
-  function PickerKey({ label, active, onClick, ariaLabel, className, disabled, id }, ref) {
-    const cls = `cnp-picker-key${active ? " is-on" : ""}${className ? ` ${className}` : ""}`;
-    return (
-      <button
-        ref={ref}
-        id={id}
-        type="button"
-        className={cls}
-        onClick={onClick}
-        disabled={disabled}
-        aria-haspopup="dialog"
-        aria-label={ariaLabel}
-      >
-        <span className="cnp-picker-key-label">{label}</span>
-        {/* Accent dot LED — empty bowl when not picked, fills with
-          * --df-accent when configured. Shares cnp-trigger-dot for CSS. */}
-        <span className="cnp-picker-key-dot cnp-trigger-dot" aria-hidden />
-      </button>
-    );
-  },
-);
+export const PickerKey = forwardRef<HTMLButtonElement, PickerKeyProps>(function PickerKey(
+  { label, active, onClick, ariaLabel, className, disabled, id },
+  ref,
+) {
+  const cls = `cnp-picker-key${active ? " is-on" : ""}${className ? ` ${className}` : ""}`;
+  return (
+    <button
+      ref={ref}
+      id={id}
+      type="button"
+      className={cls}
+      onClick={onClick}
+      disabled={disabled}
+      aria-haspopup="dialog"
+      aria-label={ariaLabel}
+    >
+      <span className="cnp-picker-key-label">{label}</span>
+      {/* Accent dot LED — empty bowl when not picked, fills with
+       * --df-accent when configured. Shares cnp-trigger-dot for CSS. */}
+      <span className="cnp-picker-key-dot cnp-trigger-dot" aria-hidden />
+    </button>
+  );
+});

@@ -1,13 +1,11 @@
 import { describe, it, expect } from "vitest";
-import {
-  validateArtifactStaticP0,
-  DEFAULT_BYTE_FLOOR,
-  type StaticP0Input,
-} from "./static-p0";
+import { validateArtifactStaticP0, DEFAULT_BYTE_FLOOR, type StaticP0Input } from "./static-p0";
 
 const HASH = "deadbeef".repeat(8);
 
-function input(overrides: Partial<StaticP0Input> & Pick<StaticP0Input, "type" | "content">): StaticP0Input {
+function input(
+  overrides: Partial<StaticP0Input> & Pick<StaticP0Input, "type" | "content">,
+): StaticP0Input {
   return {
     finalPath: "/abs/projects/x/x.html",
     contentHash: HASH,
@@ -17,7 +15,9 @@ function input(overrides: Partial<StaticP0Input> & Pick<StaticP0Input, "type" | 
 
 const VALID_HTML =
   "<!DOCTYPE html><html><head><title>x</title></head><body><h1>Hello</h1>" +
-  "<p>" + "x".repeat(220) + "</p></body></html>";
+  "<p>" +
+  "x".repeat(220) +
+  "</p></body></html>";
 
 describe("validateArtifactStaticP0 — HTML", () => {
   it("passes for a well-formed document above the floor", () => {
@@ -43,9 +43,7 @@ describe("validateArtifactStaticP0 — HTML", () => {
 
   it("respects byteFloor override (skill-specific)", () => {
     const small = "<!DOCTYPE html><html><body><p>hi</p></body></html>";
-    const r = validateArtifactStaticP0(
-      input({ type: "text/html", content: small, byteFloor: 10 }),
-    );
+    const r = validateArtifactStaticP0(input({ type: "text/html", content: small, byteFloor: 10 }));
     expect(r.status).toBe("pass");
   });
 
@@ -60,7 +58,9 @@ describe("validateArtifactStaticP0 — HTML", () => {
     const html =
       "<!DOCTYPE html><html><head><title>x</title></head><body></body></html>" +
       // Push above byte floor without putting anything in <body>.
-      "<!--" + "x".repeat(200) + "-->";
+      "<!--" +
+      "x".repeat(200) +
+      "-->";
     const r = validateArtifactStaticP0(input({ type: "text/html", content: html }));
     expect(r.status).toBe("fail");
     if (r.status === "fail") expect(r.reason).toBe("empty-body");
@@ -83,7 +83,8 @@ describe("validateArtifactStaticP0 — HTML", () => {
   it("fails unbalanced-tags when <script> never closes", () => {
     const html =
       "<!DOCTYPE html><html><body><h1>x</h1>" +
-      "<script>console.log('hi')" + "x".repeat(200) +
+      "<script>console.log('hi')" +
+      "x".repeat(200) +
       "</body></html>";
     const r = validateArtifactStaticP0(input({ type: "text/html", content: html }));
     expect(r.status).toBe("fail");
@@ -106,13 +107,17 @@ describe("validateArtifactStaticP0 — SVG", () => {
       `<rect width="400" height="400" fill="${"#fafafa"}" />` +
       `<text x="20" y="40">${"x".repeat(80)}</text>` +
       `</svg>`;
-    const r = validateArtifactStaticP0(input({ type: "image/svg+xml", content: svg, finalPath: "/x.svg" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "image/svg+xml", content: svg, finalPath: "/x.svg" }),
+    );
     expect(r.status).toBe("pass");
   });
 
   it("fails when payload doesn't begin with <svg>", () => {
     const notSvg = "<html>" + "x".repeat(220) + "</html>";
-    const r = validateArtifactStaticP0(input({ type: "image/svg+xml", content: notSvg, finalPath: "/x.svg" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "image/svg+xml", content: notSvg, finalPath: "/x.svg" }),
+    );
     expect(r.status).toBe("fail");
     if (r.status === "fail") expect(r.reason).toBe("invalid-svg");
   });
@@ -121,20 +126,26 @@ describe("validateArtifactStaticP0 — SVG", () => {
 describe("validateArtifactStaticP0 — markdown / text", () => {
   it("passes for a real markdown document", () => {
     const md = "# Heading\n\nParagraph " + "x".repeat(220) + "\n";
-    const r = validateArtifactStaticP0(input({ type: "text/markdown", content: md, finalPath: "/x.md" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "text/markdown", content: md, finalPath: "/x.md" }),
+    );
     expect(r.status).toBe("pass");
   });
 
   it("fails empty-body when content is whitespace only above the floor", () => {
     const md = " ".repeat(220);
-    const r = validateArtifactStaticP0(input({ type: "text/markdown", content: md, finalPath: "/x.md" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "text/markdown", content: md, finalPath: "/x.md" }),
+    );
     expect(r.status).toBe("fail");
     if (r.status === "fail") expect(r.reason).toBe("empty-body");
   });
 
   it("fails invalid-utf8 on lone surrogate", () => {
     const bad = "header\n" + String.fromCharCode(0xd800) + " body " + "x".repeat(220);
-    const r = validateArtifactStaticP0(input({ type: "text/markdown", content: bad, finalPath: "/x.md" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "text/markdown", content: bad, finalPath: "/x.md" }),
+    );
     expect(r.status).toBe("fail");
     if (r.status === "fail") expect(r.reason).toBe("invalid-utf8");
   });
@@ -142,7 +153,9 @@ describe("validateArtifactStaticP0 — markdown / text", () => {
 
 describe("validateArtifactStaticP0 — JSON", () => {
   it("passes on a tiny valid JSON object (relaxed floor)", () => {
-    const r = validateArtifactStaticP0(input({ type: "application/json", content: "{}", finalPath: "/x.json" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "application/json", content: "{}", finalPath: "/x.json" }),
+    );
     expect(r.status).toBe("pass");
   });
 
@@ -158,13 +171,17 @@ describe("validateArtifactStaticP0 — JSON", () => {
 describe("validateArtifactStaticP0 — CSS", () => {
   it("passes on balanced CSS", () => {
     const css = "body { color: red; } " + "/* " + "x".repeat(200) + " */";
-    const r = validateArtifactStaticP0(input({ type: "text/css", content: css, finalPath: "/x.css" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "text/css", content: css, finalPath: "/x.css" }),
+    );
     expect(r.status).toBe("pass");
   });
 
   it("fails invalid-css on unbalanced braces", () => {
     const css = ".x { color: red; " + "x".repeat(200);
-    const r = validateArtifactStaticP0(input({ type: "text/css", content: css, finalPath: "/x.css" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "text/css", content: css, finalPath: "/x.css" }),
+    );
     expect(r.status).toBe("fail");
     if (r.status === "fail") expect(r.reason).toBe("invalid-css");
   });
@@ -174,24 +191,30 @@ describe("validateArtifactStaticP0 — CSS", () => {
       `.x { content: "}"; } ` +
       `/* } } } */ ` +
       `.y { color: ${"red"}; } ` +
-      "/* " + "x".repeat(200) + " */";
-    const r = validateArtifactStaticP0(input({ type: "text/css", content: css, finalPath: "/x.css" }));
+      "/* " +
+      "x".repeat(200) +
+      " */";
+    const r = validateArtifactStaticP0(
+      input({ type: "text/css", content: css, finalPath: "/x.css" }),
+    );
     expect(r.status).toBe("pass");
   });
 });
 
 describe("validateArtifactStaticP0 — JavaScript", () => {
   it("passes for valid JS above the floor", () => {
-    const js =
-      "const greet = (n) => `hi, ${n}`;\n" +
-      "// " + "x".repeat(220) + "\n";
-    const r = validateArtifactStaticP0(input({ type: "application/javascript", content: js, finalPath: "/x.js" }));
+    const js = "const greet = (n) => `hi, ${n}`;\n" + "// " + "x".repeat(220) + "\n";
+    const r = validateArtifactStaticP0(
+      input({ type: "application/javascript", content: js, finalPath: "/x.js" }),
+    );
     expect(r.status).toBe("pass");
   });
 
   it("fails invalid-js on syntax error", () => {
     const js = "const x = ((( ; " + "x".repeat(220);
-    const r = validateArtifactStaticP0(input({ type: "application/javascript", content: js, finalPath: "/x.js" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "application/javascript", content: js, finalPath: "/x.js" }),
+    );
     expect(r.status).toBe("fail");
     if (r.status === "fail") expect(r.reason).toBe("invalid-js");
   });
@@ -202,12 +225,16 @@ describe("validateArtifactStaticP0 — binary types", () => {
     // 32 bytes of "binary-ish" content — Static P0 only checks size for
     // binary; the runtime is what tells us if the asset actually decodes.
     const blob = "x".repeat(32);
-    const r = validateArtifactStaticP0(input({ type: "image/png", content: blob, finalPath: "/x.png" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "image/png", content: blob, finalPath: "/x.png" }),
+    );
     expect(r.status).toBe("pass");
   });
 
   it("fails below-min-bytes on near-empty binary payloads", () => {
-    const r = validateArtifactStaticP0(input({ type: "image/png", content: "x", finalPath: "/x.png" }));
+    const r = validateArtifactStaticP0(
+      input({ type: "image/png", content: "x", finalPath: "/x.png" }),
+    );
     expect(r.status).toBe("fail");
     if (r.status === "fail") expect(r.reason).toBe("below-min-bytes");
   });

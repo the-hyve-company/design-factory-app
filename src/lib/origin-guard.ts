@@ -12,10 +12,7 @@
 // DEFAULT_ALLOWED_ORIGINS — keep them in sync. The constant is exported
 // so the gate test can lock the parity statically.
 
-export const ALLOWED_BRIDGE_ORIGINS = [
-  "http://localhost:1420",
-  "http://127.0.0.1:1420",
-] as const;
+export const ALLOWED_BRIDGE_ORIGINS = ["http://localhost:1420", "http://127.0.0.1:1420"] as const;
 
 export interface OriginCheck {
   ok: boolean;
@@ -57,8 +54,6 @@ export function checkCurrentOrigin(): OriginCheck {
     typeof import.meta !== "undefined"
       ? (import.meta as { env?: { VITE_DF_WEB_PORT?: string } }).env?.VITE_DF_WEB_PORT
       : undefined;
-  const devOrigins = devPort
-    ? [`http://localhost:${devPort}`, `http://127.0.0.1:${devPort}`]
-    : [];
+  const devOrigins = devPort ? [`http://localhost:${devPort}`, `http://127.0.0.1:${devPort}`] : [];
   return checkOrigin(origin, devOrigins);
 }

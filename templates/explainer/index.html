@@ -1,1205 +1,1871 @@
 <!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<title>Explainer · Design Factory</title>
-<style>
-  :root {
-    --ink:        #f4f0e2;
-    --ink-soft:   rgba(244, 240, 226, 0.74);
-    --ink-faint:  rgba(244, 240, 226, 0.32);
-    --rule:       rgba(244, 240, 226, 0.10);
-    --rule-bold:  rgba(244, 240, 226, 0.20);
+  <head>
+    <meta charset="utf-8" />
+    <title>Explainer · Design Factory</title>
+    <style>
+      :root {
+        --ink: #f4f0e2;
+        --ink-soft: rgba(244, 240, 226, 0.74);
+        --ink-faint: rgba(244, 240, 226, 0.32);
+        --rule: rgba(244, 240, 226, 0.1);
+        --rule-bold: rgba(244, 240, 226, 0.2);
 
-    --bg-deep:    #0a0a09;
-    --bg-warm:    #14130f;
-    --bg-warmer:  #1c1a15;
+        --bg-deep: #0a0a09;
+        --bg-warm: #14130f;
+        --bg-warmer: #1c1a15;
 
-    --coral:      #e89876;
-    --coral-deep: #b86348;
-    --olive:      #8db173;
-    --azure:      #6b9bd1;
-    --gold:       #d8a86b;
+        --coral: #e89876;
+        --coral-deep: #b86348;
+        --olive: #8db173;
+        --azure: #6b9bd1;
+        --gold: #d8a86b;
 
-    --syntax-key: #d6a374;
-    --syntax-tag: #8db173;
-    --syntax-str: #e8c376;
-    --syntax-com: rgba(244, 240, 226, 0.30);
+        --syntax-key: #d6a374;
+        --syntax-tag: #8db173;
+        --syntax-str: #e8c376;
+        --syntax-com: rgba(244, 240, 226, 0.3);
 
-    --DUR: 12s;
-    --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
-    --ease-pop:  cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
+        --DUR: 12s;
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    width: 100%; height: 100%;
-    background: var(--bg-deep);
-    color: var(--ink);
-    font-family: "Geist", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow: hidden;
-  }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: var(--bg-deep);
+        color: var(--ink);
+        font-family:
+          "Geist",
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+      }
 
-  /* ── Stage ────────────────────────────────────────────────────── */
-  .stage {
-    position: absolute; inset: 0;
-    overflow: hidden;
-    background: var(--bg-deep);
-    perspective: 2000px;
-    transform-style: preserve-3d;
-  }
+      /* ── Stage ────────────────────────────────────────────────────── */
+      .stage {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: var(--bg-deep);
+        perspective: 2000px;
+        transform-style: preserve-3d;
+      }
 
-  /* Painterly mesh — 6 drifting orbs blending */
-  .orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(70px);
-    mix-blend-mode: screen;
-    will-change: transform, opacity;
-    z-index: 1;
-  }
-  .orb-1 { width: 70vmax; height: 70vmax; top: -25vmax; left: -20vmax;
-           background: radial-gradient(circle, rgba(232, 152, 118, 0.65), transparent 65%);
-           animation: orbit-1 9s ease-in-out infinite alternate; }
-  .orb-2 { width: 62vmax; height: 62vmax; bottom: -25vmax; right: -12vmax;
-           background: radial-gradient(circle, rgba(141, 177, 115, 0.50), transparent 65%);
-           animation: orbit-2 11s ease-in-out infinite alternate; }
-  .orb-3 { width: 48vmax; height: 48vmax; top: 25%; left: 45%;
-           background: radial-gradient(circle, rgba(107, 155, 209, 0.45), transparent 65%);
-           animation: orbit-3 8s ease-in-out infinite alternate; }
-  .orb-4 { width: 38vmax; height: 38vmax; top: 50%; left: 10%;
-           background: radial-gradient(circle, rgba(216, 168, 107, 0.40), transparent 60%);
-           animation: orbit-4 10s ease-in-out infinite alternate; }
-  .orb-5 { width: 32vmax; height: 32vmax; top: 5%; right: 15%;
-           background: radial-gradient(circle, rgba(232, 152, 118, 0.35), transparent 60%);
-           animation: orbit-5 7s ease-in-out infinite alternate; }
-  .orb-6 { width: 28vmax; height: 28vmax; bottom: 10%; left: 30%;
-           background: radial-gradient(circle, rgba(141, 177, 115, 0.30), transparent 60%);
-           animation: orbit-6 12s ease-in-out infinite alternate; }
-  @keyframes orbit-1 { 0% { transform: translate(0,0) scale(1); }   100% { transform: translate(10vmax, 8vmax) scale(1.20); } }
-  @keyframes orbit-2 { 0% { transform: translate(0,0) scale(1.1); } 100% { transform: translate(-8vmax,-10vmax) scale(0.85); } }
-  @keyframes orbit-3 { 0% { transform: translate(0,0) scale(0.85); } 100% { transform: translate(-6vmax, 8vmax) scale(1.30); } }
-  @keyframes orbit-4 { 0% { transform: translate(0,0) scale(1); }   100% { transform: translate(7vmax, -5vmax) scale(1.18); } }
-  @keyframes orbit-5 { 0% { transform: translate(0,0) scale(1.15); } 100% { transform: translate(-9vmax, 7vmax) scale(0.9); } }
-  @keyframes orbit-6 { 0% { transform: translate(0,0) scale(0.95); } 100% { transform: translate(8vmax, -6vmax) scale(1.25); } }
+      /* Painterly mesh — 6 drifting orbs blending */
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(70px);
+        mix-blend-mode: screen;
+        will-change: transform, opacity;
+        z-index: 1;
+      }
+      .orb-1 {
+        width: 70vmax;
+        height: 70vmax;
+        top: -25vmax;
+        left: -20vmax;
+        background: radial-gradient(circle, rgba(232, 152, 118, 0.65), transparent 65%);
+        animation: orbit-1 9s ease-in-out infinite alternate;
+      }
+      .orb-2 {
+        width: 62vmax;
+        height: 62vmax;
+        bottom: -25vmax;
+        right: -12vmax;
+        background: radial-gradient(circle, rgba(141, 177, 115, 0.5), transparent 65%);
+        animation: orbit-2 11s ease-in-out infinite alternate;
+      }
+      .orb-3 {
+        width: 48vmax;
+        height: 48vmax;
+        top: 25%;
+        left: 45%;
+        background: radial-gradient(circle, rgba(107, 155, 209, 0.45), transparent 65%);
+        animation: orbit-3 8s ease-in-out infinite alternate;
+      }
+      .orb-4 {
+        width: 38vmax;
+        height: 38vmax;
+        top: 50%;
+        left: 10%;
+        background: radial-gradient(circle, rgba(216, 168, 107, 0.4), transparent 60%);
+        animation: orbit-4 10s ease-in-out infinite alternate;
+      }
+      .orb-5 {
+        width: 32vmax;
+        height: 32vmax;
+        top: 5%;
+        right: 15%;
+        background: radial-gradient(circle, rgba(232, 152, 118, 0.35), transparent 60%);
+        animation: orbit-5 7s ease-in-out infinite alternate;
+      }
+      .orb-6 {
+        width: 28vmax;
+        height: 28vmax;
+        bottom: 10%;
+        left: 30%;
+        background: radial-gradient(circle, rgba(141, 177, 115, 0.3), transparent 60%);
+        animation: orbit-6 12s ease-in-out infinite alternate;
+      }
+      @keyframes orbit-1 {
+        0% {
+          transform: translate(0, 0) scale(1);
+        }
+        100% {
+          transform: translate(10vmax, 8vmax) scale(1.2);
+        }
+      }
+      @keyframes orbit-2 {
+        0% {
+          transform: translate(0, 0) scale(1.1);
+        }
+        100% {
+          transform: translate(-8vmax, -10vmax) scale(0.85);
+        }
+      }
+      @keyframes orbit-3 {
+        0% {
+          transform: translate(0, 0) scale(0.85);
+        }
+        100% {
+          transform: translate(-6vmax, 8vmax) scale(1.3);
+        }
+      }
+      @keyframes orbit-4 {
+        0% {
+          transform: translate(0, 0) scale(1);
+        }
+        100% {
+          transform: translate(7vmax, -5vmax) scale(1.18);
+        }
+      }
+      @keyframes orbit-5 {
+        0% {
+          transform: translate(0, 0) scale(1.15);
+        }
+        100% {
+          transform: translate(-9vmax, 7vmax) scale(0.9);
+        }
+      }
+      @keyframes orbit-6 {
+        0% {
+          transform: translate(0, 0) scale(0.95);
+        }
+        100% {
+          transform: translate(8vmax, -6vmax) scale(1.25);
+        }
+      }
 
-  /* Grain */
-  .grain {
-    position: absolute; inset: 0;
-    z-index: 4;
-    pointer-events: none;
-    opacity: 0.05;
-    mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.7'/></svg>");
-    animation: grain-shift 0.8s steps(6) infinite;
-  }
-  @keyframes grain-shift {
-    0%   { transform: translate(0,0); }
-    20%  { transform: translate(-2%,1%); }
-    40%  { transform: translate(1%,-2%); }
-    60%  { transform: translate(-1%,2%); }
-    80%  { transform: translate(2%,-1%); }
-    100% { transform: translate(0,0); }
-  }
+      /* Grain */
+      .grain {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        pointer-events: none;
+        opacity: 0.05;
+        mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.7'/></svg>");
+        animation: grain-shift 0.8s steps(6) infinite;
+      }
+      @keyframes grain-shift {
+        0% {
+          transform: translate(0, 0);
+        }
+        20% {
+          transform: translate(-2%, 1%);
+        }
+        40% {
+          transform: translate(1%, -2%);
+        }
+        60% {
+          transform: translate(-1%, 2%);
+        }
+        80% {
+          transform: translate(2%, -1%);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
 
-  /* Particles canvas */
-  #particles {
-    position: absolute; inset: 0;
-    z-index: 3;
-    pointer-events: none;
-  }
+      /* Particles canvas */
+      #particles {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+      }
 
-  /* Vignette */
-  .vignette {
-    position: absolute; inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    background:
-      radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(10, 10, 9, 0.50) 100%);
-  }
+      /* Vignette */
+      .vignette {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(10, 10, 9, 0.5) 100%);
+      }
 
-  /* ── Topbar ───────────────────────────────────────────────────── */
-  .topbar {
-    position: absolute;
-    top: 4vh; left: 50%;
-    transform: translateX(-50%);
-    z-index: 12;
-    display: flex; align-items: center; gap: 18px;
-    padding: 9px 18px;
-    background: rgba(20, 19, 15, 0.55);
-    backdrop-filter: blur(18px) saturate(1.2);
-    -webkit-backdrop-filter: blur(18px) saturate(1.2);
-    border: 1px solid var(--rule);
-    border-radius: 999px;
-    opacity: 0;
-    animation: topbar-in 0.7s var(--ease-out) 0.3s forwards;
-  }
-  @keyframes topbar-in {
-    from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-  }
-  .topbar .brand {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-family: "Geist Mono", ui-monospace, monospace;
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--ink);
-  }
-  .brand-mark {
-    width: 14px; height: 14px;
-    border-radius: 3px;
-    background: linear-gradient(135deg, var(--coral), var(--coral-deep));
-    box-shadow: 0 0 12px rgba(232, 152, 118, 0.5);
-    animation: pulse 2.4s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(232, 152, 118, 0.4); }
-    50%      { transform: scale(1.15); box-shadow: 0 0 18px rgba(232, 152, 118, 0.7); }
-  }
-  .topbar .sep { width: 1px; height: 14px; background: var(--rule); }
-  .topbar .step-dots { display: inline-flex; gap: 6px; }
-  .topbar .step {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--ink-faint);
-    transition: all 0.3s var(--ease-out);
-  }
-  .topbar .step.active {
-    width: 18px; border-radius: 999px;
-    background: var(--coral);
-    box-shadow: 0 0 8px rgba(232, 152, 118, 0.6);
-  }
+      /* ── Topbar ───────────────────────────────────────────────────── */
+      .topbar {
+        position: absolute;
+        top: 4vh;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 12;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 9px 18px;
+        background: rgba(20, 19, 15, 0.55);
+        backdrop-filter: blur(18px) saturate(1.2);
+        -webkit-backdrop-filter: blur(18px) saturate(1.2);
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        opacity: 0;
+        animation: topbar-in 0.7s var(--ease-out) 0.3s forwards;
+      }
+      @keyframes topbar-in {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+      .topbar .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+      .brand-mark {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        background: linear-gradient(135deg, var(--coral), var(--coral-deep));
+        box-shadow: 0 0 12px rgba(232, 152, 118, 0.5);
+        animation: pulse 2.4s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 12px rgba(232, 152, 118, 0.4);
+        }
+        50% {
+          transform: scale(1.15);
+          box-shadow: 0 0 18px rgba(232, 152, 118, 0.7);
+        }
+      }
+      .topbar .sep {
+        width: 1px;
+        height: 14px;
+        background: var(--rule);
+      }
+      .topbar .step-dots {
+        display: inline-flex;
+        gap: 6px;
+      }
+      .topbar .step {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--ink-faint);
+        transition: all 0.3s var(--ease-out);
+      }
+      .topbar .step.active {
+        width: 18px;
+        border-radius: 999px;
+        background: var(--coral);
+        box-shadow: 0 0 8px rgba(232, 152, 118, 0.6);
+      }
 
-  /* ── Bottombar ────────────────────────────────────────────────── */
-  .bottombar {
-    position: absolute;
-    bottom: 4vh; left: 50%;
-    transform: translateX(-50%);
-    z-index: 12;
-    width: min(70%, 720px);
-    display: flex; flex-direction: column; gap: 10px; align-items: center;
-    opacity: 0;
-    animation: bottombar-in 0.7s var(--ease-out) 0.4s forwards;
-  }
-  @keyframes bottombar-in {
-    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-  }
-  .caption {
-    font-family: "Geist Mono", ui-monospace, monospace;
-    font-size: 10.5px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    text-align: center;
-    height: 1em;
-    position: relative;
-    width: 100%;
-  }
-  .caption .cap {
-    position: absolute; left: 50%; top: 0;
-    transform: translateX(-50%);
-    white-space: nowrap;
-    opacity: 0;
-  }
-  .caption .cap-1 { animation: cap-show 3s var(--ease-out) 0s forwards; }
-  .caption .cap-2 { animation: cap-show 3s var(--ease-out) 3s forwards; }
-  .caption .cap-3 { animation: cap-show 3s var(--ease-out) 6s forwards; }
-  .caption .cap-4 { animation: cap-show 3s var(--ease-out) 9s forwards; }
-  @keyframes cap-show {
-    0%   { opacity: 0; transform: translateX(-50%) translateY(6px); }
-    8%   { opacity: 1; transform: translateX(-50%) translateY(0); }
-    92%  { opacity: 1; transform: translateX(-50%) translateY(0); }
-    100% { opacity: 0; transform: translateX(-50%) translateY(-6px); }
-  }
-  .progress-rail {
-    width: 100%; height: 1px;
-    background: var(--rule);
-    position: relative;
-    overflow: visible;
-  }
-  .progress-fill {
-    position: absolute; left: 0; top: 0; bottom: 0;
-    background: linear-gradient(90deg, var(--coral), var(--gold));
-    box-shadow: 0 0 8px rgba(232, 152, 118, 0.5);
-    width: 0%;
-    animation: fill-rail var(--DUR) linear forwards;
-  }
-  @keyframes fill-rail {
-    from { width: 0%; }
-    to   { width: 100%; }
-  }
-  .progress-glow {
-    position: absolute; top: -2px;
-    width: 6px; height: 5px;
-    border-radius: 50%;
-    background: var(--coral);
-    box-shadow: 0 0 12px rgba(232, 152, 118, 0.9), 0 0 24px rgba(232, 152, 118, 0.5);
-    left: 0%;
-    animation: glow-rail var(--DUR) linear forwards;
-  }
-  @keyframes glow-rail {
-    from { left: 0%; }
-    to   { left: 100%; }
-  }
+      /* ── Bottombar ────────────────────────────────────────────────── */
+      .bottombar {
+        position: absolute;
+        bottom: 4vh;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 12;
+        width: min(70%, 720px);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+        opacity: 0;
+        animation: bottombar-in 0.7s var(--ease-out) 0.4s forwards;
+      }
+      @keyframes bottombar-in {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+      .caption {
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: 10.5px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        text-align: center;
+        height: 1em;
+        position: relative;
+        width: 100%;
+      }
+      .caption .cap {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        opacity: 0;
+      }
+      .caption .cap-1 {
+        animation: cap-show 3s var(--ease-out) 0s forwards;
+      }
+      .caption .cap-2 {
+        animation: cap-show 3s var(--ease-out) 3s forwards;
+      }
+      .caption .cap-3 {
+        animation: cap-show 3s var(--ease-out) 6s forwards;
+      }
+      .caption .cap-4 {
+        animation: cap-show 3s var(--ease-out) 9s forwards;
+      }
+      @keyframes cap-show {
+        0% {
+          opacity: 0;
+          transform: translateX(-50%) translateY(6px);
+        }
+        8% {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+        92% {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-6px);
+        }
+      }
+      .progress-rail {
+        width: 100%;
+        height: 1px;
+        background: var(--rule);
+        position: relative;
+        overflow: visible;
+      }
+      .progress-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, var(--coral), var(--gold));
+        box-shadow: 0 0 8px rgba(232, 152, 118, 0.5);
+        width: 0%;
+        animation: fill-rail var(--DUR) linear forwards;
+      }
+      @keyframes fill-rail {
+        from {
+          width: 0%;
+        }
+        to {
+          width: 100%;
+        }
+      }
+      .progress-glow {
+        position: absolute;
+        top: -2px;
+        width: 6px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--coral);
+        box-shadow:
+          0 0 12px rgba(232, 152, 118, 0.9),
+          0 0 24px rgba(232, 152, 118, 0.5);
+        left: 0%;
+        animation: glow-rail var(--DUR) linear forwards;
+      }
+      @keyframes glow-rail {
+        from {
+          left: 0%;
+        }
+        to {
+          left: 100%;
+        }
+      }
 
-  /* ── Acts ─────────────────────────────────────────────────────── */
-  .acts {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%; height: 100%;
-    z-index: 8;
-    transform-style: preserve-3d;
-    perspective: 1800px;
-  }
-  .act {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    text-align: center;
-    opacity: 0;
-    transform-style: preserve-3d;
-  }
-  .act-1 { animation: act-show-1 var(--DUR) linear forwards; }
-  .act-2 { animation: act-show-2 var(--DUR) linear forwards; }
-  .act-3 { animation: act-show-3 var(--DUR) linear forwards; }
-  .act-4 { animation: act-show-4 var(--DUR) linear forwards; }
-  @keyframes act-show-1 {
-    0%        { opacity: 0; }
-    4%        { opacity: 1; }
-    21%       { opacity: 1; }
-    25%, 100% { opacity: 0; }
-  }
-  @keyframes act-show-2 {
-    0%, 25%   { opacity: 0; }
-    29%       { opacity: 1; }
-    46%       { opacity: 1; }
-    50%, 100% { opacity: 0; }
-  }
-  @keyframes act-show-3 {
-    0%, 50%   { opacity: 0; }
-    54%       { opacity: 1; }
-    71%       { opacity: 1; }
-    75%, 100% { opacity: 0; }
-  }
-  @keyframes act-show-4 {
-    0%, 75%   { opacity: 0; }
-    79%       { opacity: 1; }
-    100%      { opacity: 1; }
-  }
+      /* ── Acts ─────────────────────────────────────────────────────── */
+      .acts {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        z-index: 8;
+        transform-style: preserve-3d;
+        perspective: 1800px;
+      }
+      .act {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        text-align: center;
+        opacity: 0;
+        transform-style: preserve-3d;
+      }
+      .act-1 {
+        animation: act-show-1 var(--DUR) linear forwards;
+      }
+      .act-2 {
+        animation: act-show-2 var(--DUR) linear forwards;
+      }
+      .act-3 {
+        animation: act-show-3 var(--DUR) linear forwards;
+      }
+      .act-4 {
+        animation: act-show-4 var(--DUR) linear forwards;
+      }
+      @keyframes act-show-1 {
+        0% {
+          opacity: 0;
+        }
+        4% {
+          opacity: 1;
+        }
+        21% {
+          opacity: 1;
+        }
+        25%,
+        100% {
+          opacity: 0;
+        }
+      }
+      @keyframes act-show-2 {
+        0%,
+        25% {
+          opacity: 0;
+        }
+        29% {
+          opacity: 1;
+        }
+        46% {
+          opacity: 1;
+        }
+        50%,
+        100% {
+          opacity: 0;
+        }
+      }
+      @keyframes act-show-3 {
+        0%,
+        50% {
+          opacity: 0;
+        }
+        54% {
+          opacity: 1;
+        }
+        71% {
+          opacity: 1;
+        }
+        75%,
+        100% {
+          opacity: 0;
+        }
+      }
+      @keyframes act-show-4 {
+        0%,
+        75% {
+          opacity: 0;
+        }
+        79% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
 
-  /* Light streak */
-  .streak {
-    position: absolute;
-    top: 0; left: -40%;
-    width: 30%; height: 100%;
-    z-index: 11;
-    background: linear-gradient(90deg,
-      transparent,
-      rgba(232, 152, 118, 0.20) 30%,
-      rgba(244, 240, 226, 0.55) 50%,
-      rgba(232, 152, 118, 0.20) 70%,
-      transparent);
-    filter: blur(6px);
-    transform: skewX(-18deg);
-    pointer-events: none;
-    opacity: 0;
-    animation: sweep var(--DUR) linear forwards;
-  }
-  @keyframes sweep {
-    0%, 23%   { left: -40%; opacity: 0; }
-    25%       { left: 130%; opacity: 1; }
-    25.01%, 48% { left: -40%; opacity: 0; }
-    50%       { left: 130%; opacity: 1; }
-    50.01%, 73% { left: -40%; opacity: 0; }
-    75%       { left: 130%; opacity: 1; }
-    75.01%, 100% { left: -40%; opacity: 0; }
-  }
+      /* Light streak */
+      .streak {
+        position: absolute;
+        top: 0;
+        left: -40%;
+        width: 30%;
+        height: 100%;
+        z-index: 11;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(232, 152, 118, 0.2) 30%,
+          rgba(244, 240, 226, 0.55) 50%,
+          rgba(232, 152, 118, 0.2) 70%,
+          transparent
+        );
+        filter: blur(6px);
+        transform: skewX(-18deg);
+        pointer-events: none;
+        opacity: 0;
+        animation: sweep var(--DUR) linear forwards;
+      }
+      @keyframes sweep {
+        0%,
+        23% {
+          left: -40%;
+          opacity: 0;
+        }
+        25% {
+          left: 130%;
+          opacity: 1;
+        }
+        25.01%,
+        48% {
+          left: -40%;
+          opacity: 0;
+        }
+        50% {
+          left: 130%;
+          opacity: 1;
+        }
+        50.01%,
+        73% {
+          left: -40%;
+          opacity: 0;
+        }
+        75% {
+          left: 130%;
+          opacity: 1;
+        }
+        75.01%,
+        100% {
+          left: -40%;
+          opacity: 0;
+        }
+      }
 
-  /* ─── ACT 1 — Atmospheric opener ──────────────────────────────── */
-  .opener {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 32px;
-    position: relative;
-  }
-  .mark-3d {
-    position: relative;
-    width: 110px; height: 110px;
-    transform-style: preserve-3d;
-    animation: mark-spin 10s linear infinite;
-  }
-  @keyframes mark-spin {
-    from { transform: rotateY(0deg); }
-    to   { transform: rotateY(360deg); }
-  }
-  svg.mark {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-  }
-  svg.mark .draw {
-    fill: none;
-    stroke: var(--coral);
-    stroke-width: 1.5;
-    stroke-dasharray: 600;
-    stroke-dashoffset: 600;
-    filter: drop-shadow(0 0 8px rgba(232, 152, 118, 0.6));
-    animation: draw 1.4s var(--ease-out) 0.4s forwards;
-  }
-  @keyframes draw {
-    to { stroke-dashoffset: 0; }
-  }
-  svg.mark .fill {
-    fill: var(--coral);
-    opacity: 0;
-    animation: mark-fade 0.8s var(--ease-out) 1.4s forwards;
-  }
-  @keyframes mark-fade {
-    to { opacity: 0.18; }
-  }
+      /* ─── ACT 1 — Atmospheric opener ──────────────────────────────── */
+      .opener {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 32px;
+        position: relative;
+      }
+      .mark-3d {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        transform-style: preserve-3d;
+        animation: mark-spin 10s linear infinite;
+      }
+      @keyframes mark-spin {
+        from {
+          transform: rotateY(0deg);
+        }
+        to {
+          transform: rotateY(360deg);
+        }
+      }
+      svg.mark {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      svg.mark .draw {
+        fill: none;
+        stroke: var(--coral);
+        stroke-width: 1.5;
+        stroke-dasharray: 600;
+        stroke-dashoffset: 600;
+        filter: drop-shadow(0 0 8px rgba(232, 152, 118, 0.6));
+        animation: draw 1.4s var(--ease-out) 0.4s forwards;
+      }
+      @keyframes draw {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      svg.mark .fill {
+        fill: var(--coral);
+        opacity: 0;
+        animation: mark-fade 0.8s var(--ease-out) 1.4s forwards;
+      }
+      @keyframes mark-fade {
+        to {
+          opacity: 0.18;
+        }
+      }
 
-  .display {
-    font-family: "Geist", "Inter", sans-serif;
-    font-weight: 700;
-    font-size: clamp(48px, 7.5vw, 110px);
-    letter-spacing: -0.04em;
-    line-height: 0.95;
-    color: var(--ink);
-    overflow: hidden;
-  }
-  .display .word {
-    display: inline-block;
-    overflow: hidden;
-    margin: 0 0.04em;
-    vertical-align: top;
-  }
-  .display .word > span {
-    display: inline-block;
-    transform: translateY(120%);
-    opacity: 0;
-    animation: word-up 1s var(--ease-out) forwards;
-  }
-  .word.w-1 > span { animation-delay: 0.6s; }
-  .word.w-2 > span { animation-delay: 0.78s; }
-  .word.w-3 > span { animation-delay: 0.96s; }
-  @keyframes word-up {
-    to { transform: translateY(0); opacity: 1; }
-  }
-  .display em {
-    font-family: "Fraunces", "Playfair Display", "Georgia", serif;
-    font-weight: 600;
-    font-style: italic;
-    color: var(--coral);
-  }
-  .lede {
-    font-family: "Geist Mono", ui-monospace, monospace;
-    font-size: clamp(11px, 1vw, 13px);
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-top: 4px;
-    opacity: 0;
-    animation: fade-up 0.8s var(--ease-out) 1.4s forwards;
-  }
-  @keyframes fade-up {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+      .display {
+        font-family: "Geist", "Inter", sans-serif;
+        font-weight: 700;
+        font-size: clamp(48px, 7.5vw, 110px);
+        letter-spacing: -0.04em;
+        line-height: 0.95;
+        color: var(--ink);
+        overflow: hidden;
+      }
+      .display .word {
+        display: inline-block;
+        overflow: hidden;
+        margin: 0 0.04em;
+        vertical-align: top;
+      }
+      .display .word > span {
+        display: inline-block;
+        transform: translateY(120%);
+        opacity: 0;
+        animation: word-up 1s var(--ease-out) forwards;
+      }
+      .word.w-1 > span {
+        animation-delay: 0.6s;
+      }
+      .word.w-2 > span {
+        animation-delay: 0.78s;
+      }
+      .word.w-3 > span {
+        animation-delay: 0.96s;
+      }
+      @keyframes word-up {
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      .display em {
+        font-family: "Fraunces", "Playfair Display", "Georgia", serif;
+        font-weight: 600;
+        font-style: italic;
+        color: var(--coral);
+      }
+      .lede {
+        font-family: "Geist Mono", ui-monospace, monospace;
+        font-size: clamp(11px, 1vw, 13px);
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        margin-top: 4px;
+        opacity: 0;
+        animation: fade-up 0.8s var(--ease-out) 1.4s forwards;
+      }
+      @keyframes fade-up {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-  .float-tag {
-    position: absolute;
-    font-family: "Geist Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    padding: 4px 10px;
-    border: 1px solid var(--rule);
-    border-radius: 999px;
-    background: rgba(20, 19, 15, 0.45);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    opacity: 0;
-  }
-  .t-1 { top: -14vh; left: -12vw; animation: tag-pop 0.5s var(--ease-pop) 1.6s forwards, drift-1 6s ease-in-out 1.6s infinite alternate; }
-  .t-2 { top: -8vh;  right: -8vw; animation: tag-pop 0.5s var(--ease-pop) 1.8s forwards, drift-2 7s ease-in-out 1.8s infinite alternate; }
-  .t-3 { bottom: -6vh; right: -4vw; animation: tag-pop 0.5s var(--ease-pop) 2.0s forwards, drift-3 5s ease-in-out 2.0s infinite alternate; }
-  @keyframes tag-pop {
-    from { opacity: 0; transform: scale(0.6) translateY(10px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  @keyframes drift-1 { from { transform: translate(0,0); } to { transform: translate(8px,-6px); } }
-  @keyframes drift-2 { from { transform: translate(0,0); } to { transform: translate(-10px,8px); } }
-  @keyframes drift-3 { from { transform: translate(0,0); } to { transform: translate(6px,-10px); } }
+      .float-tag {
+        position: absolute;
+        font-family: "Geist Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        padding: 4px 10px;
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        background: rgba(20, 19, 15, 0.45);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        opacity: 0;
+      }
+      .t-1 {
+        top: -14vh;
+        left: -12vw;
+        animation:
+          tag-pop 0.5s var(--ease-pop) 1.6s forwards,
+          drift-1 6s ease-in-out 1.6s infinite alternate;
+      }
+      .t-2 {
+        top: -8vh;
+        right: -8vw;
+        animation:
+          tag-pop 0.5s var(--ease-pop) 1.8s forwards,
+          drift-2 7s ease-in-out 1.8s infinite alternate;
+      }
+      .t-3 {
+        bottom: -6vh;
+        right: -4vw;
+        animation:
+          tag-pop 0.5s var(--ease-pop) 2s forwards,
+          drift-3 5s ease-in-out 2s infinite alternate;
+      }
+      @keyframes tag-pop {
+        from {
+          opacity: 0;
+          transform: scale(0.6) translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+      @keyframes drift-1 {
+        from {
+          transform: translate(0, 0);
+        }
+        to {
+          transform: translate(8px, -6px);
+        }
+      }
+      @keyframes drift-2 {
+        from {
+          transform: translate(0, 0);
+        }
+        to {
+          transform: translate(-10px, 8px);
+        }
+      }
+      @keyframes drift-3 {
+        from {
+          transform: translate(0, 0);
+        }
+        to {
+          transform: translate(6px, -10px);
+        }
+      }
 
-  /* ─── ACT 2 — Interface mockup ────────────────────────────────── */
-  .ui-stage {
-    width: min(76vw, 920px);
-    height: min(56vh, 500px);
-    margin: 0 auto;
-    position: relative;
-    transform-style: preserve-3d;
-    opacity: 0;
-    transform: rotateX(15deg) rotateY(-25deg) scale(0.6);
-    animation: ui-in 0.9s var(--ease-out) 3.2s forwards,
-               ui-bob 6s ease-in-out 4.2s infinite alternate;
-  }
-  @keyframes ui-in {
-    to { opacity: 1; transform: rotateX(2deg) rotateY(-6deg) scale(0.92); }
-  }
-  @keyframes ui-bob {
-    from { transform: rotateX(2deg) rotateY(-6deg) scale(0.92) translateY(0); }
-    to   { transform: rotateX(1deg) rotateY(-4deg) scale(0.92) translateY(-6px); }
-  }
-  .ui-window {
-    position: absolute; inset: 0;
-    background: linear-gradient(180deg, var(--bg-warmer) 0%, var(--bg-warm) 100%);
-    border: 1px solid var(--rule-bold);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow:
-      0 40px 80px rgba(0, 0, 0, 0.6),
-      0 0 100px rgba(232, 152, 118, 0.05),
-      inset 0 1px 0 rgba(255,255,255,0.04);
-  }
-  .ui-titlebar {
-    height: 38px;
-    border-bottom: 1px solid var(--rule);
-    display: flex; align-items: center;
-    padding: 0 16px; gap: 8px;
-    background: rgba(0,0,0,0.15);
-  }
-  .traffic { width: 11px; height: 11px; border-radius: 50%; background: var(--ink-faint); }
-  .traffic.r { background: #e07b6c; }
-  .traffic.y { background: #d8a86b; }
-  .traffic.g { background: #8db173; }
-  .url {
-    margin-left: 16px;
-    flex: 1;
-    text-align: center;
-    font-family: "Geist Mono", monospace;
-    font-size: 11px;
-    color: var(--ink-faint);
-    letter-spacing: 0.05em;
-  }
-  .url .live { color: var(--olive); font-size: 8px; margin-left: 8px; vertical-align: middle; }
+      /* ─── ACT 2 — Interface mockup ────────────────────────────────── */
+      .ui-stage {
+        width: min(76vw, 920px);
+        height: min(56vh, 500px);
+        margin: 0 auto;
+        position: relative;
+        transform-style: preserve-3d;
+        opacity: 0;
+        transform: rotateX(15deg) rotateY(-25deg) scale(0.6);
+        animation:
+          ui-in 0.9s var(--ease-out) 3.2s forwards,
+          ui-bob 6s ease-in-out 4.2s infinite alternate;
+      }
+      @keyframes ui-in {
+        to {
+          opacity: 1;
+          transform: rotateX(2deg) rotateY(-6deg) scale(0.92);
+        }
+      }
+      @keyframes ui-bob {
+        from {
+          transform: rotateX(2deg) rotateY(-6deg) scale(0.92) translateY(0);
+        }
+        to {
+          transform: rotateX(1deg) rotateY(-4deg) scale(0.92) translateY(-6px);
+        }
+      }
+      .ui-window {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, var(--bg-warmer) 0%, var(--bg-warm) 100%);
+        border: 1px solid var(--rule-bold);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow:
+          0 40px 80px rgba(0, 0, 0, 0.6),
+          0 0 100px rgba(232, 152, 118, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+      .ui-titlebar {
+        height: 38px;
+        border-bottom: 1px solid var(--rule);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        gap: 8px;
+        background: rgba(0, 0, 0, 0.15);
+      }
+      .traffic {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--ink-faint);
+      }
+      .traffic.r {
+        background: #e07b6c;
+      }
+      .traffic.y {
+        background: #d8a86b;
+      }
+      .traffic.g {
+        background: #8db173;
+      }
+      .url {
+        margin-left: 16px;
+        flex: 1;
+        text-align: center;
+        font-family: "Geist Mono", monospace;
+        font-size: 11px;
+        color: var(--ink-faint);
+        letter-spacing: 0.05em;
+      }
+      .url .live {
+        color: var(--olive);
+        font-size: 8px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
 
-  .ui-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    height: calc(100% - 38px);
-  }
-  .ui-pane {
-    padding: 18px;
-    display: flex; flex-direction: column; gap: 12px;
-    overflow: hidden;
-    text-align: left;
-  }
-  .ui-pane.left { border-right: 1px solid var(--rule); }
-  .pane-label {
-    font-family: "Geist Mono", monospace;
-    font-size: 9px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-  }
+      .ui-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: calc(100% - 38px);
+      }
+      .ui-pane {
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow: hidden;
+        text-align: left;
+      }
+      .ui-pane.left {
+        border-right: 1px solid var(--rule);
+      }
+      .pane-label {
+        font-family: "Geist Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
 
-  .chat-row { display: flex; gap: 10px; align-items: flex-start; }
-  .avatar {
-    width: 22px; height: 22px;
-    border-radius: 5px;
-    background: linear-gradient(135deg, var(--coral) 0%, var(--coral-deep) 100%);
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-  .avatar.bot {
-    background: linear-gradient(135deg, var(--bg-warmer), var(--bg-warm));
-    border: 1px solid var(--rule-bold);
-    position: relative;
-  }
-  .avatar.bot::after {
-    content: "";
-    position: absolute;
-    inset: 4px;
-    border-radius: 3px;
-    background: linear-gradient(135deg, var(--olive), transparent);
-  }
-  .chat-bubble {
-    flex: 1;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--ink-soft);
-  }
-  .chat-bubble strong { color: var(--ink); font-weight: 500; }
-  .chat-bubble em {
-    font-family: "Fraunces", serif;
-    color: var(--coral);
-    font-style: italic;
-    font-weight: 500;
-  }
+      .chat-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 5px;
+        background: linear-gradient(135deg, var(--coral) 0%, var(--coral-deep) 100%);
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .avatar.bot {
+        background: linear-gradient(135deg, var(--bg-warmer), var(--bg-warm));
+        border: 1px solid var(--rule-bold);
+        position: relative;
+      }
+      .avatar.bot::after {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 3px;
+        background: linear-gradient(135deg, var(--olive), transparent);
+      }
+      .chat-bubble {
+        flex: 1;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--ink-soft);
+      }
+      .chat-bubble strong {
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .chat-bubble em {
+        font-family: "Fraunces", serif;
+        color: var(--coral);
+        font-style: italic;
+        font-weight: 500;
+      }
 
-  .chat-input {
-    margin-top: auto;
-    padding: 10px 14px;
-    background: rgba(0,0,0,0.30);
-    border: 1px solid var(--rule);
-    border-radius: 8px;
-    font-size: 12.5px;
-    color: var(--ink);
-    min-height: 38px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .chat-input::before {
-    content: "→";
-    color: var(--ink-faint);
-    font-family: "Geist Mono", monospace;
-    font-size: 12px;
-  }
-  .typed-cursor {
-    display: inline-block;
-    width: 1px;
-    height: 14px;
-    background: var(--coral);
-    margin-left: 1px;
-    vertical-align: text-bottom;
-  }
+      .chat-input {
+        margin-top: auto;
+        padding: 10px 14px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        font-size: 12.5px;
+        color: var(--ink);
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .chat-input::before {
+        content: "→";
+        color: var(--ink-faint);
+        font-family: "Geist Mono", monospace;
+        font-size: 12px;
+      }
+      .typed-cursor {
+        display: inline-block;
+        width: 1px;
+        height: 14px;
+        background: var(--coral);
+        margin-left: 1px;
+        vertical-align: text-bottom;
+      }
 
-  .code-panel {
-    height: 100%;
-    overflow: hidden;
-    background: rgba(0,0,0,0.25);
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-family: "Geist Mono", "JetBrains Mono", monospace;
-    font-size: 10.5px;
-    line-height: 1.7;
-    color: var(--ink-soft);
-  }
-  .code-panel .line {
-    white-space: nowrap;
-    opacity: 0;
-    transform: translateX(-8px);
-  }
-  .code-panel .ln {
-    color: var(--ink-faint);
-    margin-right: 12px;
-    user-select: none;
-    display: inline-block;
-    width: 1.5em;
-    text-align: right;
-  }
-  .code-panel .k { color: var(--syntax-key); }
-  .code-panel .t { color: var(--syntax-tag); }
-  .code-panel .s { color: var(--syntax-str); }
-  .code-panel .c { color: var(--syntax-com); font-style: italic; }
-  .code-panel .line:nth-child(1)  { animation: code-line 0.4s var(--ease-out) 4.4s forwards; }
-  .code-panel .line:nth-child(2)  { animation: code-line 0.4s var(--ease-out) 4.5s forwards; }
-  .code-panel .line:nth-child(3)  { animation: code-line 0.4s var(--ease-out) 4.6s forwards; }
-  .code-panel .line:nth-child(4)  { animation: code-line 0.4s var(--ease-out) 4.7s forwards; }
-  .code-panel .line:nth-child(5)  { animation: code-line 0.4s var(--ease-out) 4.8s forwards; }
-  .code-panel .line:nth-child(6)  { animation: code-line 0.4s var(--ease-out) 4.9s forwards; }
-  .code-panel .line:nth-child(7)  { animation: code-line 0.4s var(--ease-out) 5.0s forwards; }
-  .code-panel .line:nth-child(8)  { animation: code-line 0.4s var(--ease-out) 5.1s forwards; }
-  .code-panel .line:nth-child(9)  { animation: code-line 0.4s var(--ease-out) 5.2s forwards; }
-  .code-panel .line:nth-child(10) { animation: code-line 0.4s var(--ease-out) 5.3s forwards; }
-  .code-panel .line:nth-child(11) { animation: code-line 0.4s var(--ease-out) 5.4s forwards; }
-  .code-panel .line:nth-child(12) { animation: code-line 0.4s var(--ease-out) 5.5s forwards; }
-  @keyframes code-line {
-    to { opacity: 1; transform: translateX(0); }
-  }
+      .code-panel {
+        height: 100%;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 8px;
+        padding: 12px 14px;
+        font-family: "Geist Mono", "JetBrains Mono", monospace;
+        font-size: 10.5px;
+        line-height: 1.7;
+        color: var(--ink-soft);
+      }
+      .code-panel .line {
+        white-space: nowrap;
+        opacity: 0;
+        transform: translateX(-8px);
+      }
+      .code-panel .ln {
+        color: var(--ink-faint);
+        margin-right: 12px;
+        user-select: none;
+        display: inline-block;
+        width: 1.5em;
+        text-align: right;
+      }
+      .code-panel .k {
+        color: var(--syntax-key);
+      }
+      .code-panel .t {
+        color: var(--syntax-tag);
+      }
+      .code-panel .s {
+        color: var(--syntax-str);
+      }
+      .code-panel .c {
+        color: var(--syntax-com);
+        font-style: italic;
+      }
+      .code-panel .line:nth-child(1) {
+        animation: code-line 0.4s var(--ease-out) 4.4s forwards;
+      }
+      .code-panel .line:nth-child(2) {
+        animation: code-line 0.4s var(--ease-out) 4.5s forwards;
+      }
+      .code-panel .line:nth-child(3) {
+        animation: code-line 0.4s var(--ease-out) 4.6s forwards;
+      }
+      .code-panel .line:nth-child(4) {
+        animation: code-line 0.4s var(--ease-out) 4.7s forwards;
+      }
+      .code-panel .line:nth-child(5) {
+        animation: code-line 0.4s var(--ease-out) 4.8s forwards;
+      }
+      .code-panel .line:nth-child(6) {
+        animation: code-line 0.4s var(--ease-out) 4.9s forwards;
+      }
+      .code-panel .line:nth-child(7) {
+        animation: code-line 0.4s var(--ease-out) 5s forwards;
+      }
+      .code-panel .line:nth-child(8) {
+        animation: code-line 0.4s var(--ease-out) 5.1s forwards;
+      }
+      .code-panel .line:nth-child(9) {
+        animation: code-line 0.4s var(--ease-out) 5.2s forwards;
+      }
+      .code-panel .line:nth-child(10) {
+        animation: code-line 0.4s var(--ease-out) 5.3s forwards;
+      }
+      .code-panel .line:nth-child(11) {
+        animation: code-line 0.4s var(--ease-out) 5.4s forwards;
+      }
+      .code-panel .line:nth-child(12) {
+        animation: code-line 0.4s var(--ease-out) 5.5s forwards;
+      }
+      @keyframes code-line {
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
 
-  .cursor {
-    position: absolute;
-    top: 50%; left: 25%;
-    width: 22px; height: 22px;
-    z-index: 5;
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
-    pointer-events: none;
-    filter: drop-shadow(0 0 6px rgba(232, 152, 118, 0.6));
-    animation: cursor-in 0.4s var(--ease-pop) 3.6s forwards,
-               cursor-move 1.4s var(--ease-out) 4.0s forwards;
-  }
-  @keyframes cursor-in {
-    from { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 0; }
-    to   { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
-  }
-  @keyframes cursor-move {
-    0%   { top: 50%; left: 25%; }
-    60%  { top: 80%; left: 22%; }
-    100% { top: 86%; left: 22%; }
-  }
-  .cursor svg { width: 100%; height: 100%; }
+      .cursor {
+        position: absolute;
+        top: 50%;
+        left: 25%;
+        width: 22px;
+        height: 22px;
+        z-index: 5;
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+        pointer-events: none;
+        filter: drop-shadow(0 0 6px rgba(232, 152, 118, 0.6));
+        animation:
+          cursor-in 0.4s var(--ease-pop) 3.6s forwards,
+          cursor-move 1.4s var(--ease-out) 4s forwards;
+      }
+      @keyframes cursor-in {
+        from {
+          transform: translate(-50%, -50%) scale(0) rotate(-20deg);
+          opacity: 0;
+        }
+        to {
+          transform: translate(-50%, -50%) scale(1) rotate(0deg);
+          opacity: 1;
+        }
+      }
+      @keyframes cursor-move {
+        0% {
+          top: 50%;
+          left: 25%;
+        }
+        60% {
+          top: 80%;
+          left: 22%;
+        }
+        100% {
+          top: 86%;
+          left: 22%;
+        }
+      }
+      .cursor svg {
+        width: 100%;
+        height: 100%;
+      }
 
-  /* ─── ACT 3 — Render frames ───────────────────────────────────── */
-  .render-act {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 32px;
-    transform-style: preserve-3d;
-  }
-  .filmstrip {
-    display: flex;
-    gap: 6px;
-    perspective: 1500px;
-    transform-style: preserve-3d;
-    transform: rotateX(8deg) rotateY(-12deg);
-  }
-  .filmstrip .frame {
-    width: clamp(60px, 7vw, 92px);
-    height: clamp(36px, 4vw, 52px);
-    background: var(--bg-warmer);
-    border: 1px solid var(--rule);
-    border-radius: 4px;
-    position: relative;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(40px) rotateY(-30deg);
-  }
-  .filmstrip .frame::after {
-    content: "";
-    position: absolute;
-    bottom: 4px; left: 4px;
-    width: 14px; height: 1px;
-    background: var(--coral);
-    box-shadow: 0 -3px 0 var(--ink-faint), 0 -6px 0 var(--ink-faint);
-    z-index: 2;
-  }
-  .filmstrip .frame .fill-bar {
-    position: absolute; inset: 0;
-    transform: scaleX(0);
-    transform-origin: left;
-  }
-  .filmstrip .frame:nth-child(1)  { animation: frame-in 0.5s var(--ease-pop) 6.40s forwards; }
-  .filmstrip .frame:nth-child(2)  { animation: frame-in 0.5s var(--ease-pop) 6.45s forwards; }
-  .filmstrip .frame:nth-child(3)  { animation: frame-in 0.5s var(--ease-pop) 6.50s forwards; }
-  .filmstrip .frame:nth-child(4)  { animation: frame-in 0.5s var(--ease-pop) 6.55s forwards; }
-  .filmstrip .frame:nth-child(5)  { animation: frame-in 0.5s var(--ease-pop) 6.60s forwards; }
-  .filmstrip .frame:nth-child(6)  { animation: frame-in 0.5s var(--ease-pop) 6.65s forwards; }
-  .filmstrip .frame:nth-child(7)  { animation: frame-in 0.5s var(--ease-pop) 6.70s forwards; }
-  .filmstrip .frame:nth-child(8)  { animation: frame-in 0.5s var(--ease-pop) 6.75s forwards; }
-  .filmstrip .frame:nth-child(9)  { animation: frame-in 0.5s var(--ease-pop) 6.80s forwards; }
-  .filmstrip .frame:nth-child(1) .fill-bar  { background: linear-gradient(135deg, var(--coral), var(--coral-deep)); animation: bar-fill 0.5s ease-out 7.40s forwards; }
-  .filmstrip .frame:nth-child(2) .fill-bar  { background: linear-gradient(135deg, var(--coral), var(--gold));      animation: bar-fill 0.5s ease-out 7.45s forwards; }
-  .filmstrip .frame:nth-child(3) .fill-bar  { background: linear-gradient(135deg, var(--gold), var(--coral));      animation: bar-fill 0.5s ease-out 7.50s forwards; }
-  .filmstrip .frame:nth-child(4) .fill-bar  { background: linear-gradient(135deg, var(--gold), var(--olive));      animation: bar-fill 0.5s ease-out 7.55s forwards; }
-  .filmstrip .frame:nth-child(5) .fill-bar  { background: linear-gradient(135deg, var(--olive), var(--gold));      animation: bar-fill 0.5s ease-out 7.60s forwards; }
-  .filmstrip .frame:nth-child(6) .fill-bar  { background: linear-gradient(135deg, var(--olive), var(--azure));     animation: bar-fill 0.5s ease-out 7.65s forwards; }
-  .filmstrip .frame:nth-child(7) .fill-bar  { background: linear-gradient(135deg, var(--azure), var(--olive));     animation: bar-fill 0.5s ease-out 7.70s forwards; }
-  .filmstrip .frame:nth-child(8) .fill-bar  { background: linear-gradient(135deg, var(--azure), var(--coral));     animation: bar-fill 0.5s ease-out 7.75s forwards; }
-  .filmstrip .frame:nth-child(9) .fill-bar  { background: linear-gradient(135deg, var(--coral), var(--azure));     animation: bar-fill 0.5s ease-out 7.80s forwards; }
-  @keyframes frame-in {
-    to { opacity: 1; transform: translateY(0) rotateY(0); }
-  }
-  @keyframes bar-fill {
-    to { transform: scaleX(1); }
-  }
+      /* ─── ACT 3 — Render frames ───────────────────────────────────── */
+      .render-act {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 32px;
+        transform-style: preserve-3d;
+      }
+      .filmstrip {
+        display: flex;
+        gap: 6px;
+        perspective: 1500px;
+        transform-style: preserve-3d;
+        transform: rotateX(8deg) rotateY(-12deg);
+      }
+      .filmstrip .frame {
+        width: clamp(60px, 7vw, 92px);
+        height: clamp(36px, 4vw, 52px);
+        background: var(--bg-warmer);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(40px) rotateY(-30deg);
+      }
+      .filmstrip .frame::after {
+        content: "";
+        position: absolute;
+        bottom: 4px;
+        left: 4px;
+        width: 14px;
+        height: 1px;
+        background: var(--coral);
+        box-shadow:
+          0 -3px 0 var(--ink-faint),
+          0 -6px 0 var(--ink-faint);
+        z-index: 2;
+      }
+      .filmstrip .frame .fill-bar {
+        position: absolute;
+        inset: 0;
+        transform: scaleX(0);
+        transform-origin: left;
+      }
+      .filmstrip .frame:nth-child(1) {
+        animation: frame-in 0.5s var(--ease-pop) 6.4s forwards;
+      }
+      .filmstrip .frame:nth-child(2) {
+        animation: frame-in 0.5s var(--ease-pop) 6.45s forwards;
+      }
+      .filmstrip .frame:nth-child(3) {
+        animation: frame-in 0.5s var(--ease-pop) 6.5s forwards;
+      }
+      .filmstrip .frame:nth-child(4) {
+        animation: frame-in 0.5s var(--ease-pop) 6.55s forwards;
+      }
+      .filmstrip .frame:nth-child(5) {
+        animation: frame-in 0.5s var(--ease-pop) 6.6s forwards;
+      }
+      .filmstrip .frame:nth-child(6) {
+        animation: frame-in 0.5s var(--ease-pop) 6.65s forwards;
+      }
+      .filmstrip .frame:nth-child(7) {
+        animation: frame-in 0.5s var(--ease-pop) 6.7s forwards;
+      }
+      .filmstrip .frame:nth-child(8) {
+        animation: frame-in 0.5s var(--ease-pop) 6.75s forwards;
+      }
+      .filmstrip .frame:nth-child(9) {
+        animation: frame-in 0.5s var(--ease-pop) 6.8s forwards;
+      }
+      .filmstrip .frame:nth-child(1) .fill-bar {
+        background: linear-gradient(135deg, var(--coral), var(--coral-deep));
+        animation: bar-fill 0.5s ease-out 7.4s forwards;
+      }
+      .filmstrip .frame:nth-child(2) .fill-bar {
+        background: linear-gradient(135deg, var(--coral), var(--gold));
+        animation: bar-fill 0.5s ease-out 7.45s forwards;
+      }
+      .filmstrip .frame:nth-child(3) .fill-bar {
+        background: linear-gradient(135deg, var(--gold), var(--coral));
+        animation: bar-fill 0.5s ease-out 7.5s forwards;
+      }
+      .filmstrip .frame:nth-child(4) .fill-bar {
+        background: linear-gradient(135deg, var(--gold), var(--olive));
+        animation: bar-fill 0.5s ease-out 7.55s forwards;
+      }
+      .filmstrip .frame:nth-child(5) .fill-bar {
+        background: linear-gradient(135deg, var(--olive), var(--gold));
+        animation: bar-fill 0.5s ease-out 7.6s forwards;
+      }
+      .filmstrip .frame:nth-child(6) .fill-bar {
+        background: linear-gradient(135deg, var(--olive), var(--azure));
+        animation: bar-fill 0.5s ease-out 7.65s forwards;
+      }
+      .filmstrip .frame:nth-child(7) .fill-bar {
+        background: linear-gradient(135deg, var(--azure), var(--olive));
+        animation: bar-fill 0.5s ease-out 7.7s forwards;
+      }
+      .filmstrip .frame:nth-child(8) .fill-bar {
+        background: linear-gradient(135deg, var(--azure), var(--coral));
+        animation: bar-fill 0.5s ease-out 7.75s forwards;
+      }
+      .filmstrip .frame:nth-child(9) .fill-bar {
+        background: linear-gradient(135deg, var(--coral), var(--azure));
+        animation: bar-fill 0.5s ease-out 7.8s forwards;
+      }
+      @keyframes frame-in {
+        to {
+          opacity: 1;
+          transform: translateY(0) rotateY(0);
+        }
+      }
+      @keyframes bar-fill {
+        to {
+          transform: scaleX(1);
+        }
+      }
 
-  .render-meta {
-    display: flex;
-    gap: 14px;
-    align-items: center;
-    font-family: "Geist Mono", monospace;
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    color: var(--ink-soft);
-  }
-  .render-meta .pill {
-    padding: 5px 12px;
-    border: 1px solid var(--rule-bold);
-    border-radius: 999px;
-    background: rgba(20, 19, 15, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    opacity: 0;
-    transform: translateY(8px) scale(0.9);
-  }
-  .pill.p-1 { animation: pill-in 0.5s var(--ease-pop) 7.0s forwards; }
-  .pill.p-2 { animation: pill-in 0.5s var(--ease-pop) 7.15s forwards; }
-  .pill.p-3 { animation: pill-in 0.5s var(--ease-pop) 7.30s forwards; }
-  .pill.p-4 { animation: pill-in 0.5s var(--ease-pop) 7.45s forwards; }
-  @keyframes pill-in {
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  .pill .dot {
-    display: inline-block;
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--olive);
-    margin-right: 6px;
-    vertical-align: middle;
-    box-shadow: 0 0 6px rgba(141, 177, 115, 0.6);
-  }
-  .pill .accent { color: var(--coral); }
+      .render-meta {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        font-family: "Geist Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        color: var(--ink-soft);
+      }
+      .render-meta .pill {
+        padding: 5px 12px;
+        border: 1px solid var(--rule-bold);
+        border-radius: 999px;
+        background: rgba(20, 19, 15, 0.6);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        opacity: 0;
+        transform: translateY(8px) scale(0.9);
+      }
+      .pill.p-1 {
+        animation: pill-in 0.5s var(--ease-pop) 7s forwards;
+      }
+      .pill.p-2 {
+        animation: pill-in 0.5s var(--ease-pop) 7.15s forwards;
+      }
+      .pill.p-3 {
+        animation: pill-in 0.5s var(--ease-pop) 7.3s forwards;
+      }
+      .pill.p-4 {
+        animation: pill-in 0.5s var(--ease-pop) 7.45s forwards;
+      }
+      @keyframes pill-in {
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      .pill .dot {
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--olive);
+        margin-right: 6px;
+        vertical-align: middle;
+        box-shadow: 0 0 6px rgba(141, 177, 115, 0.6);
+      }
+      .pill .accent {
+        color: var(--coral);
+      }
 
-  .render-headline {
-    font-family: "Geist", sans-serif;
-    font-weight: 600;
-    font-size: clamp(34px, 4.5vw, 60px);
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-    color: var(--ink);
-    opacity: 0;
-    animation: headline-in 0.8s var(--ease-out) 6.5s forwards;
-  }
-  .render-headline em {
-    font-family: "Fraunces", serif;
-    font-style: italic;
-    font-weight: 500;
-    color: var(--coral);
-  }
-  @keyframes headline-in {
-    from { opacity: 0; transform: translateY(20px) scale(0.96); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-  }
+      .render-headline {
+        font-family: "Geist", sans-serif;
+        font-weight: 600;
+        font-size: clamp(34px, 4.5vw, 60px);
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        color: var(--ink);
+        opacity: 0;
+        animation: headline-in 0.8s var(--ease-out) 6.5s forwards;
+      }
+      .render-headline em {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-weight: 500;
+        color: var(--coral);
+      }
+      @keyframes headline-in {
+        from {
+          opacity: 0;
+          transform: translateY(20px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
 
-  /* ─── ACT 4 — Output cards ────────────────────────────────────── */
-  .output-act {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 36px;
-    transform-style: preserve-3d;
-  }
-  .output-headline {
-    font-family: "Geist", sans-serif;
-    font-weight: 700;
-    font-size: clamp(40px, 6vw, 84px);
-    letter-spacing: -0.04em;
-    line-height: 1.0;
-    color: var(--ink);
-    text-align: center;
-    background: linear-gradient(180deg, var(--ink) 0%, var(--ink) 60%, rgba(244, 240, 226, 0.5) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: out-headline 1s var(--ease-out) 9.4s forwards;
-  }
-  .output-headline em {
-    font-family: "Fraunces", serif;
-    font-style: italic;
-    font-weight: 500;
-    background: linear-gradient(180deg, var(--coral), var(--coral-deep));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  @keyframes out-headline {
-    to { opacity: 1; transform: translateY(0); }
-  }
+      /* ─── ACT 4 — Output cards ────────────────────────────────────── */
+      .output-act {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 36px;
+        transform-style: preserve-3d;
+      }
+      .output-headline {
+        font-family: "Geist", sans-serif;
+        font-weight: 700;
+        font-size: clamp(40px, 6vw, 84px);
+        letter-spacing: -0.04em;
+        line-height: 1;
+        color: var(--ink);
+        text-align: center;
+        background: linear-gradient(
+          180deg,
+          var(--ink) 0%,
+          var(--ink) 60%,
+          rgba(244, 240, 226, 0.5) 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: out-headline 1s var(--ease-out) 9.4s forwards;
+      }
+      .output-headline em {
+        font-family: "Fraunces", serif;
+        font-style: italic;
+        font-weight: 500;
+        background: linear-gradient(180deg, var(--coral), var(--coral-deep));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      @keyframes out-headline {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-  .output-cards {
-    display: flex; gap: 14px;
-    perspective: 1500px;
-    transform-style: preserve-3d;
-  }
-  .out-card {
-    width: clamp(120px, 14vw, 170px);
-    height: clamp(160px, 19vw, 220px);
-    border-radius: 12px;
-    border: 1px solid var(--rule-bold);
-    background: linear-gradient(180deg, rgba(28, 26, 21, 0.85) 0%, rgba(20, 19, 15, 0.92) 100%);
-    backdrop-filter: blur(20px) saturate(1.2);
-    -webkit-backdrop-filter: blur(20px) saturate(1.2);
-    box-shadow:
-      0 20px 50px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 rgba(255,255,255,0.05);
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    opacity: 0;
-    text-align: left;
-  }
-  .out-card.c-1 { transform: rotateY(-10deg) translateZ(-30px) translateY(40px); animation: in-1 0.7s var(--ease-pop) 9.7s forwards, bob-1 4.8s ease-in-out 10.4s infinite alternate; }
-  .out-card.c-2 { transform: rotateY(-3deg)  translateZ(-10px) translateY(40px); animation: in-2 0.7s var(--ease-pop) 9.85s forwards, bob-2 5.4s ease-in-out 10.55s infinite alternate; }
-  .out-card.c-3 { transform: rotateY(3deg)   translateZ(-10px) translateY(40px); animation: in-3 0.7s var(--ease-pop) 10.0s forwards, bob-3 4.6s ease-in-out 10.7s infinite alternate; }
-  .out-card.c-4 { transform: rotateY(10deg)  translateZ(-30px) translateY(40px); animation: in-4 0.7s var(--ease-pop) 10.15s forwards, bob-4 5.8s ease-in-out 10.85s infinite alternate; }
-  @keyframes in-1 { to { opacity: 1; transform: rotateY(-10deg) translateZ(-30px) translateY(0); } }
-  @keyframes in-2 { to { opacity: 1; transform: rotateY(-3deg)  translateZ(-10px) translateY(0); } }
-  @keyframes in-3 { to { opacity: 1; transform: rotateY(3deg)   translateZ(-10px) translateY(0); } }
-  @keyframes in-4 { to { opacity: 1; transform: rotateY(10deg)  translateZ(-30px) translateY(0); } }
-  @keyframes bob-1 { from { transform: rotateY(-10deg) translateZ(-30px) translateY(0); } to { transform: rotateY(-9deg)  translateZ(-26px) translateY(-4px); } }
-  @keyframes bob-2 { from { transform: rotateY(-3deg)  translateZ(-10px) translateY(0); } to { transform: rotateY(-2deg)  translateZ(-6px)  translateY(-6px); } }
-  @keyframes bob-3 { from { transform: rotateY(3deg)   translateZ(-10px) translateY(0); } to { transform: rotateY(4deg)   translateZ(-6px)  translateY(-5px); } }
-  @keyframes bob-4 { from { transform: rotateY(10deg)  translateZ(-30px) translateY(0); } to { transform: rotateY(9deg)   translateZ(-26px) translateY(-3px); } }
+      .output-cards {
+        display: flex;
+        gap: 14px;
+        perspective: 1500px;
+        transform-style: preserve-3d;
+      }
+      .out-card {
+        width: clamp(120px, 14vw, 170px);
+        height: clamp(160px, 19vw, 220px);
+        border-radius: 12px;
+        border: 1px solid var(--rule-bold);
+        background: linear-gradient(180deg, rgba(28, 26, 21, 0.85) 0%, rgba(20, 19, 15, 0.92) 100%);
+        backdrop-filter: blur(20px) saturate(1.2);
+        -webkit-backdrop-filter: blur(20px) saturate(1.2);
+        box-shadow:
+          0 20px 50px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        opacity: 0;
+        text-align: left;
+      }
+      .out-card.c-1 {
+        transform: rotateY(-10deg) translateZ(-30px) translateY(40px);
+        animation:
+          in-1 0.7s var(--ease-pop) 9.7s forwards,
+          bob-1 4.8s ease-in-out 10.4s infinite alternate;
+      }
+      .out-card.c-2 {
+        transform: rotateY(-3deg) translateZ(-10px) translateY(40px);
+        animation:
+          in-2 0.7s var(--ease-pop) 9.85s forwards,
+          bob-2 5.4s ease-in-out 10.55s infinite alternate;
+      }
+      .out-card.c-3 {
+        transform: rotateY(3deg) translateZ(-10px) translateY(40px);
+        animation:
+          in-3 0.7s var(--ease-pop) 10s forwards,
+          bob-3 4.6s ease-in-out 10.7s infinite alternate;
+      }
+      .out-card.c-4 {
+        transform: rotateY(10deg) translateZ(-30px) translateY(40px);
+        animation:
+          in-4 0.7s var(--ease-pop) 10.15s forwards,
+          bob-4 5.8s ease-in-out 10.85s infinite alternate;
+      }
+      @keyframes in-1 {
+        to {
+          opacity: 1;
+          transform: rotateY(-10deg) translateZ(-30px) translateY(0);
+        }
+      }
+      @keyframes in-2 {
+        to {
+          opacity: 1;
+          transform: rotateY(-3deg) translateZ(-10px) translateY(0);
+        }
+      }
+      @keyframes in-3 {
+        to {
+          opacity: 1;
+          transform: rotateY(3deg) translateZ(-10px) translateY(0);
+        }
+      }
+      @keyframes in-4 {
+        to {
+          opacity: 1;
+          transform: rotateY(10deg) translateZ(-30px) translateY(0);
+        }
+      }
+      @keyframes bob-1 {
+        from {
+          transform: rotateY(-10deg) translateZ(-30px) translateY(0);
+        }
+        to {
+          transform: rotateY(-9deg) translateZ(-26px) translateY(-4px);
+        }
+      }
+      @keyframes bob-2 {
+        from {
+          transform: rotateY(-3deg) translateZ(-10px) translateY(0);
+        }
+        to {
+          transform: rotateY(-2deg) translateZ(-6px) translateY(-6px);
+        }
+      }
+      @keyframes bob-3 {
+        from {
+          transform: rotateY(3deg) translateZ(-10px) translateY(0);
+        }
+        to {
+          transform: rotateY(4deg) translateZ(-6px) translateY(-5px);
+        }
+      }
+      @keyframes bob-4 {
+        from {
+          transform: rotateY(10deg) translateZ(-30px) translateY(0);
+        }
+        to {
+          transform: rotateY(9deg) translateZ(-26px) translateY(-3px);
+        }
+      }
 
-  .out-thumb {
-    flex: 1;
-    border-radius: 6px;
-    border: 1px solid var(--rule);
-    overflow: hidden;
-    position: relative;
-  }
-  .c-1 .out-thumb { background: linear-gradient(135deg, var(--coral), var(--coral-deep)); }
-  .c-2 .out-thumb { background: linear-gradient(135deg, var(--olive), var(--bg-warmer)); }
-  .c-3 .out-thumb { background: linear-gradient(135deg, var(--azure), var(--bg-warmer)); }
-  .c-4 .out-thumb { background: linear-gradient(135deg, var(--gold), var(--coral-deep)); }
-  .out-thumb::after {
-    content: "";
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 0; height: 0;
-    border-left: 14px solid var(--ink);
-    border-top: 9px solid transparent;
-    border-bottom: 9px solid transparent;
-    opacity: 0.85;
-    filter: drop-shadow(0 0 4px rgba(0,0,0,0.4));
-  }
-  .out-meta { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
-  .out-meta .label {
-    font-family: "Geist Mono", monospace;
-    font-size: 9px; letter-spacing: 0.18em;
-    text-transform: uppercase; color: var(--ink-faint);
-  }
-  .out-meta .name {
-    font-family: "Geist", sans-serif;
-    font-size: 13px; font-weight: 500; color: var(--ink);
-  }
-  .out-meta .ratio {
-    font-family: "Geist Mono", monospace;
-    font-size: 10px; color: var(--ink-soft); margin-top: 2px;
-  }
+      .out-thumb {
+        flex: 1;
+        border-radius: 6px;
+        border: 1px solid var(--rule);
+        overflow: hidden;
+        position: relative;
+      }
+      .c-1 .out-thumb {
+        background: linear-gradient(135deg, var(--coral), var(--coral-deep));
+      }
+      .c-2 .out-thumb {
+        background: linear-gradient(135deg, var(--olive), var(--bg-warmer));
+      }
+      .c-3 .out-thumb {
+        background: linear-gradient(135deg, var(--azure), var(--bg-warmer));
+      }
+      .c-4 .out-thumb {
+        background: linear-gradient(135deg, var(--gold), var(--coral-deep));
+      }
+      .out-thumb::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 0;
+        height: 0;
+        border-left: 14px solid var(--ink);
+        border-top: 9px solid transparent;
+        border-bottom: 9px solid transparent;
+        opacity: 0.85;
+        filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.4));
+      }
+      .out-meta {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .out-meta .label {
+        font-family: "Geist Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+      .out-meta .name {
+        font-family: "Geist", sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .out-meta .ratio {
+        font-family: "Geist Mono", monospace;
+        font-size: 10px;
+        color: var(--ink-soft);
+        margin-top: 2px;
+      }
 
-  /* ─── Portrait (9:16) layout ──────────────────────────────────── */
-  @media (max-aspect-ratio: 1/1) {
-    .ui-stage {
-      width: 90vw;
-      height: 50vh;
-    }
-    .ui-body { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
-    .ui-pane.left { border-right: none; border-bottom: 1px solid var(--rule); }
-    .filmstrip { flex-wrap: wrap; max-width: 80vw; justify-content: center; }
-    .output-cards { flex-wrap: wrap; max-width: 86vw; justify-content: center; gap: 10px; }
-    .out-card { width: clamp(110px, 38vw, 150px); height: clamp(150px, 50vw, 200px); }
-    .opener { gap: 24px; }
-    .display { font-size: clamp(48px, 11vw, 96px); }
-    .render-headline { font-size: clamp(34px, 7vw, 56px); }
-    .output-headline { font-size: clamp(40px, 9vw, 72px); }
-    .t-1 { top: -10vh; left: -2vw; }
-    .t-2 { top: -6vh; right: -2vw; }
-    .t-3 { bottom: -8vh; right: 2vw; }
-  }
-</style>
-</head>
-<body>
-  <div class="stage">
+      /* ─── Portrait (9:16) layout ──────────────────────────────────── */
+      @media (max-aspect-ratio: 1/1) {
+        .ui-stage {
+          width: 90vw;
+          height: 50vh;
+        }
+        .ui-body {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr 1fr;
+        }
+        .ui-pane.left {
+          border-right: none;
+          border-bottom: 1px solid var(--rule);
+        }
+        .filmstrip {
+          flex-wrap: wrap;
+          max-width: 80vw;
+          justify-content: center;
+        }
+        .output-cards {
+          flex-wrap: wrap;
+          max-width: 86vw;
+          justify-content: center;
+          gap: 10px;
+        }
+        .out-card {
+          width: clamp(110px, 38vw, 150px);
+          height: clamp(150px, 50vw, 200px);
+        }
+        .opener {
+          gap: 24px;
+        }
+        .display {
+          font-size: clamp(48px, 11vw, 96px);
+        }
+        .render-headline {
+          font-size: clamp(34px, 7vw, 56px);
+        }
+        .output-headline {
+          font-size: clamp(40px, 9vw, 72px);
+        }
+        .t-1 {
+          top: -10vh;
+          left: -2vw;
+        }
+        .t-2 {
+          top: -6vh;
+          right: -2vw;
+        }
+        .t-3 {
+          bottom: -8vh;
+          right: 2vw;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <div class="orb orb-4"></div>
+      <div class="orb orb-5"></div>
+      <div class="orb orb-6"></div>
 
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
-    <div class="orb orb-5"></div>
-    <div class="orb orb-6"></div>
+      <canvas id="particles"></canvas>
 
-    <canvas id="particles"></canvas>
+      <div class="vignette"></div>
+      <div class="grain"></div>
 
-    <div class="vignette"></div>
-    <div class="grain"></div>
+      <div class="streak"></div>
 
-    <div class="streak"></div>
+      <div class="topbar">
+        <span class="brand">
+          <span class="brand-mark"></span>
+          <span>Design Factory</span>
+        </span>
+        <span class="sep"></span>
+        <span class="step-dots">
+          <span class="step s-1 active"></span>
+          <span class="step s-2"></span>
+          <span class="step s-3"></span>
+          <span class="step s-4"></span>
+        </span>
+      </div>
 
-    <div class="topbar">
-      <span class="brand">
-        <span class="brand-mark"></span>
-        <span>Design Factory</span>
-      </span>
-      <span class="sep"></span>
-      <span class="step-dots">
-        <span class="step s-1 active"></span>
-        <span class="step s-2"></span>
-        <span class="step s-3"></span>
-        <span class="step s-4"></span>
-      </span>
-    </div>
+      <div class="acts">
+        <!-- ACT 1 -->
+        <div class="act act-1">
+          <div class="opener">
+            <div class="float-tag t-1">html · css · js</div>
+            <div class="float-tag t-2">→ mp4 1080p</div>
+            <div class="float-tag t-3">deterministic render</div>
 
-    <div class="acts">
+            <div class="mark-3d">
+              <svg class="mark" viewBox="0 0 100 100">
+                <path class="draw" d="M 20 80 L 20 20 L 50 60 L 80 20 L 80 80" />
+                <path class="fill" d="M 20 80 L 20 20 L 50 60 L 80 20 L 80 80 Z" />
+              </svg>
+            </div>
 
-      <!-- ACT 1 -->
-      <div class="act act-1">
-        <div class="opener">
-          <div class="float-tag t-1">html · css · js</div>
-          <div class="float-tag t-2">→ mp4 1080p</div>
-          <div class="float-tag t-3">deterministic render</div>
+            <h1 class="display">
+              <span class="word w-1"><span>Cinema</span></span>
+              <span class="word w-2"><span>com</span></span>
+              <span class="word w-3"
+                ><span><em>código.</em></span></span
+              >
+            </h1>
+            <p class="lede">geração após geração · Design Factory</p>
+          </div>
+        </div>
 
-          <div class="mark-3d">
-            <svg class="mark" viewBox="0 0 100 100">
-              <path class="draw" d="M 20 80 L 20 20 L 50 60 L 80 20 L 80 80" />
-              <path class="fill" d="M 20 80 L 20 20 L 50 60 L 80 20 L 80 80 Z" />
+        <!-- ACT 2 -->
+        <div class="act act-2">
+          <div class="ui-stage">
+            <div class="ui-window">
+              <div class="ui-titlebar">
+                <span class="traffic r"></span>
+                <span class="traffic y"></span>
+                <span class="traffic g"></span>
+                <span class="url"
+                  >design-factory · projeto/hero-loop <span class="live">● live</span></span
+                >
+              </div>
+              <div class="ui-body">
+                <div class="ui-pane left">
+                  <span class="pane-label">Chat — turn 1</span>
+                  <div class="chat-row">
+                    <div class="avatar"></div>
+                    <div class="chat-bubble">
+                      <strong>You:</strong> Quero um <em>hero loop</em> de 8s, palavra por palavra,
+                      fonte Geist, accent Fraunces coral.
+                    </div>
+                  </div>
+                  <div class="chat-row">
+                    <div class="avatar bot"></div>
+                    <div class="chat-bubble">
+                      <strong>Atelier:</strong> Saquei. Geist 700, Fraunces italic, palette warm
+                      noir.
+                    </div>
+                  </div>
+                  <div class="chat-input">
+                    <span id="typed"></span><span class="typed-cursor"></span>
+                  </div>
+                </div>
+                <div class="ui-pane right">
+                  <span class="pane-label">index.html — generated</span>
+                  <div class="code-panel">
+                    <div class="line">
+                      <span class="ln">1</span
+                      ><span class="c">/* hero loop · Geist + Fraunces italic */</span>
+                    </div>
+                    <div class="line">
+                      <span class="ln">2</span><span class="k">.stage</span> {
+                      <span class="t">position</span>: <span class="s">absolute</span>;
+                      <span class="t">inset</span>: 0; }
+                    </div>
+                    <div class="line">
+                      <span class="ln">3</span><span class="k">.headline</span> {
+                    </div>
+                    <div class="line">
+                      <span class="ln">4</span>&nbsp;&nbsp;<span class="t">font-family</span>:
+                      <span class="s">"Geist", sans-serif</span>;
+                    </div>
+                    <div class="line">
+                      <span class="ln">5</span>&nbsp;&nbsp;<span class="t">font-size</span>:
+                      <span class="s">clamp(56px, 9vw, 144px)</span>;
+                    </div>
+                    <div class="line">
+                      <span class="ln">6</span>&nbsp;&nbsp;<span class="t">letter-spacing</span>:
+                      <span class="s">-0.04em</span>;
+                    </div>
+                    <div class="line"><span class="ln">7</span>}</div>
+                    <div class="line">
+                      <span class="ln">8</span><span class="k">.headline em</span> {
+                    </div>
+                    <div class="line">
+                      <span class="ln">9</span>&nbsp;&nbsp;<span class="t">font-family</span>:
+                      <span class="s">"Fraunces", serif</span>;
+                    </div>
+                    <div class="line">
+                      <span class="ln">10</span>&nbsp;&nbsp;<span class="t">color</span>:
+                      <span class="s">#d88a6b</span>;
+                    </div>
+                    <div class="line">
+                      <span class="ln">11</span>&nbsp;&nbsp;<span class="t">font-style</span>:
+                      <span class="s">italic</span>;
+                    </div>
+                    <div class="line"><span class="ln">12</span>}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <svg class="cursor" viewBox="0 0 24 24">
+              <path
+                d="M3 2 L3 18 L8 14 L11 21 L14 20 L11 13 L18 13 Z"
+                fill="#f4f0e2"
+                stroke="#0a0a09"
+                stroke-width="0.8"
+                stroke-linejoin="round"
+              />
             </svg>
           </div>
-
-          <h1 class="display">
-            <span class="word w-1"><span>Cinema</span></span>
-            <span class="word w-2"><span>com</span></span>
-            <span class="word w-3"><span><em>código.</em></span></span>
-          </h1>
-          <p class="lede">geração após geração · Design Factory</p>
         </div>
-      </div>
 
-      <!-- ACT 2 -->
-      <div class="act act-2">
-        <div class="ui-stage">
-          <div class="ui-window">
-            <div class="ui-titlebar">
-              <span class="traffic r"></span>
-              <span class="traffic y"></span>
-              <span class="traffic g"></span>
-              <span class="url">design-factory · projeto/hero-loop <span class="live">● live</span></span>
+        <!-- ACT 3 -->
+        <div class="act act-3">
+          <div class="render-act">
+            <h2 class="render-headline">Renderiza <em>frame por frame.</em></h2>
+
+            <div class="filmstrip">
+              <div class="frame"><div class="fill-bar"></div></div>
+              <div class="frame"><div class="fill-bar"></div></div>
+              <div class="frame"><div class="fill-bar"></div></div>
+              <div class="frame"><div class="fill-bar"></div></div>
+              <div class="frame"><div class="fill-bar"></div></div>
+              <div class="frame"><div class="fill-bar"></div></div>
+              <div class="frame"><div class="fill-bar"></div></div>
+              <div class="frame"><div class="fill-bar"></div></div>
+              <div class="frame"><div class="fill-bar"></div></div>
             </div>
-            <div class="ui-body">
-              <div class="ui-pane left">
-                <span class="pane-label">Chat — turn 1</span>
-                <div class="chat-row">
-                  <div class="avatar"></div>
-                  <div class="chat-bubble">
-                    <strong>You:</strong> Quero um <em>hero loop</em> de 8s, palavra por palavra, fonte Geist, accent Fraunces coral.
-                  </div>
-                </div>
-                <div class="chat-row">
-                  <div class="avatar bot"></div>
-                  <div class="chat-bubble">
-                    <strong>Atelier:</strong> Saquei. Geist 700, Fraunces italic, palette warm noir.
-                  </div>
-                </div>
-                <div class="chat-input">
-                  <span id="typed"></span><span class="typed-cursor"></span>
-                </div>
-              </div>
-              <div class="ui-pane right">
-                <span class="pane-label">index.html — generated</span>
-                <div class="code-panel">
-                  <div class="line"><span class="ln">1</span><span class="c">/* hero loop · Geist + Fraunces italic */</span></div>
-                  <div class="line"><span class="ln">2</span><span class="k">.stage</span> { <span class="t">position</span>: <span class="s">absolute</span>; <span class="t">inset</span>: 0; }</div>
-                  <div class="line"><span class="ln">3</span><span class="k">.headline</span> {</div>
-                  <div class="line"><span class="ln">4</span>&nbsp;&nbsp;<span class="t">font-family</span>: <span class="s">"Geist", sans-serif</span>;</div>
-                  <div class="line"><span class="ln">5</span>&nbsp;&nbsp;<span class="t">font-size</span>: <span class="s">clamp(56px, 9vw, 144px)</span>;</div>
-                  <div class="line"><span class="ln">6</span>&nbsp;&nbsp;<span class="t">letter-spacing</span>: <span class="s">-0.04em</span>;</div>
-                  <div class="line"><span class="ln">7</span>}</div>
-                  <div class="line"><span class="ln">8</span><span class="k">.headline em</span> {</div>
-                  <div class="line"><span class="ln">9</span>&nbsp;&nbsp;<span class="t">font-family</span>: <span class="s">"Fraunces", serif</span>;</div>
-                  <div class="line"><span class="ln">10</span>&nbsp;&nbsp;<span class="t">color</span>: <span class="s">#d88a6b</span>;</div>
-                  <div class="line"><span class="ln">11</span>&nbsp;&nbsp;<span class="t">font-style</span>: <span class="s">italic</span>;</div>
-                  <div class="line"><span class="ln">12</span>}</div>
-                </div>
-              </div>
+
+            <div class="render-meta">
+              <span class="pill p-1"><span class="dot"></span>1920 × 1080</span>
+              <span class="pill p-2"><span class="dot"></span>30 fps</span>
+              <span class="pill p-3"><span class="dot"></span>libx264</span>
+              <span class="pill p-4"
+                ><span class="dot"></span><span class="accent">crf 20</span></span
+              >
             </div>
           </div>
-
-          <svg class="cursor" viewBox="0 0 24 24">
-            <path d="M3 2 L3 18 L8 14 L11 21 L14 20 L11 13 L18 13 Z"
-                  fill="#f4f0e2" stroke="#0a0a09" stroke-width="0.8" stroke-linejoin="round"/>
-          </svg>
         </div>
-      </div>
 
-      <!-- ACT 3 -->
-      <div class="act act-3">
-        <div class="render-act">
-          <h2 class="render-headline">Renderiza <em>frame por frame.</em></h2>
+        <!-- ACT 4 -->
+        <div class="act act-4">
+          <div class="output-act">
+            <h1 class="output-headline">Pronto para <em>compartilhar.</em></h1>
 
-          <div class="filmstrip">
-            <div class="frame"><div class="fill-bar"></div></div>
-            <div class="frame"><div class="fill-bar"></div></div>
-            <div class="frame"><div class="fill-bar"></div></div>
-            <div class="frame"><div class="fill-bar"></div></div>
-            <div class="frame"><div class="fill-bar"></div></div>
-            <div class="frame"><div class="fill-bar"></div></div>
-            <div class="frame"><div class="fill-bar"></div></div>
-            <div class="frame"><div class="fill-bar"></div></div>
-            <div class="frame"><div class="fill-bar"></div></div>
-          </div>
-
-          <div class="render-meta">
-            <span class="pill p-1"><span class="dot"></span>1920 × 1080</span>
-            <span class="pill p-2"><span class="dot"></span>30 fps</span>
-            <span class="pill p-3"><span class="dot"></span>libx264</span>
-            <span class="pill p-4"><span class="dot"></span><span class="accent">crf 20</span></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ACT 4 -->
-      <div class="act act-4">
-        <div class="output-act">
-          <h1 class="output-headline">Pronto para <em>compartilhar.</em></h1>
-
-          <div class="output-cards">
-            <div class="out-card c-1">
-              <div class="out-thumb"></div>
-              <div class="out-meta">
-                <span class="label">Hero loop</span>
-                <span class="name">hero-16x9.mp4</span>
-                <span class="ratio">1920 × 1080 · 8.0s</span>
+            <div class="output-cards">
+              <div class="out-card c-1">
+                <div class="out-thumb"></div>
+                <div class="out-meta">
+                  <span class="label">Hero loop</span>
+                  <span class="name">hero-16x9.mp4</span>
+                  <span class="ratio">1920 × 1080 · 8.0s</span>
+                </div>
               </div>
-            </div>
-            <div class="out-card c-2">
-              <div class="out-thumb"></div>
-              <div class="out-meta">
-                <span class="label">Story</span>
-                <span class="name">hero-9x16.mp4</span>
-                <span class="ratio">1080 × 1920 · 8.0s</span>
+              <div class="out-card c-2">
+                <div class="out-thumb"></div>
+                <div class="out-meta">
+                  <span class="label">Story</span>
+                  <span class="name">hero-9x16.mp4</span>
+                  <span class="ratio">1080 × 1920 · 8.0s</span>
+                </div>
               </div>
-            </div>
-            <div class="out-card c-3">
-              <div class="out-thumb"></div>
-              <div class="out-meta">
-                <span class="label">Square</span>
-                <span class="name">hero-1x1.mp4</span>
-                <span class="ratio">1080 × 1080 · 8.0s</span>
+              <div class="out-card c-3">
+                <div class="out-thumb"></div>
+                <div class="out-meta">
+                  <span class="label">Square</span>
+                  <span class="name">hero-1x1.mp4</span>
+                  <span class="ratio">1080 × 1080 · 8.0s</span>
+                </div>
               </div>
-            </div>
-            <div class="out-card c-4">
-              <div class="out-thumb"></div>
-              <div class="out-meta">
-                <span class="label">GIF</span>
-                <span class="name">hero-loop.gif</span>
-                <span class="ratio">1280 × 720 · 8.0s</span>
+              <div class="out-card c-4">
+                <div class="out-thumb"></div>
+                <div class="out-meta">
+                  <span class="label">GIF</span>
+                  <span class="name">hero-loop.gif</span>
+                  <span class="ratio">1280 × 720 · 8.0s</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-    </div>
-
-    <div class="bottombar">
-      <div class="caption">
-        <span class="cap cap-1">você descreve</span>
-        <span class="cap cap-2">a ia gera o código</span>
-        <span class="cap cap-3">a fábrica renderiza</span>
-        <span class="cap cap-4">você compartilha</span>
-      </div>
-      <div class="progress-rail">
-        <div class="progress-fill"></div>
-        <div class="progress-glow"></div>
+      <div class="bottombar">
+        <div class="caption">
+          <span class="cap cap-1">você descreve</span>
+          <span class="cap cap-2">a ia gera o código</span>
+          <span class="cap cap-3">a fábrica renderiza</span>
+          <span class="cap cap-4">você compartilha</span>
+        </div>
+        <div class="progress-rail">
+          <div class="progress-fill"></div>
+          <div class="progress-glow"></div>
+        </div>
       </div>
     </div>
 
-  </div>
+    <script>
+      /* Step indicator */
+      (() => {
+        const dots = [
+          document.querySelector(".step.s-1"),
+          document.querySelector(".step.s-2"),
+          document.querySelector(".step.s-3"),
+          document.querySelector(".step.s-4"),
+        ];
+        function tick() {
+          const t = performance.now();
+          let active = 0;
+          if (t < 3000) active = 0;
+          else if (t < 6000) active = 1;
+          else if (t < 9000) active = 2;
+          else active = 3;
+          dots.forEach((d, i) => d && d.classList.toggle("active", i === active));
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      })();
 
-<script>
-/* Step indicator */
-(() => {
-  const dots = [
-    document.querySelector('.step.s-1'),
-    document.querySelector('.step.s-2'),
-    document.querySelector('.step.s-3'),
-    document.querySelector('.step.s-4'),
-  ];
-  function tick() {
-    const t = performance.now();
-    let active = 0;
-    if (t < 3000) active = 0;
-    else if (t < 6000) active = 1;
-    else if (t < 9000) active = 2;
-    else active = 3;
-    dots.forEach((d, i) => d && d.classList.toggle('active', i === active));
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-})();
+      /* Typed prompt */
+      (() => {
+        const target = "8s, Geist 700, italic Fraunces coral";
+        const el = document.getElementById("typed");
+        if (!el) return;
+        const START = 4000,
+          DUR = 1500;
+        function tick() {
+          const t = performance.now();
+          if (t < START) {
+            el.textContent = "";
+          } else if (t < START + DUR) {
+            const p = (t - START) / DUR;
+            el.textContent = target.slice(0, Math.floor(p * target.length));
+          } else {
+            el.textContent = target;
+          }
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      })();
 
-/* Typed prompt */
-(() => {
-  const target = "8s, Geist 700, italic Fraunces coral";
-  const el = document.getElementById('typed');
-  if (!el) return;
-  const START = 4000, DUR = 1500;
-  function tick() {
-    const t = performance.now();
-    if (t < START) {
-      el.textContent = "";
-    } else if (t < START + DUR) {
-      const p = (t - START) / DUR;
-      el.textContent = target.slice(0, Math.floor(p * target.length));
-    } else {
-      el.textContent = target;
-    }
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-})();
+      /* Particle field */
+      (() => {
+        const canvas = document.getElementById("particles");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        function size() {
+          canvas.width = canvas.clientWidth || window.innerWidth;
+          canvas.height = canvas.clientHeight || window.innerHeight;
+        }
+        size();
+        window.addEventListener("resize", size);
 
-/* Particle field */
-(() => {
-  const canvas = document.getElementById('particles');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  function size() {
-    canvas.width = canvas.clientWidth || window.innerWidth;
-    canvas.height = canvas.clientHeight || window.innerHeight;
-  }
-  size();
-  window.addEventListener('resize', size);
+        function mulberry32(a) {
+          return function () {
+            let t = (a += 0x6d2b79f5);
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+        }
+        const rand = mulberry32(0xb16b00b5);
 
-  function mulberry32(a) {
-    return function() {
-      let t = a += 0x6D2B79F5;
-      t = Math.imul(t ^ t >>> 15, t | 1);
-      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-      return ((t ^ t >>> 14) >>> 0) / 4294967296;
-    };
-  }
-  const rand = mulberry32(0xb16b00b5);
+        const N = 40;
+        const particles = [];
+        for (let i = 0; i < N; i++) {
+          particles.push({
+            x0: rand(),
+            y0: rand(),
+            r: 0.4 + rand() * 1.6,
+            sp: 0.012 + rand() * 0.025,
+            ph: rand() * Math.PI * 2,
+            hue: rand() < 0.7 ? "coral" : rand() < 0.5 ? "olive" : "ink",
+          });
+        }
+        const colors = {
+          coral: "rgba(232, 152, 118, ",
+          olive: "rgba(141, 177, 115, ",
+          ink: "rgba(244, 240, 226, ",
+        };
 
-  const N = 40;
-  const particles = [];
-  for (let i = 0; i < N; i++) {
-    particles.push({
-      x0: rand(),
-      y0: rand(),
-      r:  0.4 + rand() * 1.6,
-      sp: 0.012 + rand() * 0.025,
-      ph: rand() * Math.PI * 2,
-      hue: rand() < 0.7 ? 'coral' : (rand() < 0.5 ? 'olive' : 'ink'),
-    });
-  }
-  const colors = {
-    coral: 'rgba(232, 152, 118, ',
-    olive: 'rgba(141, 177, 115, ',
-    ink:   'rgba(244, 240, 226, ',
-  };
-
-  function frame() {
-    const t = performance.now() / 1000;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.globalCompositeOperation = 'lighter';
-    for (const p of particles) {
-      const yWrap = (((p.y0 + 1.2) - (t * p.sp)) % 1.2 + 1.2) % 1.2 - 0.1;
-      const x = p.x0 + Math.sin(t * 0.5 + p.ph) * 0.012;
-      const px = x * canvas.width;
-      const py = yWrap * canvas.height;
-      const alpha = 0.20 + 0.40 * (0.5 + 0.5 * Math.sin(t * 1.2 + p.ph));
-      const r = p.r;
-      const grad = ctx.createRadialGradient(px, py, 0, px, py, r * 8);
-      grad.addColorStop(0, colors[p.hue] + (alpha * 0.9) + ')');
-      grad.addColorStop(0.4, colors[p.hue] + (alpha * 0.3) + ')');
-      grad.addColorStop(1, colors[p.hue] + '0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(px, py, r * 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = colors[p.hue] + (alpha * 1.4) + ')';
-      ctx.beginPath();
-      ctx.arc(px, py, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalCompositeOperation = 'source-over';
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
-})();
-</script>
-</body>
+        function frame() {
+          const t = performance.now() / 1000;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.globalCompositeOperation = "lighter";
+          for (const p of particles) {
+            const yWrap = ((((p.y0 + 1.2 - t * p.sp) % 1.2) + 1.2) % 1.2) - 0.1;
+            const x = p.x0 + Math.sin(t * 0.5 + p.ph) * 0.012;
+            const px = x * canvas.width;
+            const py = yWrap * canvas.height;
+            const alpha = 0.2 + 0.4 * (0.5 + 0.5 * Math.sin(t * 1.2 + p.ph));
+            const r = p.r;
+            const grad = ctx.createRadialGradient(px, py, 0, px, py, r * 8);
+            grad.addColorStop(0, colors[p.hue] + alpha * 0.9 + ")");
+            grad.addColorStop(0.4, colors[p.hue] + alpha * 0.3 + ")");
+            grad.addColorStop(1, colors[p.hue] + "0)");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(px, py, r * 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = colors[p.hue] + alpha * 1.4 + ")";
+            ctx.beginPath();
+            ctx.arc(px, py, r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.globalCompositeOperation = "source-over";
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      })();
+    </script>
+  </body>
 </html>

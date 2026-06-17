@@ -19,13 +19,13 @@
 import { pushDiag, type DiagLevel } from "./diagnostics";
 
 export type TurnRecScope =
-  | "sse"        // raw event from /{provider}/stream
-  | "tool"       // onToolCall / onToolResult / liveTools snapshot
-  | "iframe"     // hydrate attempts (toolResult retry, onDone sweep, safety effect)
-  | "persist"    // appendChatTurn / writeChatSnapshot / saveMessageStructured
-  | "hydrate"    // chat-load on boot
-  | "artifact"   // parseArtifact results
-  | "client";    // UX-side state (handleSend, setIframeHtml, etc.)
+  | "sse" // raw event from /{provider}/stream
+  | "tool" // onToolCall / onToolResult / liveTools snapshot
+  | "iframe" // hydrate attempts (toolResult retry, onDone sweep, safety effect)
+  | "persist" // appendChatTurn / writeChatSnapshot / saveMessageStructured
+  | "hydrate" // chat-load on boot
+  | "artifact" // parseArtifact results
+  | "client"; // UX-side state (handleSend, setIframeHtml, etc.)
 
 export interface TurnRecEntry {
   /** Monotonic ms relative to recorder.start(). */
@@ -40,7 +40,7 @@ interface TurnRecord {
   turnId: string;
   provider: string | null;
   model: string | null;
-  startedAt: number;        // epoch ms
+  startedAt: number; // epoch ms
   entries: TurnRecEntry[];
   closed: boolean;
   closedAt?: number;
@@ -55,11 +55,18 @@ const listeners = new Set<(turn: TurnRecord | null) => void>();
 
 function notify() {
   for (const l of listeners) {
-    try { l(current); } catch { /* noop */ }
+    try {
+      l(current);
+    } catch {
+      /* noop */
+    }
   }
 }
 
-export function startTurn(turnId: string, opts: { provider?: string | null; model?: string | null } = {}): void {
+export function startTurn(
+  turnId: string,
+  opts: { provider?: string | null; model?: string | null } = {},
+): void {
   // If a previous turn was left open, close it first so the ring rolls.
   if (current && !current.closed) {
     endTurn({ reason: "superseded" });
@@ -120,7 +127,9 @@ export function endTurn(opts: { reason?: string } = {}): TurnRecord | null {
   // never blocks the chat path).
   recent.unshift(current);
   if (recent.length > MAX_RECENT_TURNS) recent.pop();
-  void persistTurn(current).catch(() => { /* swallow — observability never breaks */ });
+  void persistTurn(current).catch(() => {
+    /* swallow — observability never breaks */
+  });
   const finished = current;
   current = null;
   notify();
@@ -137,7 +146,9 @@ export function getRecentTurns(): TurnRecord[] {
 
 export function subscribe(listener: (turn: TurnRecord | null) => void): () => void {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 // ── Persistence ──────────────────────────────────────────────────────
@@ -163,14 +174,21 @@ async function persistTurn(turn: TurnRecord): Promise<void> {
   const info = await fetchWorkspaceInfo().catch(() => null);
   const projectsDir = info?.projectsDir ?? "projects";
   const path = `${projectsDir.replace(/\/$/, "")}/${activeSlug}/.df/sessions/${turn.turnId}.jsonl`;
-  const body = turn.entries.map((e) => JSON.stringify({
-    ts: e.ts,
-    scope: e.scope,
-    kind: e.kind,
-    level: e.level,
-    detail: e.detail,
-  })).join("\n") + "\n";
-  await writeFile(path, body).catch(() => { /* swallow */ });
+  const body =
+    turn.entries
+      .map((e) =>
+        JSON.stringify({
+          ts: e.ts,
+          scope: e.scope,
+          kind: e.kind,
+          level: e.level,
+          detail: e.detail,
+        }),
+      )
+      .join("\n") + "\n";
+  await writeFile(path, body).catch(() => {
+    /* swallow */
+  });
 }
 
 let activeSlug: string | null = null;

@@ -26,7 +26,12 @@ export const geminiApiProvider: LLMProvider = {
   async status() {
     try {
       const cfg = await getGeminiApiTokenStatus();
-      if (!cfg.tokenSet) return { status: "needs-auth", version: null, detail: "Set GEMINI_API_KEY or paste it in Settings → Tokens" };
+      if (!cfg.tokenSet)
+        return {
+          status: "needs-auth",
+          version: null,
+          detail: "Set GEMINI_API_KEY or paste it in Settings → Tokens",
+        };
       return { status: "connected", version: cfg.source === "env" ? "env key" : "disk key" };
     } catch (e) {
       return { status: "error", version: null, detail: String(e) };

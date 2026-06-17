@@ -117,13 +117,17 @@ export function PromptConsole({
   const { t } = useT();
   const [copied, setCopied] = useState<string | null>(null);
   const copy = (text: string, id: string) => {
-    void navigator.clipboard?.writeText(text).then(() => {
-      setCopied(id);
-      window.setTimeout(() => setCopied((c) => (c === id ? null : c)), 1500);
-    }).catch(() => {});
+    void navigator.clipboard
+      ?.writeText(text)
+      .then(() => {
+        setCopied(id);
+        window.setTimeout(() => setCopied((c) => (c === id ? null : c)), 1500);
+      })
+      .catch(() => {});
   };
   const engineTokens = useMemo(
-    () => (engineBlocks ? Math.round(engineBlocks.reduce((n, b) => n + b.content.length, 0) / 4) : 0),
+    () =>
+      engineBlocks ? Math.round(engineBlocks.reduce((n, b) => n + b.content.length, 0) / 4) : 0,
     [engineBlocks],
   );
 
@@ -150,9 +154,7 @@ export function PromptConsole({
     ? tf("promptconsole.title.with.project", projectName)
     : t("promptconsole.title");
 
-  const note = onConfirm
-    ? t("promptconsole.note")
-    : t("promptconsole.note.readonly");
+  const note = onConfirm ? t("promptconsole.note") : t("promptconsole.note.readonly");
 
   // ── Derived display strings ────────────────────────────────────
   const canvasText = useMemo(() => {
@@ -173,9 +175,7 @@ export function PromptConsole({
 
   const rulesCountLabel = useMemo(() => {
     const n = rules?.length ?? 0;
-    return n > 0
-      ? tf("promptconsole.section.rules.count", n)
-      : t("promptconsole.section.rules");
+    return n > 0 ? tf("promptconsole.section.rules.count", n) : t("promptconsole.section.rules");
   }, [rules, t]);
 
   const tasteCountLabel = useMemo(() => {
@@ -204,12 +204,7 @@ export function PromptConsole({
   // chrome — Voltar isn't a tiny pill next to a tall premium key.
   const footer = (
     <>
-      <button
-        type="button"
-        className="cnp-foot-reset"
-        style={footBackBtnStyle}
-        onClick={onClose}
-      >
+      <button type="button" className="cnp-foot-reset" style={footBackBtnStyle} onClick={onClose}>
         {onConfirm ? t("promptconsole.back") : t("promptconsole.close")}
       </button>
       {onConfirm ? (
@@ -222,10 +217,10 @@ export function PromptConsole({
           }}
         >
           <span className="cnp-begin-led" aria-hidden="true" />
-          <span className="cnp-begin-label">
-            {confirmLabel ?? t("promptconsole.confirm")}
+          <span className="cnp-begin-label">{confirmLabel ?? t("promptconsole.confirm")}</span>
+          <span className="cnp-begin-arrow" aria-hidden="true">
+            →
           </span>
-          <span className="cnp-begin-arrow" aria-hidden="true">→</span>
         </button>
       ) : null}
     </>
@@ -234,7 +229,9 @@ export function PromptConsole({
   return (
     <DfModal open={open} onClose={onClose} size="lg" title={title} foot={footer}>
       <div className="pc-body" style={bodyStyle}>
-        <p className="pc-note" style={noteStyle}>{note}</p>
+        <p className="pc-note" style={noteStyle}>
+          {note}
+        </p>
 
         {/* User prompt */}
         <Section eyebrow={t("promptconsole.section.prompt")}>
@@ -278,9 +275,11 @@ export function PromptConsole({
         <Section eyebrow={rulesCountLabel}>
           {rules && rules.length > 0 ? (
             <div style={chipRowStyle}>
-              {(ruleLabels && ruleLabels.length === rules.length ? ruleLabels : rules).map((label, i) => (
-                <Chip key={`${rules[i]}-${i}`}>{label}</Chip>
-              ))}
+              {(ruleLabels && ruleLabels.length === rules.length ? ruleLabels : rules).map(
+                (label, i) => (
+                  <Chip key={`${rules[i]}-${i}`}>{label}</Chip>
+                ),
+              )}
             </div>
           ) : (
             <EmptyText>{t("promptconsole.empty.rules")}</EmptyText>
@@ -304,11 +303,7 @@ export function PromptConsole({
 
         {/* Provider + model */}
         <Section eyebrow={t("promptconsole.section.provider")}>
-          {providerText ? (
-            <Chip>{providerText}</Chip>
-          ) : (
-            <EmptyText>—</EmptyText>
-          )}
+          {providerText ? <Chip>{providerText}</Chip> : <EmptyText>—</EmptyText>}
         </Section>
 
         {/* Attachments */}
@@ -325,29 +320,53 @@ export function PromptConsole({
         </Section>
 
         {/* Assembled prompt — the exact blocks the V2 engine ships, in
-          * order. Replaces the old split preamble/compiled sections so the
-          * inspector matches what's actually sent. */}
+         * order. Replaces the old split preamble/compiled sections so the
+         * inspector matches what's actually sent. */}
         {engineBlocks && engineBlocks.length > 0 ? (
           <section className="pc-section" style={sectionStyle}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <div className="pc-eyebrow" style={eyebrowStyle}>{t("promptconsole.section.assembled")}</div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+              }}
+            >
+              <div className="pc-eyebrow" style={eyebrowStyle}>
+                {t("promptconsole.section.assembled")}
+              </div>
               <button
                 type="button"
                 style={copyBtnStyle}
-                onClick={() => copy(engineBlocks.map((b) => `## ${b.label}\n\n${b.content}`).join("\n\n---\n\n"), "_all")}
+                onClick={() =>
+                  copy(
+                    engineBlocks.map((b) => `## ${b.label}\n\n${b.content}`).join("\n\n---\n\n"),
+                    "_all",
+                  )
+                }
               >
-                {copied === "_all" ? t("promptconsole.copied") : t("promptconsole.copyall")} · ~{engineTokens.toLocaleString()} tok
+                {copied === "_all" ? t("promptconsole.copied") : t("promptconsole.copyall")} · ~
+                {engineTokens.toLocaleString()} tok
               </button>
             </div>
             {engineBlocks.map((b) => (
               <div key={b.id} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                  }}
+                >
                   <span style={{ ...eyebrowStyle, color: "var(--df-text-muted)" }}>{b.label}</span>
                   <button type="button" style={copyBtnStyle} onClick={() => copy(b.content, b.id)}>
                     {copied === b.id ? t("promptconsole.copied") : t("promptconsole.copy")}
                   </button>
                 </div>
-                <pre className="pc-compiled" style={preStyle}>{b.content || "—"}</pre>
+                <pre className="pc-compiled" style={preStyle}>
+                  {b.content || "—"}
+                </pre>
               </div>
             ))}
           </section>
@@ -377,22 +396,38 @@ export function PromptConsole({
 function Section({ eyebrow, children }: { eyebrow: string; children: ReactNode }) {
   return (
     <section className="pc-section" style={sectionStyle}>
-      <div className="pc-eyebrow" style={eyebrowStyle}>{eyebrow}</div>
-      <div className="pc-content" style={contentStyle}>{children}</div>
+      <div className="pc-eyebrow" style={eyebrowStyle}>
+        {eyebrow}
+      </div>
+      <div className="pc-content" style={contentStyle}>
+        {children}
+      </div>
     </section>
   );
 }
 
 function Chip({ children }: { children: ReactNode }) {
-  return <span className="pc-chip" style={chipStyle}>{children}</span>;
+  return (
+    <span className="pc-chip" style={chipStyle}>
+      {children}
+    </span>
+  );
 }
 
 function BodyText({ children }: { children: ReactNode }) {
-  return <p className="pc-text" style={textStyle}>{children}</p>;
+  return (
+    <p className="pc-text" style={textStyle}>
+      {children}
+    </p>
+  );
 }
 
 function EmptyText({ children }: { children: ReactNode }) {
-  return <p className="pc-empty" style={emptyTextStyle}>{children}</p>;
+  return (
+    <p className="pc-empty" style={emptyTextStyle}>
+      {children}
+    </p>
+  );
 }
 
 // ─── Styles ──────────────────────────────────────────────────────
@@ -507,7 +542,8 @@ const preStyle: CSSProperties = {
   padding: 14,
   borderRadius: "var(--df-r-sm, 6px)",
   border: "0",
-  boxShadow: "var(--df-skeu-recess, inset 0 2px 4px rgba(0,0,0,0.18), inset 0 0 0 1px var(--df-border-subtle))",
+  boxShadow:
+    "var(--df-skeu-recess, inset 0 2px 4px rgba(0,0,0,0.18), inset 0 0 0 1px var(--df-border-subtle))",
   maxHeight: "32vh",
   overflow: "auto",
   margin: 0,

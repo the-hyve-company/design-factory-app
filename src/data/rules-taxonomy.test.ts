@@ -81,7 +81,12 @@ describe("rules-taxonomy effective catalog", () => {
   });
 
   it("user rules append to effective catalog", () => {
-    const u: Rule = { id: "usr-custom-x", title: "Custom rule X", category: "custom", builtin: false };
+    const u: Rule = {
+      id: "usr-custom-x",
+      title: "Custom rule X",
+      category: "custom",
+      builtin: false,
+    };
     setUserRules([u]);
     const eff = getEffectiveRules();
     expect(eff.find((r) => r.id === "usr-custom-x")).toEqual(u);
@@ -89,7 +94,9 @@ describe("rules-taxonomy effective catalog", () => {
   });
 
   it("builtin overrides apply title/description without changing id", () => {
-    setBuiltinOverrides({ "as-no-decorative-emojis": { title: "Sem emojis (pt)", description: "nada" } });
+    setBuiltinOverrides({
+      "as-no-decorative-emojis": { title: "Sem emojis (pt)", description: "nada" },
+    });
     const r = findRule("as-no-decorative-emojis");
     expect(r?.title).toBe("Sem emojis (pt)");
     expect(r?.description).toBe("nada");
@@ -97,9 +104,7 @@ describe("rules-taxonomy effective catalog", () => {
   });
 
   it("user rules with builtin: true get coerced to false on setUserRules", () => {
-    setUserRules([
-      { id: "evil", title: "Evil", category: "custom", builtin: true } as Rule,
-    ]);
+    setUserRules([{ id: "evil", title: "Evil", category: "custom", builtin: true } as Rule]);
     const eff = getEffectiveRules();
     const evil = eff.find((r) => r.id === "evil");
     expect(evil?.builtin).toBe(false);
@@ -145,7 +150,9 @@ describe("rules-taxonomy selection helpers", () => {
   it("describeRuleSelection in pt-BR", () => {
     expect(describeRuleSelection([])).toBe("Nenhuma regra");
     expect(describeRuleSelection(["as-no-decorative-emojis"])).toBe("No decorative emojis");
-    expect(describeRuleSelection(["as-no-decorative-emojis", "tn-skeu-premium-tier2"])).toBe("2 regras");
+    expect(describeRuleSelection(["as-no-decorative-emojis", "tn-skeu-premium-tier2"])).toBe(
+      "2 regras",
+    );
   });
 
   it("generateUserRuleId yields kebab-case usr- prefix", () => {

@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  processArtifacts,
-  dispatchParseResult,
-} from "./process-artifacts";
+import { processArtifacts, dispatchParseResult } from "./process-artifacts";
 
 // the feature-flag gate moved out of processArtifacts. The
 // capability dispatch lives in `turn-stages/process-artifacts.ts`; this
@@ -101,7 +98,11 @@ describe("processArtifacts — error mapping", () => {
     fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 422,
-      json: async () => ({ error: "static-fail: below-min-bytes", code: "static-fail", reason: "below-min-bytes" }),
+      json: async () => ({
+        error: "static-fail: below-min-bytes",
+        code: "static-fail",
+        reason: "below-min-bytes",
+      }),
     });
     const stream = `<artifact identifier="x.html" type="text/html">${HTML_BIG}</artifact>`;
     const out = await processArtifacts(stream, { bridgeUrl: "http://daemon" });
@@ -243,4 +244,3 @@ describe("processArtifacts — intent + multi-file fields", () => {
     }
   });
 });
-

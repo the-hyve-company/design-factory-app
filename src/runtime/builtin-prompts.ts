@@ -19,7 +19,7 @@ const SUPPORTED_KEYS: Set<EditablePromptId> = new Set(EDITABLE_PROMPT_IDS);
 export async function getBuiltinPrompt(
   key: string,
   fallback: string,
-  _projectId?: string
+  _projectId?: string,
 ): Promise<string> {
   if (!SUPPORTED_KEYS.has(key as EditablePromptId)) return fallback;
   try {

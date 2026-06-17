@@ -72,7 +72,7 @@ export interface SanitizableChatMessage {
 }
 
 export function sanitizeMessages<T extends SanitizableChatMessage>(
-  msgs: ReadonlyArray<T>
+  msgs: ReadonlyArray<T>,
 ): { messages: T[]; cleaned: number } {
   const out: T[] = [];
   const seen = new Set<string>();
@@ -97,7 +97,8 @@ export function sanitizeMessages<T extends SanitizableChatMessage>(
     seen.add(key);
     if (m.role === "assistant" && text.length > 8000) {
       const head = text.slice(0, 200);
-      const looksLikeHtml = /^<!doctype/i.test(head) || /^<html/i.test(head) || /^```html/i.test(head);
+      const looksLikeHtml =
+        /^<!doctype/i.test(head) || /^<html/i.test(head) || /^```html/i.test(head);
       if (looksLikeHtml) {
         cleaned++;
         out.push({

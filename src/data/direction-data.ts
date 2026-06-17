@@ -65,9 +65,21 @@ export interface Direction {
 }
 
 export const CATEGORIAS: Categoria[] = [
-  { id: "video",     nome: "Video",     descricao: "Outputs that render to MP4 via the HyperFrames pipeline." },
-  { id: "interface", nome: "Interface", descricao: "Static screens — UI, landing pages, dashboards. HTML output." },
-  { id: "social",    nome: "Social",    descricao: "Feed-friendly content — carousels, stories, OG images." },
+  {
+    id: "video",
+    nome: "Video",
+    descricao: "Outputs that render to MP4 via the HyperFrames pipeline.",
+  },
+  {
+    id: "interface",
+    nome: "Interface",
+    descricao: "Static screens — UI, landing pages, dashboards. HTML output.",
+  },
+  {
+    id: "social",
+    nome: "Social",
+    descricao: "Feed-friendly content — carousels, stories, OG images.",
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────
@@ -80,7 +92,8 @@ export const FORMATOS: Formato[] = [
     id: "explainer",
     categoria: "video",
     nome: "Explainer",
-    descricao: "Video explaining a product, concept, or flow. Didactic, dense, with explicit visual objects.",
+    descricao:
+      "Video explaining a product, concept, or flow. Didactic, dense, with explicit visual objects.",
     canvas: { ratio: "16:9", duration: 18 },
     prompt_prefix: `You are producing an EXPLAINER VIDEO.
 
@@ -525,21 +538,23 @@ PRINCIPLES:
   },
 ];
 
-
 // ─────────────────────────────────────────────────────────────────────
 // DIRECTIONS — toggleable. All start UNCHECKED.
 // ─────────────────────────────────────────────────────────────────────
 
 export const EIXOS: Eixo[] = [
-  { id: "motion",     nome: "Motion",       descricao: "How elements enter, exit, and move" },
-  { id: "typography", nome: "Typography",   descricao: "Hierarchy, scale, and type families" },
-  { id: "layout",     nome: "Composition",  descricao: "Grid, distribution, spatial hierarchy" },
-  { id: "surfaces",   nome: "Surfaces",     descricao: "Background, depth, texture" },
-  { id: "anti-slop",  nome: "Anti-slop",    descricao: "Extra prohibitions on top of the format presets" },
+  { id: "motion", nome: "Motion", descricao: "How elements enter, exit, and move" },
+  { id: "typography", nome: "Typography", descricao: "Hierarchy, scale, and type families" },
+  { id: "layout", nome: "Composition", descricao: "Grid, distribution, spatial hierarchy" },
+  { id: "surfaces", nome: "Surfaces", descricao: "Background, depth, texture" },
+  {
+    id: "anti-slop",
+    nome: "Anti-slop",
+    descricao: "Extra prohibitions on top of the format presets",
+  },
 ];
 
 export const DIRECTIONS: Direction[] = [
-
   // ─── MOTION ──────────────────────────────────────────────────────
   {
     id: "motion-clip-path-reveal",
@@ -1010,7 +1025,9 @@ FORBIDDEN: purple-blue gradient, fuchsia→purple bg, violet CTAs. The most univ
 // on boot via setFormatOverrides / setDirectionOverrides; consumers
 // (modal, composePrompt, settings UI) ALWAYS go through the effective
 // getters below — never the raw FORMATOS / DIRECTIONS arrays.
-export type FormatoOverride = Partial<Pick<Formato, "nome" | "descricao" | "prompt_prefix" | "anti_slop">>;
+export type FormatoOverride = Partial<
+  Pick<Formato, "nome" | "descricao" | "prompt_prefix" | "anti_slop">
+>;
 export type DirectionOverride = Partial<Pick<Direction, "nome" | "descricao" | "prompt_addon">>;
 
 let formatOverrides: Record<string, FormatoOverride> = {};
@@ -1032,15 +1049,31 @@ export function setDisabledFormatIds(ids: string[]): void {
 export function setDisabledDirectionIds(ids: string[]): void {
   disabledDirectionIds = new Set(ids ?? []);
 }
-export function isFormatDisabled(id: string): boolean { return disabledFormatIds.has(id); }
-export function isDirectionDisabled(id: string): boolean { return disabledDirectionIds.has(id); }
+export function isFormatDisabled(id: string): boolean {
+  return disabledFormatIds.has(id);
+}
+export function isDirectionDisabled(id: string): boolean {
+  return disabledDirectionIds.has(id);
+}
 
-export function setCustomFormats(arr: Formato[]): void { customFormats = Array.isArray(arr) ? [...arr] : []; }
-export function setCustomDirections(arr: Direction[]): void { customDirections = Array.isArray(arr) ? [...arr] : []; }
-export function getCustomFormats(): Formato[] { return [...customFormats]; }
-export function getCustomDirections(): Direction[] { return [...customDirections]; }
-export function isCustomFormat(id: string): boolean { return customFormats.some((f) => f.id === id); }
-export function isCustomDirection(id: string): boolean { return customDirections.some((d) => d.id === id); }
+export function setCustomFormats(arr: Formato[]): void {
+  customFormats = Array.isArray(arr) ? [...arr] : [];
+}
+export function setCustomDirections(arr: Direction[]): void {
+  customDirections = Array.isArray(arr) ? [...arr] : [];
+}
+export function getCustomFormats(): Formato[] {
+  return [...customFormats];
+}
+export function getCustomDirections(): Direction[] {
+  return [...customDirections];
+}
+export function isCustomFormat(id: string): boolean {
+  return customFormats.some((f) => f.id === id);
+}
+export function isCustomDirection(id: string): boolean {
+  return customDirections.some((d) => d.id === id);
+}
 export function getFormatOverrides(): Record<string, FormatoOverride> {
   return { ...formatOverrides };
 }
@@ -1102,7 +1135,10 @@ export function directionsForFormato(formato: Formato): Direction[] {
   return getEffectiveDirections().filter((d) => {
     if (isDirectionDisabled(d.id)) return false;
     const okCat = d.aplica.categorias.includes(formato.categoria);
-    const okFormato = !d.aplica.formatos || d.aplica.formatos.length === 0 || d.aplica.formatos.includes(formato.id);
+    const okFormato =
+      !d.aplica.formatos ||
+      d.aplica.formatos.length === 0 ||
+      d.aplica.formatos.includes(formato.id);
     return okCat && okFormato;
   });
 }
@@ -1171,12 +1207,17 @@ export interface DirectionSelection {
 // RATIO_DIMS). Used when substituting {{viewport}} in prompts.
 function viewportFromRatio(ratio: string): string {
   switch (ratio) {
-    case "9:16":   return "1080×1920";
-    case "1:1":    return "1080×1080";
-    case "1.91:1": return "1200×630";
+    case "9:16":
+      return "1080×1920";
+    case "1:1":
+      return "1080×1080";
+    case "1.91:1":
+      return "1200×630";
     case "4k":
-    case "16:9_4k": return "3840×2160";
-    default:       return "1920×1080";
+    case "16:9_4k":
+      return "3840×2160";
+    default:
+      return "1920×1080";
   }
 }
 

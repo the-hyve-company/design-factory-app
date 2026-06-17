@@ -63,8 +63,15 @@ interface Props {
 }
 
 const VALID_STORED_IDS = new Set<string>([
-  "claude", "codex", "gemini", "opencode",
-  "kimi", "anthropic", "openai", "gemini-api", "openrouter",
+  "claude",
+  "codex",
+  "gemini",
+  "opencode",
+  "kimi",
+  "anthropic",
+  "openai",
+  "gemini-api",
+  "openrouter",
   "ollama",
 ]);
 
@@ -92,7 +99,7 @@ async function fetchProviders(): Promise<ProviderDescriptor[]> {
   try {
     const r = await fetch(`${BRIDGE_URL}/providers`, { signal: AbortSignal.timeout(2500) });
     if (!r.ok) return [];
-    const body = await r.json() as {
+    const body = (await r.json()) as {
       providers?: Array<{
         id: string;
         label: string;
@@ -185,22 +192,28 @@ export function AgentPicker({ onChange }: Props) {
 
   const sourceList = providers.length > 0 ? providers : fallbackEntries;
 
-  const visibleEntries: Array<ProviderDescriptor & { sublabel?: string }> =
-    sourceList.map((p) => ({ ...p, sublabel: sublabelById[p.id] }));
+  const visibleEntries: Array<ProviderDescriptor & { sublabel?: string }> = sourceList.map((p) => ({
+    ...p,
+    sublabel: sublabelById[p.id],
+  }));
 
   const activeEntry = visibleEntries.find((e) => e.id === active) ?? null;
   const activeAgent = agents.find((a) => agentToPicker(a.id) === active) ?? null;
   const isApiOrLocal = active === "ollama" || active === "openrouter";
   const label = isApiOrLocal
     ? (activeEntry?.label ?? active)
-    : (activeAgent
-        ? (activeAgent.available ? activeAgent.label : `${activeAgent.label} · not installed`)
-        : (activeEntry?.label ?? "Claude Code"));
+    : activeAgent
+      ? activeAgent.available
+        ? activeAgent.label
+        : `${activeAgent.label} · not installed`
+      : (activeEntry?.label ?? "Claude Code");
 
   const pick = (id: PickerId) => {
     if (!SUPPORTED_NOW.has(id)) return;
     setActive(id);
-    try { window.localStorage.setItem(STORAGE_KEY, id); } catch {}
+    try {
+      window.localStorage.setItem(STORAGE_KEY, id);
+    } catch {}
     const providerId = pickerToProvider(id);
     if (providerId) {
       void writeGlobalConfig({ default_provider: providerId }).catch(() => {});
@@ -236,17 +249,26 @@ export function AgentPicker({ onChange }: Props) {
       >
         <span style={dotStyle(activeEntry?.available ?? true)} />
         <span style={triggerLabelStyle}>{label}</span>
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M3 4.5l3 3 3-3" />
         </svg>
       </button>
       {open && (
         <div role="listbox" style={menuStyle}>
-          {([
+          {[
             { title: "CLIs", ids: ["claude", "codex", "gemini", "opencode", "kimi"] as const },
             { title: "APIs", ids: ["anthropic", "openai", "gemini-api", "openrouter"] as const },
             { title: "Local", ids: ["ollama"] as const },
-          ]).map((group) => {
+          ].map((group) => {
             // User direction 2026-05-15: dropdown shows ONLY
             // connected/available entries. Greyed-out "not installed"
             // and "needs auth" rows are hidden — users discover them in
@@ -265,9 +287,9 @@ export function AgentPicker({ onChange }: Props) {
                   const isVirtual = entry.id === "openrouter" || entry.id === "ollama";
                   const meta = isVirtual
                     ? (entry.sublabel ?? "")
-                    : (!entry.available
-                        ? "not installed"
-                        : (entry.sublabel ?? ""));
+                    : !entry.available
+                      ? "not installed"
+                      : (entry.sublabel ?? "");
                   const titleText =
                     entry.id === "ollama"
                       ? "Local Ollama server (open weights)"
@@ -300,13 +322,24 @@ export function AgentPicker({ onChange }: Props) {
             type="button"
             onClick={rescan}
             disabled={refreshing}
-            style={{ ...rescanStyle, display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{
+              ...rescanStyle,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
             title="Reescanear PATH"
             aria-label="Reescanear PATH"
           >
             <svg
-              width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               style={refreshing ? { animation: "df-spin 0.8s linear infinite" } : undefined}
             >
               <polyline points="23 4 23 10 17 10" />

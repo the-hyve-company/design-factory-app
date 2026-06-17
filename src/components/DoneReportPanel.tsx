@@ -20,7 +20,7 @@ export interface DoneReportPanelProps {
 
 export function DoneReportPanel({ report, defaultExpanded }: DoneReportPanelProps) {
   // Auto-expand on catastrophic so the user sees the diagnostic immediately.
-  const initial = defaultExpanded ?? (report.overall === "catastrophic");
+  const initial = defaultExpanded ?? report.overall === "catastrophic";
   const [expanded, setExpanded] = useState<boolean>(Boolean(initial));
 
   const summary = summarizeDoneReport(report);
@@ -42,8 +42,18 @@ export function DoneReportPanel({ report, defaultExpanded }: DoneReportPanelProp
         fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
-        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}
+      >
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {summary}
         </span>
         <button

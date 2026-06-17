@@ -27,10 +27,7 @@
 
 import { getProvider } from "@/providers/registry";
 import { spawnStream, type PromptCategory } from "@/runtime/cli-spawner";
-import {
-  workspaceContextPreamble,
-  type ProjectContext,
-} from "@/runtime/prompt-invoker";
+import { workspaceContextPreamble, type ProjectContext } from "@/runtime/prompt-invoker";
 import { buildArtifactContractBlock } from "@/runtime/output-contract";
 import {
   dispatchParseResult,
@@ -64,13 +61,7 @@ import type { DoneReport } from "@/runtime/done-report";
  * invoke* matrix. keeps the type for backward-compat; only `chat`
  * and `ask` are exercised end-to-end today.
  */
-export type TurnMode =
-  | "chat"
-  | "ask"
-  | "verb"
-  | "add-component"
-  | "apply-style"
-  | "search-replace";
+export type TurnMode = "chat" | "ask" | "verb" | "add-component" | "apply-style" | "search-replace";
 
 export interface TurnAttachment {
   content: string;
@@ -131,11 +122,7 @@ export interface AssistantMessage {
   usage?: StreamResult;
 }
 
-export type TurnStatus =
-  | "ok"
-  | "static-fail"
-  | "cancelled"
-  | "error";
+export type TurnStatus = "ok" | "static-fail" | "cancelled" | "error";
 
 export interface TurnError {
   code: string;
@@ -271,9 +258,15 @@ export function prepare(input: UserTurnInput, opts: PrepareOptions = {}): TurnCo
     conversationHistory: external.history ?? [],
     hasDesignSystem: Boolean(external.designSystem?.path),
     cwd: external.workspaceRoot ?? undefined,
-    ...(external.designSystem?.path !== undefined ? { designSystemPath: external.designSystem.path } : {}),
-    ...(external.designSystem?.name !== undefined ? { designSystemName: external.designSystem.name } : {}),
-    ...(external.designSystem?.markdown !== undefined ? { designSystemMarkdown: external.designSystem.markdown } : {}),
+    ...(external.designSystem?.path !== undefined
+      ? { designSystemPath: external.designSystem.path }
+      : {}),
+    ...(external.designSystem?.name !== undefined
+      ? { designSystemName: external.designSystem.name }
+      : {}),
+    ...(external.designSystem?.markdown !== undefined
+      ? { designSystemMarkdown: external.designSystem.markdown }
+      : {}),
     ...(external.iframeHtml !== undefined ? { currentHtml: external.iframeHtml } : {}),
     ...(external.model !== undefined ? { model: external.model } : {}),
   };
@@ -357,7 +350,10 @@ export interface TurnPreviewBlock {
  * Preview-only: it never touches the send path, so drift at worst shows a
  * slightly-off preview, never a broken turn.
  */
-export function assembleTurnBlocks(input: UserTurnInput, opts: PrepareOptions = {}): TurnPreviewBlock[] {
+export function assembleTurnBlocks(
+  input: UserTurnInput,
+  opts: PrepareOptions = {},
+): TurnPreviewBlock[] {
   const provider = getProvider(input.providerId);
   const capabilities = provider?.capabilities ?? { fileWrite: "artifact" as const };
   const external = input.context ?? {};
@@ -369,23 +365,45 @@ export function assembleTurnBlocks(input: UserTurnInput, opts: PrepareOptions = 
     conversationHistory: external.history ?? [],
     hasDesignSystem: Boolean(external.designSystem?.path),
     cwd: external.workspaceRoot ?? undefined,
-    ...(external.designSystem?.path !== undefined ? { designSystemPath: external.designSystem.path } : {}),
-    ...(external.designSystem?.name !== undefined ? { designSystemName: external.designSystem.name } : {}),
-    ...(external.designSystem?.markdown !== undefined ? { designSystemMarkdown: external.designSystem.markdown } : {}),
+    ...(external.designSystem?.path !== undefined
+      ? { designSystemPath: external.designSystem.path }
+      : {}),
+    ...(external.designSystem?.name !== undefined
+      ? { designSystemName: external.designSystem.name }
+      : {}),
+    ...(external.designSystem?.markdown !== undefined
+      ? { designSystemMarkdown: external.designSystem.markdown }
+      : {}),
     ...(external.iframeHtml !== undefined ? { currentHtml: external.iframeHtml } : {}),
     ...(external.model !== undefined ? { model: external.model } : {}),
   };
 
   const blocks: TurnPreviewBlock[] = [];
   if (opts.systemPromptOverride !== undefined) {
-    blocks.push({ id: "system", label: "System prompt (override)", content: opts.systemPromptOverride });
+    blocks.push({
+      id: "system",
+      label: "System prompt (override)",
+      content: opts.systemPromptOverride,
+    });
   } else {
-    blocks.push({ id: "preamble", label: "Workspace preamble · output contract · design system", content: workspaceContextPreamble(projectCtx) });
+    blocks.push({
+      id: "preamble",
+      label: "Workspace preamble · output contract · design system",
+      content: workspaceContextPreamble(projectCtx),
+    });
     if (opts.preambleExtras) {
-      blocks.push({ id: "direction", label: "Project direction · Format / Rules / Taste", content: opts.preambleExtras });
+      blocks.push({
+        id: "direction",
+        label: "Project direction · Format / Rules / Taste",
+        content: opts.preambleExtras,
+      });
     }
     if (external.iframeHtml) {
-      blocks.push({ id: "current-file", label: `Current ${projectCtx.primaryFile} content`, content: external.iframeHtml });
+      blocks.push({
+        id: "current-file",
+        label: `Current ${projectCtx.primaryFile} content`,
+        content: external.iframeHtml,
+      });
     }
   }
   const filePath = `${projectCtx.projectPath?.replace(/^~\/?/, "") ?? "projects/default"}/${projectCtx.primaryFile ?? "index.html"}`;
@@ -396,9 +414,17 @@ export function assembleTurnBlocks(input: UserTurnInput, opts: PrepareOptions = 
     ...(external.iframeHtml ? { isEdit: true } : {}),
   });
   if (contractBlock) {
-    blocks.push({ id: "contract", label: "Artifact output contract (API providers)", content: contractBlock.trim() });
+    blocks.push({
+      id: "contract",
+      label: "Artifact output contract (API providers)",
+      content: contractBlock.trim(),
+    });
   }
-  blocks.push({ id: "user", label: "User message", content: composeUserPrompt(input.userMessage, input.attachments) });
+  blocks.push({
+    id: "user",
+    label: "User message",
+    content: composeUserPrompt(input.userMessage, input.attachments),
+  });
   return blocks;
 }
 
@@ -409,19 +435,21 @@ export function assembleTurnBlocks(input: UserTurnInput, opts: PrepareOptions = 
  */
 export function composeUserPrompt(userMessage: string, attachments?: TurnAttachment[]): string {
   if (!attachments || attachments.length === 0) return userMessage;
-  const attachBlock = attachments.map((f) => {
-    if (f.mime.startsWith("image/")) {
-      // Cross-platform absolute-path detection — see EditorScreen.tsx for the
-      // sibling check. Windows paths (`C:\...`) were misclassified as data URLs
-      // and the agent received garbage.
-      const isAbsPath = /^[A-Za-z]:[\\/]|^[\\/]/.test(f.content) || f.content.startsWith("~");
-      if (isAbsPath) {
-        return `[attached image: ${f.content}]`;
+  const attachBlock = attachments
+    .map((f) => {
+      if (f.mime.startsWith("image/")) {
+        // Cross-platform absolute-path detection — see EditorScreen.tsx for the
+        // sibling check. Windows paths (`C:\...`) were misclassified as data URLs
+        // and the agent received garbage.
+        const isAbsPath = /^[A-Za-z]:[\\/]|^[\\/]/.test(f.content) || f.content.startsWith("~");
+        if (isAbsPath) {
+          return `[attached image: ${f.content}]`;
+        }
+        return `[image: ${f.name} (${(f.size / 1024).toFixed(0)}kb) attached as data URL]\n${f.content}`;
       }
-      return `[image: ${f.name} (${(f.size / 1024).toFixed(0)}kb) attached as data URL]\n${f.content}`;
-    }
-    return `--- ${f.name} (${(f.size / 1024).toFixed(0)}kb) ---\n${f.content}\n--- end of ${f.name} ---`;
-  }).join("\n\n");
+      return `--- ${f.name} (${(f.size / 1024).toFixed(0)}kb) ---\n${f.content}\n--- end of ${f.name} ---`;
+    })
+    .join("\n\n");
   return `${attachBlock}\n\n${userMessage}`;
 }
 
@@ -436,10 +464,7 @@ export interface StreamOptions {
   sideChannels?: TurnSideChannels;
 }
 
-export async function stream(
-  ctx: TurnContext,
-  opts: StreamOptions = {},
-): Promise<TurnStream> {
+export async function stream(ctx: TurnContext, opts: StreamOptions = {}): Promise<TurnStream> {
   if (ctx.input.signal?.aborted) throw new TurnAbortError();
 
   const bag: TurnStream = {
@@ -466,7 +491,11 @@ export async function stream(
     onText: (chunk) => {
       bag.fullText += chunk;
       if (sideChannels.onText) {
-        try { sideChannels.onText(chunk); } catch { /* swallow */ }
+        try {
+          sideChannels.onText(chunk);
+        } catch {
+          /* swallow */
+        }
       }
     },
     onDone: (full) => {
@@ -483,18 +512,30 @@ export async function stream(
     onMeta: (meta) => {
       bag.meta = meta;
       if (sideChannels.onMeta) {
-        try { sideChannels.onMeta(meta); } catch { /* swallow */ }
+        try {
+          sideChannels.onMeta(meta);
+        } catch {
+          /* swallow */
+        }
       }
     },
     onUsage: (usage) => {
       if (sideChannels.onUsage) {
-        try { sideChannels.onUsage(usage); } catch { /* swallow */ }
+        try {
+          sideChannels.onUsage(usage);
+        } catch {
+          /* swallow */
+        }
       }
     },
     onResult: (result) => {
       bag.result = result;
       if (sideChannels.onResult) {
-        try { sideChannels.onResult(result); } catch { /* swallow */ }
+        try {
+          sideChannels.onResult(result);
+        } catch {
+          /* swallow */
+        }
       }
     },
     onToolCall: (call) => {
@@ -517,7 +558,11 @@ export async function stream(
         }
       }
       if (sideChannels.onToolCall) {
-        try { sideChannels.onToolCall(call); } catch { /* swallow */ }
+        try {
+          sideChannels.onToolCall(call);
+        } catch {
+          /* swallow */
+        }
       }
     },
     onToolResult: (tr) => {
@@ -533,19 +578,31 @@ export async function stream(
         liveToolEvents.push(normalizedResult);
       }
       if (sideChannels.onToolResult) {
-        try { sideChannels.onToolResult(tr); } catch { /* swallow */ }
+        try {
+          sideChannels.onToolResult(tr);
+        } catch {
+          /* swallow */
+        }
       }
     },
     onSession: (id) => {
       bag.sessionId = id;
       if (sideChannels.onSessionId) {
-        try { sideChannels.onSessionId(id); } catch { /* swallow */ }
+        try {
+          sideChannels.onSessionId(id);
+        } catch {
+          /* swallow */
+        }
       }
     },
     onAuthRequired: (detail) => {
       bag.authRequired = detail;
       if (sideChannels.onAuthRequired) {
-        try { sideChannels.onAuthRequired(detail); } catch { /* swallow */ }
+        try {
+          sideChannels.onAuthRequired(detail);
+        } catch {
+          /* swallow */
+        }
       }
     },
   };
@@ -556,7 +613,11 @@ export async function stream(
       if (settled) return;
       settled = true;
       if (abortListener && ctx.input.signal) {
-        try { ctx.input.signal.removeEventListener("abort", abortListener); } catch { /* swallow */ }
+        try {
+          ctx.input.signal.removeEventListener("abort", abortListener);
+        } catch {
+          /* swallow */
+        }
       }
       resolve();
     };
@@ -575,19 +636,13 @@ export async function stream(
 
     void (async () => {
       try {
-        unlisten = await spawnStream(
-          category,
-          ctx.prompt,
-          ctx.systemPrompt,
-          wrapped,
-          {
-            providerId: ctx.providerId,
-            ...(ctx.providerOptions.model ? { model: ctx.providerOptions.model } : {}),
-            ...(ctx.providerOptions.cwd !== undefined ? { cwd: ctx.providerOptions.cwd } : {}),
-            ...(ctx.providerOptions.agent ? { agent: ctx.providerOptions.agent } : {}),
-            ...(ctx.providerOptions.sessionId ? { sessionId: ctx.providerOptions.sessionId } : {}),
-          },
-        );
+        unlisten = await spawnStream(category, ctx.prompt, ctx.systemPrompt, wrapped, {
+          providerId: ctx.providerId,
+          ...(ctx.providerOptions.model ? { model: ctx.providerOptions.model } : {}),
+          ...(ctx.providerOptions.cwd !== undefined ? { cwd: ctx.providerOptions.cwd } : {}),
+          ...(ctx.providerOptions.agent ? { agent: ctx.providerOptions.agent } : {}),
+          ...(ctx.providerOptions.sessionId ? { sessionId: ctx.providerOptions.sessionId } : {}),
+        });
       } catch (err) {
         bag.errored = true;
         bag.errorMessage = err instanceof Error ? err.message : String(err);
@@ -599,7 +654,11 @@ export async function stream(
       abortListener = () => {
         bag.aborted = true;
         if (unlisten) {
-          try { unlisten(); } catch { /* swallow */ }
+          try {
+            unlisten();
+          } catch {
+            /* swallow */
+          }
         }
         finish();
       };
@@ -664,7 +723,9 @@ export async function finalize(
       // here only affects cross-reload --resume.
       await Promise.race([
         upsertProviderSession(ctx.input.projectId, ctx.providerId, { sessionId: s.sessionId }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("upsertProviderSession timeout 2s")), 2000)),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("upsertProviderSession timeout 2s")), 2000),
+        ),
       ]);
     } catch {
       // Best-effort.

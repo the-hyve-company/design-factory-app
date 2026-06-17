@@ -23,10 +23,7 @@ import {
   getBucket,
   extractTagFromPath,
 } from "./InlineEditPanel";
-import type {
-  InlineEditSelectPayload,
-  InlineEditStyles,
-} from "@/runtime/inline-edit-bridge";
+import type { InlineEditSelectPayload, InlineEditStyles } from "@/runtime/inline-edit-bridge";
 
 // ────────────────────────────────────────────────────────────────────
 // Fixtures
@@ -69,8 +66,14 @@ function makeSelection(over: Partial<InlineEditSelectPayload> = {}): InlineEditS
  *  iframeRect to render — null hides it. */
 function makeIframeRect(over: Partial<DOMRect> = {}): DOMRect {
   const base = {
-    x: 280, y: 60, width: 1000, height: 700,
-    top: 60, right: 1280, bottom: 760, left: 280,
+    x: 280,
+    y: 60,
+    width: 1000,
+    height: 700,
+    top: 60,
+    right: 1280,
+    bottom: 760,
+    left: 280,
     toJSON: () => ({}),
   };
   return { ...base, ...over } as DOMRect;
@@ -143,22 +146,34 @@ describe("opacityToPercent / percentToOpacity", () => {
 describe("parseBoxSides", () => {
   it("expands 1 value to all four sides", () => {
     expect(parseBoxSides("8px")).toEqual({
-      top: "8px", right: "8px", bottom: "8px", left: "8px",
+      top: "8px",
+      right: "8px",
+      bottom: "8px",
+      left: "8px",
     });
   });
   it("expands 2 values to vertical + horizontal", () => {
     expect(parseBoxSides("8px 16px")).toEqual({
-      top: "8px", right: "16px", bottom: "8px", left: "16px",
+      top: "8px",
+      right: "16px",
+      bottom: "8px",
+      left: "16px",
     });
   });
   it("expands 3 values to top / horizontal / bottom", () => {
     expect(parseBoxSides("8px 16px 4px")).toEqual({
-      top: "8px", right: "16px", bottom: "4px", left: "16px",
+      top: "8px",
+      right: "16px",
+      bottom: "4px",
+      left: "16px",
     });
   });
   it("expands 4 values one-to-one", () => {
     expect(parseBoxSides("1px 2px 3px 4px")).toEqual({
-      top: "1px", right: "2px", bottom: "3px", left: "4px",
+      top: "1px",
+      right: "2px",
+      bottom: "3px",
+      left: "4px",
     });
   });
   it("returns all-empty for empty input", () => {
@@ -167,7 +182,10 @@ describe("parseBoxSides", () => {
   });
   it("ignores values past the fourth", () => {
     expect(parseBoxSides("1px 2px 3px 4px 5px")).toEqual({
-      top: "1px", right: "2px", bottom: "3px", left: "4px",
+      top: "1px",
+      right: "2px",
+      bottom: "3px",
+      left: "4px",
     });
   });
 });
@@ -177,13 +195,19 @@ describe("formatBoxSides", () => {
     expect(formatBoxSides({ top: "8px", right: "8px", bottom: "8px", left: "8px" })).toBe("8px");
   });
   it("collapses to 2-value form for vertical/horizontal symmetry", () => {
-    expect(formatBoxSides({ top: "8px", right: "16px", bottom: "8px", left: "16px" })).toBe("8px 16px");
+    expect(formatBoxSides({ top: "8px", right: "16px", bottom: "8px", left: "16px" })).toBe(
+      "8px 16px",
+    );
   });
   it("collapses to 3-value form when horizontal is symmetric", () => {
-    expect(formatBoxSides({ top: "8px", right: "16px", bottom: "4px", left: "16px" })).toBe("8px 16px 4px");
+    expect(formatBoxSides({ top: "8px", right: "16px", bottom: "4px", left: "16px" })).toBe(
+      "8px 16px 4px",
+    );
   });
   it("falls back to 4-value form when nothing is symmetric", () => {
-    expect(formatBoxSides({ top: "1px", right: "2px", bottom: "3px", left: "4px" })).toBe("1px 2px 3px 4px");
+    expect(formatBoxSides({ top: "1px", right: "2px", bottom: "3px", left: "4px" })).toBe(
+      "1px 2px 3px 4px",
+    );
   });
   it("emits empty string when all sides empty", () => {
     expect(formatBoxSides({ top: "", right: "", bottom: "", left: "" })).toBe("");

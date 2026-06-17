@@ -48,12 +48,7 @@ const ADAPTERS_WITH_TERMINAL = [
 // shared wirers in index.mjs (wireStreamJson / wireCodexJson /
 // wireGeminiJson); the wirers themselves carry the contract guard.
 // anthropic.mjs delegates to pipeAnthropicStream in index.mjs.
-const DELEGATED_ADAPTERS = [
-  "claude.mjs",
-  "codex.mjs",
-  "gemini.mjs",
-  "anthropic.mjs",
-];
+const DELEGATED_ADAPTERS = ["claude.mjs", "codex.mjs", "gemini.mjs", "anthropic.mjs"];
 
 // Source paths for the shared wirers + pipeAnthropicStream.
 const SHARED_WIRER_SOURCE = join(__dirname, "..", "index.mjs");
@@ -86,7 +81,14 @@ describe("provider adapter contract — release readiness", () => {
     const fake = {
       id: "fake",
       label: "Fake",
-      capabilities: { streaming: true, tools: false, multimodal: false, sessions: false, mcp: false, fileWrite: "artifact" },
+      capabilities: {
+        streaming: true,
+        tools: false,
+        multimodal: false,
+        sessions: false,
+        mcp: false,
+        fileWrite: "artifact",
+      },
       stream: async () => {},
       once: async () => {},
     };
@@ -110,8 +112,7 @@ describe("provider adapter contract — final event normalization", () => {
         missing.push(file);
       }
     }
-    expect(missing, `Adapters missing empty-completion guard: ${missing.join(", ")}`)
-      .toEqual([]);
+    expect(missing, `Adapters missing empty-completion guard: ${missing.join(", ")}`).toEqual([]);
   });
 
   it("delegated adapters route through the shared wirers (sanity)", () => {
@@ -163,11 +164,11 @@ describe("provider adapter contract — final event normalization", () => {
       const doneIdx = [...src.matchAll(/event: done\\n/g)].map((m) => m.index ?? 0);
       for (const idx of doneIdx) {
         const window = src.slice(Math.max(0, idx - 400), idx);
-        const hasGuard = /if\s*\(\s*full(\s|\)|&&)/.test(window) || /\?\s*\`event:\s*done/.test(window);
+        const hasGuard =
+          /if\s*\(\s*full(\s|\)|&&)/.test(window) || /\?\s*\`event:\s*done/.test(window);
         if (!hasGuard) offenders.push(`${file}@~${idx}`);
       }
     }
-    expect(offenders, `Unguarded done emissions: ${offenders.join(", ")}`)
-      .toEqual([]);
+    expect(offenders, `Unguarded done emissions: ${offenders.join(", ")}`).toEqual([]);
   });
 });

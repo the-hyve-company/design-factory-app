@@ -32,22 +32,22 @@ type TabId = "01" | "02" | "03" | "04" | "05";
 // freeform.
 
 const RATIO_CHOICES_VIDEO = [
-  { id: "16:9",  name: "16:9",  meta: "1920×1080" },
-  { id: "9:16",  name: "9:16",  meta: "1080×1920" },
-  { id: "1:1",   name: "1:1",   meta: "1080×1080" },
-  { id: "4k",    name: "4K",    meta: "3840×2160" },
+  { id: "16:9", name: "16:9", meta: "1920×1080" },
+  { id: "9:16", name: "9:16", meta: "1080×1920" },
+  { id: "1:1", name: "1:1", meta: "1080×1080" },
+  { id: "4k", name: "4K", meta: "3840×2160" },
 ];
 const FPS_CHOICES = [24, 30, 60];
 const VIEWPORT_CHOICES_INTERFACE = [
   { id: "1920×1080", name: "Desktop", meta: "1920×1080" },
-  { id: "1440×900",  name: "Laptop",  meta: "1440×900" },
-  { id: "1024×768",  name: "Tablet",  meta: "1024×768" },
-  { id: "390×844",   name: "Mobile",  meta: "390×844" },
+  { id: "1440×900", name: "Laptop", meta: "1440×900" },
+  { id: "1024×768", name: "Tablet", meta: "1024×768" },
+  { id: "390×844", name: "Mobile", meta: "390×844" },
 ];
 const RATIO_CHOICES_SOCIAL = [
-  { id: "1:1",   name: "Square",   meta: "1080×1080" },
-  { id: "4:5",   name: "Portrait", meta: "1080×1350" },
-  { id: "9:16",  name: "Story",    meta: "1080×1920" },
+  { id: "1:1", name: "Square", meta: "1080×1080" },
+  { id: "4:5", name: "Portrait", meta: "1080×1350" },
+  { id: "9:16", name: "Story", meta: "1080×1920" },
 ];
 
 interface CanvasFieldSpec {
@@ -86,14 +86,28 @@ interface DirectionModalProps {
 
 // ─── Icons (SVG inline) ──────────────────────────────────────────────
 const IconClose = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    aria-hidden
+  >
     <line x1="6" y1="6" x2="18" y2="18" />
     <line x1="18" y1="6" x2="6" y2="18" />
   </svg>
 );
 
 const IconCheck = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+  >
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
@@ -108,7 +122,16 @@ function CategoriaIcon({ id }: { id: CategoriaId }) {
   }
   if (id === "interface") {
     return (
-      <svg className="dm-cat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg
+        className="dm-cat-ico"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <line x1="3" y1="9" x2="21" y2="9" />
         <line x1="9" y1="21" x2="9" y2="9" />
@@ -116,7 +139,16 @@ function CategoriaIcon({ id }: { id: CategoriaId }) {
     );
   }
   return (
-    <svg className="dm-cat-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      className="dm-cat-ico"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <circle cx="6" cy="6" r="3" />
       <circle cx="18" cy="6" r="3" />
       <circle cx="6" cy="18" r="3" />
@@ -224,9 +256,7 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
     const has = draft.directionIds.includes(id);
     setDraft({
       ...draft,
-      directionIds: has
-        ? draft.directionIds.filter((x) => x !== id)
-        : [...draft.directionIds, id],
+      directionIds: has ? draft.directionIds.filter((x) => x !== id) : [...draft.directionIds, id],
     });
   };
 
@@ -334,7 +364,12 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
               <div className="dm-eyebrow">{t("dir.modal.kicker.full")}</div>
               <h2 className="dm-title">{t("dir.modal.title.full")}</h2>
             </div>
-            <button className="dm-close" type="button" aria-label={t("dir.modal.close")} onClick={onClose}>
+            <button
+              className="dm-close"
+              type="button"
+              aria-label={t("dir.modal.close")}
+              onClick={onClose}
+            >
               <IconClose />
             </button>
           </div>
@@ -349,7 +384,9 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
                   "dm-tab",
                   activeTab === tab.id ? "is-on" : "",
                   tab.disabled ? "is-disabled" : "",
-                ].filter(Boolean).join(" ")}
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 onClick={() => !tab.disabled && setActiveTab(tab.id)}
                 disabled={tab.disabled}
               >
@@ -375,11 +412,18 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
                   <strong>{formato.nome}</strong>
                   <span className="dm-foot-sep">·</span>
                   {effectiveRatio}
-                  {effectiveDuration && effectiveDuration > 0 ? ` · ${tf("dir.modal.format.duration", effectiveDuration)}` : ""}
-                  {canvasOverrideCount > 0 && <span className="dm-foot-pill">{t("dir.modal.foot.custom.pill")}</span>}
+                  {effectiveDuration && effectiveDuration > 0
+                    ? ` · ${tf("dir.modal.format.duration", effectiveDuration)}`
+                    : ""}
+                  {canvasOverrideCount > 0 && (
+                    <span className="dm-foot-pill">{t("dir.modal.foot.custom.pill")}</span>
+                  )}
                 </span>
                 <span className="dm-foot-stat">
-                  {dirCount} {dirCount === 1 ? t("dir.modal.foot.dir.singular") : t("dir.modal.foot.dir.plural")}
+                  {dirCount}{" "}
+                  {dirCount === 1
+                    ? t("dir.modal.foot.dir.singular")
+                    : t("dir.modal.foot.dir.plural")}
                 </span>
                 <span className="dm-foot-stat">
                   {antiCount} {t("dir.modal.antislop")}
@@ -410,15 +454,12 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
         </div>
       }
     >
-
       {/* ── Tab 01 — Category ───────────────────────────────────── */}
       {activeTab === "01" && (
         <section className="dm-tabpane is-active">
           <div className="dm-pane-head">
             <h3 className="dm-pane-title">{t("dir.modal.q.category")}</h3>
-            <p className="dm-pane-desc">
-              {t("dir.modal.q.category.body")}
-            </p>
+            <p className="dm-pane-desc">{t("dir.modal.q.category.body")}</p>
           </div>
           <div className="dm-cat-grid">
             {CATEGORIAS.map((c) => (
@@ -443,7 +484,9 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
           <div className="dm-pane-head">
             <h3 className="dm-pane-title">{t("dir.modal.q.format")}</h3>
             <p className="dm-pane-desc">
-              {fmts.length} {fmts.length === 1 ? t("dir.modal.opt") : t("dir.modal.opts")} in {CATEGORIAS.find((c) => c.id === activeCat)?.nome.toLowerCase()}{t("dir.modal.q.format.body")}
+              {fmts.length} {fmts.length === 1 ? t("dir.modal.opt") : t("dir.modal.opts")} in{" "}
+              {CATEGORIAS.find((c) => c.id === activeCat)?.nome.toLowerCase()}
+              {t("dir.modal.q.format.body")}
             </p>
           </div>
           <div className="dm-formato-grid">
@@ -465,8 +508,12 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
                   </div>
                   <p className="dm-formato-desc">{f.descricao}</p>
                   <div className="dm-formato-meta">
-                    <span>{f.anti_slop.length} {t("dir.modal.q.antislop.presets")}</span>
-                    {on && <span className="dm-formato-mark">{t("dir.modal.format.selected")}</span>}
+                    <span>
+                      {f.anti_slop.length} {t("dir.modal.q.antislop.presets")}
+                    </span>
+                    {on && (
+                      <span className="dm-formato-mark">{t("dir.modal.format.selected")}</span>
+                    )}
                   </div>
                 </button>
               );
@@ -484,9 +531,7 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
               {formato.nome.toLowerCase()}
             </span>
             <h3 className="dm-pane-title">{t("dir.modal.q.canvas")}</h3>
-            <p className="dm-pane-desc">
-              {t("dir.modal.q.canvas.body")}
-            </p>
+            <p className="dm-pane-desc">{t("dir.modal.q.canvas.body")}</p>
           </div>
 
           <div className="dm-canvas-stack">
@@ -567,7 +612,11 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
                   />
                   <span className="dm-canvas-unit">{t("dir.modal.canvas.seconds")}</span>
                   <span className="dm-canvas-derived">
-                    {tf("dir.modal.canvas.derived", canvasOverrides.fps ?? 30, Math.round(effectiveDuration! * (canvasOverrides.fps ?? 30)))}
+                    {tf(
+                      "dir.modal.canvas.derived",
+                      canvasOverrides.fps ?? 30,
+                      Math.round(effectiveDuration! * (canvasOverrides.fps ?? 30)),
+                    )}
                   </span>
                 </div>
               </div>
@@ -577,7 +626,9 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
               <div className="dm-canvas-field">
                 <div className="dm-canvas-label">
                   <span className="dm-canvas-label-name">{t("dir.modal.q.framerate")}</span>
-                  <span className="dm-canvas-label-default">{t("dir.modal.q.framerate.default")}</span>
+                  <span className="dm-canvas-label-default">
+                    {t("dir.modal.q.framerate.default")}
+                  </span>
                 </div>
                 <div className="dm-canvas-choices">
                   {FPS_CHOICES.map((fps) => {
@@ -644,9 +695,7 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
               {formato.nome.toLowerCase()}
             </span>
             <h3 className="dm-pane-title">{t("dir.modal.q.directions")}</h3>
-            <p className="dm-pane-desc">
-              {t("dir.modal.q.directions.body")}
-            </p>
+            <p className="dm-pane-desc">{t("dir.modal.q.directions.body")}</p>
           </div>
 
           <div className="dm-eixo-stack">
@@ -696,9 +745,7 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
               {formato.nome.toLowerCase()}
             </span>
             <h3 className="dm-pane-title">{t("dir.modal.q.bans")}</h3>
-            <p className="dm-pane-desc">
-              {t("dir.modal.q.bans.body")}
-            </p>
+            <p className="dm-pane-desc">{t("dir.modal.q.bans.body")}</p>
           </div>
 
           <div className="dm-as-stack">
@@ -755,7 +802,9 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
                 <ul className="dm-as-list">
                   {draft!.customAntiSlop.map((text, i) => (
                     <li key={`${text}-${i}`} className="dm-as-item is-on dm-as-item--custom">
-                      <span className="dm-as-mark" aria-hidden><IconCheck /></span>
+                      <span className="dm-as-mark" aria-hidden>
+                        <IconCheck />
+                      </span>
                       <span className="dm-as-text">{text}</span>
                       <button
                         type="button"
@@ -809,7 +858,6 @@ export function DirectionModal({ open, initial, onClose, onApply }: DirectionMod
           </button>
         </div>
       )}
-
     </DfModal>
   );
 }

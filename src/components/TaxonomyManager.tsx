@@ -193,9 +193,8 @@ export function TaxonomyManager<T extends TaxonomyItem>({
     let out = items;
     if (groupFilter) out = out.filter((i) => i.group === groupFilter);
     if (!q) return out;
-    return out.filter((i) =>
-      i.title.toLowerCase().includes(q) ||
-      (i.subtitle ?? "").toLowerCase().includes(q),
+    return out.filter(
+      (i) => i.title.toLowerCase().includes(q) || (i.subtitle ?? "").toLowerCase().includes(q),
     );
   }, [items, query, groupFilter]);
 
@@ -322,10 +321,11 @@ export function TaxonomyManager<T extends TaxonomyItem>({
     [bulkIds, items],
   );
   const bulkCustomIds = useMemo(
-    () => bulkIds.filter((id) => {
-      const it = items.find((i) => i.id === id);
-      return it && !it.builtin;
-    }),
+    () =>
+      bulkIds.filter((id) => {
+        const it = items.find((i) => i.id === id);
+        return it && !it.builtin;
+      }),
     [bulkIds, items],
   );
   const handleBulkDelete = useCallback(() => {
@@ -338,22 +338,28 @@ export function TaxonomyManager<T extends TaxonomyItem>({
     onDuplicate(bulkIds);
     setMultiSelect(new Set());
   }, [onDuplicate, bulkIds]);
-  const handleBulkEnable = useCallback((enable: boolean) => {
-    if (!onBulkToggleEnabled || bulkIds.length === 0) return;
-    onBulkToggleEnabled(bulkIds, enable);
-    // keep selection — user may want to toggle again on the same set
-  }, [onBulkToggleEnabled, bulkIds]);
+  const handleBulkEnable = useCallback(
+    (enable: boolean) => {
+      if (!onBulkToggleEnabled || bulkIds.length === 0) return;
+      onBulkToggleEnabled(bulkIds, enable);
+      // keep selection — user may want to toggle again on the same set
+    },
+    [onBulkToggleEnabled, bulkIds],
+  );
   const handleBulkHideBuiltins = useCallback(() => {
     if (!onBulkHideBuiltins || bulkBuiltinIds.length === 0) return;
     onBulkHideBuiltins(bulkBuiltinIds);
     setMultiSelect(new Set());
   }, [onBulkHideBuiltins, bulkBuiltinIds]);
-  const handleBulkMove = useCallback((targetCategoryId: string) => {
-    if (!onBulkMoveCategory || bulkCustomIds.length === 0) return;
-    if (!targetCategoryId) return;
-    onBulkMoveCategory(bulkCustomIds, targetCategoryId);
-    setMultiSelect(new Set());
-  }, [onBulkMoveCategory, bulkCustomIds]);
+  const handleBulkMove = useCallback(
+    (targetCategoryId: string) => {
+      if (!onBulkMoveCategory || bulkCustomIds.length === 0) return;
+      if (!targetCategoryId) return;
+      onBulkMoveCategory(bulkCustomIds, targetCategoryId);
+      setMultiSelect(new Set());
+    },
+    [onBulkMoveCategory, bulkCustomIds],
+  );
   const handleSelectAllVisible = useCallback(() => {
     setMultiSelect((prev) => {
       const allIds = filtered.map((i) => i.id);
@@ -448,7 +454,16 @@ export function TaxonomyManager<T extends TaxonomyItem>({
               onClick={onManageCategories}
               title={manageCategoriesLabel ?? "Manage categories"}
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="4" y1="6" x2="20" y2="6" />
                 <line x1="4" y1="12" x2="20" y2="12" />
                 <line x1="4" y1="18" x2="14" y2="18" />
@@ -459,16 +474,22 @@ export function TaxonomyManager<T extends TaxonomyItem>({
         </div>
       )}
 
-      {toolbarTopSlot && (
-        <div className="tx-mgr-toolbar-top">{toolbarTopSlot}</div>
-      )}
+      {toolbarTopSlot && <div className="tx-mgr-toolbar-top">{toolbarTopSlot}</div>}
 
       <div className="tx-mgr-split">
         {/* ──── LEFT — search + list ──── */}
         <aside className="tx-mgr-left">
           <div className="tx-mgr-search">
             <span className="tx-mgr-search-icon" aria-hidden>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              >
                 <circle cx="11" cy="11" r="7" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
@@ -500,7 +521,9 @@ export function TaxonomyManager<T extends TaxonomyItem>({
             onClick={onCreate}
             title={`${createLabel ?? t("tax.create")} (⌘N)`}
           >
-            <span className="tx-mgr-create-icon" aria-hidden>+</span>
+            <span className="tx-mgr-create-icon" aria-hidden>
+              +
+            </span>
             <span>{createLabel ?? t("tax.create")}</span>
           </button>
 
@@ -514,7 +537,9 @@ export function TaxonomyManager<T extends TaxonomyItem>({
           >
             {showEmptyAll ? (
               <div className="tx-mgr-empty">
-                <div className="tx-mgr-empty-title">{emptyAllTitle ?? t("tax.empty.all.title")}</div>
+                <div className="tx-mgr-empty-title">
+                  {emptyAllTitle ?? t("tax.empty.all.title")}
+                </div>
                 {emptyAllBody && <div className="tx-mgr-empty-body">{emptyAllBody}</div>}
                 <button
                   type="button"
@@ -594,8 +619,12 @@ export function TaxonomyManager<T extends TaxonomyItem>({
                         )}
                         {onReorder && (
                           <span className="tx-mgr-grip" aria-hidden>
-                            <span /><span /><span />
-                            <span /><span /><span />
+                            <span />
+                            <span />
+                            <span />
+                            <span />
+                            <span />
+                            <span />
                           </span>
                         )}
                         {onToggleEnabled && (
@@ -629,17 +658,26 @@ export function TaxonomyManager<T extends TaxonomyItem>({
                         </div>
                         <div className="tx-mgr-row-badges">
                           {item.builtin && (
-                            <span className="tx-mgr-badge tx-mgr-badge--builtin" title={t("tax.badge.builtin.hint")}>
+                            <span
+                              className="tx-mgr-badge tx-mgr-badge--builtin"
+                              title={t("tax.badge.builtin.hint")}
+                            >
                               {t("tax.badge.builtin")}
                             </span>
                           )}
                           {!item.builtin && (
-                            <span className="tx-mgr-badge tx-mgr-badge--custom" title={t("tax.badge.custom.hint")}>
+                            <span
+                              className="tx-mgr-badge tx-mgr-badge--custom"
+                              title={t("tax.badge.custom.hint")}
+                            >
                               {t("tax.badge.custom")}
                             </span>
                           )}
                           {item.edited && (
-                            <span className="tx-mgr-badge tx-mgr-badge--edited" title={t("tax.badge.edited.hint")}>
+                            <span
+                              className="tx-mgr-badge tx-mgr-badge--edited"
+                              title={t("tax.badge.edited.hint")}
+                            >
                               {t("tax.badge.edited")}
                             </span>
                           )}
@@ -662,11 +700,7 @@ export function TaxonomyManager<T extends TaxonomyItem>({
               </span>
               <div className="tx-mgr-bulk-actions">
                 {onDuplicate && (
-                  <button
-                    type="button"
-                    className="tx-mgr-bulk-btn"
-                    onClick={handleBulkDuplicate}
-                  >
+                  <button type="button" className="tx-mgr-bulk-btn" onClick={handleBulkDuplicate}>
                     {t("tax.bulk.duplicate")}
                   </button>
                 )}
@@ -703,7 +737,9 @@ export function TaxonomyManager<T extends TaxonomyItem>({
                       {t("tax.bulk.move.cat")}
                     </option>
                     {groups.map((g) => (
-                      <option key={g.id} value={g.id}>{g.label}</option>
+                      <option key={g.id} value={g.id}>
+                        {g.label}
+                      </option>
                     ))}
                   </select>
                 )}
@@ -729,11 +765,7 @@ export function TaxonomyManager<T extends TaxonomyItem>({
                   </button>
                 )}
                 {renderBulkExtras && renderBulkExtras(bulkIds)}
-                <button
-                  type="button"
-                  className="tx-mgr-bulk-btn"
-                  onClick={handleSelectAllVisible}
-                >
+                <button type="button" className="tx-mgr-bulk-btn" onClick={handleSelectAllVisible}>
                   {t("tax.bulk.select.all")}
                 </button>
                 <button
@@ -757,7 +789,16 @@ export function TaxonomyManager<T extends TaxonomyItem>({
           ) : (
             <div className="tx-mgr-detail-empty">
               <div className="tx-mgr-detail-empty-mark" aria-hidden>
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="40"
+                  height="40"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <rect x="3" y="3" width="7" height="7" rx="1" />
                   <rect x="14" y="3" width="7" height="7" rx="1" />
                   <rect x="3" y="14" width="7" height="7" rx="1" />

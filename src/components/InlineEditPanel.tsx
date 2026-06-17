@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type {
-  InlineEditSelectPayload,
-  InlineEditStyles,
-} from "@/runtime/inline-edit-bridge";
+import type { InlineEditSelectPayload, InlineEditStyles } from "@/runtime/inline-edit-bridge";
 
 // InlineEditPanel — floating mini-toolbar anchored to the currently
 // selected element in the iframe. Position is computed from the iframe
@@ -61,7 +58,10 @@ const FONT_OPTIONS = [
   { label: "Inherit", value: "" },
   { label: "Geist", value: "'Geist', system-ui, sans-serif" },
   { label: "Geist Mono", value: "'Geist Mono', ui-monospace, monospace" },
-  { label: "System sans", value: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" },
+  {
+    label: "System sans",
+    value: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+  },
   { label: "Serif", value: "Georgia, 'Times New Roman', serif" },
   { label: "Display", value: "'Playfair Display', Georgia, serif" },
   { label: "Humanist", value: "'Iowan Old Style', Georgia, serif" },
@@ -114,9 +114,22 @@ const PANEL_APPROX_HEIGHT = 520;
 export type ElementBucket = "text" | "image" | "container";
 
 const TEXT_TAGS = new Set([
-  "h1", "h2", "h3", "h4", "h5", "h6",
-  "p", "span", "a", "button", "label", "li",
-  "strong", "em", "small", "blockquote",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "p",
+  "span",
+  "a",
+  "button",
+  "label",
+  "li",
+  "strong",
+  "em",
+  "small",
+  "blockquote",
 ]);
 
 const IMAGE_TAGS = new Set(["img", "video", "picture", "svg"]);
@@ -272,14 +285,29 @@ export function InlineEditPanel({
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--df-text-faint)" }}>
-            Inline edit · <span style={{ color: "var(--df-text-muted, var(--df-text-faint))" }}>{tagName || "?"}</span>
+          <span
+            style={{
+              fontSize: 10,
+              textTransform: "uppercase",
+              letterSpacing: 0.4,
+              color: "var(--df-text-faint)",
+            }}
+          >
+            Inline edit ·{" "}
+            <span style={{ color: "var(--df-text-muted, var(--df-text-faint))" }}>
+              {tagName || "?"}
+            </span>
           </span>
           <span style={{ fontSize: 9, color: "var(--df-text-faint)", letterSpacing: 0.3 }}>
             {bucket}
           </span>
         </div>
-        <span style={{ fontSize: 10, color: dirty ? "var(--df-accent-user, #ef5d3b)" : "var(--df-text-faint)" }}>
+        <span
+          style={{
+            fontSize: 10,
+            color: dirty ? "var(--df-accent-user, #ef5d3b)" : "var(--df-text-faint)",
+          }}
+        >
           {dirty ? "● unsaved" : "● synced"}
         </span>
       </header>
@@ -320,7 +348,11 @@ export function InlineEditPanel({
                 }}
                 style={inputStyle}
               >
-                {FONT_OPTIONS.map((o) => <option key={o.label} value={o.value}>{o.label}</option>)}
+                {FONT_OPTIONS.map((o) => (
+                  <option key={o.label} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
               </select>
             </Field>
 
@@ -334,7 +366,11 @@ export function InlineEditPanel({
                   }}
                   style={inputStyle}
                 >
-                  {WEIGHT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  {WEIGHT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Size">
@@ -372,7 +408,11 @@ export function InlineEditPanel({
                   }}
                   style={inputStyle}
                 >
-                  {ALIGN_OPTIONS.map((o) => <option key={o.label} value={o.value}>{o.label}</option>)}
+                  {ALIGN_OPTIONS.map((o) => (
+                    <option key={o.label} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Line Height">
@@ -500,7 +540,11 @@ export function InlineEditPanel({
                   }}
                   style={inputStyle}
                 >
-                  {BORDER_STYLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  {BORDER_STYLE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div style={{ marginTop: 6 }}>
@@ -571,7 +615,14 @@ export function InlineEditPanel({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--df-text-faint)" }}>
+      <span
+        style={{
+          fontSize: 9,
+          textTransform: "uppercase",
+          letterSpacing: 0.4,
+          color: "var(--df-text-faint)",
+        }}
+      >
         {label}
       </span>
       {children}
@@ -670,7 +721,10 @@ export function formatBoxSides(sides: BoxSides): string {
   // the user only filled some boxes (otherwise "8px 0px 0px 0px" is
   // what the browser sees anyway).
   const safe = (v: string) => (v ? v : "0");
-  const T = safe(t), R = safe(r), B = safe(b), L = safe(l);
+  const T = safe(t),
+    R = safe(r),
+    B = safe(b),
+    L = safe(l);
   if (T === R && R === B && B === L) return T;
   if (T === B && R === L) return `${T} ${R}`;
   if (R === L) return `${T} ${R} ${B}`;
@@ -713,7 +767,14 @@ function BoxSidesField({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--df-text-faint)" }}>
+        <span
+          style={{
+            fontSize: 9,
+            textTransform: "uppercase",
+            letterSpacing: 0.4,
+            color: "var(--df-text-faint)",
+          }}
+        >
           {label}
         </span>
         <button
@@ -851,17 +912,25 @@ const inputStyle: React.CSSProperties = {
   fontSize: 12,
 };
 
-function btnStyle({ tone, disabled }: { tone: "primary" | "ghost"; disabled: boolean }): React.CSSProperties {
+function btnStyle({
+  tone,
+  disabled,
+}: {
+  tone: "primary" | "ghost";
+  disabled: boolean;
+}): React.CSSProperties {
   return {
     padding: "6px 12px",
     border: "1px solid var(--df-border-subtle)",
     borderRadius: 6,
-    background: tone === "primary"
-      ? (disabled ? "var(--df-surface-raised)" : "var(--df-accent-user, #ef5d3b)")
-      : "transparent",
-    color: tone === "primary"
-      ? (disabled ? "var(--df-text-faint)" : "#fff")
-      : "var(--df-text-primary)",
+    background:
+      tone === "primary"
+        ? disabled
+          ? "var(--df-surface-raised)"
+          : "var(--df-accent-user, #ef5d3b)"
+        : "transparent",
+    color:
+      tone === "primary" ? (disabled ? "var(--df-text-faint)" : "#fff") : "var(--df-text-primary)",
     fontFamily: "var(--df-font-mono)",
     fontSize: 11,
     fontWeight: 600,

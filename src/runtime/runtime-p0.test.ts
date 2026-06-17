@@ -30,9 +30,7 @@ describe("classifyMetrics — happy path", () => {
 
 describe("classifyMetrics — catastrophic", () => {
   it("flags blank-screen when body has no area and zero visible kids", () => {
-    const r = classifyMetrics(
-      metrics({ bodyRect: { width: 0, height: 0 }, visibleChildCount: 0 }),
-    );
+    const r = classifyMetrics(metrics({ bodyRect: { width: 0, height: 0 }, visibleChildCount: 0 }));
     expect(r.status).toBe("catastrophic");
     if (r.status === "catastrophic") expect(r.reason).toBe("blank-screen");
   });
@@ -90,32 +88,40 @@ describe("classifyMetrics — soft fails", () => {
 
 describe("detectCatastrophicRuntimeFail", () => {
   it("returns the catastrophic reason when status is catastrophic", () => {
-    expect(detectCatastrophicRuntimeFail({
-      status: "catastrophic",
-      reason: "iframe-timeout",
-    })).toBe("iframe-timeout");
+    expect(
+      detectCatastrophicRuntimeFail({
+        status: "catastrophic",
+        reason: "iframe-timeout",
+      }),
+    ).toBe("iframe-timeout");
   });
 
   it("returns null on pass", () => {
-    expect(detectCatastrophicRuntimeFail({
-      status: "pass",
-      metrics: metrics(),
-    })).toBe(null);
+    expect(
+      detectCatastrophicRuntimeFail({
+        status: "pass",
+        metrics: metrics(),
+      }),
+    ).toBe(null);
   });
 
   it("returns null on soft fail", () => {
-    expect(detectCatastrophicRuntimeFail({
-      status: "fail",
-      reason: "fonts-failed",
-      metrics: metrics({ fontsReady: false }),
-    })).toBe(null);
+    expect(
+      detectCatastrophicRuntimeFail({
+        status: "fail",
+        reason: "fonts-failed",
+        metrics: metrics({ fontsReady: false }),
+      }),
+    ).toBe(null);
   });
 
   it("returns null on skipped", () => {
-    expect(detectCatastrophicRuntimeFail({
-      status: "skipped",
-      reason: "type-not-previewable",
-    })).toBe(null);
+    expect(
+      detectCatastrophicRuntimeFail({
+        status: "skipped",
+        reason: "type-not-previewable",
+      }),
+    ).toBe(null);
   });
 });
 

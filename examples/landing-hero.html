@@ -1,93 +1,152 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Stencil — focused writing surface for technical drafts</title>
-  <style>
-    :root {
-      --ink: #1a1a17;
-      --paper: #fafaf7;
-      --muted: #6b6b66;
-      --line: rgba(26,26,23,0.10);
-      --accent: #4a3aff;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root { --ink: #f5f5ef; --paper: #14140f; --muted: #999a91; --line: rgba(245,245,239,0.10); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-    }
-    html, body { margin: 0; }
-    body {
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--paper);
-      color: var(--ink);
-      font-size: 17px;
-      line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
-    main { max-width: 720px; margin: 0 auto; padding: 96px 24px 64px; }
-    .kicker {
-      font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--muted);
-      margin: 0 0 12px;
-    }
-    h1 {
-      font-size: 56px; line-height: 1.05; letter-spacing: -0.02em;
-      margin: 0 0 18px; font-weight: 600;
-    }
-    h1 em { font-style: normal; color: var(--accent); }
-    .lead { font-size: 19px; color: var(--muted); margin: 0 0 36px; max-width: 540px; }
-    .cta {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 12px 18px;
-      background: var(--ink); color: var(--paper);
-      border: none; border-radius: 8px;
-      font: inherit; font-size: 15px; font-weight: 500;
-      cursor: pointer;
-      transition: transform 120ms ease-out;
-    }
-    .cta:hover { transform: translateY(-1px); }
-    .cta:active { transform: translateY(0); }
-    .cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-    .stats {
-      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px;
-      margin-top: 72px; padding-top: 32px;
-      border-top: 1px solid var(--line);
-    }
-    .stat-value {
-      font-variant-numeric: tabular-nums;
-      font-size: 32px; font-weight: 600; letter-spacing: -0.015em;
-      display: block;
-    }
-    .stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
-  </style>
-</head>
-<body>
-  <main>
-    <p class="kicker">v0.4 — focused mode</p>
-    <h1>Drafting that doesn't <em>fight</em> you.</h1>
-    <p class="lead">Stencil is a writing surface tuned for long-form
-    technical drafts. Three modes (plan, draft, ship), no formatting
-    toolbar, and a keystroke history that survives reloads.</p>
-    <button class="cta" type="button">Open the latest build</button>
-    <section class="stats" aria-label="Adoption">
-      <div>
-        <span class="stat-value">12,480</span>
-        <span class="stat-label">drafts started · 30 days</span>
-      </div>
-      <div>
-        <span class="stat-value">94%</span>
-        <span class="stat-label">drafts that reach &quot;ship&quot;</span>
-      </div>
-      <div>
-        <span class="stat-value">3.2s</span>
-        <span class="stat-label">cold start to typeable</span>
-      </div>
-    </section>
-  </main>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Stencil — focused writing surface for technical drafts</title>
+    <style>
+      :root {
+        --ink: #1a1a17;
+        --paper: #fafaf7;
+        --muted: #6b6b66;
+        --line: rgba(26, 26, 23, 0.1);
+        --accent: #4a3aff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ink: #f5f5ef;
+          --paper: #14140f;
+          --muted: #999a91;
+          --line: rgba(245, 245, 239, 0.1);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 17px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 96px 24px 64px;
+      }
+      .kicker {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+      h1 {
+        font-size: 56px;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        margin: 0 0 18px;
+        font-weight: 600;
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--accent);
+      }
+      .lead {
+        font-size: 19px;
+        color: var(--muted);
+        margin: 0 0 36px;
+        max-width: 540px;
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 18px;
+        background: var(--ink);
+        color: var(--paper);
+        border: none;
+        border-radius: 8px;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: transform 120ms ease-out;
+      }
+      .cta:hover {
+        transform: translateY(-1px);
+      }
+      .cta:active {
+        transform: translateY(0);
+      }
+      .cta:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 32px;
+        margin-top: 72px;
+        padding-top: 32px;
+        border-top: 1px solid var(--line);
+      }
+      .stat-value {
+        font-variant-numeric: tabular-nums;
+        font-size: 32px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        display: block;
+      }
+      .stat-label {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="kicker">v0.4 — focused mode</p>
+      <h1>Drafting that doesn't <em>fight</em> you.</h1>
+      <p class="lead">
+        Stencil is a writing surface tuned for long-form technical drafts. Three modes (plan, draft,
+        ship), no formatting toolbar, and a keystroke history that survives reloads.
+      </p>
+      <button class="cta" type="button">Open the latest build</button>
+      <section class="stats" aria-label="Adoption">
+        <div>
+          <span class="stat-value">12,480</span>
+          <span class="stat-label">drafts started · 30 days</span>
+        </div>
+        <div>
+          <span class="stat-value">94%</span>
+          <span class="stat-label">drafts that reach &quot;ship&quot;</span>
+        </div>
+        <div>
+          <span class="stat-value">3.2s</span>
+          <span class="stat-label">cold start to typeable</span>
+        </div>
+      </section>
+    </main>
+  </body>
 </html>

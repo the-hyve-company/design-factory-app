@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-const HtmlOutputSchema = z.string().min(1).refine(
-  (s) => s.includes("<") && s.includes(">"),
-  { message: "Output deve conter HTML válido" }
-);
+const HtmlOutputSchema = z
+  .string()
+  .min(1)
+  .refine((s) => s.includes("<") && s.includes(">"), { message: "Output deve conter HTML válido" });
 
 const TweaksConfigSchema = z.object({
   controls: z.array(
@@ -17,19 +17,23 @@ const TweaksConfigSchema = z.object({
       max: z.number().optional(),
       step: z.number().optional(),
       cssVar: z.string().optional(),
-    })
+    }),
   ),
 });
 
 export type TweaksConfig = z.infer<typeof TweaksConfigSchema>;
 
-export function validateHtml(raw: string): { ok: true; value: string } | { ok: false; error: string } {
+export function validateHtml(
+  raw: string,
+): { ok: true; value: string } | { ok: false; error: string } {
   const result = HtmlOutputSchema.safeParse(raw.trim());
   if (result.success) return { ok: true, value: result.data };
   return { ok: false, error: result.error.issues[0]?.message ?? "Validação falhou" };
 }
 
-export function validateTweaks(raw: string): { ok: true; value: TweaksConfig } | { ok: false; error: string } {
+export function validateTweaks(
+  raw: string,
+): { ok: true; value: TweaksConfig } | { ok: false; error: string } {
   try {
     const parsed = JSON.parse(raw);
     const result = TweaksConfigSchema.safeParse(parsed);

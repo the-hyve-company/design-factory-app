@@ -55,7 +55,11 @@ async function streamOpenaiViaBridge(
           }
           if (!dataStr) continue;
           let data: any;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
@@ -75,7 +79,9 @@ async function streamOpenaiViaBridge(
     }
   })();
   return () => {
-    try { controller.abort(); } catch {}
+    try {
+      controller.abort();
+    } catch {}
   };
 }
 
@@ -87,10 +93,7 @@ export function streamOpenai(
   return streamOpenaiViaBridge(prompt, config, callbacks);
 }
 
-export async function openaiOnce(
-  prompt: string,
-  config: OpenaiConfig = {},
-): Promise<string> {
+export async function openaiOnce(prompt: string, config: OpenaiConfig = {}): Promise<string> {
   const res = await fetch(`${BRIDGE_URL}/openai/once`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -109,7 +112,10 @@ export async function openaiOnce(
 /** Token storage: GET reports tokenSet without revealing the value, PUT
  *  writes it to ~/.design-factory/openai.json (chmod 600). Env var
  *  OPENAI_API_KEY takes precedence. */
-export async function getOpenaiTokenStatus(): Promise<{ tokenSet: boolean; source: "env" | "disk" | null }> {
+export async function getOpenaiTokenStatus(): Promise<{
+  tokenSet: boolean;
+  source: "env" | "disk" | null;
+}> {
   const res = await fetch(`${BRIDGE_URL}/config/openai`);
   if (!res.ok) throw new Error(`bridge HTTP ${res.status}`);
   return res.json();
@@ -122,7 +128,7 @@ export async function setOpenaiToken(token: string): Promise<void> {
     body: JSON.stringify({ token }),
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: string };
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error ?? `bridge HTTP ${res.status}`);
   }
 }

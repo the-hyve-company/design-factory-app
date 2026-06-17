@@ -45,7 +45,9 @@ describe("config-dir — resolution order", () => {
 
   afterEach(() => {
     restoreEnv();
-    try { rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+    try {
+      rmSync(tmpHome, { recursive: true, force: true });
+    } catch {}
   });
 
   it("DF_CONFIG_DIR env overrides everything else", () => {
@@ -88,7 +90,9 @@ describe("config-dir — legacy migration", () => {
 
   afterEach(() => {
     restoreEnv();
-    try { rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+    try {
+      rmSync(tmpHome, { recursive: true, force: true });
+    } catch {}
   });
 
   it("migrates legacy ~/.design-factory/* into ~/.config/design-factory/", () => {
@@ -174,7 +178,9 @@ describe("config-dir — path accessors", () => {
 
   afterEach(() => {
     restoreEnv();
-    try { rmSync(tmpHome, { recursive: true, force: true }); } catch {}
+    try {
+      rmSync(tmpHome, { recursive: true, force: true });
+    } catch {}
   });
 
   it("getCanonicalConfigDir always returns the XDG path regardless of override", () => {

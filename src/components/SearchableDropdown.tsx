@@ -56,7 +56,9 @@ function renderItem<T>(
     isSelected ? "is-selected" : "",
     isHighlighted ? "is-highlighted" : "",
     it.footerAction ? "sd-pop-opt--footer" : "",
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <button
       key={it.id}
@@ -78,10 +80,14 @@ function renderItem<T>(
         {it.sub && <span className="sd-pop-opt-sub">{it.sub}</span>}
       </span>
       {isSelected && !it.footerAction && (
-        <span className="sd-pop-opt-check" aria-hidden>✓</span>
+        <span className="sd-pop-opt-check" aria-hidden>
+          ✓
+        </span>
       )}
       {it.footerAction && (
-        <span className="sd-pop-opt-caret" aria-hidden>›</span>
+        <span className="sd-pop-opt-caret" aria-hidden>
+          ›
+        </span>
       )}
     </button>
   );
@@ -164,7 +170,7 @@ export function SearchableDropdown<T = unknown>({
   selectedId,
   onPick,
   searchPlaceholder = "Buscar…",
-  emptyTemplate = "Nenhum resultado para \"{query}\"",
+  emptyTemplate = 'Nenhum resultado para "{query}"',
   role = "listbox",
   ariaLabel,
   searchThreshold = 6,
@@ -189,7 +195,11 @@ export function SearchableDropdown<T = unknown>({
     } else {
       // Defer so the popover renders before we focus.
       requestAnimationFrame(() => {
-        try { inputRef.current?.focus(); } catch { /* ignore */ }
+        try {
+          inputRef.current?.focus();
+        } catch {
+          /* ignore */
+        }
       });
     }
   }, [open]);
@@ -217,11 +227,13 @@ export function SearchableDropdown<T = unknown>({
   // Scroll the highlighted item into view (mid-list nav).
   useEffect(() => {
     if (!open || !listRef.current) return;
-    const el = listRef.current.querySelector<HTMLElement>(
-      `[data-sd-idx="${highlightIdx}"]`,
-    );
+    const el = listRef.current.querySelector<HTMLElement>(`[data-sd-idx="${highlightIdx}"]`);
     if (el) {
-      try { el.scrollIntoView({ block: "nearest" }); } catch { /* ignore */ }
+      try {
+        el.scrollIntoView({ block: "nearest" });
+      } catch {
+        /* ignore */
+      }
     }
   }, [highlightIdx, open]);
 
@@ -254,7 +266,11 @@ export function SearchableDropdown<T = unknown>({
   // even if the modal scrolls internally. coords are in viewport
   // space → used with `position: fixed` to escape overflow:hidden +
   // transform containing blocks (np-modal-card has BOTH).
-  const [portalCoords, setPortalCoords] = useState<{ top: number; left: number; triggerWidth: number } | null>(null);
+  const [portalCoords, setPortalCoords] = useState<{
+    top: number;
+    left: number;
+    triggerWidth: number;
+  } | null>(null);
   // User ask 2026-05-21: "drop de modelos ta abrindo no lugar
   // errado deslocado". Previous logic used a hardcoded popH=380 (the
   // CSS max-height) and clamped negative tops to 8 — so when the
@@ -309,16 +325,14 @@ export function SearchableDropdown<T = unknown>({
       const spaceBelow = window.innerHeight - rect.bottom;
       // Auto-flip when the requested side can't fit but the opposite can.
       const opensUpward = requestUpward
-        ? (spaceAbove >= popH + 14 || spaceAbove >= spaceBelow)
+        ? spaceAbove >= popH + 14 || spaceAbove >= spaceBelow
         : !(spaceBelow >= popH + 14 || spaceBelow >= spaceAbove);
       const top = opensUpward
         ? Math.max(8, rect.top - popH - 6)
         : Math.min(window.innerHeight - popH - 8, rect.bottom + 6);
       const popoverW = width === "trigger" ? rect.width : Number(width);
       const isEndAnchor = anchor.endsWith("end");
-      let left = isEndAnchor
-        ? rect.right - popoverW
-        : rect.left;
+      let left = isEndAnchor ? rect.right - popoverW : rect.left;
       // Clamp into viewport (8px safe margin on both sides).
       const minLeft = 8;
       const maxLeft = window.innerWidth - popoverW - 8;
@@ -408,11 +422,7 @@ export function SearchableDropdown<T = unknown>({
       )}
 
       {onClear && selectedId && (
-        <button
-          type="button"
-          className="sd-pop-opt sd-pop-opt--clear"
-          onClick={onClear}
-        >
+        <button type="button" className="sd-pop-opt sd-pop-opt--clear" onClick={onClear}>
           <span className="sd-pop-opt-label">{clearLabel}</span>
         </button>
       )}
@@ -429,12 +439,17 @@ export function SearchableDropdown<T = unknown>({
             // highlight index still refers to ITEMS only (not headers).
             const hasGroups = filtered.some((it) => it.group !== undefined);
             if (!hasGroups) {
-              return filtered.map((it, idx) => renderItem(it, idx, selectedId, highlightIdx, role, onPick, setHighlightIdx));
+              return filtered.map((it, idx) =>
+                renderItem(it, idx, selectedId, highlightIdx, role, onPick, setHighlightIdx),
+              );
             }
             // Preserve the original order of groups — first appearance wins.
             const groupOrder: string[] = [];
             const groupLabels: Record<string, string> = {};
-            const groupBuckets: Record<string, Array<{ item: SearchableDropdownItem<T>; idx: number }>> = {};
+            const groupBuckets: Record<
+              string,
+              Array<{ item: SearchableDropdownItem<T>; idx: number }>
+            > = {};
             filtered.forEach((it, idx) => {
               const key = it.group ?? "__none__";
               if (!groupBuckets[key]) {
@@ -455,7 +470,9 @@ export function SearchableDropdown<T = unknown>({
                       <span className="sd-pop-group-count">{bucket.length}</span>
                     </div>
                   )}
-                  {bucket.map(({ item, idx }) => renderItem(item, idx, selectedId, highlightIdx, role, onPick, setHighlightIdx))}
+                  {bucket.map(({ item, idx }) =>
+                    renderItem(item, idx, selectedId, highlightIdx, role, onPick, setHighlightIdx),
+                  )}
                 </div>
               );
             });
@@ -469,7 +486,5 @@ export function SearchableDropdown<T = unknown>({
   // blocks (the np-modal-card has both). When no triggerRef passed,
   // fall back to inline absolute positioning so non-modal callers
   // (settings dropdowns rendered in normal flow) don't pay the cost.
-  return portalActive
-    ? createPortal(popoverNode, document.body)
-    : popoverNode;
+  return portalActive ? createPortal(popoverNode, document.body) : popoverNode;
 }

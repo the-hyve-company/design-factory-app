@@ -362,11 +362,7 @@ export const DirectionSelectionSchema = z.object({
  *   const parsed = safeRead(GlobalConfigSchema, raw, "readGlobalConfig");
  *   if (!parsed) return null;
  */
-export function safeRead<T>(
-  schema: z.ZodType<T>,
-  input: unknown,
-  context: string,
-): T | null {
+export function safeRead<T>(schema: z.ZodType<T>, input: unknown, context: string): T | null {
   const result = schema.safeParse(input);
   if (result.success) return result.data;
   // Don't blow up the app — but DO log so the bug surfaces in console
@@ -385,11 +381,7 @@ export function safeRead<T>(
  * failure — this catches OUR bugs (we're about to persist garbage).
  * Use on every write/append.
  */
-export function safeWriteOrThrow<T>(
-  schema: z.ZodType<T>,
-  input: unknown,
-  context: string,
-): T {
+export function safeWriteOrThrow<T>(schema: z.ZodType<T>, input: unknown, context: string): T {
   const result = schema.safeParse(input);
   if (result.success) return result.data;
   const msg = `[schema] ${context} would write invalid data: ${result.error.issues

@@ -27,7 +27,10 @@ export function TactileBtn({ onClick, children, disabled = false, title, style }
       title={title}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
-      onMouseLeave={() => { setPressed(false); setHover(false); }}
+      onMouseLeave={() => {
+        setPressed(false);
+        setHover(false);
+      }}
       onMouseEnter={() => setHover(true)}
       style={{
         display: "inline-flex",
@@ -49,10 +52,10 @@ export function TactileBtn({ onClick, children, disabled = false, title, style }
         boxShadow: disabled
           ? "inset 0 0 0 1px var(--df-border-subtle)"
           : pressed
-          ? "var(--df-shadow-button-tactile-pressed)"
-          : hover
-          ? "var(--df-shadow-button-tactile-hover)"
-          : "var(--df-shadow-button-tactile)",
+            ? "var(--df-shadow-button-tactile-pressed)"
+            : hover
+              ? "var(--df-shadow-button-tactile-hover)"
+              : "var(--df-shadow-button-tactile)",
         transition: "box-shadow var(--df-motion-quick) var(--df-ease-out)",
         userSelect: "none",
         ...style,
@@ -79,7 +82,10 @@ export function TactileIconBtn({ onClick, children, title, size = 24 }: TactileI
       title={title}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
-      onMouseLeave={() => { setPressed(false); setHover(false); }}
+      onMouseLeave={() => {
+        setPressed(false);
+        setHover(false);
+      }}
       onMouseEnter={() => setHover(true)}
       style={{
         display: "inline-flex",
@@ -95,9 +101,10 @@ export function TactileIconBtn({ onClick, children, title, size = 24 }: TactileI
         boxShadow: pressed
           ? "var(--df-skeu-recess)"
           : hover
-          ? "inset 0 0 0 1px var(--df-border-hover)"
-          : "none",
-        transition: "box-shadow var(--df-motion-quick) var(--df-ease-out), color var(--df-motion-quick) var(--df-ease-out)",
+            ? "inset 0 0 0 1px var(--df-border-hover)"
+            : "none",
+        transition:
+          "box-shadow var(--df-motion-quick) var(--df-ease-out), color var(--df-motion-quick) var(--df-ease-out)",
       }}
     >
       {children}

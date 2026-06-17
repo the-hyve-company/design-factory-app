@@ -40,8 +40,8 @@ interface ProjectCoverProps {
 const VIEWPORT_BY_RATIO: Record<RatioId, { vw: number; vh: number }> = {
   "16:9": { vw: 1280, vh: 720 },
   "9:16": { vw: 720, vh: 1280 },
-  "1:1":  { vw: 1080, vh: 1080 },
-  "4k":   { vw: 1280, vh: 720 },
+  "1:1": { vw: 1080, vh: 1080 },
+  "4k": { vw: 1280, vh: 720 },
 };
 
 export type DotGridStyle =
@@ -63,10 +63,22 @@ export type DotGridStyle =
   | "x-shape";
 
 export const DOT_GRID_STYLES: DotGridStyle[] = [
-  "radial-bright", "radial-dim", "wave-h", "wave-v", "wave-diagonal",
-  "concentric", "spotlight", "corner", "cross", "circle-silhouette",
-  "checkerboard", "bands-h", "bands-v", "spiral",
-  "hourglass", "x-shape",
+  "radial-bright",
+  "radial-dim",
+  "wave-h",
+  "wave-v",
+  "wave-diagonal",
+  "concentric",
+  "spotlight",
+  "corner",
+  "cross",
+  "circle-silhouette",
+  "checkerboard",
+  "bands-h",
+  "bands-v",
+  "spiral",
+  "hourglass",
+  "x-shape",
 ];
 
 // Back-compat: kept so the showcase / older imports keep working.
@@ -87,11 +99,14 @@ function makeRng(seed: number) {
   let c = (seed * 2.713) | 0;
   let d = (seed * 1.149) | 0;
   return () => {
-    a |= 0; b |= 0; c |= 0; d |= 0;
+    a |= 0;
+    b |= 0;
+    c |= 0;
+    d |= 0;
     const t = (a + b) | 0;
     a = b ^ (b >>> 9);
     b = (c + (c << 3)) | 0;
-    c = ((c << 21) | (c >>> 11)) | 0;
+    c = (c << 21) | (c >>> 11) | 0;
     d = (d + 1) | 0;
     c = (c + t) | 0;
     return ((t >>> 0) % 0x10000) / 0x10000;
@@ -114,7 +129,13 @@ const smooth = (t: number) => Math.max(0, Math.min(1, t * t * (3 - 2 * t)));
 // - rng (already seeded — use for params at top of fn, NOT inside loop)
 // Returns radius in [MIN_R, MAX_R] and opacity in [0,1].
 
-type Modulator = (col: number, row: number, cols: number, rows: number, p: ModParams) => { r: number; o: number };
+type Modulator = (
+  col: number,
+  row: number,
+  cols: number,
+  rows: number,
+  p: ModParams,
+) => { r: number; o: number };
 type ModParams = Record<string, number>;
 
 function paramsFor(style: DotGridStyle, rng: () => number): ModParams {
@@ -131,13 +152,26 @@ function paramsFor(style: DotGridStyle, rng: () => number): ModParams {
     case "concentric":
       return { fx: range(rng, 0.3, 0.7), fy: range(rng, 0.3, 0.7), period: range(rng, 1.8, 3.2) };
     case "spotlight":
-      return { fx: range(rng, 0.25, 0.75), fy: range(rng, 0.25, 0.75), tightness: range(rng, 0.18, 0.32) };
+      return {
+        fx: range(rng, 0.25, 0.75),
+        fy: range(rng, 0.25, 0.75),
+        tightness: range(rng, 0.18, 0.32),
+      };
     case "corner":
       return { corner: Math.floor(rng() * 4) };
     case "cross":
-      return { fx: range(rng, 0.4, 0.6), fy: range(rng, 0.4, 0.6), thickness: range(rng, 0.18, 0.32) };
+      return {
+        fx: range(rng, 0.4, 0.6),
+        fy: range(rng, 0.4, 0.6),
+        thickness: range(rng, 0.18, 0.32),
+      };
     case "circle-silhouette":
-      return { fx: range(rng, 0.4, 0.6), fy: range(rng, 0.4, 0.6), radius: range(rng, 0.30, 0.46), invert: rng() > 0.5 ? 1 : 0 };
+      return {
+        fx: range(rng, 0.4, 0.6),
+        fy: range(rng, 0.4, 0.6),
+        radius: range(rng, 0.3, 0.46),
+        invert: rng() > 0.5 ? 1 : 0,
+      };
     case "checkerboard":
       return { phase: rng() > 0.5 ? 1 : 0, scale: Math.floor(range(rng, 1, 3)) };
     case "bands-h":
@@ -149,7 +183,7 @@ function paramsFor(style: DotGridStyle, rng: () => number): ModParams {
     case "hourglass":
       return { tightness: range(rng, 0.18, 0.32) };
     case "x-shape":
-      return { thickness: range(rng, 0.10, 0.22) };
+      return { thickness: range(rng, 0.1, 0.22) };
     default:
       return {};
   }
@@ -168,49 +202,49 @@ const MODULATORS: Record<DotGridStyle, Modulator> = {
     const v = row / (rows - 1);
     const d = Math.hypot(u - p.fx, v - p.fy) / Math.SQRT2;
     const t = smooth(d);
-    return { r: MIN_R + t * (MAX_R - MIN_R), o: 0.20 + t * 0.55 };
+    return { r: MIN_R + t * (MAX_R - MIN_R), o: 0.2 + t * 0.55 };
   },
   "wave-h": (col, _row, cols, _rows, p) => {
     const u = col / (cols - 1);
     const t = 0.5 + 0.5 * Math.sin(u * p.freq * Math.PI * 2 + p.phase);
-    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R), o: 0.30 + t * 0.45 };
+    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R), o: 0.3 + t * 0.45 };
   },
   "wave-v": (_col, row, _cols, rows, p) => {
     const v = row / (rows - 1);
     const t = 0.5 + 0.5 * Math.sin(v * p.freq * Math.PI * 2 + p.phase);
-    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R), o: 0.30 + t * 0.45 };
+    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R), o: 0.3 + t * 0.45 };
   },
   "wave-diagonal": (col, row, cols, rows, p) => {
     const u = col / (cols - 1);
     const v = row / (rows - 1);
     const d = u + v * (1 + p.angle * 0.5);
     const t = 0.5 + 0.5 * Math.sin(d * p.freq * Math.PI * 2 + p.phase);
-    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R), o: 0.30 + t * 0.45 };
+    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R), o: 0.3 + t * 0.45 };
   },
-  "concentric": (col, row, cols, rows, p) => {
+  concentric: (col, row, cols, rows, p) => {
     const u = col / (cols - 1);
     const v = row / (rows - 1);
     const d = Math.hypot(u - p.fx, v - p.fy) * 6;
     const t = 0.5 + 0.5 * Math.cos(d * p.period);
     return { r: MIN_R + smooth(t) * (MAX_R - MIN_R), o: 0.25 + t * 0.55 };
   },
-  "spotlight": (col, row, cols, rows, p) => {
+  spotlight: (col, row, cols, rows, p) => {
     const u = col / (cols - 1);
     const v = row / (rows - 1);
     const d = Math.hypot(u - p.fx, v - p.fy);
     const t = Math.max(0, 1 - d / p.tightness);
-    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R), o: 0.18 + t * 0.70 };
+    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R), o: 0.18 + t * 0.7 };
   },
-  "corner": (col, row, cols, rows, p) => {
+  corner: (col, row, cols, rows, p) => {
     const u = col / (cols - 1);
     const v = row / (rows - 1);
-    const cx = (p.corner === 1 || p.corner === 3) ? 1 : 0;
-    const cy = (p.corner >= 2) ? 1 : 0;
+    const cx = p.corner === 1 || p.corner === 3 ? 1 : 0;
+    const cy = p.corner >= 2 ? 1 : 0;
     const d = Math.hypot(u - cx, v - cy);
     const t = smooth(1 - d / 1.2);
     return { r: MIN_R + t * (MAX_R - MIN_R), o: 0.18 + t * 0.65 };
   },
-  "cross": (col, row, cols, rows, p) => {
+  cross: (col, row, cols, rows, p) => {
     const u = col / (cols - 1);
     const v = row / (rows - 1);
     const dx = Math.abs(u - p.fx);
@@ -231,31 +265,31 @@ const MODULATORS: Record<DotGridStyle, Modulator> = {
       ? { r: MIN_R + t * (MAX_R - MIN_R), o: 0.32 + t * 0.55 }
       : { r: MIN_R * 0.7, o: 0.15 };
   },
-  "checkerboard": (col, row, _cols, _rows, p) => {
+  checkerboard: (col, row, _cols, _rows, p) => {
     const block = (Math.floor(col / p.scale) + Math.floor(row / p.scale)) % 2;
     const lit = block === p.phase;
-    return lit ? { r: MAX_R * 0.75, o: 0.62 } : { r: MIN_R * 0.7, o: 0.20 };
+    return lit ? { r: MAX_R * 0.75, o: 0.62 } : { r: MIN_R * 0.7, o: 0.2 };
   },
   "bands-h": (_col, row, _cols, rows, p) => {
     const v = row / (rows - 1);
     const t = 0.5 + 0.5 * Math.sin(v * p.period * Math.PI * 2 + p.phase);
-    return { r: MIN_R + t * (MAX_R - MIN_R) * 0.9, o: 0.28 + t * 0.50 };
+    return { r: MIN_R + t * (MAX_R - MIN_R) * 0.9, o: 0.28 + t * 0.5 };
   },
   "bands-v": (col, _row, cols, _rows, p) => {
     const u = col / (cols - 1);
     const t = 0.5 + 0.5 * Math.sin(u * p.period * Math.PI * 2 + p.phase);
-    return { r: MIN_R + t * (MAX_R - MIN_R) * 0.9, o: 0.28 + t * 0.50 };
+    return { r: MIN_R + t * (MAX_R - MIN_R) * 0.9, o: 0.28 + t * 0.5 };
   },
-  "spiral": (col, row, cols, rows, p) => {
+  spiral: (col, row, cols, rows, p) => {
     const u = col / (cols - 1) - p.fx;
     const v = row / (rows - 1) - p.fy;
     const r = Math.hypot(u, v);
     const a = Math.atan2(v, u);
     const t = 0.5 + 0.5 * Math.sin(a * p.direction + r * p.twist * 8);
     const fade = smooth(1 - r / 0.7);
-    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R) * fade, o: 0.20 + t * 0.55 * fade };
+    return { r: MIN_R + smooth(t) * (MAX_R - MIN_R) * fade, o: 0.2 + t * 0.55 * fade };
   },
-  "hourglass": (col, row, cols, rows, p) => {
+  hourglass: (col, row, cols, rows, p) => {
     const u = col / (cols - 1);
     const v = row / (rows - 1);
     // Distance to vertical center line, modulated by vertical position
@@ -264,7 +298,7 @@ const MODULATORS: Record<DotGridStyle, Modulator> = {
     const inside = dx < widthAtY;
     if (!inside) return { r: MIN_R * 0.6, o: 0.15 };
     const t = 1 - dx / widthAtY;
-    return { r: MIN_R + t * (MAX_R - MIN_R), o: 0.35 + t * 0.50 };
+    return { r: MIN_R + t * (MAX_R - MIN_R), o: 0.35 + t * 0.5 };
   },
   "x-shape": (col, row, cols, rows, p) => {
     const u = col / (cols - 1);
@@ -274,7 +308,7 @@ const MODULATORS: Record<DotGridStyle, Modulator> = {
     const inX = d1 < p.thickness || d2 < p.thickness;
     if (!inX) return { r: MIN_R * 0.6, o: 0.16 };
     const t = 1 - Math.min(d1, d2) / p.thickness;
-    return { r: MIN_R + t * (MAX_R - MIN_R), o: 0.40 + t * 0.50 };
+    return { r: MIN_R + t * (MAX_R - MIN_R), o: 0.4 + t * 0.5 };
   },
 };
 
@@ -288,11 +322,22 @@ export function pickStyleForSlug(slug: string): DotGridStyle {
 // Back-compat alias
 export const pickVariantForSlug = pickStyleForSlug;
 
-export function ProjectCover({ slug, width = 320, height = 240, variant, htmlContent, ratio, className, style }: ProjectCoverProps) {
+export function ProjectCover({
+  slug,
+  width = 320,
+  height = 240,
+  variant,
+  htmlContent,
+  ratio,
+  className,
+  style,
+}: ProjectCoverProps) {
   // Live HTML preview path — only when content is non-trivial (avoid
   // showing an empty white box for projects that haven't generated yet).
   if (htmlContent && htmlContent.trim().length > 80) {
-    return <HtmlPreviewCover html={htmlContent} ratio={ratio} className={className} style={style} />;
+    return (
+      <HtmlPreviewCover html={htmlContent} ratio={ratio} className={className} style={style} />
+    );
   }
 
   // Fallback (no HTML yet) — generative dot-grid character (user
@@ -304,9 +349,16 @@ export function ProjectCover({ slug, width = 320, height = 240, variant, htmlCon
   // makeRng / DOT_GRID_STYLES / MODULATORS) are no longer rendered —
   // they remain in this module behind a `void` block in case we want
   // the old fallback back without rewriting the math.
-  void variant; void width; void height; void slug;
+  void variant;
+  void width;
+  void height;
+  void slug;
   // Silence TS6133 on the dot-grid helpers we deliberately kept around.
-  void makeRng; void COLS; void ROWS; void paramsFor; void MODULATORS;
+  void makeRng;
+  void COLS;
+  void ROWS;
+  void paramsFor;
+  void MODULATORS;
   // User ask 2026-05-21: projects without HTML yet should show "um
   // html padrão com logo suave do design factory" instead of the
   // generative character (characters belong to Skills). Flat neutral
@@ -337,7 +389,17 @@ export function ProjectCover({ slug, width = 320, height = 240, variant, htmlCon
  * inside the card. Previous version was hard-coded to 1280×720 (16:9), so
  * a 9:16 video preview rendered into a wide viewport and got squashed.
  */
-export function HtmlPreviewCover({ html, ratio = "16:9", className, style }: { html: string; ratio?: RatioId; className?: string; style?: React.CSSProperties }) {
+export function HtmlPreviewCover({
+  html,
+  ratio = "16:9",
+  className,
+  style,
+}: {
+  html: string;
+  ratio?: RatioId;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.25);
   // Lazy-mount the iframe only once the card scrolls into view. Rendering a
@@ -351,12 +413,15 @@ export function HtmlPreviewCover({ html, ratio = "16:9", className, style }: { h
   useEffect(() => {
     const el = wrapRef.current;
     if (!el || visible) return;
-    const io = new IntersectionObserver((entries) => {
-      if (entries.some((e) => e.isIntersecting)) {
-        setVisible(true);
-        io.disconnect();
-      }
-    }, { rootMargin: "200px" });
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
     io.observe(el);
     return () => io.disconnect();
   }, [visible]);
@@ -416,15 +481,21 @@ export function HtmlPreviewCover({ html, ratio = "16:9", className, style }: { h
           }}
         />
       ) : (
-        <div aria-hidden="true" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: "var(--df-bg-section)" }}>
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            background: "var(--df-bg-section)",
+          }}
+        >
           <Logo size={40} style={{ opacity: 0.18 }} />
         </div>
       )}
       {/* Defense in depth: invisible overlay to swallow any iframe events. */}
-      <div
-        aria-hidden="true"
-        style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
-      />
+      <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
     </div>
   );
 }

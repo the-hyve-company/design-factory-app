@@ -55,7 +55,12 @@ export interface AutoFixInput {
    * inject a pre-validated result. Defaults to the canonical
    * `validateArtifactStaticP0`.
    */
-  staticGate?: (input: { content: string; type: string; finalPath: string; contentHash: string }) => StaticP0Result;
+  staticGate?: (input: {
+    content: string;
+    type: string;
+    finalPath: string;
+    contentHash: string;
+  }) => StaticP0Result;
   /**
    * Optional Runtime P0 override. Defaults to the canonical
    * `runPreviewRuntimeP0`. Tests substitute a deterministic stub.
@@ -174,10 +179,7 @@ export async function autoFixLoop(input: AutoFixInput): Promise<AutoFixOutcome> 
     if (runtimeResult.status === "pass" || runtimeResult.status === "skipped") {
       // For type-not-previewable on round-1+ we count as pass — Static P0
       // already validated the structural change.
-      const metrics =
-        runtimeResult.status === "pass"
-          ? runtimeResult.metrics
-          : zeroMetrics();
+      const metrics = runtimeResult.status === "pass" ? runtimeResult.metrics : zeroMetrics();
       return {
         status: "pass-after-fix",
         rounds,
@@ -237,18 +239,24 @@ export function buildFixPrompt(input: BuildFixPromptInput): string {
       lines.push("Fix: remove the cause of each error. Common cases:");
       lines.push("- `Uncaught ReferenceError: x is not defined` → declare or import the symbol.");
       lines.push("- `Failed to load module` → fix the import path or inline the module.");
-      lines.push("- `TypeError: Cannot read properties of null` → add a null check before the access.");
+      lines.push(
+        "- `TypeError: Cannot read properties of null` → add a null check before the access.",
+      );
     } else if (runtimeResult.reason === "asset-404-critical") {
       lines.push("Local assets returned 404:");
       for (const url of m.asset404s.slice(0, 8)) {
         lines.push(`- ${url}`);
       }
       lines.push("");
-      lines.push("Fix: either inline the asset (data: URI for small images, <style> for CSS) or remove the reference.");
+      lines.push(
+        "Fix: either inline the asset (data: URI for small images, <style> for CSS) or remove the reference.",
+      );
     } else if (runtimeResult.reason === "fonts-failed") {
       lines.push("`document.fonts.ready` resolved with failures.");
       lines.push("");
-      lines.push("Fix: either ship the @font-face block with a valid src, drop the custom font, or use a system fallback.");
+      lines.push(
+        "Fix: either ship the @font-face block with a valid src, drop the custom font, or use a system fallback.",
+      );
     }
   } else if (runtimeResult.status === "catastrophic") {
     // Catastrophic shouldn't normally enter the fix loop, but if a previous
@@ -274,7 +282,10 @@ export function buildFixPrompt(input: BuildFixPromptInput): string {
       lines.push("- `body { display: none }` or `body { opacity: 0 }`.");
       lines.push("- Every child has `visibility: hidden` or `position: absolute; left: -99999px`.");
       lines.push("- Root container is set to `width: 0` or `height: 0`.");
-    } else if (runtimeResult.reason === "iframe-timeout" || runtimeResult.reason === "probe-no-payload") {
+    } else if (
+      runtimeResult.reason === "iframe-timeout" ||
+      runtimeResult.reason === "probe-no-payload"
+    ) {
       lines.push("The runtime probe never reported. Common causes:");
       lines.push("- Synchronous infinite loop in a `<script>` tag.");
       lines.push("- Top-level `await` that never resolves.");
@@ -283,14 +294,25 @@ export function buildFixPrompt(input: BuildFixPromptInput): string {
   }
 
   lines.push("");
-  lines.push("Re-emit the FULL artifact (no diffs, no patches) as a single `<artifact identifier=\"" + artifact.identifier + "\" type=\"" + artifact.type + "\">…</artifact>` block at the very end of your response.");
+  lines.push(
+    'Re-emit the FULL artifact (no diffs, no patches) as a single `<artifact identifier="' +
+      artifact.identifier +
+      '" type="' +
+      artifact.type +
+      '">…</artifact>` block at the very end of your response.',
+  );
 
   return lines.join("\n");
 }
 
 // ─── Default gate adapters ──────────────────────────────────────────────
 
-function defaultStaticGate(input: { content: string; type: string; finalPath: string; contentHash: string }): StaticP0Result {
+function defaultStaticGate(input: {
+  content: string;
+  type: string;
+  finalPath: string;
+  contentHash: string;
+}): StaticP0Result {
   return validateArtifactStaticP0(input);
 }
 

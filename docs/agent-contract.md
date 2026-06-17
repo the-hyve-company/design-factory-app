@@ -44,11 +44,11 @@ working directory (the DF repo root), not the user's project.
 
 Only the files inside `projects/{slug}/` outside `.df/`:
 
-| File | Purpose |
-|---|---|
-| `{slug}.html` | The primary file. The iframe ALWAYS renders this. |
+| File             | Purpose                                                |
+| ---------------- | ------------------------------------------------------ |
+| `{slug}.html`    | The primary file. The iframe ALWAYS renders this.      |
 | `tab-N-foo.html` | Secondary tab views (only when the user asks for them) |
-| `assets/*` | Images, audio, fonts, any binary the HTML imports |
+| `assets/*`       | Images, audio, fonts, any binary the HTML imports      |
 
 ### Files you NEVER touch
 
@@ -65,10 +65,10 @@ Only the files inside `projects/{slug}/` outside `.df/`:
 
 Two outputs per turn — and they are NEVER mixed:
 
-| Channel | Goes there | Why |
-|---|---|---|
-| **The file** (Write/Edit tool, or `<artifact>` block) | Code only — HTML/CSS/JS that renders | The iframe shows the file as-is |
-| **The chat reply** (your prose) | 1-3 lines of plain natural language | The user reads this beside the iframe |
+| Channel                                               | Goes there                           | Why                                   |
+| ----------------------------------------------------- | ------------------------------------ | ------------------------------------- |
+| **The file** (Write/Edit tool, or `<artifact>` block) | Code only — HTML/CSS/JS that renders | The iframe shows the file as-is       |
+| **The chat reply** (your prose)                       | 1-3 lines of plain natural language  | The user reads this beside the iframe |
 
 ### Output channel by capability
 
@@ -137,13 +137,13 @@ Write/Edit tool calls when they exist; emit `<artifact>` blocks otherwise.
 
 The first non-whitespace character of every file MUST match its extension:
 
-| Extension | First char | Why |
-|---|---|---|
-| `.html` `.htm` `.svg` | `<` (doctype, html, svg, xml, any tag) | Must be a renderable document |
-| `.css` | `/*`, `@`, `:`, `.`, `#`, `[`, or a selector | Valid stylesheet |
-| `.js` `.ts` `.mjs` | `import`, `export`, `const`, `let`, `function`, `class`, `//`, `/*`, `(`, `{` | Valid script |
-| `.json` | `{` or `[`, parseable as JSON | Structured data |
-| `.md` | text (no constraint) | Prose is fine here |
+| Extension             | First char                                                                    | Why                           |
+| --------------------- | ----------------------------------------------------------------------------- | ----------------------------- |
+| `.html` `.htm` `.svg` | `<` (doctype, html, svg, xml, any tag)                                        | Must be a renderable document |
+| `.css`                | `/*`, `@`, `:`, `.`, `#`, `[`, or a selector                                  | Valid stylesheet              |
+| `.js` `.ts` `.mjs`    | `import`, `export`, `const`, `let`, `function`, `class`, `//`, `/*`, `(`, `{` | Valid script                  |
+| `.json`               | `{` or `[`, parseable as JSON                                                 | Structured data               |
+| `.md`                 | text (no constraint)                                                          | Prose is fine here            |
 
 A file that starts with prose like "Here is a gooey simulation..." is a
 contract violation. The iframe renders that as bare text on a blank page.
@@ -323,12 +323,12 @@ the full `design.md` content. Treat it as the SOURCE OF TRUTH:
 
 Different harnesses expose different tools. Adapt:
 
-| Tool family | Examples | When to use |
-|---|---|---|
-| **File ops** | Write, Edit, Read | Always available — your main output channel |
-| **Shell** | Bash | Available in some harnesses; scope to the project folder |
-| **Search** | Glob, Grep | Use to find existing patterns before editing |
-| **Discrete questions** | `::question` inline protocol (see §9) | When you need a yes/no or multi-choice answer |
+| Tool family            | Examples                              | When to use                                              |
+| ---------------------- | ------------------------------------- | -------------------------------------------------------- |
+| **File ops**           | Write, Edit, Read                     | Always available — your main output channel              |
+| **Shell**              | Bash                                  | Available in some harnesses; scope to the project folder |
+| **Search**             | Glob, Grep                            | Use to find existing patterns before editing             |
+| **Discrete questions** | `::question` inline protocol (see §9) | When you need a yes/no or multi-choice answer            |
 
 If a tool isn't available, don't invent it. If a user message asks for
 something only a missing tool can do, say so plainly: "I can't run
@@ -377,11 +377,11 @@ chat with stack traces.
 at the daemon layer, but the contract bears repeating: the user must
 always see one of three outcomes, never silence.
 
-| Outcome | Daemon emits | Frontend renders |
-|---|---|---|
-| Success | `event: done` with `content` | Normal assistant bubble |
-| Empty completion | `event: error` with `"<provider> completed without text or artifact"` | Red error bubble |
-| Real error | `event: error` with the provider's diagnostic | Red error bubble |
+| Outcome          | Daemon emits                                                          | Frontend renders        |
+| ---------------- | --------------------------------------------------------------------- | ----------------------- |
+| Success          | `event: done` with `content`                                          | Normal assistant bubble |
+| Empty completion | `event: error` with `"<provider> completed without text or artifact"` | Red error bubble        |
+| Real error       | `event: error` with the provider's diagnostic                         | Red error bubble        |
 
 A turn that returns NO text AND no `<artifact>` AND no Write call is
 an **empty completion**. From the agent's side: don't end a turn this
@@ -435,14 +435,15 @@ Turn pipeline is intentionally minimal. There is **no** layered
 identity/project/artifact/conversation handoff, **no** sticky
 multi-file canonical state, and **no** auto-fix loop blocking the
 stream. Providers receive: a system prompt with the project preamble
-+ optional output contract, a user prompt with attachments inline,
-and conversation history forwarded by the wrapper. That is all.
+
+- optional output contract, a user prompt with attachments inline,
+  and conversation history forwarded by the wrapper. That is all.
 
 ---
 
-*Canonical agent contract. Provider-specific adapters reference this
+_Canonical agent contract. Provider-specific adapters reference this
 file as the source of truth. When this file changes, all providers
-update behavior on the next turn — there is no separate sync step.*
+update behavior on the next turn — there is no separate sync step._
 
 ---
 

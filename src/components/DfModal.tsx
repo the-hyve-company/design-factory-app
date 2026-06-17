@@ -45,7 +45,7 @@ export function DfModal({
       }
       if (noTrap || e.key !== "Tab" || !modalRef.current) return;
       const focusables = modalRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
       );
       if (focusables.length === 0) return;
       const first = focusables[0];
@@ -58,7 +58,7 @@ export function DfModal({
         first.focus();
       }
     },
-    [onClose, noTrap]
+    [onClose, noTrap],
   );
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export function DfModal({
     previousFocus.current = document.activeElement as HTMLElement;
     // First focusable inside modal
     const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
-      'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
     firstFocusable?.focus();
     document.addEventListener("keydown", handleKey);
@@ -95,22 +95,30 @@ export function DfModal({
         aria-labelledby={title ? titleId : undefined}
         {...rest}
       >
-        {head ?? (title && (
-          <div className="df-modal-head">
-            <div id={titleId} className="df-modal-title">
-              {title}
+        {head ??
+          (title && (
+            <div className="df-modal-head">
+              <div id={titleId} className="df-modal-title">
+                {title}
+              </div>
+              <button className="close" type="button" onClick={onClose} aria-label="Close dialog">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
+              </button>
             </div>
-            <button className="close" type="button" onClick={onClose} aria-label="Close dialog">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-        ))}
+          ))}
         <div className="df-modal-body">{children}</div>
         {foot && <div className="df-modal-foot">{foot}</div>}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

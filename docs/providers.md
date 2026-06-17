@@ -45,18 +45,18 @@ adapters.
 
 ## Capability Matrix
 
-| Provider | Type | Readiness | Streaming | Tools | Sessions | MCP | Multimodal | File write | Auth |
-|---|---|---|:-:|:-:|:-:|:-:|:-:|:-:|---|
-| **Claude Code** | CLI | stable | yes | yes | yes | yes | yes | tool | `claude login` |
-| **Codex CLI** | CLI | beta | yes | yes (Bash) | yes (1.1+) | no | yes | tool | `codex login` |
-| **Gemini CLI** | CLI | beta | yes | no | yes | no | yes | artifact | `gemini login` |
-| **Opencode CLI** | CLI | experimental | yes | yes | no | no | no | tool | `opencode auth` |
-| **Kimi Code CLI** | CLI | experimental | yes | yes | no | yes | yes | tool | `kimi` → `/login` |
-| **Anthropic API** | API | beta | yes | no | no | no | yes | artifact | BYOK token |
-| **OpenAI API** | API | beta | yes | no | no | no | no | artifact | BYOK token |
-| **Gemini API** | API | beta | yes | no | no | no | yes | artifact | BYOK token |
-| **OpenRouter API** | API | beta | yes | no | no | no | no | artifact | BYOK token |
-| **Ollama** | local | beta | yes | no | no | no | no | artifact | none (local) |
+| Provider           | Type  | Readiness    | Streaming |   Tools    |  Sessions  | MCP | Multimodal | File write | Auth              |
+| ------------------ | ----- | ------------ | :-------: | :--------: | :--------: | :-: | :--------: | :--------: | ----------------- |
+| **Claude Code**    | CLI   | stable       |    yes    |    yes     |    yes     | yes |    yes     |    tool    | `claude login`    |
+| **Codex CLI**      | CLI   | beta         |    yes    | yes (Bash) | yes (1.1+) | no  |    yes     |    tool    | `codex login`     |
+| **Gemini CLI**     | CLI   | beta         |    yes    |     no     |    yes     | no  |    yes     |  artifact  | `gemini login`    |
+| **Opencode CLI**   | CLI   | experimental |    yes    |    yes     |     no     | no  |     no     |    tool    | `opencode auth`   |
+| **Kimi Code CLI**  | CLI   | experimental |    yes    |    yes     |     no     | yes |    yes     |    tool    | `kimi` → `/login` |
+| **Anthropic API**  | API   | beta         |    yes    |     no     |     no     | no  |    yes     |  artifact  | BYOK token        |
+| **OpenAI API**     | API   | beta         |    yes    |     no     |     no     | no  |     no     |  artifact  | BYOK token        |
+| **Gemini API**     | API   | beta         |    yes    |     no     |     no     | no  |    yes     |  artifact  | BYOK token        |
+| **OpenRouter API** | API   | beta         |    yes    |     no     |     no     | no  |     no     |  artifact  | BYOK token        |
+| **Ollama**         | local | beta         |    yes    |     no     |     no     | no  |     no     |  artifact  | none (local)      |
 
 Capabilities are **declarative** in the adapter file (`capabilities`
 object on the default export). The runtime and UI read these to decide
@@ -96,26 +96,31 @@ field. Agents do not need to detect this themselves — see
 ## CLI Setup
 
 ### Claude Code
+
 - Install: `npm i -g @anthropic-ai/claude-code`
 - Auth: `claude login`
 - Env override: `DF_CLAUDE_BIN`
 
 ### Codex CLI
+
 - Install: `npm i -g @openai/codex`
 - Auth: `codex login` (OpenAI account)
 - Env override: `DF_CODEX_BIN`
 
 ### Gemini CLI
+
 - Install: `npm i -g @google/gemini-cli`
 - Auth: `gemini login` (Google account)
 - Env override: `DF_GEMINI_BIN`
 
 ### Opencode CLI
+
 - Install: `npm i -g opencode-cli`
 - Auth: `opencode auth` (provider-agnostic)
 - Env override: `DF_OPENCODE_BIN`
 
 ### Kimi Code CLI
+
 - Install: `curl -LsSf https://code.kimi.com/install.sh | bash`
 - Auth: run `kimi` interactively once and `/login` (OAuth via browser),
   or set `MOONSHOT_API_KEY` before spawn — the kimi CLI handles auth
@@ -135,19 +140,23 @@ field. Agents do not need to detect this themselves — see
 ## API Setup (BYOK)
 
 ### Anthropic API
+
 - Token sources: `ANTHROPIC_API_KEY` env, or PUT `/config/anthropic`
   to write `~/.config/design-factory/anthropic.json`
 - Default model: `claude-sonnet-4-6`
 
 ### OpenAI API
+
 - Token sources: `OPENAI_API_KEY` env, or PUT `/config/openai`
 - Default model: `gpt-4o-mini`
 
 ### Gemini API
+
 - Token sources: `GEMINI_API_KEY` env, or PUT `/config/gemini-api`
 - Default model: `gemini-1.5-flash`
 
 ### OpenRouter API
+
 - Token sources: `OPENROUTER_API_KEY` env, or PUT `/config/openrouter`
 - Default model: `meta-llama/llama-3.3-70b-instruct:free`
 
@@ -156,6 +165,7 @@ field. Agents do not need to detect this themselves — see
 ## Local
 
 ### Ollama
+
 - Install: `brew install ollama` then `ollama serve`
 - Default endpoint: `http://localhost:11434` (override:
   `DF_OLLAMA_HOST`)
@@ -170,11 +180,11 @@ greys non-chat models out in the picker. Known-good: `llama3.2`,
 
 **Tuning env (optional):**
 
-| Var | Default | Effect |
-|---|---|---|
-| `DF_OLLAMA_HOST` | `127.0.0.1` → `localhost` → `[::1]` | Explicit host:port; skips probing. |
-| `DF_OLLAMA_NUM_CTX` | `16384` | Context window requested per turn, clamped to the model's max. DF's system-prompt stack (preamble + craft + output contract + current file + history) easily exceeds Ollama's bare 4096 default, which silently truncates the prompt — the model never sees your actual ask. Raise on a roomy GPU; lower if you hit VRAM limits. |
-| `DF_OLLAMA_THINK` | `auto` | `auto`/`1` = enable thinking on reasoning models (qwen3, deepseek-r1, gpt-oss); reasoning goes to a separate channel and never leaks into the HTML. `0` = force off (faster, lower quality). No effect on non-reasoning models. |
+| Var                 | Default                             | Effect                                                                                                                                                                                                                                                                                                                           |
+| ------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DF_OLLAMA_HOST`    | `127.0.0.1` → `localhost` → `[::1]` | Explicit host:port; skips probing.                                                                                                                                                                                                                                                                                               |
+| `DF_OLLAMA_NUM_CTX` | `16384`                             | Context window requested per turn, clamped to the model's max. DF's system-prompt stack (preamble + craft + output contract + current file + history) easily exceeds Ollama's bare 4096 default, which silently truncates the prompt — the model never sees your actual ask. Raise on a roomy GPU; lower if you hit VRAM limits. |
+| `DF_OLLAMA_THINK`   | `auto`                              | `auto`/`1` = enable thinking on reasoning models (qwen3, deepseek-r1, gpt-oss); reasoning goes to a separate channel and never leaks into the HTML. `0` = force off (faster, lower quality). No effect on non-reasoning models.                                                                                                  |
 
 **VRAM note for big models.** A 32B model at Q4 plus a 16k context fills a 24GB
 GPU (≈22GB weights + KV cache). It still runs, but cold-load + a long thinking
@@ -190,6 +200,7 @@ timeout on very slow turns — prefer streaming generation for large models.
 ## Endpoints
 
 ### `GET /providers`
+
 Lists every registered provider with declared capabilities, a runtime
 `available` flag (true = installed for CLIs / token present for APIs),
 and the readiness badge. The picker uses this as its single source of
@@ -198,22 +209,45 @@ truth.
 ```json
 {
   "providers": [
-    { "id": "claude", "label": "Claude Code", "capabilities": {}, "readiness": "stable", "available": true, "version": "1.0.84" },
-    { "id": "codex", "label": "Codex CLI", "capabilities": {}, "readiness": "beta", "available": true, "version": "1.1.5" },
-    { "id": "kimi", "label": "Kimi Code CLI", "capabilities": {}, "readiness": "experimental", "available": false }
+    {
+      "id": "claude",
+      "label": "Claude Code",
+      "capabilities": {},
+      "readiness": "stable",
+      "available": true,
+      "version": "1.0.84"
+    },
+    {
+      "id": "codex",
+      "label": "Codex CLI",
+      "capabilities": {},
+      "readiness": "beta",
+      "available": true,
+      "version": "1.1.5"
+    },
+    {
+      "id": "kimi",
+      "label": "Kimi Code CLI",
+      "capabilities": {},
+      "readiness": "experimental",
+      "available": false
+    }
   ]
 }
 ```
 
 ### `GET /providers/:id`
+
 Single-provider lookup. 404 on unknown id.
 
 ### `POST /:id/stream`
+
 SSE endpoint per provider. Accepts
 `{ prompt, systemPrompt?, model?, cwd? }`. Emits
 `event: text|usage|error|done` frames.
 
 ### `POST /:id/once`
+
 Non-streaming sibling of `/stream`. Returns `{ text }` or
 `{ error }`.
 

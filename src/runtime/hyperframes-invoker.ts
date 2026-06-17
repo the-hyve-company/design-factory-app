@@ -36,7 +36,10 @@ export interface HyperframesCallbacks {
   onPhase?: (phase: HyperframesPhase) => void;
   /** Determinate progress [0..1]. Fires during `rendering` and `encoding`.
    *  `linting` is indeterminate (no progress events). */
-  onProgress?: (frac: number, detail?: { frame?: number; totalFrames?: number; fps?: number }) => void;
+  onProgress?: (
+    frac: number,
+    detail?: { frame?: number; totalFrames?: number; fps?: number },
+  ) => void;
   /** Soft warning surfaced by the linter. Render continues but the UI
    *  shows them above the progress card. */
   onWarning?: (text: string) => void;
@@ -90,20 +93,30 @@ export function renderVideo(req: RenderRequest, cb: HyperframesCallbacks): Abort
           }
           if (!dataStr) continue;
           let data: unknown;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           const d = data as Record<string, unknown>;
           if (event === "phase") cb.onPhase?.(String(d.phase) as HyperframesPhase);
-          else if (event === "progress") cb.onProgress?.(Number(d.frac ?? 0), d as { frame?: number; totalFrames?: number; fps?: number });
+          else if (event === "progress")
+            cb.onProgress?.(
+              Number(d.frac ?? 0),
+              d as { frame?: number; totalFrames?: number; fps?: number },
+            );
           else if (event === "warning") cb.onWarning?.(String(d.text ?? ""));
-          else if (event === "done") cb.onDone?.({
-            mp4Path: String(d.mp4Path ?? ""),
-            durationMs: Number(d.durationMs ?? 0),
-            sizeBytes: Number(d.sizeBytes ?? 0),
-          });
-          else if (event === "error") cb.onError?.({
-            kind: (d.kind as "lint" | "render" | "constraint" | "spawn") || "render",
-            message: String(d.message ?? "render failed"),
-          });
+          else if (event === "done")
+            cb.onDone?.({
+              mp4Path: String(d.mp4Path ?? ""),
+              durationMs: Number(d.durationMs ?? 0),
+              sizeBytes: Number(d.sizeBytes ?? 0),
+            });
+          else if (event === "error")
+            cb.onError?.({
+              kind: (d.kind as "lint" | "render" | "constraint" | "spawn") || "render",
+              message: String(d.message ?? "render failed"),
+            });
         }
       }
     } catch (e) {

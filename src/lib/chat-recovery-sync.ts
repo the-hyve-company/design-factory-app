@@ -58,13 +58,15 @@ interface SyncOptions {
  */
 export async function syncRecoveryQueue(opts: SyncOptions = {}): Promise<SyncReport> {
   if (syncing) {
-    return lastResult ?? {
-      attempted: 0,
-      flushed: 0,
-      remaining: 0,
-      startedAt: lastSyncAt,
-      finishedAt: lastSyncAt,
-    };
+    return (
+      lastResult ?? {
+        attempted: 0,
+        flushed: 0,
+        remaining: 0,
+        startedAt: lastSyncAt,
+        finishedAt: lastSyncAt,
+      }
+    );
   }
   syncing = true;
   const startedAt = Date.now();
@@ -122,8 +124,12 @@ export function startRecoverySync(): () => void {
   // initial render on disk writes that may take a moment.
   void syncRecoveryQueue();
 
-  const onFocus = () => { void syncRecoveryQueue(); };
-  const onOnline = () => { void syncRecoveryQueue(); };
+  const onFocus = () => {
+    void syncRecoveryQueue();
+  };
+  const onOnline = () => {
+    void syncRecoveryQueue();
+  };
 
   if (typeof window !== "undefined") {
     window.addEventListener("focus", onFocus);

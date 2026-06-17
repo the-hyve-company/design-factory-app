@@ -58,7 +58,11 @@ async function streamGeminiApiViaBridge(
           }
           if (!dataStr) continue;
           let data: any;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
@@ -78,7 +82,9 @@ async function streamGeminiApiViaBridge(
     }
   })();
   return () => {
-    try { controller.abort(); } catch {}
+    try {
+      controller.abort();
+    } catch {}
   };
 }
 
@@ -90,10 +96,7 @@ export function streamGeminiApi(
   return streamGeminiApiViaBridge(prompt, config, callbacks);
 }
 
-export async function geminiApiOnce(
-  prompt: string,
-  config: GeminiApiConfig = {},
-): Promise<string> {
+export async function geminiApiOnce(prompt: string, config: GeminiApiConfig = {}): Promise<string> {
   const res = await fetch(`${BRIDGE_URL}/gemini-api/once`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -112,7 +115,10 @@ export async function geminiApiOnce(
 /** Token storage: GET reports tokenSet without revealing the value, PUT
  *  writes it to ~/.design-factory/gemini.json (chmod 600). Env vars
  *  GEMINI_API_KEY / GOOGLE_API_KEY take precedence. */
-export async function getGeminiApiTokenStatus(): Promise<{ tokenSet: boolean; source: "env" | "disk" | null }> {
+export async function getGeminiApiTokenStatus(): Promise<{
+  tokenSet: boolean;
+  source: "env" | "disk" | null;
+}> {
   const res = await fetch(`${BRIDGE_URL}/config/gemini`);
   if (!res.ok) throw new Error(`bridge HTTP ${res.status}`);
   return res.json();
@@ -125,7 +131,7 @@ export async function setGeminiApiToken(token: string): Promise<void> {
     body: JSON.stringify({ token }),
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: string };
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error ?? `bridge HTTP ${res.status}`);
   }
 }

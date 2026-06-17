@@ -13,7 +13,15 @@
  * machine; ratio-regen.ts only resolves the request or rejects it.
  */
 
-import { streamClaude, gitSnapshot, writeFile, writeProjectMeta, readProjectMeta, type ClaudeConfig, type UnlistenFn } from "@/lib/claude-bridge";
+import {
+  streamClaude,
+  gitSnapshot,
+  writeFile,
+  writeProjectMeta,
+  readProjectMeta,
+  type ClaudeConfig,
+  type UnlistenFn,
+} from "@/lib/claude-bridge";
 import type { RatioId } from "@/runtime/hyperframes-invoker";
 
 export type RatioDimsMap = Record<RatioId, { w: number; h: number; label: string }>;
@@ -21,8 +29,8 @@ export type RatioDimsMap = Record<RatioId, { w: number; h: number; label: string
 export const RATIO_DIMS: RatioDimsMap = {
   "16:9": { w: 1920, h: 1080, label: "1920×1080" },
   "9:16": { w: 1080, h: 1920, label: "1080×1920" },
-  "1:1":  { w: 1080, h: 1080, label: "1080×1080" },
-  "4k":   { w: 3840, h: 2160, label: "3840×2160" },
+  "1:1": { w: 1080, h: 1080, label: "1080×1080" },
+  "4k": { w: 3840, h: 2160, label: "3840×2160" },
 };
 
 /**
@@ -71,7 +79,10 @@ export interface RegenForRatioResult {
 }
 
 export class RegenError extends Error {
-  constructor(message: string, public readonly kind: "stream" | "invalid-html" | "cancelled" | "write-failed") {
+  constructor(
+    message: string,
+    public readonly kind: "stream" | "invalid-html" | "cancelled" | "write-failed",
+  ) {
     super(message);
     this.name = "RegenError";
   }
@@ -98,7 +109,10 @@ function isValidHtml(text: string): boolean {
  *   or write failure. Caller is responsible for restoring from its own
  *   in-memory backup; this orchestrator does NOT touch disk on failure.
  */
-export function regenerateForRatio(input: RegenForRatioInput): { promise: Promise<RegenForRatioResult>; abort: () => void } {
+export function regenerateForRatio(input: RegenForRatioInput): {
+  promise: Promise<RegenForRatioResult>;
+  abort: () => void;
+} {
   const { slug, projectPath, html, oldRatio, newRatio, config, onTokens } = input;
   const htmlPath = `${projectPath.replace(/\/$/, "")}/${slug}.html`;
 
@@ -107,7 +121,9 @@ export function regenerateForRatio(input: RegenForRatioInput): { promise: Promis
 
   const abort = () => {
     cancelled = true;
-    try { unlistenFn?.(); } catch {}
+    try {
+      unlistenFn?.();
+    } catch {}
   };
 
   const promise = new Promise<RegenForRatioResult>((resolve, reject) => {

@@ -6,4 +6,8 @@
 
 export type EditablePromptId = "generate" | "refine" | "tweaks";
 
-export const EDITABLE_PROMPT_IDS: ReadonlyArray<EditablePromptId> = ["generate", "refine", "tweaks"];
+export const EDITABLE_PROMPT_IDS: ReadonlyArray<EditablePromptId> = [
+  "generate",
+  "refine",
+  "tweaks",
+];

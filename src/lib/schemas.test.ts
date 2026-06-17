@@ -164,7 +164,11 @@ describe("ProjectMetaSchema", () => {
 
   it("rejects bad mode", () => {
     const r = ProjectMetaSchema.safeParse({
-      id: "x", name: "n", mode: "design", created_at: 0, updated_at: 0,
+      id: "x",
+      name: "n",
+      mode: "design",
+      created_at: 0,
+      updated_at: 0,
     });
     expect(r.success).toBe(false);
   });
@@ -256,7 +260,10 @@ describe("migrateLegacyChatMessage", () => {
   });
 
   it("preserves provider when caller supplied a non-claude legacy provider", () => {
-    const r = migrateLegacyChatMessage({ role: "claude", provider: "codex", text: "x" }) as Record<string, unknown>;
+    const r = migrateLegacyChatMessage({ role: "claude", provider: "codex", text: "x" }) as Record<
+      string,
+      unknown
+    >;
     expect(r.provider).toBe("codex");
   });
 
@@ -287,9 +294,7 @@ describe("migrateLegacyChatMessages (array)", () => {
   });
 
   it("migrated messages then pass through CachedMessageSchema", () => {
-    const migrated = migrateLegacyChatMessages([
-      { role: "claude", text: "yo" },
-    ]);
+    const migrated = migrateLegacyChatMessages([{ role: "claude", text: "yo" }]);
     const parsed = CachedMessagesArraySchema.parse(migrated);
     expect(parsed[0].role).toBe("assistant");
     expect(parsed[0].provider).toBe("claude");

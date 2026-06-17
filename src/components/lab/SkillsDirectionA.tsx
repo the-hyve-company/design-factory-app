@@ -6,8 +6,13 @@
 import { useRef, useState } from "react";
 import { ArrowRight, Folder, Link, Sparkles, Upload, type LucideIcon } from "lucide-react";
 import {
-  installSkill, fetchUrlViaBridge, listFolder, readFileViaBridge,
-  parseSkillMarkdown, type CreateSkillInput, type Skill,
+  installSkill,
+  fetchUrlViaBridge,
+  listFolder,
+  readFileViaBridge,
+  parseSkillMarkdown,
+  type CreateSkillInput,
+  type Skill,
 } from "@/lib/claude-bridge";
 import { parseSkillZip } from "@/lib/skill-zip-import";
 import { collectSkillFromFolder } from "@/lib/skill-folder-import";
@@ -17,13 +22,44 @@ type Mode = "create" | "import";
 type ImportSource = "upload" | "url" | "folder";
 
 function slugify(name: string): string {
-  return "/" + name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return (
+    "/" +
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+  );
 }
 
-const IMPORT_SOURCES: Array<{ id: ImportSource; Icon: LucideIcon; name: string; hint: string; placeholder?: string }> = [
-  { id: "upload", Icon: Upload, name: "Upload", hint: "Suba um arquivo .md ou um bundle .zip de skill.", placeholder: undefined },
-  { id: "url",    Icon: Link,   name: "URL",    hint: "Cole a URL de um SKILL.md ou bundle publicado.", placeholder: "https://…/SKILL.md" },
-  { id: "folder", Icon: Folder, name: "Pasta",  hint: "Escolha skills de uma pasta skills/ (ou .claude/skills/ legado).", placeholder: "~/projeto/skills" },
+const IMPORT_SOURCES: Array<{
+  id: ImportSource;
+  Icon: LucideIcon;
+  name: string;
+  hint: string;
+  placeholder?: string;
+}> = [
+  {
+    id: "upload",
+    Icon: Upload,
+    name: "Upload",
+    hint: "Suba um arquivo .md ou um bundle .zip de skill.",
+    placeholder: undefined,
+  },
+  {
+    id: "url",
+    Icon: Link,
+    name: "URL",
+    hint: "Cole a URL de um SKILL.md ou bundle publicado.",
+    placeholder: "https://…/SKILL.md",
+  },
+  {
+    id: "folder",
+    Icon: Folder,
+    name: "Pasta",
+    hint: "Escolha skills de uma pasta skills/ (ou .claude/skills/ legado).",
+    placeholder: "~/projeto/skills",
+  },
 ];
 
 interface Props {
@@ -54,7 +90,8 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canCreate = name.trim().length > 0 && trigger.trim().length > 0 && body.trim().length > 0 && !saving;
+  const canCreate =
+    name.trim().length > 0 && trigger.trim().length > 0 && body.trim().length > 0 && !saving;
 
   const onNameChange = (v: string) => {
     setName(v);
@@ -68,7 +105,10 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
     setSaving(true);
     const result = await installSkill(input);
     setSaving(false);
-    if ("error" in result) { setError(result.error); return; }
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
     onImported(result);
     onClose();
   };
@@ -81,7 +121,10 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
         await installStaged(parsed.installInput);
         return;
       }
-      if (file.size > 200_000) { setError(`${file.name} é grande demais (máx 200KB para SKILL.md)`); return; }
+      if (file.size > 200_000) {
+        setError(`${file.name} é grande demais (máx 200KB para SKILL.md)`);
+        return;
+      }
       const text = await file.text();
       const parsed = parseSkillMarkdown(text);
       const fallback = file.name.replace(/\.md$/i, "").replace(/[-_]/g, " ").trim();
@@ -109,24 +152,35 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
         body,
       });
       setSaving(false);
-      if ("error" in result) { setError(result.error); return; }
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
       onCreated(result);
       onClose();
       return;
     }
     // Import — different action per source.
-    if (source === "upload") { fileInputRef.current?.click(); return; }
+    if (source === "upload") {
+      fileInputRef.current?.click();
+      return;
+    }
     const raw = importValue.trim();
-    if (!raw) { setError(source === "url" ? "Cole uma URL." : "Cole o caminho da pasta."); return; }
+    if (!raw) {
+      setError(source === "url" ? "Cole uma URL." : "Cole o caminho da pasta.");
+      return;
+    }
     setSaving(true);
     try {
       if (source === "url") {
         const res = await fetchUrlViaBridge(raw);
         if ("error" in res) throw new Error(res.error);
         const md = res.html;
-        if (raw.toLowerCase().endsWith(".zip")) throw new Error("ZIP via URL ainda não — use Upload.");
+        if (raw.toLowerCase().endsWith(".zip"))
+          throw new Error("ZIP via URL ainda não — use Upload.");
         const parsed = parseSkillMarkdown(md);
-        const fallback = raw.split("/").pop()?.replace(/\.md$/i, "").replace(/[-_]/g, " ").trim() ?? "";
+        const fallback =
+          raw.split("/").pop()?.replace(/\.md$/i, "").replace(/[-_]/g, " ").trim() ?? "";
         await installStaged({
           name: parsed.name ?? fallback,
           trigger: parsed.trigger ?? "",
@@ -140,7 +194,9 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
       // + extraFiles-bundling logic in one testable place instead of
       // inline-and-mocked across component renders.
       const { input } = await collectSkillFromFolder(raw, {
-        listFolder, readFileViaBridge, parseSkillMarkdown,
+        listFolder,
+        readFileViaBridge,
+        parseSkillMarkdown,
       });
       await installStaged(input);
     } catch (e) {
@@ -155,16 +211,30 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
       <div className="dsl-zone">
         <span className="dsl-engrave">o que você quer</span>
         <div className="dsl-keys dsl-keys--2">
-          <button type="button" className="dsl-key" data-active={mode === "create"} onClick={() => setMode("create")}>
+          <button
+            type="button"
+            className="dsl-key"
+            data-active={mode === "create"}
+            onClick={() => setMode("create")}
+          >
             <div className="dsl-key-head">
-              <span className="dsl-key-glyph" aria-hidden="true"><Sparkles size={20} strokeWidth={2} /></span>
+              <span className="dsl-key-glyph" aria-hidden="true">
+                <Sparkles size={20} strokeWidth={2} />
+              </span>
               <span className="dsl-key-led" aria-hidden="true" />
             </div>
             <span className="dsl-key-name">Criar do zero</span>
           </button>
-          <button type="button" className="dsl-key" data-active={mode === "import"} onClick={() => setMode("import")}>
+          <button
+            type="button"
+            className="dsl-key"
+            data-active={mode === "import"}
+            onClick={() => setMode("import")}
+          >
             <div className="dsl-key-head">
-              <span className="dsl-key-glyph" aria-hidden="true"><Upload size={20} strokeWidth={2} /></span>
+              <span className="dsl-key-glyph" aria-hidden="true">
+                <Upload size={20} strokeWidth={2} />
+              </span>
               <span className="dsl-key-led" aria-hidden="true" />
             </div>
             <span className="dsl-key-name">Importar</span>
@@ -176,19 +246,51 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
         <>
           <div className="dsl-zone">
             <span className="dsl-engrave">nome</span>
-            <input className="dsl-input" value={name} onChange={(e) => onNameChange(e.target.value)} placeholder="Minha skill" spellCheck={false} autoComplete="off" style={{ fontFamily: "var(--df-font-sans)" }} />
+            <input
+              className="dsl-input"
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
+              placeholder="Minha skill"
+              spellCheck={false}
+              autoComplete="off"
+              style={{ fontFamily: "var(--df-font-sans)" }}
+            />
           </div>
           <div className="dsl-zone">
             <span className="dsl-engrave">trigger</span>
-            <input className="dsl-input" value={trigger} onChange={(e) => { setTrigger(e.target.value); setTriggerEdited(true); }} placeholder="/minha-skill" spellCheck={false} autoComplete="off" />
+            <input
+              className="dsl-input"
+              value={trigger}
+              onChange={(e) => {
+                setTrigger(e.target.value);
+                setTriggerEdited(true);
+              }}
+              placeholder="/minha-skill"
+              spellCheck={false}
+              autoComplete="off"
+            />
           </div>
           <div className="dsl-zone">
             <span className="dsl-engrave">descrição</span>
-            <input className="dsl-input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="O que essa skill faz e quando usar" spellCheck={false} autoComplete="off" style={{ fontFamily: "var(--df-font-sans)" }} />
+            <input
+              className="dsl-input"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="O que essa skill faz e quando usar"
+              spellCheck={false}
+              autoComplete="off"
+              style={{ fontFamily: "var(--df-font-sans)" }}
+            />
           </div>
           <div className="dsl-zone">
             <span className="dsl-engrave">corpo (instruções)</span>
-            <textarea className="dsl-textarea" value={body} onChange={(e) => setBody(e.target.value)} placeholder="As instruções que o agente segue quando a skill é ativada…" spellCheck={false} />
+            <textarea
+              className="dsl-textarea"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="As instruções que o agente segue quando a skill é ativada…"
+              spellCheck={false}
+            />
           </div>
         </>
       ) : (
@@ -197,9 +299,17 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
             <span className="dsl-engrave">de onde</span>
             <div className="dsl-keys dsl-keys--3">
               {IMPORT_SOURCES.map((s) => (
-                <button key={s.id} type="button" className="dsl-key" data-active={source === s.id} onClick={() => setSource(s.id)}>
+                <button
+                  key={s.id}
+                  type="button"
+                  className="dsl-key"
+                  data-active={source === s.id}
+                  onClick={() => setSource(s.id)}
+                >
                   <div className="dsl-key-head">
-                    <span className="dsl-key-glyph" aria-hidden="true"><s.Icon size={20} strokeWidth={2} /></span>
+                    <span className="dsl-key-glyph" aria-hidden="true">
+                      <s.Icon size={20} strokeWidth={2} />
+                    </span>
                     <span className="dsl-key-led" aria-hidden="true" />
                   </div>
                   <span className="dsl-key-name">{s.name}</span>
@@ -237,8 +347,17 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
                 </div>
               ) : (
                 <>
-                  <div className="dsl-bowl-hint" style={{ marginBottom: 9 }}>{activeSource.hint}</div>
-                  <input className="dsl-input" value={importValue} onChange={(e) => setImportValue(e.target.value)} placeholder={activeSource.placeholder} spellCheck={false} autoComplete="off" />
+                  <div className="dsl-bowl-hint" style={{ marginBottom: 9 }}>
+                    {activeSource.hint}
+                  </div>
+                  <input
+                    className="dsl-input"
+                    value={importValue}
+                    onChange={(e) => setImportValue(e.target.value)}
+                    placeholder={activeSource.placeholder}
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
                 </>
               )}
             </div>
@@ -248,7 +367,11 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
 
       {/* Footer — premium begin */}
       {error && (
-        <div className="dsl-zone" style={{ color: "var(--df-accent-danger)", fontSize: "var(--df-text-xs)" }} role="alert">
+        <div
+          className="dsl-zone"
+          style={{ color: "var(--df-accent-danger)", fontSize: "var(--df-text-xs)" }}
+          role="alert"
+        >
           {error}
         </div>
       )}
@@ -257,15 +380,25 @@ export function SkillsDirectionA({ initialMode, onClose, onCreated, onImported }
         <button
           type="button"
           className={`cnp-begin cnp-begin--v8${saving ? " is-loading" : ""}`}
-          onClick={() => { void submit(); }}
+          onClick={() => {
+            void submit();
+          }}
           disabled={mode === "create" ? !canCreate : saving}
           aria-busy={saving}
         >
           <span className="cnp-begin-led" aria-hidden="true" />
           <span className="cnp-begin-label">
-            {saving ? (mode === "create" ? "Criando…" : "Importando…") : (mode === "create" ? "Criar skill" : "Importar skill")}
+            {saving
+              ? mode === "create"
+                ? "Criando…"
+                : "Importando…"
+              : mode === "create"
+                ? "Criar skill"
+                : "Importar skill"}
           </span>
-          <span className="cnp-begin-arrow" aria-hidden="true"><ArrowRight size={16} strokeWidth={2} /></span>
+          <span className="cnp-begin-arrow" aria-hidden="true">
+            <ArrowRight size={16} strokeWidth={2} />
+          </span>
         </button>
       </div>
     </div>

@@ -39,14 +39,18 @@ export function ActiveVerbPill({ verb }: { verb: Verb | null }) {
       }}
     >
       {/* Shimmer band sweeping across the pill — Apple Intelligence vibe */}
-      <span aria-hidden style={{
-        position: "absolute",
-        inset: 0,
-        background: "linear-gradient(110deg, transparent 0%, transparent 30%, rgba(255,255,255,0.12) 50%, transparent 70%, transparent 100%)",
-        backgroundSize: "260% 100%",
-        animation: "df-verb-shimmer 1.8s linear infinite",
-        pointerEvents: "none",
-      }} />
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(110deg, transparent 0%, transparent 30%, rgba(255,255,255,0.12) 50%, transparent 70%, transparent 100%)",
+          backgroundSize: "260% 100%",
+          animation: "df-verb-shimmer 1.8s linear infinite",
+          pointerEvents: "none",
+        }}
+      />
 
       <span
         aria-hidden
@@ -61,22 +65,28 @@ export function ActiveVerbPill({ verb }: { verb: Verb | null }) {
           animation: "df-verb-pill-breath 1400ms ease-in-out infinite",
         }}
       />
-      <span style={{
-        position: "relative",
-        fontWeight: "var(--df-fw-semibold, 600)",
-        letterSpacing: "var(--df-tracking-tight)",
-      }}>
+      <span
+        style={{
+          position: "relative",
+          fontWeight: "var(--df-fw-semibold, 600)",
+          letterSpacing: "var(--df-tracking-tight)",
+        }}
+      >
         {verb.label}
       </span>
-      <span style={{
-        position: "relative",
-        color: "var(--df-text-muted)",
-        fontFamily: "var(--df-font-mono)",
-        fontSize: 10,
-        letterSpacing: "0.04em",
-      }}>
+      <span
+        style={{
+          position: "relative",
+          color: "var(--df-text-muted)",
+          fontFamily: "var(--df-font-mono)",
+          fontSize: 10,
+          letterSpacing: "0.04em",
+        }}
+      >
         running
-        <span className="df-verb-dots" aria-hidden>...</span>
+        <span className="df-verb-dots" aria-hidden>
+          ...
+        </span>
       </span>
       <style>{`
         @keyframes df-verb-pill-in {

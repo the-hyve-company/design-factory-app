@@ -39,7 +39,10 @@ export function parseSkillFile(raw) {
   const pickList = (key) => {
     const match = fm.match(new RegExp(`^${key}\\s*:\\s*\\[([^\\]]*)\\]`, "m"));
     if (!match) return [];
-    return match[1].split(",").map((value) => value.trim().replace(/^["'](.*)["']$/, "$1")).filter(Boolean);
+    return match[1]
+      .split(",")
+      .map((value) => value.trim().replace(/^["'](.*)["']$/, "$1"))
+      .filter(Boolean);
   };
   return {
     name: pick("name"),
@@ -67,7 +70,8 @@ function sha16(value) {
 function buildSkill({ raw, absPath, source, cwd }) {
   const parsed = parseSkillFile(raw);
   const basename = absPath.split("/").pop().replace(/\.md$/i, "");
-  const name = parsed.name || basename.replace(/[-_]/g, " ").replace(/^\w/, (char) => char.toUpperCase());
+  const name =
+    parsed.name || basename.replace(/[-_]/g, " ").replace(/^\w/, (char) => char.toUpperCase());
   const rel = cwd && absPath.startsWith(cwd + "/") ? absPath.slice(cwd.length + 1) : absPath;
   let trigger = parsed.trigger;
   if (!trigger) trigger = "/" + slugifyName(parsed.name || basename);
@@ -88,8 +92,19 @@ function buildSkill({ raw, absPath, source, cwd }) {
 }
 
 const RESERVED_TRIGGERS = new Set([
-  "/tweaks", "/edit", "/export", "/present", "/terminal",
-  "/init", "/review", "/clear", "/cost", "/model", "/compact", "/undo", "/resume",
+  "/tweaks",
+  "/edit",
+  "/export",
+  "/present",
+  "/terminal",
+  "/init",
+  "/review",
+  "/clear",
+  "/cost",
+  "/model",
+  "/compact",
+  "/undo",
+  "/resume",
 ]);
 
 function validateSkillInput(input) {
@@ -101,13 +116,18 @@ function validateSkillInput(input) {
   const body = typeof input.body === "string" ? input.body : "";
   if (body.trim().length < 20) errors.push("instructions must be at least 20 characters");
   if (body.length > 100_000) errors.push("skill body too large (100kb max)");
-  if (body && /\b(ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|Bearer\s+[A-Za-z0-9\-_.]{20,})/i.test(body)) {
+  if (
+    body &&
+    /\b(ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|Bearer\s+[A-Za-z0-9\-_.]{20,})/i.test(body)
+  ) {
     errors.push("remove tokens / secrets from instructions before saving");
   }
 
   let trigger = typeof input.trigger === "string" ? input.trigger.trim() : "";
   if (trigger && !/^\/[a-z0-9:_-]{1,40}$/i.test(trigger)) {
-    errors.push("command must start with / and use alphanumerics, hyphens or underscores (max 40 chars)");
+    errors.push(
+      "command must start with / and use alphanumerics, hyphens or underscores (max 40 chars)",
+    );
   } else if (!trigger) {
     trigger = "/" + slugifyName(name);
   }
@@ -118,7 +138,9 @@ function validateSkillInput(input) {
     trigger,
     description: typeof input.description === "string" ? input.description.trim() : null,
     body,
-    requires: Array.isArray(input.requires) ? input.requires.filter((value) => typeof value === "string") : null,
+    requires: Array.isArray(input.requires)
+      ? input.requires.filter((value) => typeof value === "string")
+      : null,
     override: input.override === true || input.override === "true" ? true : null,
     version: typeof input.version === "string" ? input.version.trim() : null,
   };
@@ -129,7 +151,8 @@ function serializeSkillMarkdown({ name, trigger, description, body, requires, ov
   lines.push(`name: ${JSON.stringify(name)}`);
   if (description) lines.push(`description: ${JSON.stringify(description)}`);
   if (trigger) lines.push(`trigger: "${trigger}"`);
-  if (requires?.length) lines.push(`requires: [${requires.map((value) => JSON.stringify(value)).join(", ")}]`);
+  if (requires?.length)
+    lines.push(`requires: [${requires.map((value) => JSON.stringify(value)).join(", ")}]`);
   if (override) lines.push("override: true");
   if (version) lines.push(`version: ${JSON.stringify(version)}`);
   lines.push("---", "", body);
@@ -138,9 +161,10 @@ function serializeSkillMarkdown({ name, trigger, description, body, requires, ov
 
 export async function installDfSkill(input, { repoRoot = resolveRepoRoot() } = {}) {
   const validated = validateSkillInput(input);
-  const rawSlug = typeof input.forceSlug === "string" && input.forceSlug.trim()
-    ? input.forceSlug
-    : (validated.trigger.replace(/^\//, "") || validated.name);
+  const rawSlug =
+    typeof input.forceSlug === "string" && input.forceSlug.trim()
+      ? input.forceSlug
+      : validated.trigger.replace(/^\//, "") || validated.name;
   const dir = join(repoRoot, "skills", slugifyName(rawSlug));
   const filePath = join(dir, "SKILL.md");
 
@@ -148,7 +172,9 @@ export async function installDfSkill(input, { repoRoot = resolveRepoRoot() } = {
     throw new Error(`skill already exists at ${filePath} - use update or pick a different command`);
   }
   if (RESERVED_TRIGGERS.has(validated.trigger) && !validated.override) {
-    throw new Error(`${validated.trigger} is reserved by a built-in - set override:true to replace it`);
+    throw new Error(
+      `${validated.trigger} is reserved by a built-in - set override:true to replace it`,
+    );
   }
 
   await mkdir(dir, { recursive: true });

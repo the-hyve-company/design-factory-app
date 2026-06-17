@@ -24,19 +24,30 @@ export interface SkillsModalLabProps {
   onImported: (skill: Skill) => void;
 }
 
-export function SkillsModalLab({ open, initialMode = "create", onClose, registry, onCreated, onImported }: SkillsModalLabProps) {
+export function SkillsModalLab({
+  open,
+  initialMode = "create",
+  onClose,
+  registry,
+  onCreated,
+  onImported,
+}: SkillsModalLabProps) {
   if (!open) return null;
 
   return createPortal(
     <div
       className="np-modal-backdrop"
       role="presentation"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="np-modal-card dsl-card" role="dialog" aria-modal="true" aria-label="Skills">
         <header className="np-modal-face">
           <span className="np-modal-face-sheen" aria-hidden="true" />
-          <div className="np-modal-face-mark is-active"><Logo size={22} /></div>
+          <div className="np-modal-face-mark is-active">
+            <Logo size={22} />
+          </div>
           <div className="np-modal-face-title-slot">
             <div className="np-modal-face-kicker">skills</div>
             <div className="np-modal-face-title-input" style={{ pointerEvents: "none" }}>
@@ -44,7 +55,9 @@ export function SkillsModalLab({ open, initialMode = "create", onClose, registry
             </div>
           </div>
           <button type="button" className="np-modal-close" onClick={onClose} aria-label="Fechar">
-            <span className="np-modal-close-glyph" aria-hidden="true"><X size={16} strokeWidth={2} /></span>
+            <span className="np-modal-close-glyph" aria-hidden="true">
+              <X size={16} strokeWidth={2} />
+            </span>
           </button>
         </header>
 

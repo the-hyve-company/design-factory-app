@@ -42,7 +42,10 @@ export interface UseSkillRegistry {
 }
 
 const EMPTY_BY_SOURCE: Record<SkillSource, Skill[]> = {
-  df: [], project: [], global: [], builtin: [],
+  df: [],
+  project: [],
+  global: [],
+  builtin: [],
 };
 
 // Precedence order when the user doesn't explicitly pick a collision winner.
@@ -85,9 +88,7 @@ function groupByTrigger(skills: Skill[]): Map<string, Skill[]> {
   return map;
 }
 
-export function useSkillRegistry(
-  cwd: string | null | undefined,
-): UseSkillRegistry {
+export function useSkillRegistry(cwd: string | null | undefined): UseSkillRegistry {
   const [registry, setRegistry] = useState<SkillsRegistry | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,14 +137,17 @@ export function useSkillRegistry(
   const bySource = registry ? groupBySource(skills) : EMPTY_BY_SOURCE;
   const byTrigger = groupByTrigger(skills);
 
-  const lookup = useCallback((trigger: string): CollisionLookup => {
-    const matches = byTrigger.get(trigger) ?? [];
-    return {
-      matches,
-      resolved: resolveCollision(matches),
-      hasCollision: matches.length > 1,
-    };
-  }, [byTrigger]);
+  const lookup = useCallback(
+    (trigger: string): CollisionLookup => {
+      const matches = byTrigger.get(trigger) ?? [];
+      return {
+        matches,
+        resolved: resolveCollision(matches),
+        hasCollision: matches.length > 1,
+      };
+    },
+    [byTrigger],
+  );
 
   return {
     registry,

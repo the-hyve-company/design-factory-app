@@ -74,9 +74,13 @@ export function ToolEventBubble({ event, defaultExpanded = false, onSelect }: Pr
     case "tool_call":
       return <ToolCallBubble event={event} defaultExpanded={defaultExpanded} onSelect={onSelect} />;
     case "tool_result":
-      return <ToolResultBubble event={event} defaultExpanded={defaultExpanded} onSelect={onSelect} />;
+      return (
+        <ToolResultBubble event={event} defaultExpanded={defaultExpanded} onSelect={onSelect} />
+      );
     case "tool_error":
-      return <ToolErrorBubble event={event} defaultExpanded={defaultExpanded} onSelect={onSelect} />;
+      return (
+        <ToolErrorBubble event={event} defaultExpanded={defaultExpanded} onSelect={onSelect} />
+      );
   }
 }
 
@@ -119,9 +123,7 @@ function ToolResultBubble({
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const truncated = event.output.length > OUTPUT_TRUNCATE_LIMIT;
-  const display = truncated
-    ? `${event.output.slice(0, OUTPUT_TRUNCATE_LIMIT)}\n…`
-    : event.output;
+  const display = truncated ? `${event.output.slice(0, OUTPUT_TRUNCATE_LIMIT)}\n…` : event.output;
   const summary = collapseToOneLine(event.output, 140) || `result · ${event.toolCallId}`;
   return (
     <Shell
@@ -362,7 +364,7 @@ export function ToolEventStream({
     <div data-tool-event-stream style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {events.map((ev, i) => (
         <ToolEventBubble
-          key={`${ev.provider}-${(ev.type === "tool_call" ? ev.id : ev.toolCallId)}-${ev.type}-${i}`}
+          key={`${ev.provider}-${ev.type === "tool_call" ? ev.id : ev.toolCallId}-${ev.type}-${i}`}
           event={ev}
           defaultExpanded={defaultExpanded}
           onSelect={onSelect}

@@ -30,21 +30,29 @@ function load(): DiagEntry[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.slice(-MAX_ENTRIES) : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 function save() {
   if (typeof localStorage === "undefined") return;
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(buffer.slice(-MAX_ENTRIES))); }
-  catch { /* quota */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(buffer.slice(-MAX_ENTRIES)));
+  } catch {
+    /* quota */
+  }
 }
 
 function stringifyDetail(detail: unknown): string | undefined {
   if (detail == null) return undefined;
   if (typeof detail === "string") return detail;
   if (detail instanceof Error) return `${detail.name}: ${detail.message}\n${detail.stack ?? ""}`;
-  try { return JSON.stringify(detail, null, 2).slice(0, 4000); }
-  catch { return String(detail).slice(0, 4000); }
+  try {
+    return JSON.stringify(detail, null, 2).slice(0, 4000);
+  } catch {
+    return String(detail).slice(0, 4000);
+  }
 }
 
 export function pushDiag(level: DiagLevel, scope: string, message: string, detail?: unknown) {
@@ -58,7 +66,11 @@ export function pushDiag(level: DiagLevel, scope: string, message: string, detai
   buffer.push(entry);
   if (buffer.length > MAX_ENTRIES) buffer = buffer.slice(-MAX_ENTRIES);
   save();
-  listeners.forEach((l) => { try { l(buffer); } catch {} });
+  listeners.forEach((l) => {
+    try {
+      l(buffer);
+    } catch {}
+  });
 }
 
 export function getDiag(): DiagEntry[] {
@@ -67,13 +79,19 @@ export function getDiag(): DiagEntry[] {
 
 export function subscribeDiag(fn: Listener): () => void {
   listeners.add(fn);
-  return () => { listeners.delete(fn); };
+  return () => {
+    listeners.delete(fn);
+  };
 }
 
 export function clearDiag() {
   buffer = [];
   save();
-  listeners.forEach((l) => { try { l(buffer); } catch {} });
+  listeners.forEach((l) => {
+    try {
+      l(buffer);
+    } catch {}
+  });
 }
 
 export interface DiagSnapshot {
@@ -106,9 +124,10 @@ export function snapshot(): DiagSnapshot {
     takenAt: new Date().toISOString(),
     userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
     url: typeof window !== "undefined" ? window.location.href : "",
-    buildMode: typeof import.meta !== "undefined" && (import.meta as any).env?.MODE
-      ? String((import.meta as any).env.MODE)
-      : "unknown",
+    buildMode:
+      typeof import.meta !== "undefined" && (import.meta as any).env?.MODE
+        ? String((import.meta as any).env.MODE)
+        : "unknown",
     storage: { used, keyCount: keys.length, keys },
     entries: [...buffer],
   };
@@ -119,7 +138,9 @@ export async function copySnapshotToClipboard(): Promise<boolean> {
     const text = JSON.stringify(snapshot(), null, 2);
     await navigator.clipboard.writeText(text);
     return true;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 // ─── Install global hooks ─────────────────────────────────────────────────
@@ -134,7 +155,9 @@ export function installDiagnostics() {
   if (typeof window !== "undefined") {
     window.addEventListener("error", (ev) => {
       pushDiag("error", "window.error", ev.message, {
-        filename: ev.filename, lineno: ev.lineno, colno: ev.colno,
+        filename: ev.filename,
+        lineno: ev.lineno,
+        colno: ev.colno,
         stack: ev.error?.stack,
       });
     });
@@ -145,10 +168,14 @@ export function installDiagnostics() {
     });
     window.addEventListener("df-dev-log", (ev) => {
       const d = (ev as CustomEvent).detail || {};
-      const level: DiagLevel = d.level === "error" ? "error"
-        : d.level === "warn" ? "warn"
-        : d.level === "debug" ? "debug"
-        : "info";
+      const level: DiagLevel =
+        d.level === "error"
+          ? "error"
+          : d.level === "warn"
+            ? "warn"
+            : d.level === "debug"
+              ? "debug"
+              : "info";
       pushDiag(level, "dev-log", d.message || "(no message)", d);
     });
   }
@@ -161,19 +188,27 @@ export function installDiagnostics() {
     console.error = (...args: unknown[]) => {
       origError(...args);
       const first = args[0];
-      const scope = typeof first === "string" && /^\[([a-z0-9-]+)\]/i.test(first)
-        ? first.match(/^\[([a-z0-9-]+)\]/i)![1]
-        : "console";
-      const msg = args.map((a) => typeof a === "string" ? a : stringifyDetail(a) ?? "").join(" ").slice(0, 1000);
+      const scope =
+        typeof first === "string" && /^\[([a-z0-9-]+)\]/i.test(first)
+          ? first.match(/^\[([a-z0-9-]+)\]/i)![1]
+          : "console";
+      const msg = args
+        .map((a) => (typeof a === "string" ? a : (stringifyDetail(a) ?? "")))
+        .join(" ")
+        .slice(0, 1000);
       pushDiag("error", scope, msg, args.length > 1 ? args.slice(1) : undefined);
     };
     console.warn = (...args: unknown[]) => {
       origWarn(...args);
       const first = args[0];
-      const scope = typeof first === "string" && /^\[([a-z0-9-]+)\]/i.test(first)
-        ? first.match(/^\[([a-z0-9-]+)\]/i)![1]
-        : "console";
-      const msg = args.map((a) => typeof a === "string" ? a : stringifyDetail(a) ?? "").join(" ").slice(0, 1000);
+      const scope =
+        typeof first === "string" && /^\[([a-z0-9-]+)\]/i.test(first)
+          ? first.match(/^\[([a-z0-9-]+)\]/i)![1]
+          : "console";
+      const msg = args
+        .map((a) => (typeof a === "string" ? a : (stringifyDetail(a) ?? "")))
+        .join(" ")
+        .slice(0, 1000);
       pushDiag("warn", scope, msg, args.length > 1 ? args.slice(1) : undefined);
     };
   }

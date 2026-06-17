@@ -23,7 +23,7 @@ let repoRoot;
 let projectsRoot;
 let slug;
 
-const HTML_BIG = '<!DOCTYPE html><html><body>' + 'x'.repeat(300) + '</body></html>';
+const HTML_BIG = "<!DOCTYPE html><html><body>" + "x".repeat(300) + "</body></html>";
 function sha256(s) {
   return createHash("sha256").update(s, "utf8").digest("hex");
 }
@@ -33,7 +33,11 @@ beforeEach(async () => {
   // Make it a git repo (so `git rev-parse` resolves; not strictly required
   // because writeArtifactSafely resolves repoRoot from the caller, but
   // mirrors the production runtime).
-  try { execFileSync("git", ["init", "-q", repoRoot], { stdio: "pipe" }); } catch { /* fine */ }
+  try {
+    execFileSync("git", ["init", "-q", repoRoot], { stdio: "pipe" });
+  } catch {
+    /* fine */
+  }
   slug = `gooey-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   projectsRoot = join(repoRoot, "projects");
   await mkdir(join(projectsRoot, slug), { recursive: true });
@@ -56,7 +60,10 @@ describe("validateArtifactStaticP0Minimal", () => {
   });
 
   it("fails for HTML below the byte floor", () => {
-    const r = validateArtifactStaticP0Minimal({ type: "text/html", content: "<html><body>x</body></html>" });
+    const r = validateArtifactStaticP0Minimal({
+      type: "text/html",
+      content: "<html><body>x</body></html>",
+    });
     expect(r.ok).toBe(false);
     if (!r.ok) {
       expect(r.reason).toBe("below-min-bytes");
@@ -192,7 +199,9 @@ describe("writeArtifactSafely — failure modes", () => {
         content: "<html><body>too small</body></html>",
         repoRoot,
       });
-    } catch (e) { caught = e; }
+    } catch (e) {
+      caught = e;
+    }
     expect(caught).toBeTruthy();
     expect(caught.code).toBe("STATIC_FAIL");
     expect(caught.reason).toBe("below-min-bytes");
@@ -208,7 +217,9 @@ describe("writeArtifactSafely — failure modes", () => {
         content: huge,
         repoRoot,
       });
-    } catch (e) { caught = e; }
+    } catch (e) {
+      caught = e;
+    }
     expect(caught.code).toBe("OVERSIZE");
   });
 
@@ -221,7 +232,9 @@ describe("writeArtifactSafely — failure modes", () => {
         content: HTML_BIG,
         repoRoot,
       });
-    } catch (e) { caught = e; }
+    } catch (e) {
+      caught = e;
+    }
     expect(caught).toBeTruthy();
     expect(caught.name).toBe("PathScopeError");
   });
@@ -241,7 +254,9 @@ describe("writeArtifactSafely — failure modes", () => {
         content: "<html>tiny</html>",
         repoRoot,
       });
-    } catch (e) { caught = e; }
+    } catch (e) {
+      caught = e;
+    }
     expect(caught.code).toBe("STATIC_FAIL");
     // Previous good file untouched.
     const onDisk = await readFile(first.finalPath, "utf8");
@@ -252,7 +267,9 @@ describe("writeArtifactSafely — failure modes", () => {
     let caught = null;
     try {
       await writeArtifactSafely({ identifier: "", type: "text/html", content: HTML_BIG, repoRoot });
-    } catch (e) { caught = e; }
+    } catch (e) {
+      caught = e;
+    }
     expect(caught.code).toBe("BAD_REQUEST");
   });
 
@@ -265,7 +282,9 @@ describe("writeArtifactSafely — failure modes", () => {
         content: HTML_BIG,
         repoRoot,
       });
-    } catch (e) { caught = e; }
+    } catch (e) {
+      caught = e;
+    }
     expect(caught).toBeTruthy();
     // Either path-scope error (e.g. PATH_NO_SLUG) or PATH_INVALID — both
     // signal "not a valid file target".
@@ -312,12 +331,14 @@ describe("writeArtifactSafely — concurrency", () => {
     // guarantees the backup chain stays consistent (no torn renames).
     const tasks = [];
     for (let i = 0; i < 5; i++) {
-      tasks.push(writeArtifactSafely({
-        identifier: `projects/${slug}/index.html`,
-        type: "text/html",
-        content: HTML_BIG.replace("body", `body-${i}-${"y".repeat(50)}`),
-        repoRoot,
-      }));
+      tasks.push(
+        writeArtifactSafely({
+          identifier: `projects/${slug}/index.html`,
+          type: "text/html",
+          content: HTML_BIG.replace("body", `body-${i}-${"y".repeat(50)}`),
+          repoRoot,
+        }),
+      );
     }
     const results = await Promise.all(tasks);
     expect(results.every((r) => r.ok)).toBe(true);
@@ -415,7 +436,11 @@ describe("deleteArtifactSafely — happy path", () => {
     expect(r.deleted).toBe(true);
     // Verify the file is actually gone.
     let exists = true;
-    try { await stat(r.finalPath); } catch { exists = false; }
+    try {
+      await stat(r.finalPath);
+    } catch {
+      exists = false;
+    }
     expect(exists).toBe(false);
   });
 
@@ -431,9 +456,9 @@ describe("deleteArtifactSafely — happy path", () => {
 
 describe("deleteArtifactSafely — failure modes", () => {
   it("rejects empty path with BAD_REQUEST", async () => {
-    await expect(
-      deleteArtifactSafely({ requestedPath: "", repoRoot }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(deleteArtifactSafely({ requestedPath: "", repoRoot })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
   });
 
   it("rejects path that escapes scope", async () => {

@@ -48,13 +48,14 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
 
   const isNewCategory = categoryChoice === NEW_CAT_VALUE;
   const effectiveCategory = isNewCategory
-    ? newCategory.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+    ? newCategory
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "")
     : categoryChoice;
 
-  const canSubmit =
-    title.trim().length > 0 &&
-    effectiveCategory.length > 0 &&
-    !submitting;
+  const canSubmit = title.trim().length > 0 && effectiveCategory.length > 0 && !submitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -108,15 +109,14 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
       foot={
         <div className="dmv2-foot">
           <span className="dmv2-foot-stat">
-            {error ? <span style={{ color: "var(--df-accent-danger)" }}>{error}</span> : t("rules.new.foot.cmd")}
+            {error ? (
+              <span style={{ color: "var(--df-accent-danger)" }}>{error}</span>
+            ) : (
+              t("rules.new.foot.cmd")
+            )}
           </span>
           <div className="dmv2-foot-actions">
-            <button
-              type="button"
-              className="dmv2-btn-text"
-              onClick={onClose}
-              disabled={submitting}
-            >
+            <button type="button" className="dmv2-btn-text" onClick={onClose} disabled={submitting}>
               {t("rules.new.cancel")}
             </button>
             <button
@@ -133,7 +133,9 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
     >
       <div className="rcm-form" onKeyDown={handleKeyDown}>
         <div className="rcm-row">
-          <label className="rcm-label" htmlFor="rcm-title">{t("rules.new.title.label")}</label>
+          <label className="rcm-label" htmlFor="rcm-title">
+            {t("rules.new.title.label")}
+          </label>
           <input
             id="rcm-title"
             className="rcm-input"
@@ -147,7 +149,9 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
         </div>
 
         <div className="rcm-row">
-          <label className="rcm-label" htmlFor="rcm-cat">{t("rules.new.cat.label")}</label>
+          <label className="rcm-label" htmlFor="rcm-cat">
+            {t("rules.new.cat.label")}
+          </label>
           <select
             id="rcm-cat"
             className="rcm-select"
@@ -155,7 +159,9 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
             onChange={(e) => setCategoryChoice(e.target.value)}
           >
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.label}</option>
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
             ))}
             {/* Allow user to spawn a new category. */}
             {!RULE_CATEGORIES.some((rc) => rc.id === NEW_CAT_VALUE) && (
@@ -166,7 +172,9 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
 
         {isNewCategory && (
           <div className="rcm-row">
-            <label className="rcm-label" htmlFor="rcm-newcat">{t("rules.new.newcat.label")}</label>
+            <label className="rcm-label" htmlFor="rcm-newcat">
+              {t("rules.new.newcat.label")}
+            </label>
             <input
               id="rcm-newcat"
               className="rcm-input"
@@ -181,7 +189,9 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
         )}
 
         <div className="rcm-row">
-          <label className="rcm-label" htmlFor="rcm-desc">{t("rules.new.desc.label")}</label>
+          <label className="rcm-label" htmlFor="rcm-desc">
+            {t("rules.new.desc.label")}
+          </label>
           <input
             id="rcm-desc"
             className="rcm-input"

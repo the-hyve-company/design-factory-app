@@ -88,12 +88,7 @@ export function isSuspiciousDone(input: SuspiciousDoneInput): boolean {
  *  but carries extra info the in-memory hook needs while a stream is
  *  live. The persisted journal still uses AiStatus values; this is just
  *  the runtime view. */
-export type StreamLifecycleStatus =
-  | "idle"
-  | "streaming"
-  | "done"
-  | "error"
-  | "interrupted";
+export type StreamLifecycleStatus = "idle" | "streaming" | "done" | "error" | "interrupted";
 
 /** Watchdog state — caller (useClaude) keeps a single instance per
  *  active stream and resets it on each observable event. */
@@ -122,7 +117,11 @@ export function createIdleWatchdog(
     timer = setTimeout(() => {
       if (stopped) return;
       stopped = true;
-      try { onIdleTimeout(); } catch { /* swallow — caller decides */ }
+      try {
+        onIdleTimeout();
+      } catch {
+        /* swallow — caller decides */
+      }
     }, timeoutMs);
   };
 

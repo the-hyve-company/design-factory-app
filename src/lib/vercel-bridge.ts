@@ -127,7 +127,7 @@ export async function saveVercelConfig(input: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { ok: false, error: body?.error ?? `HTTP ${res.status}` };
     return { ok: true };
   } catch (err) {
@@ -155,7 +155,7 @@ export async function deployVercel(input: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { ok: false, error: body?.error ?? `HTTP ${res.status}` };
     return {
       ok: true,
@@ -196,7 +196,10 @@ export interface DeployStatusResult {
 
 /** poll a single Vercel deployment's readyState. Cheap (~80B),
  *  meant for 1.5s loops. Pass `teamId=""` to force personal scope. */
-export async function getDeployStatus(deploymentId: string, opts: { teamId?: string | null } = {}): Promise<DeployStatusResult> {
+export async function getDeployStatus(
+  deploymentId: string,
+  opts: { teamId?: string | null } = {},
+): Promise<DeployStatusResult> {
   try {
     const url = new URL(`${BRIDGE_URL}/deploy/vercel/status`);
     url.searchParams.set("id", deploymentId);
@@ -204,7 +207,7 @@ export async function getDeployStatus(deploymentId: string, opts: { teamId?: str
       url.searchParams.set("teamId", opts.teamId);
     }
     const res = await fetch(url.toString());
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok || body?.ok === false) {
       return {
         ok: false,
@@ -228,9 +231,13 @@ export async function getDeployStatus(deploymentId: string, opts: { teamId?: str
 export async function listVercelDeployments(limit = 5): Promise<DeployListResult> {
   try {
     const res = await fetch(`${BRIDGE_URL}/deploy/vercel/list?limit=${limit}`);
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { ok: false, deployments: [], error: body?.error ?? `HTTP ${res.status}` };
-    return { ok: !!body?.ok, deployments: Array.isArray(body?.deployments) ? body.deployments : [], error: body?.error };
+    return {
+      ok: !!body?.ok,
+      deployments: Array.isArray(body?.deployments) ? body.deployments : [],
+      error: body?.error,
+    };
   } catch (err) {
     return { ok: false, deployments: [], error: String(err) };
   }
@@ -240,9 +247,14 @@ export async function listVercelDeployments(limit = 5): Promise<DeployListResult
 export async function testVercelConnection(): Promise<ConnectionTestResult> {
   try {
     const res = await fetch(`${BRIDGE_URL}/deploy/vercel/test`);
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { ok: false, error: body?.error ?? `HTTP ${res.status}` };
-    return { ok: !!body?.ok, username: body?.username, teamLabel: body?.teamLabel, error: body?.error };
+    return {
+      ok: !!body?.ok,
+      username: body?.username,
+      teamLabel: body?.teamLabel,
+      error: body?.error,
+    };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
@@ -269,7 +281,7 @@ export interface VercelUserProfile {
 export async function getVercelUser(): Promise<VercelUserProfile> {
   try {
     const res = await fetch(`${BRIDGE_URL}/vercel/user`);
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { ok: false, error: body?.error ?? `HTTP ${res.status}` };
     return body as VercelUserProfile;
   } catch (err) {
@@ -301,16 +313,22 @@ export interface VercelProjectsResult {
 /** List the user's Vercel projects. Empty list when no token. :
  *  pass `teamId` to scope to a specific team; pass `""` to force
  *  personal scope; omit to use the saved teamId. */
-export async function listVercelProjects(opts: { limit?: number; search?: string; teamId?: string } = {}): Promise<VercelProjectsResult> {
+export async function listVercelProjects(
+  opts: { limit?: number; search?: string; teamId?: string } = {},
+): Promise<VercelProjectsResult> {
   try {
     const url = new URL(`${BRIDGE_URL}/vercel/projects`);
     if (opts.limit) url.searchParams.set("limit", String(opts.limit));
     if (opts.search) url.searchParams.set("search", opts.search);
     if (opts.teamId !== undefined) url.searchParams.set("teamId", opts.teamId);
     const res = await fetch(url.toString());
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { ok: false, projects: [], error: body?.error ?? `HTTP ${res.status}` };
-    return { ok: !!body?.ok, projects: Array.isArray(body?.projects) ? body.projects : [], error: body?.error };
+    return {
+      ok: !!body?.ok,
+      projects: Array.isArray(body?.projects) ? body.projects : [],
+      error: body?.error,
+    };
   } catch (err) {
     return { ok: false, projects: [], error: String(err) };
   }
@@ -336,9 +354,13 @@ export interface VercelTeamsResult {
 export async function listVercelTeams(): Promise<VercelTeamsResult> {
   try {
     const res = await fetch(`${BRIDGE_URL}/vercel/teams`);
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { ok: false, teams: [], error: body?.error ?? `HTTP ${res.status}` };
-    return { ok: !!body?.ok, teams: Array.isArray(body?.teams) ? body.teams : [], error: body?.error };
+    return {
+      ok: !!body?.ok,
+      teams: Array.isArray(body?.teams) ? body.teams : [],
+      error: body?.error,
+    };
   } catch (err) {
     return { ok: false, teams: [], error: String(err) };
   }
@@ -359,14 +381,17 @@ export interface VercelAllProjectsResult {
  *  replaces the bug-prone single-scope listVercelProjects in
  *  the publish dialog. Daemon fans out in parallel and de-duplicates
  *  by id, so callers don't need to manage scope. */
-export async function listVercelAllProjects(opts: { limit?: number; search?: string } = {}): Promise<VercelAllProjectsResult> {
+export async function listVercelAllProjects(
+  opts: { limit?: number; search?: string } = {},
+): Promise<VercelAllProjectsResult> {
   try {
     const url = new URL(`${BRIDGE_URL}/vercel/projects/all`);
     if (opts.limit) url.searchParams.set("limit", String(opts.limit));
     if (opts.search) url.searchParams.set("search", opts.search);
     const res = await fetch(url.toString());
-    const body = await res.json().catch(() => null) as any;
-    if (!res.ok) return { ok: false, projects: [], teams: [], error: body?.error ?? `HTTP ${res.status}` };
+    const body = (await res.json().catch(() => null)) as any;
+    if (!res.ok)
+      return { ok: false, projects: [], teams: [], error: body?.error ?? `HTTP ${res.status}` };
     return {
       ok: !!body?.ok,
       projects: Array.isArray(body?.projects) ? body.projects : [],
@@ -387,13 +412,16 @@ export type VercelProjectNameAvailability =
  *  inline validation surface for the "Create new" flow.
  *  Pass `teamId=""` to check personal scope. Omit to check against the
  *  saved teamId. */
-export async function checkVercelProjectName(name: string, opts: { teamId?: string } = {}): Promise<VercelProjectNameAvailability> {
+export async function checkVercelProjectName(
+  name: string,
+  opts: { teamId?: string } = {},
+): Promise<VercelProjectNameAvailability> {
   try {
     const url = new URL(`${BRIDGE_URL}/vercel/projects/check`);
     url.searchParams.set("name", name);
     if (opts.teamId !== undefined) url.searchParams.set("teamId", opts.teamId);
     const res = await fetch(url.toString());
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok || body?.ok === false) {
       return { ok: false, error: body?.error ?? `HTTP ${res.status}`, name: body?.name ?? name };
     }
@@ -426,8 +454,13 @@ export type VercelDeviceFlowStartResult =
 export async function vercelDeviceStart(): Promise<VercelDeviceFlowStartResult> {
   try {
     const res = await fetch(`${BRIDGE_URL}/vercel/device/start`, { method: "POST" });
-    const body = await res.json().catch(() => null) as any;
-    if (!res.ok) return { error: body?.error ?? `HTTP ${res.status}`, fallback: body?.fallback, hint: body?.hint };
+    const body = (await res.json().catch(() => null)) as any;
+    if (!res.ok)
+      return {
+        error: body?.error ?? `HTTP ${res.status}`,
+        fallback: body?.fallback,
+        hint: body?.hint,
+      };
     return body as VercelDeviceFlowStart;
   } catch (err) {
     return { error: String(err) };
@@ -447,7 +480,7 @@ export async function vercelDevicePoll(deviceCode: string): Promise<VercelDevice
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ deviceCode }),
     });
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { status: "error", error: body?.error ?? `HTTP ${res.status}` };
     return body as VercelDevicePollStatus;
   } catch (err) {

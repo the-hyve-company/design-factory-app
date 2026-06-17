@@ -35,11 +35,7 @@ const ClaudeStreamContext = createContext<UseClaudeReturn | null>(null);
 
 export function ClaudeStreamProvider({ children }: { children: ReactNode }) {
   const value = useClaudeState();
-  return (
-    <ClaudeStreamContext.Provider value={value}>
-      {children}
-    </ClaudeStreamContext.Provider>
-  );
+  return <ClaudeStreamContext.Provider value={value}>{children}</ClaudeStreamContext.Provider>;
 }
 
 /** Read the singleton Claude stream state. Must be called inside a
@@ -52,7 +48,7 @@ export function useClaudeStream(): UseClaudeReturn {
   if (!ctx) {
     throw new Error(
       "useClaudeStream() must be used inside <ClaudeStreamProvider>. " +
-      "Add the provider at the App level, above your Routes.",
+        "Add the provider at the App level, above your Routes.",
     );
   }
   return ctx;

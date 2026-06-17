@@ -92,10 +92,16 @@ export function ProviderBanner({ onOpenSettings }: Props) {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <svg
-          width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="var(--df-accent-warn, #d6a043)" strokeWidth="2"
-          strokeLinecap="round" strokeLinejoin="round"
-          style={{ flexShrink: 0 }} aria-hidden="true"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--df-accent-warn, #d6a043)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ flexShrink: 0 }}
+          aria-hidden="true"
         >
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="8" x2="12" y2="12" />
@@ -109,16 +115,24 @@ export function ProviderBanner({ onOpenSettings }: Props) {
         <button type="button" onClick={() => setShowPoint((v) => !v)} className="df-btn df-btn--sm">
           Apontar minha CLI
         </button>
-        <button type="button" onClick={() => onOpenSettings("providers")} className="df-btn df-btn--sm">
+        <button
+          type="button"
+          onClick={() => onOpenSettings("providers")}
+          className="df-btn df-btn--sm"
+        >
           Abrir Ajustes
         </button>
       </div>
 
       {showPoint && (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 10 }}>
+        <div
+          style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 10 }}
+        >
           <select value={pointId} onChange={(e) => setPointId(e.target.value)} aria-label="CLI">
             {CLI_AGENTS.map((a) => (
-              <option key={a.id} value={a.id}>{a.label}</option>
+              <option key={a.id} value={a.id}>
+                {a.label}
+              </option>
             ))}
           </select>
           <input
@@ -128,7 +142,9 @@ export function ProviderBanner({ onOpenSettings }: Props) {
             placeholder="caminho do executável (ex: C:\\Users\\voce\\.local\\bin\\claude.exe)"
             spellCheck={false}
             style={{ flex: 1, minWidth: 240, fontFamily: "var(--df-font-mono, monospace)" }}
-            onKeyDown={(e) => { if (e.key === "Enter" && pointPath.trim() && !saving) void handleSave(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && pointPath.trim() && !saving) void handleSave();
+            }}
           />
           <button
             type="button"
@@ -138,9 +154,12 @@ export function ProviderBanner({ onOpenSettings }: Props) {
           >
             {saving ? "Salvando…" : "Salvar"}
           </button>
-          {err && <span style={{ width: "100%", color: "var(--df-accent-warn, #d6a043)" }}>{err}</span>}
+          {err && (
+            <span style={{ width: "100%", color: "var(--df-accent-warn, #d6a043)" }}>{err}</span>
+          )}
           <span style={{ width: "100%", fontSize: "var(--df-text-xs, 12px)", opacity: 0.7 }}>
-            Dica: no terminal, <code>where claude</code> (Windows) ou <code>which claude</code> (Mac/Linux) mostra o caminho.
+            Dica: no terminal, <code>where claude</code> (Windows) ou <code>which claude</code>{" "}
+            (Mac/Linux) mostra o caminho.
           </span>
         </div>
       )}

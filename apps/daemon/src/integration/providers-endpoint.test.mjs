@@ -67,9 +67,9 @@ describe("GET /providers — registry contract", () => {
     // Lock the current public distribution. Promoting an adapter past
     // experimental requires updating this assertion alongside the
     // README/providers.md narrative.
-    expect(counts.stable).toBe(1);          // claude
-    expect(counts.beta).toBe(7);            // codex, gemini, anthropic, openai, gemini-api, openrouter, ollama
-    expect(counts.experimental).toBe(2);    // opencode, kimi
+    expect(counts.stable).toBe(1); // claude
+    expect(counts.beta).toBe(7); // codex, gemini, anthropic, openai, gemini-api, openrouter, ollama
+    expect(counts.experimental).toBe(2); // opencode, kimi
   });
 
   it("describeProvider returns the public-shape descriptor", () => {

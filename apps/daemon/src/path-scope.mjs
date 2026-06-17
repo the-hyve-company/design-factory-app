@@ -71,7 +71,7 @@ export function assertPathInScope(candidate, root) {
   if (!existing) {
     throw new PathScopeError(
       `candidate path has no resolvable ancestor: ${candidate}`,
-      "PATH_NO_ANCESTOR"
+      "PATH_NO_ANCESTOR",
     );
   }
   // Reconstruct full real path = realpath(existing ancestor) + missing tail.
@@ -87,7 +87,7 @@ export function assertPathInScope(candidate, root) {
   if (!matches && realCandidate !== root) {
     throw new PathScopeError(
       `path escapes scope: ${candidate} → ${realCandidate} (root=${root})`,
-      "PATH_OUT_OF_SCOPE"
+      "PATH_OUT_OF_SCOPE",
     );
   }
   return realCandidate;

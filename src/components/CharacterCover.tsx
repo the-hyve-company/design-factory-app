@@ -86,7 +86,7 @@ export function CharacterCover({ seed, accent, background }: CharacterCoverProps
     };
     // Row weights = probability of each cell being "on" in the LEFT half.
     // Head crown sparse, face medium, body dense, legs symmetric pair.
-    const weights = [0.10, 0.22, 0.55, 0.65, 0.55, 0.78, 0.82, 0.65, 0.25, 0.25, 0.00];
+    const weights = [0.1, 0.22, 0.55, 0.65, 0.55, 0.78, 0.82, 0.65, 0.25, 0.25, 0.0];
     for (let r = 0; r < ROWS - 1; r++) {
       const w = weights[r] ?? 0.4;
       for (let c = 0; c < HALF + 1; c++) {
@@ -109,7 +109,7 @@ export function CharacterCover({ seed, accent, background }: CharacterCoverProps
     // 1-2 cells from the centre. Carve them OUT of the head fill (set
     // to false) so they read as eyes; the render path paints them in
     // the accent color regardless of the grid state.
-    const eyeOffset = (hash & 1) ? 2 : 1;
+    const eyeOffset = hash & 1 ? 2 : 1;
     grid[3][HALF - eyeOffset] = false;
     grid[3][HALF + eyeOffset] = false;
     const eyeCells: Array<[number, number]> = [
@@ -146,7 +146,12 @@ export function CharacterCover({ seed, accent, background }: CharacterCoverProps
     <svg
       viewBox={`0 0 ${FRAME_W} ${FRAME_H}`}
       preserveAspectRatio="xMidYMid meet"
-      style={{ width: "100%", height: "100%", display: "block", background: background ?? "var(--df-bg-section)" }}
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "block",
+        background: background ?? "var(--df-bg-section)",
+      }}
       role="img"
       aria-label={`character cover ${seed}`}
     >
@@ -183,15 +188,7 @@ export function CharacterCover({ seed, accent, background }: CharacterCoverProps
       {eyes.map(([r, c]) => {
         const x = offsetX + c * CELL + CELL / 2;
         const y = offsetY + r * CELL + CELL / 2;
-        return (
-          <circle
-            key={`eye-${r}-${c}`}
-            cx={x}
-            cy={y}
-            r={CELL * 0.28}
-            fill={accentColor}
-          />
-        );
+        return <circle key={`eye-${r}-${c}`} cx={x} cy={y} r={CELL * 0.28} fill={accentColor} />;
       })}
     </svg>
   );

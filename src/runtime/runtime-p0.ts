@@ -87,10 +87,7 @@ export interface RuntimeMetrics {
   firstPaintMs: number;
 }
 
-export type RuntimeP0FailReason =
-  | "asset-404-critical"
-  | "console-error-critical"
-  | "fonts-failed";
+export type RuntimeP0FailReason = "asset-404-critical" | "console-error-critical" | "fonts-failed";
 
 export type CatastrophicReason =
   | "iframe-timeout"
@@ -168,7 +165,11 @@ export function runPreviewRuntimeP0(input: RuntimeP0Input): Promise<RuntimeP0Res
       messageListener = null;
       if (timeoutHandle) clearTimeout(timeoutHandle);
       timeoutHandle = null;
-      try { iframe.remove(); } catch { /* */ }
+      try {
+        iframe.remove();
+      } catch {
+        /* */
+      }
     };
 
     const settle = (result: RuntimeP0Result) => {
@@ -204,9 +205,10 @@ export function runPreviewRuntimeP0(input: RuntimeP0Input): Promise<RuntimeP0Res
     // — the preview-server is responsible for probe injection there. If the
     // caller gave us raw content, we inject the probe and mount via srcdoc.
     if (input.srcdoc != null) {
-      const probed = type === "image/svg+xml"
-        ? wrapSvgWithProbe(input.srcdoc)
-        : injectProbeIntoHtml(input.srcdoc);
+      const probed =
+        type === "image/svg+xml"
+          ? wrapSvgWithProbe(input.srcdoc)
+          : injectProbeIntoHtml(input.srcdoc);
       iframe.srcdoc = probed;
     } else if (input.src) {
       iframe.src = input.src;
@@ -253,7 +255,9 @@ function classifyMetrics(metrics: RuntimeMetrics): RuntimeP0Result {
   // crashed during initial parse. We still surface a generic
   // syntax-error-pre-paint reason to keep the diagnostic actionable.
   if (
-    metrics.consoleErrors.some((err) => /SyntaxError|Unexpected token|Unexpected end of input/i.test(err)) &&
+    metrics.consoleErrors.some((err) =>
+      /SyntaxError|Unexpected token|Unexpected end of input/i.test(err),
+    ) &&
     metrics.firstPaintMs < 200
   ) {
     return { status: "catastrophic", reason: "syntax-error-pre-paint", metrics };

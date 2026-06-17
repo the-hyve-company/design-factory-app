@@ -51,9 +51,7 @@ export function parseSkillZip(bytes: Uint8Array, fileName: string): ParsedSkillZ
   const extraFiles: Record<string, string> = {};
   for (const [path, entryBytes] of entries) {
     if (path === manifestPath) continue;
-    const rel = manifestDir && path.startsWith(manifestDir)
-      ? path.slice(manifestDir.length)
-      : path;
+    const rel = manifestDir && path.startsWith(manifestDir) ? path.slice(manifestDir.length) : path;
     if (!rel || rel.includes("..") || rel.startsWith("/")) continue;
     extraFiles[rel] = bytesToBase64(entryBytes);
   }

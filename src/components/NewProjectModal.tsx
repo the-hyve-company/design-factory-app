@@ -19,10 +19,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Logo } from "@/components/Logo";
-import {
-  NewProjectFormSkeu,
-  type NewProjectFormPayload,
-} from "@/components/NewProjectFormSkeu";
+import { NewProjectFormSkeu, type NewProjectFormPayload } from "@/components/NewProjectFormSkeu";
 import { useT } from "@/i18n";
 
 // Friendly suggested name so the Begin button is never blocked by an
@@ -121,9 +118,9 @@ export function NewProjectModal({ open, onClose, onCreate }: NewProjectModalProp
         aria-labelledby="np-modal-title"
       >
         {/* Faceplate — sheen on top, engraved title (editable input),
-          * key-style close. Rivets are intentionally absent so the
-          * topbar reads as a clean nameplate; the sheen sweep
-          * keyframe and the logo glow stay. */}
+         * key-style close. Rivets are intentionally absent so the
+         * topbar reads as a clean nameplate; the sheen sweep
+         * keyframe and the logo glow stay. */}
         <header className="np-modal-face">
           <span className="np-modal-face-sheen" aria-hidden="true" />
 
@@ -133,7 +130,7 @@ export function NewProjectModal({ open, onClose, onCreate }: NewProjectModalProp
           </div>
 
           {/* The title slot hosts the editable input; the kicker
-            * stays static above it. */}
+           * stays static above it. */}
           <div className="np-modal-face-title-slot">
             <div className="np-modal-face-kicker">{t("newproject.kicker")}</div>
             <input
@@ -156,12 +153,14 @@ export function NewProjectModal({ open, onClose, onCreate }: NewProjectModalProp
             onClick={onClose}
             aria-label={t("newproject.close.label")}
           >
-            <span className="np-modal-close-glyph" aria-hidden="true">×</span>
+            <span className="np-modal-close-glyph" aria-hidden="true">
+              ×
+            </span>
           </button>
         </header>
 
         {/* Body — skeu form on a recessed inner stage. v8: name lives on
-          * the faceplate, so the form starts at the prompt (no zone--name). */}
+         * the faceplate, so the form starts at the prompt (no zone--name). */}
         <div className="np-modal-stage">
           <NewProjectFormSkeu
             key={formKeyRef.current}

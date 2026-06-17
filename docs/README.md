@@ -5,16 +5,16 @@ GitHub Pages, use [index.md](index.md) as the docs entry point.
 
 ## Use the app
 
-| Doc | When to read |
-| --- | --- |
-| [Quickstart](quickstart.md) | Clone, install, connect a provider, create the first project. |
-| [Providers](providers.md) | Understand CLI detection, BYOK API keys, Ollama, readiness, and model support. |
+| Doc                                   | When to read                                                                   |
+| ------------------------------------- | ------------------------------------------------------------------------------ |
+| [Quickstart](quickstart.md)           | Clone, install, connect a provider, create the first project.                  |
+| [Providers](providers.md)             | Understand CLI detection, BYOK API keys, Ollama, readiness, and model support. |
 | [Troubleshooting](troubleshooting.md) | Provider auth, missing CLIs, daemon issues, Ollama, and common runtime errors. |
 
 ## Agent support
 
-| Doc | When to read |
-| --- | --- |
+| Doc                                 | When to read                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------ |
 | [Agent contract](agent-contract.md) | Instructions repository agents should follow when writing project files. |
 
 ## Docs site

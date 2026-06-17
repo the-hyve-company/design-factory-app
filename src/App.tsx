@@ -8,9 +8,23 @@ import { SkillCoverPreviewScreen } from "@/screens/SkillCoverPreviewScreen";
 import { DsPreviewScreen } from "@/screens/DsPreviewScreen";
 import type { DsEntry } from "@/types/ds";
 import { useProjects } from "@/hooks/useProjects";
-import { db, mkdirViaBridge, writeFile, readGlobalConfig, writeGlobalConfig, listDesignSystemsFromFilesystem } from "@/lib/claude-bridge";
+import {
+  db,
+  mkdirViaBridge,
+  writeFile,
+  readGlobalConfig,
+  writeGlobalConfig,
+  listDesignSystemsFromFilesystem,
+} from "@/lib/claude-bridge";
 import { setLang, t as tFn, type Lang } from "@/i18n";
-import { setFormatOverrides, setDirectionOverrides, setDisabledFormatIds, setDisabledDirectionIds, setCustomFormats, setCustomDirections } from "@/data/direction-data";
+import {
+  setFormatOverrides,
+  setDirectionOverrides,
+  setDisabledFormatIds,
+  setDisabledDirectionIds,
+  setCustomFormats,
+  setCustomDirections,
+} from "@/data/direction-data";
 import { warn } from "@/lib/error-surface";
 import { slugFromPath } from "@/lib/project-files";
 import {
@@ -27,7 +41,6 @@ import { ErrorToastDock } from "@/components/ErrorToastDock";
 import { OriginGuardBanner } from "@/components/OriginGuardBanner";
 import { startRecoverySync } from "@/lib/chat-recovery-sync";
 import { useThemeOverrides } from "@/hooks/useThemeOverrides";
-
 
 export type StartMode = "prototype" | "slide" | "template" | "other";
 
@@ -57,7 +70,9 @@ export function App() {
   // candidate-cover gallery instead of the regular app shell. Plain
   // query check — no router change, no nav menu, no link. Type
   // ?preview=skill-covers manually to open it.
-  const isCoverPreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "skill-covers";
+  const isCoverPreview =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("preview") === "skill-covers";
 
   // Mount theme override hook at the app root so user-customized color
   // tokens apply everywhere. Hook injects a <style id="df-theme-overrides">
@@ -112,7 +127,9 @@ export function App() {
       try {
         const lsLang = window.localStorage?.getItem("df_language");
         if (isDev && lsLang === "xx") nextLang = null;
-      } catch { /* swallow */ }
+      } catch {
+        /* swallow */
+      }
       if (nextLang) setLang(nextLang);
       // Apply user accent (single app-wide accent color, set in Settings →
       // Appearance). Falls back to the token default (olive) when unset.
@@ -175,7 +192,9 @@ export function App() {
               }
               setRulesUserSlot(parsed);
             }
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
       }
       if (fromFs?.builtin_rule_overrides && typeof fromFs.builtin_rule_overrides === "object") {
@@ -186,7 +205,9 @@ export function App() {
           try {
             const obj = JSON.parse(dbOver);
             if (obj && typeof obj === "object") setRulesBuiltinOverrides(obj as never);
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
       }
       const dbDisabled = await db.getSetting("rules_disabled").catch(() => null);
@@ -194,7 +215,9 @@ export function App() {
         try {
           const arr = JSON.parse(dbDisabled);
           if (Array.isArray(arr)) setDisabledRuleIds(arr);
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
 
       // category overrides + custom categories (Padrões mgmt)
@@ -206,7 +229,9 @@ export function App() {
           try {
             const arr = JSON.parse(dbCats);
             if (Array.isArray(arr)) setCustomRuleCategories(arr);
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
       }
       if (fromFs?.rule_category_overrides && typeof fromFs.rule_category_overrides === "object") {
@@ -217,7 +242,9 @@ export function App() {
           try {
             const obj = JSON.parse(dbCatOver);
             if (obj && typeof obj === "object") setCategoryLabelOverrides(obj as never);
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
       }
       if (Array.isArray(fromFs?.custom_format_categories)) {
@@ -228,14 +255,20 @@ export function App() {
           try {
             const arr = JSON.parse(dbFmtCats);
             if (Array.isArray(arr)) setCustomFormatCategories(arr);
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
       }
     })();
     (document.documentElement.style as unknown as { zoom?: string }).zoom = "1";
     const ORPHANS = [
-      "ui_zoom", "loader_selection", "loader_rotation_ms", "loader_transition_ms",
-      "default_agent", "initial_commands",
+      "ui_zoom",
+      "loader_selection",
+      "loader_rotation_ms",
+      "loader_transition_ms",
+      "default_agent",
+      "initial_commands",
     ];
     ORPHANS.forEach((k) => db.setSetting(k, "").catch(warn("setSetting:k")));
   }, []);
@@ -278,37 +311,112 @@ export function App() {
 
   return (
     <ClaudeStreamProvider>
-    <div style={{ height: "100%", position: "relative" }}>
-      <OriginGuardBanner />
-      <Suspense fallback={null}>
-      <Routes>
-        <Route path="/" element={<HomeRoute theme={theme} onThemeChange={handleThemeChange} openSettings={openSettings} projectsApi={projectsApi} />} />
-        <Route path="/templates" element={<HomeRoute theme={theme} onThemeChange={handleThemeChange} openSettings={openSettings} projectsApi={projectsApi} />} />
-        <Route path="/design-systems" element={<HomeRoute theme={theme} onThemeChange={handleThemeChange} openSettings={openSettings} projectsApi={projectsApi} />} />
-        <Route path="/directions" element={<HomeRoute theme={theme} onThemeChange={handleThemeChange} openSettings={openSettings} projectsApi={projectsApi} />} />
-        <Route path="/skills" element={<HomeRoute theme={theme} onThemeChange={handleThemeChange} openSettings={openSettings} projectsApi={projectsApi} />} />
+      <div style={{ height: "100%", position: "relative" }}>
+        <OriginGuardBanner />
+        <Suspense fallback={null}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <HomeRoute
+                  theme={theme}
+                  onThemeChange={handleThemeChange}
+                  openSettings={openSettings}
+                  projectsApi={projectsApi}
+                />
+              }
+            />
+            <Route
+              path="/templates"
+              element={
+                <HomeRoute
+                  theme={theme}
+                  onThemeChange={handleThemeChange}
+                  openSettings={openSettings}
+                  projectsApi={projectsApi}
+                />
+              }
+            />
+            <Route
+              path="/design-systems"
+              element={
+                <HomeRoute
+                  theme={theme}
+                  onThemeChange={handleThemeChange}
+                  openSettings={openSettings}
+                  projectsApi={projectsApi}
+                />
+              }
+            />
+            <Route
+              path="/directions"
+              element={
+                <HomeRoute
+                  theme={theme}
+                  onThemeChange={handleThemeChange}
+                  openSettings={openSettings}
+                  projectsApi={projectsApi}
+                />
+              }
+            />
+            <Route
+              path="/skills"
+              element={
+                <HomeRoute
+                  theme={theme}
+                  onThemeChange={handleThemeChange}
+                  openSettings={openSettings}
+                  projectsApi={projectsApi}
+                />
+              }
+            />
 
-        <Route path="/projects/:id" element={<EditorRoute theme={theme} onThemeChange={handleThemeChange} openSettings={openSettings} projectsApi={projectsApi} />} />
+            <Route
+              path="/projects/:id"
+              element={
+                <EditorRoute
+                  theme={theme}
+                  onThemeChange={handleThemeChange}
+                  openSettings={openSettings}
+                  projectsApi={projectsApi}
+                />
+              }
+            />
 
-        <Route path="/ds/:slug" element={<DsPreviewRoute theme={theme} onThemeChange={handleThemeChange} openSettings={openSettings} />} />
+            <Route
+              path="/ds/:slug"
+              element={
+                <DsPreviewRoute
+                  theme={theme}
+                  onThemeChange={handleThemeChange}
+                  openSettings={openSettings}
+                />
+              }
+            />
 
-        <Route path="/settings" element={<SettingsRoute theme={theme} onThemeChange={handleThemeChange} />} />
-        <Route path="/settings/:section" element={<SettingsRoute theme={theme} onThemeChange={handleThemeChange} />} />
+            <Route
+              path="/settings"
+              element={<SettingsRoute theme={theme} onThemeChange={handleThemeChange} />}
+            />
+            <Route
+              path="/settings/:section"
+              element={<SettingsRoute theme={theme} onThemeChange={handleThemeChange} />}
+            />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      </Suspense>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
 
-      {/* Diagnostics drawer — opened via ⌘⇧D keyboard shortcut or the
+        {/* Diagnostics drawer — opened via ⌘⇧D keyboard shortcut or the
           "Inspector" button in the editor footer. No floating button:
           the entry point is pinned to the status bar rather than a
           standalone FAB. */}
 
-      {/* Surfaces silent runtime failures (persist, load, schema drift, etc).
+        {/* Surfaces silent runtime failures (persist, load, schema drift, etc).
           Replaces the old `.catch(() => {})` patterns where the user
           had no idea something failed. See lib/error-surface.ts. */}
-      <ErrorToastDock />
-    </div>
+        <ErrorToastDock />
+      </div>
     </ClaudeStreamProvider>
   );
 }
@@ -331,13 +439,14 @@ interface SharedProps {
 
 function HomeRoute({ theme, onThemeChange, openSettings, projectsApi }: SharedProps) {
   const navigate = useNavigate();
-  const { projects, addProject, touchProject, removeProject, renameProject, duplicateProject } = projectsApi;
+  const { projects, addProject, touchProject, removeProject, renameProject, duplicateProject } =
+    projectsApi;
 
   const handleOpenProject = async (
     path: string,
     _name: string,
     _mode: "wireframe" | "hifi",
-    id: string
+    id: string,
   ) => {
     touchProject(id);
     mkdirViaBridge(path).catch(warn("mkdirViaBridge:path"));
@@ -369,10 +478,14 @@ function HomeRoute({ theme, onThemeChange, openSettings, projectsApi }: SharedPr
       await db.setSetting(`cwd:${p.id}`, cwdOverride.trim()).catch(warn("setSetting:cwd::p.id"));
     }
     if (initialPrompt && initialPrompt.trim()) {
-      await db.setSetting(`initialPrompt:${p.id}`, initialPrompt.trim()).catch(warn("setSetting:initialPrompt::p.id"));
+      await db
+        .setSetting(`initialPrompt:${p.id}`, initialPrompt.trim())
+        .catch(warn("setSetting:initialPrompt::p.id"));
     }
     if (extras?.rawPrompt && extras.rawPrompt.trim()) {
-      await db.setSetting(`rawPrompt:${p.id}`, extras.rawPrompt.trim()).catch(warn("setSetting:rawPrompt::p.id"));
+      await db
+        .setSetting(`rawPrompt:${p.id}`, extras.rawPrompt.trim())
+        .catch(warn("setSetting:rawPrompt::p.id"));
     }
     if (extras?.directionSelection) {
       await db
@@ -424,7 +537,9 @@ function HomeRoute({ theme, onThemeChange, openSettings, projectsApi }: SharedPr
           alert(`Failed to delete project: ${String(e instanceof Error ? e.message : e)}`);
         }
       }}
-      onDuplicateProject={(id) => { void duplicateProject(id); }}
+      onDuplicateProject={(id) => {
+        void duplicateProject(id);
+      }}
       onOpenDs={(entry) => navigate(`/ds/${dsSlug(entry)}`)}
     />
   );
@@ -451,25 +566,38 @@ function EditorRoute({ theme, onThemeChange, openSettings, projectsApi }: Shared
     (async () => {
       const rawMode = await db.getSetting(`startMode:${id}`).catch(() => null);
       if (cancelled) return;
-      setStartMode((rawMode === "slide" || rawMode === "template" || rawMode === "other") ? rawMode : "prototype");
+      setStartMode(
+        rawMode === "slide" || rawMode === "template" || rawMode === "other"
+          ? rawMode
+          : "prototype",
+      );
       const rawPrompt = await db.getSetting(`initialPrompt:${id}`).catch(() => null);
       if (cancelled) return;
       setInitialPrompt(rawPrompt || undefined);
-      if (rawPrompt) await db.setSetting(`initialPrompt:${id}`, "").catch(warn("setSetting:initialPrompt::id"));
+      if (rawPrompt)
+        await db.setSetting(`initialPrompt:${id}`, "").catch(warn("setSetting:initialPrompt::id"));
     })();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Redirect home only AFTER waiting ~600ms for projects[] to settle. If
   // the project shows up in that window (race resolves), we skip the
   // redirect entirely.
   useEffect(() => {
-    if (project) { setShouldRedirect(false); return; }
+    if (project) {
+      setShouldRedirect(false);
+      return;
+    }
     if (projects.length === 0) return;
     if (!id) return;
     const t = window.setTimeout(() => {
-      console.warn("[editor-route] project not found after grace, redirecting", { id, projectsLen: projects.length });
+      console.warn("[editor-route] project not found after grace, redirecting", {
+        id,
+        projectsLen: projects.length,
+      });
       setShouldRedirect(true);
     }, 600);
     return () => window.clearTimeout(t);
@@ -502,7 +630,10 @@ function EditorRoute({ theme, onThemeChange, openSettings, projectsApi }: Shared
       onThemeChange={onThemeChange}
       onHome={() => navigate("/")}
       onOpenSettings={() => openSettings()}
-      onDuplicateProject={(dupId) => { void duplicateProject(dupId); navigate("/"); }}
+      onDuplicateProject={(dupId) => {
+        void duplicateProject(dupId);
+        navigate("/");
+      }}
     />
   );
 }
@@ -521,8 +652,13 @@ function DsPreviewRoute({ theme, onThemeChange, openSettings }: Omit<SharedProps
       const fsList = await listDesignSystemsFromFilesystem();
       if (cancelled) return;
       if (fsList && fsList.length > 0) {
-        const match = fsList.find((d) => d.slug === slug || dsSlug({ path: d.path, name: d.name }) === slug);
-        if (!match) { setStatus("not-found"); return; }
+        const match = fsList.find(
+          (d) => d.slug === slug || dsSlug({ path: d.path, name: d.name }) === slug,
+        );
+        if (!match) {
+          setStatus("not-found");
+          return;
+        }
         setEntry({
           name: match.name,
           path: match.path,
@@ -536,12 +672,22 @@ function DsPreviewRoute({ theme, onThemeChange, openSettings }: Omit<SharedProps
       // Bridge reachable but empty — check DB before giving up.
       const raw = await db.getSetting("design_systems").catch(() => null);
       if (cancelled) return;
-      if (!raw) { setStatus("no-list"); return; }
+      if (!raw) {
+        setStatus("no-list");
+        return;
+      }
       try {
         const list = JSON.parse(raw);
-        if (!Array.isArray(list) || list.length === 0) { setStatus("no-list"); return; }
-        const match = list.find((x: any) => dsSlug({ path: x.path, name: x.name }) === slug) ?? null;
-        if (!match) { setStatus("not-found"); return; }
+        if (!Array.isArray(list) || list.length === 0) {
+          setStatus("no-list");
+          return;
+        }
+        const match =
+          list.find((x: any) => dsSlug({ path: x.path, name: x.name }) === slug) ?? null;
+        if (!match) {
+          setStatus("not-found");
+          return;
+        }
         setEntry({
           name: match.name ?? "design system",
           path: match.path,
@@ -551,23 +697,53 @@ function DsPreviewRoute({ theme, onThemeChange, openSettings }: Omit<SharedProps
           addedAt: match.addedAt ?? Date.now(),
         });
         setStatus("ok");
-      } catch { setStatus("not-found"); }
+      } catch {
+        setStatus("not-found");
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   if (status === "loading") return null;
   if (status !== "ok" || !entry) {
     return (
-      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: "var(--df-sp-5)", background: "var(--df-bg-base)" }}>
-        <div style={{ maxWidth: 480, textAlign: "center", color: "var(--df-text-secondary)", fontFamily: "var(--df-font-sans)" }}>
-          <h1 style={{ fontSize: "var(--df-text-xl)", color: "var(--df-text-primary)", marginBottom: 8 }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          padding: "var(--df-sp-5)",
+          background: "var(--df-bg-base)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 480,
+            textAlign: "center",
+            color: "var(--df-text-secondary)",
+            fontFamily: "var(--df-font-sans)",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "var(--df-text-xl)",
+              color: "var(--df-text-primary)",
+              marginBottom: 8,
+            }}
+          >
             {status === "no-list" ? "No design systems yet" : "Design system not found"}
           </h1>
           <p style={{ fontSize: "var(--df-text-sm)", lineHeight: 1.55, marginBottom: 18 }}>
-            {status === "no-list"
-              ? "You haven't added any DS. Create one from the design systems tab."
-              : <>No DS matches <code style={{ fontFamily: "var(--df-font-mono)" }}>{slug}</code>. It may have been renamed or removed.</>}
+            {status === "no-list" ? (
+              "You haven't added any DS. Create one from the design systems tab."
+            ) : (
+              <>
+                No DS matches <code style={{ fontFamily: "var(--df-font-mono)" }}>{slug}</code>. It
+                may have been renamed or removed.
+              </>
+            )}
           </p>
           <button className="df-btn df-btn--primary" onClick={() => navigate("/design-systems")}>
             Back to design systems
@@ -588,7 +764,10 @@ function DsPreviewRoute({ theme, onThemeChange, openSettings }: Omit<SharedProps
   );
 }
 
-function SettingsRoute({ theme, onThemeChange }: Omit<SharedProps, "openSettings" | "projectsApi">) {
+function SettingsRoute({
+  theme,
+  onThemeChange,
+}: Omit<SharedProps, "openSettings" | "projectsApi">) {
   const { section } = useParams<{ section?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -597,11 +776,16 @@ function SettingsRoute({ theme, onThemeChange }: Omit<SharedProps, "openSettings
   // label flips with language. Reads tFn at render
   // time — Settings re-renders when lang event fires (via useT) and the
   // wrapper passes the freshly-localized label as a prop.
-  const backLabel = !from || from === "/" ? tFn("settings.back.home")
-    : from.startsWith("/projects/") ? tFn("settings.back.project")
-    : from.startsWith("/ds/") ? tFn("settings.back.ds")
-    : from === "/design-systems" ? tFn("settings.back.designsystems")
-    : tFn("settings.back");
+  const backLabel =
+    !from || from === "/"
+      ? tFn("settings.back.home")
+      : from.startsWith("/projects/")
+        ? tFn("settings.back.project")
+        : from.startsWith("/ds/")
+          ? tFn("settings.back.ds")
+          : from === "/design-systems"
+            ? tFn("settings.back.designsystems")
+            : tFn("settings.back");
 
   return (
     <SettingsScreen

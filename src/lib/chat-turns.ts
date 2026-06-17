@@ -99,7 +99,13 @@ type RawLine =
   // assistant branch in legacyLinesToTurns auto-handles both because old
   // disk lines get migrated to "assistant" before parsing (see
   // migrateLegacyChatMessage).
-  | { role?: "user" | "assistant" | "claude"; text?: string; ts?: number; is_design?: boolean; parts_json?: string };
+  | {
+      role?: "user" | "assistant" | "claude";
+      text?: string;
+      ts?: number;
+      is_design?: boolean;
+      parts_json?: string;
+    };
 
 /** Detect whether a parsed JSONL line is in the new turn format. */
 export function isTurnLine(raw: unknown): raw is Turn {
@@ -204,6 +210,9 @@ export function parseChatJsonl(rawLines: ReadonlyArray<unknown>): Turn[] {
  *  + bare Node bridge contexts. Good enough for chat turn ids. */
 export function turnId(): string {
   // 8-4-4-4-12 hex
-  const hex = (n: number) => Math.floor(Math.random() * 16 ** n).toString(16).padStart(n, "0");
+  const hex = (n: number) =>
+    Math.floor(Math.random() * 16 ** n)
+      .toString(16)
+      .padStart(n, "0");
   return `${hex(8)}-${hex(4)}-${hex(4)}-${hex(4)}-${hex(8)}${hex(4)}`;
 }

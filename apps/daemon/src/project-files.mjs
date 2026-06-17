@@ -68,11 +68,7 @@ const EXT_TO_MIME = {
   ttf: "font/ttf",
 };
 
-const PREVIEWABLE_MIMES = new Set([
-  "text/html",
-  "image/svg+xml",
-  "application/xhtml+xml",
-]);
+const PREVIEWABLE_MIMES = new Set(["text/html", "image/svg+xml", "application/xhtml+xml"]);
 
 /** Lock acquire timeout for the registry — keep the same ceiling as
  *  artifact writes so a hung registry update can't block the request
@@ -86,16 +82,25 @@ const registryLocks = new Map();
 async function withRegistryLock(registryPath, fn) {
   const previous = registryLocks.get(registryPath) || Promise.resolve();
   let release;
-  const next = new Promise((r) => { release = r; });
-  registryLocks.set(registryPath, previous.then(() => next));
+  const next = new Promise((r) => {
+    release = r;
+  });
+  registryLocks.set(
+    registryPath,
+    previous.then(() => next),
+  );
 
   const timeoutErr = new Error(`registry lock acquire timeout: ${registryPath}`);
   timeoutErr.code = "REGISTRY_LOCK_TIMEOUT";
   let timeoutId = null;
   const waited = await Promise.race([
     previous.then(() => "ok"),
-    new Promise((_, reject) => { timeoutId = setTimeout(() => reject(timeoutErr), REGISTRY_LOCK_WAIT_MS); }),
-  ]).catch((err) => { throw err; });
+    new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(timeoutErr), REGISTRY_LOCK_WAIT_MS);
+    }),
+  ]).catch((err) => {
+    throw err;
+  });
   if (timeoutId) clearTimeout(timeoutId);
   if (waited !== "ok") throw timeoutErr;
 
@@ -105,9 +110,11 @@ async function withRegistryLock(registryPath, fn) {
     release();
     const current = registryLocks.get(registryPath);
     if (current) {
-      Promise.resolve(current).then(() => {
-        if (registryLocks.get(registryPath) === current) registryLocks.delete(registryPath);
-      }).catch(() => registryLocks.delete(registryPath));
+      Promise.resolve(current)
+        .then(() => {
+          if (registryLocks.get(registryPath) === current) registryLocks.delete(registryPath);
+        })
+        .catch(() => registryLocks.delete(registryPath));
     }
   }
 }
@@ -122,8 +129,10 @@ const VALID_ROLES = new Set(["primary", "variant", "doc", "prompt", "data", "ass
 export function validateRegistryShape(value) {
   if (!value || typeof value !== "object") return { error: "registry-not-object" };
   if (value.version !== REGISTRY_VERSION) return { error: `unsupported-version: ${value.version}` };
-  if (typeof value.primaryFile !== "string" || !value.primaryFile) return { error: "primaryFile-missing" };
-  if (typeof value.activeFile !== "string" || !value.activeFile) return { error: "activeFile-missing" };
+  if (typeof value.primaryFile !== "string" || !value.primaryFile)
+    return { error: "primaryFile-missing" };
+  if (typeof value.activeFile !== "string" || !value.activeFile)
+    return { error: "activeFile-missing" };
   if (!value.files || typeof value.files !== "object") return { error: "files-not-object" };
   // primaryFile must exist as a key in files.
   if (!Object.prototype.hasOwnProperty.call(value.files, value.primaryFile)) {
@@ -135,14 +144,19 @@ export function validateRegistryShape(value) {
   for (const [path, entry] of Object.entries(value.files)) {
     if (typeof path !== "string" || !path) return { error: "file-key-not-string" };
     if (!entry || typeof entry !== "object") return { error: `entry-not-object: ${path}` };
-    if (typeof entry.type !== "string" || !entry.type) return { error: `entry-type-missing: ${path}` };
+    if (typeof entry.type !== "string" || !entry.type)
+      return { error: `entry-type-missing: ${path}` };
     if (!VALID_ROLES.has(entry.role)) return { error: `entry-role-invalid: ${path}` };
-    if (typeof entry.previewable !== "boolean") return { error: `entry-previewable-not-bool: ${path}` };
+    if (typeof entry.previewable !== "boolean")
+      return { error: `entry-previewable-not-bool: ${path}` };
     if (typeof entry.createdAt !== "string") return { error: `entry-createdAt-missing: ${path}` };
     if (typeof entry.updatedAt !== "string") return { error: `entry-updatedAt-missing: ${path}` };
-    if (entry.title !== undefined && typeof entry.title !== "string") return { error: `entry-title-not-string: ${path}` };
-    if (entry.hash !== undefined && typeof entry.hash !== "string") return { error: `entry-hash-not-string: ${path}` };
-    if (entry.parent !== undefined && typeof entry.parent !== "string") return { error: `entry-parent-not-string: ${path}` };
+    if (entry.title !== undefined && typeof entry.title !== "string")
+      return { error: `entry-title-not-string: ${path}` };
+    if (entry.hash !== undefined && typeof entry.hash !== "string")
+      return { error: `entry-hash-not-string: ${path}` };
+    if (entry.parent !== undefined && typeof entry.parent !== "string")
+      return { error: `entry-parent-not-string: ${path}` };
   }
   return null;
 }
@@ -206,14 +220,25 @@ async function atomicWriteJson(absPath, value) {
   await ensureDir(dirname(absPath));
   // Use a unique tmp suffix so a concurrent writer (different lock holder
   // somehow) can't clobber our temp file mid-rename.
-  const tmp = absPath + ".tmp." + process.pid + "." + Date.now() + "." + Math.random().toString(36).slice(2, 8);
+  const tmp =
+    absPath +
+    ".tmp." +
+    process.pid +
+    "." +
+    Date.now() +
+    "." +
+    Math.random().toString(36).slice(2, 8);
   const json = JSON.stringify(value, null, 2) + "\n";
   await writeFile(tmp, json, "utf8");
   try {
     await rename(tmp, absPath);
   } catch (err) {
     // Cleanup tmp on rename failure (Windows: target-exists semantics).
-    try { await unlink(tmp); } catch { /* */ }
+    try {
+      await unlink(tmp);
+    } catch {
+      /* */
+    }
     throw err;
   }
 }
@@ -335,12 +360,16 @@ export async function inferRegistryFromFilesystem(slug, projectsRoot) {
     try {
       const buf = await readFile(f.abs);
       hash = sha256OfBuffer(buf);
-    } catch { /* unreadable — skip hash */ }
+    } catch {
+      /* unreadable — skip hash */
+    }
     try {
       const s = await stat(f.abs);
       mtime = s.mtime.toISOString();
       ctime = s.birthtime ? s.birthtime.toISOString() : mtime;
-    } catch { /* */ }
+    } catch {
+      /* */
+    }
     const key = `projects/${slug}/${f.relParts.join("/")}`;
     const entry = {
       type,
@@ -355,9 +384,7 @@ export async function inferRegistryFromFilesystem(slug, projectsRoot) {
 
   // Decide primaryFile.
   const primaryRel = pickPrimary(slug, fileRels);
-  const primaryKey = primaryRel
-    ? `projects/${slug}/${primaryRel}`
-    : `projects/${slug}/index.html`;
+  const primaryKey = primaryRel ? `projects/${slug}/${primaryRel}` : `projects/${slug}/index.html`;
 
   // If primary doesn't exist as an entry yet (no files on disk), synthesise.
   if (!filesMap[primaryKey]) {
@@ -446,7 +473,9 @@ export async function validateOrRebuild(slug, projectsRoot) {
   try {
     await writeRegistry(slug, projectsRoot, rebuilt);
   } catch (err) {
-    console.warn(`[project-files] write-back of rebuilt registry failed for ${slug}: ${err.message}`);
+    console.warn(
+      `[project-files] write-back of rebuilt registry failed for ${slug}: ${err.message}`,
+    );
   }
   return rebuilt;
 }
@@ -476,13 +505,14 @@ export async function upsertFile({ slug, projectsRoot, key, entry, setActive, se
     }
     const now = new Date().toISOString();
     const existing = registry.files[key];
-    const mergedRole = setPrimary ? "primary" : (entry.role || existing?.role || "variant");
+    const mergedRole = setPrimary ? "primary" : entry.role || existing?.role || "variant";
     const merged = {
       type: entry.type || existing?.type || "application/octet-stream",
       role: mergedRole,
-      previewable: typeof entry.previewable === "boolean"
-        ? entry.previewable
-        : (existing?.previewable ?? previewableForType(entry.type || existing?.type || "")),
+      previewable:
+        typeof entry.previewable === "boolean"
+          ? entry.previewable
+          : (existing?.previewable ?? previewableForType(entry.type || existing?.type || "")),
       createdAt: existing?.createdAt || now,
       updatedAt: now,
     };

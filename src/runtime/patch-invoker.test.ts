@@ -32,10 +32,8 @@ beforeEach(() => {
 
 describe("applyPatches — patch-edit regressions", () => {
   it("applies a single unique-match patch without falling back", () => {
-    const html = '<!DOCTYPE html><html><body><h1>Hello</h1></body></html>';
-    const result = applyPatches(html, [
-      { search: "<h1>Hello</h1>", replace: "<h1>Bonjour</h1>" },
-    ]);
+    const html = "<!DOCTYPE html><html><body><h1>Hello</h1></body></html>";
+    const result = applyPatches(html, [{ search: "<h1>Hello</h1>", replace: "<h1>Bonjour</h1>" }]);
 
     expect(result).not.toBeNull();
     if (result.html === null) throw new Error("expected applied result");
@@ -60,9 +58,9 @@ describe("applyPatches — patch-edit regressions", () => {
   });
 
   it("rejects not-found patch with reason=not-found (distinct from ambiguous)", () => {
-    const html = '<div>a</div>';
+    const html = "<div>a</div>";
     const result = applyPatches(html, [
-      { search: '<span>nope</span>', replace: '<span>yes</span>' },
+      { search: "<span>nope</span>", replace: "<span>yes</span>" },
     ]);
 
     if (result.html !== null) throw new Error("expected failure");
@@ -73,7 +71,7 @@ describe("applyPatches — patch-edit regressions", () => {
   it("applies patches sequentially — each sees the previous result", () => {
     // Without sequential application, the second patch could reference a
     // string that was just replaced in the first patch (silent bug).
-    const html = '<p>one</p><p>two</p>';
+    const html = "<p>one</p><p>two</p>";
     const result = applyPatches(html, [
       { search: "<p>one</p>", replace: "<p>uno</p>" },
       { search: "<p>two</p>", replace: "<p>dos</p>" },
@@ -87,7 +85,7 @@ describe("applyPatches — patch-edit regressions", () => {
   it("fails partway and reports failedAt index", () => {
     // First patch applies, second fails — we report which index failed so
     // the caller can either retry that patch or fall back wholesale.
-    const html = '<p>one</p>';
+    const html = "<p>one</p>";
     const result = applyPatches(html, [
       { search: "<p>one</p>", replace: "<p>uno</p>" },
       { search: "<p>two</p>", replace: "<p>dos</p>" },
@@ -103,7 +101,7 @@ describe("applyPatches — patch-edit regressions", () => {
     // comment, the LLM produces a precise patch, applyPatches succeeds,
     // and the file should contain ONLY the new comment — never a
     // concatenation of old + new.
-    const html = '<!DOCTYPE html><html><head><!-- old comment --></head><body></body></html>';
+    const html = "<!DOCTYPE html><html><head><!-- old comment --></head><body></body></html>";
     const result = applyPatches(html, [
       { search: "<!-- old comment -->", replace: "<!-- new comment -->" },
     ]);
@@ -194,8 +192,8 @@ describe("parsePatchResponse — fallback signals", () => {
     const raw = JSON.stringify({
       patches: [
         { search: "good", replace: "fine" },
-        { search: "" },                       // missing replace
-        { replace: "lonely" },                // missing search
+        { search: "" }, // missing replace
+        { replace: "lonely" }, // missing search
         { search: "also-good", replace: "" }, // empty replace is OK (deletion)
       ],
     });

@@ -14,15 +14,12 @@ function resolveBridgeUrl(): string {
   // The dev:web launcher sets VITE_BRIDGE_URL to the daemon's resolved port
   // (it picks a free one when 1421 is busy); otherwise fall back to the
   // default daemon port.
-  const env =
-    typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_BRIDGE_URL;
+  const env = typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_BRIDGE_URL;
   return env || "http://127.0.0.1:1421";
 }
 
 export const BRIDGE_URL: string = resolveBridgeUrl();
-const IS_TEST =
-  typeof process !== "undefined" &&
-  process.env?.VITEST === "true";
+const IS_TEST = typeof process !== "undefined" && process.env?.VITEST === "true";
 
 type BridgeStatus = { available: boolean; url: string; checkedAt: number };
 
@@ -102,9 +99,15 @@ export interface ToolResult {
 
 export interface ClaudeStreamEvent {
   type:
-    | "text" | "meta" | "usage" | "result" | "done" | "error"
-    | "tool_call" | "tool_result"
-    | "session"        // carries the CLI's session_id for --resume
+    | "text"
+    | "meta"
+    | "usage"
+    | "result"
+    | "done"
+    | "error"
+    | "tool_call"
+    | "tool_result"
+    | "session" // carries the CLI's session_id for --resume
     | "auth_required"; // stderr matched an auth-failure pattern
   content?: string;
   error?: string;
@@ -164,7 +167,7 @@ export interface StreamCallbacks {
 async function streamViaBridge(
   prompt: string,
   config: ClaudeConfig,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
 ): Promise<UnlistenFn> {
   const controller = new AbortController();
   (async () => {
@@ -208,7 +211,11 @@ async function streamViaBridge(
           }
           if (!dataStr) continue;
           let data: any;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           const logMsg = (level: string, message: string) =>
             window.dispatchEvent(new CustomEvent("df-dev-log", { detail: { level, message } }));
 
@@ -220,29 +227,42 @@ async function streamViaBridge(
             }
           } else if (event === "meta") {
             callbacks.onMeta?.(data as StreamMeta);
-            logMsg("info", `meta — model=${data.model ?? "?"}, ttft=${data.ttftMs ?? "?"}ms, cache_read=${data.cacheReadTokens ?? 0}, cache_create=${data.cacheCreationTokens ?? 0}`);
+            logMsg(
+              "info",
+              `meta — model=${data.model ?? "?"}, ttft=${data.ttftMs ?? "?"}ms, cache_read=${data.cacheReadTokens ?? 0}, cache_create=${data.cacheCreationTokens ?? 0}`,
+            );
           } else if (event === "usage") {
             callbacks.onUsage?.(data as StreamUsage);
-            logMsg("info", `usage — in=${data.inputTokens ?? 0} out=${data.outputTokens ?? 0} stop=${data.stopReason ?? "?"}`);
+            logMsg(
+              "info",
+              `usage — in=${data.inputTokens ?? 0} out=${data.outputTokens ?? 0} stop=${data.stopReason ?? "?"}`,
+            );
           } else if (event === "tool_call") {
             callbacks.onToolCall?.(data as ToolCall);
             logMsg("info", `tool_call — ${data.name}`);
           } else if (event === "tool_result") {
             callbacks.onToolResult?.(data as ToolResult);
-            logMsg("info", `tool_result — ${data.isError ? "error" : "ok"} ${(data.content ?? "").slice(0, 60)}`);
+            logMsg(
+              "info",
+              `tool_result — ${data.isError ? "error" : "ok"} ${(data.content ?? "").slice(0, 60)}`,
+            );
           } else if (event === "session" && typeof data.sessionId === "string") {
             callbacks.onSession?.(data.sessionId);
             logMsg("info", `session_id=${data.sessionId}`);
           } else if (event === "auth_required") {
-            const detail = typeof data.detail === "string" && data.detail
-              ? data.detail
-              : "Run `claude login` in your terminal.";
+            const detail =
+              typeof data.detail === "string" && data.detail
+                ? data.detail
+                : "Run `claude login` in your terminal.";
             callbacks.onAuthRequired?.(detail);
             logMsg("warn", `auth_required — ${detail}`);
           } else if (event === "result") {
             callbacks.onResult?.(data as StreamResult);
             const cost = typeof data.costUsd === "number" ? `$${data.costUsd.toFixed(4)}` : "?";
-            logMsg("info", `result — duration=${data.durationMs ?? "?"}ms, cost=${cost}, turns=${data.numTurns ?? "?"}`);
+            logMsg(
+              "info",
+              `result — duration=${data.durationMs ?? "?"}ms, cost=${cost}, turns=${data.numTurns ?? "?"}`,
+            );
           } else if (event === "done") {
             logMsg("info", `done — total ${full.length.toLocaleString()} chars`);
             callbacks.onDone(typeof data.content === "string" ? data.content : full);
@@ -269,7 +289,7 @@ async function streamViaBridge(
 export async function streamClaude(
   prompt: string,
   config: ClaudeConfig,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
 ): Promise<UnlistenFn> {
   // BUG-18: do NOT pre-gate on probeBridge() here. probeBridge shares a
   // singleton `probePromise` with the 8s health-check interval; under load
@@ -285,14 +305,11 @@ export async function streamClaude(
   return streamViaBridge(prompt, config, callbacks);
 }
 
-export async function claudeOnce(
-  prompt: string,
-  config: ClaudeConfig = {}
-): Promise<string> {
+export async function claudeOnce(prompt: string, config: ClaudeConfig = {}): Promise<string> {
   const status = await probeBridge();
   if (!status.available) {
     throw new Error(
-      `dev bridge not reachable at ${BRIDGE_URL}. Run \`npm run bridge\` (or use \`npm run dev:web\`).`
+      `dev bridge not reachable at ${BRIDGE_URL}. Run \`npm run bridge\` (or use \`npm run dev:web\`).`,
     );
   }
   const res = await fetch(`${BRIDGE_URL}/claude/once`, {
@@ -337,7 +354,9 @@ export async function listFolder(path?: string, showHidden?: boolean): Promise<F
     const data = await res.json().catch(() => null);
     if (!res.ok) return { error: data?.error || `HTTP ${res.status}` };
     return data;
-  } catch (e) { return { error: String(e) }; }
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
 export async function copyDirViaBridge(from: string, to: string): Promise<boolean> {
@@ -348,7 +367,9 @@ export async function copyDirViaBridge(from: string, to: string): Promise<boolea
       body: JSON.stringify({ from, to }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 export async function moveDirViaBridge(from: string, to: string): Promise<boolean> {
@@ -359,10 +380,15 @@ export async function moveDirViaBridge(from: string, to: string): Promise<boolea
       body: JSON.stringify({ from, to }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
-export async function writeBinaryViaBridge(path: string, base64: string): Promise<{ path: string; size: number } | null> {
+export async function writeBinaryViaBridge(
+  path: string,
+  base64: string,
+): Promise<{ path: string; size: number } | null> {
   try {
     const r = await fetch(`${BRIDGE_URL}/fs/write-base64`, {
       method: "POST",
@@ -371,7 +397,9 @@ export async function writeBinaryViaBridge(path: string, base64: string): Promis
     });
     if (!r.ok) return null;
     return await r.json();
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function mkdirViaBridge(path: string): Promise<boolean> {
@@ -380,7 +408,9 @@ export async function mkdirViaBridge(path: string): Promise<boolean> {
     url.searchParams.set("path", path);
     const res = await fetch(url.toString(), { method: "POST" });
     return res.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 /** Recursively remove a file or folder inside the projects/ root. Scoped
@@ -393,10 +423,18 @@ export async function removeFsEntryViaBridge(path: string): Promise<boolean> {
       body: JSON.stringify({ path }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
-export interface FsFile { path: string; size: number; mtime: number; isText: boolean; content: string }
+export interface FsFile {
+  path: string;
+  size: number;
+  mtime: number;
+  isText: boolean;
+  content: string;
+}
 
 export async function readFileViaBridge(path: string): Promise<FsFile | null> {
   try {
@@ -410,7 +448,9 @@ export async function readFileViaBridge(path: string): Promise<FsFile | null> {
     // callers don't have to special-case it.
     if (data && data.found === false) return null;
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /** Validates a string is real HTML, not a base64 data URI the bridge
@@ -425,7 +465,12 @@ export function isUsableHtmlContent(s: string | null | undefined): s is string {
   if (s.length < 50) return false;
   if (s.startsWith("data:")) return false;
   const trimmed = s.replace(/^﻿/, "").trimStart().slice(0, 200).toLowerCase();
-  return trimmed.includes("<!doctype") || trimmed.includes("<html") || trimmed.includes("<svg") || trimmed.includes("<?xml");
+  return (
+    trimmed.includes("<!doctype") ||
+    trimmed.includes("<html") ||
+    trimmed.includes("<svg") ||
+    trimmed.includes("<?xml")
+  );
 }
 
 /**
@@ -536,7 +581,9 @@ export async function writeFile(filePath: string, content: string): Promise<void
       body: JSON.stringify({ path: filePath, content }),
     });
   } catch (e) {
-    throw new Error(`Bridge unreachable at ${BRIDGE_URL} — can't persist ${filePath}. Start the dev bridge or run the Tauri app. (${String(e)})`);
+    throw new Error(
+      `Bridge unreachable at ${BRIDGE_URL} — can't persist ${filePath}. Start the dev bridge or run the Tauri app. (${String(e)})`,
+    );
   }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
@@ -565,7 +612,9 @@ export async function ghHasToken(): Promise<{ hasToken: boolean; source: string 
     if (!r.ok) return { hasToken: false, source: null };
     const data = await r.json();
     return { hasToken: !!data.hasToken, source: data.source ?? null };
-  } catch { return { hasToken: false, source: null }; }
+  } catch {
+    return { hasToken: false, source: null };
+  }
 }
 
 export interface GhDeviceFlowStart {
@@ -583,7 +632,9 @@ export async function ghDeviceStart(): Promise<GhDeviceFlowStart | { error: stri
     const data = await r.json().catch(() => null);
     if (!r.ok) return { error: data?.error || `HTTP ${r.status}` };
     return data;
-  } catch (e) { return { error: String(e) }; }
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
 export type GhDevicePollStatus =
@@ -602,17 +653,23 @@ export async function ghDevicePoll(deviceCode: string): Promise<GhDevicePollStat
     const data = await r.json().catch(() => null);
     if (!r.ok) return { status: "error", error: data?.error || `HTTP ${r.status}` };
     return data as GhDevicePollStatus;
-  } catch (e) { return { status: "error", error: String(e) }; }
+  } catch (e) {
+    return { status: "error", error: String(e) };
+  }
 }
 
 export async function ghDeviceLogout(): Promise<boolean> {
   try {
     const r = await fetch(`${BRIDGE_URL}/gh/device/logout`, { method: "POST" });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
-export async function ghListRepos(opts: { search?: string; pat?: string; limit?: number } = {}): Promise<{ repos: GithubRepo[] } | { error: string }> {
+export async function ghListRepos(
+  opts: { search?: string; pat?: string; limit?: number } = {},
+): Promise<{ repos: GithubRepo[] } | { error: string }> {
   try {
     const url = new URL(`${BRIDGE_URL}/gh/repos`);
     if (opts.search) url.searchParams.set("search", opts.search);
@@ -622,10 +679,15 @@ export async function ghListRepos(opts: { search?: string; pat?: string; limit?:
     const data = await r.json().catch(() => null);
     if (!r.ok) return { error: data?.error || `HTTP ${r.status}` };
     return data;
-  } catch (e) { return { error: String(e) }; }
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
-export async function gitSnapshot(cwd: string, label?: string): Promise<{ tag: string; sha: string; message: string } | { error: string }> {
+export async function gitSnapshot(
+  cwd: string,
+  label?: string,
+): Promise<{ tag: string; sha: string; message: string } | { error: string }> {
   try {
     const r = await fetch(`${BRIDGE_URL}/git/snapshot`, {
       method: "POST",
@@ -635,10 +697,15 @@ export async function gitSnapshot(cwd: string, label?: string): Promise<{ tag: s
     const data = await r.json().catch(() => null);
     if (!r.ok) return { error: data?.error || `HTTP ${r.status}` };
     return data;
-  } catch (e) { return { error: String(e) }; }
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
-export async function gitShallowClone(repoUrl: string, pat?: string): Promise<{ path: string; slug: string } | { error: string }> {
+export async function gitShallowClone(
+  repoUrl: string,
+  pat?: string,
+): Promise<{ path: string; slug: string } | { error: string }> {
   try {
     const r = await fetch(`${BRIDGE_URL}/git/shallow-clone`, {
       method: "POST",
@@ -648,7 +715,9 @@ export async function gitShallowClone(repoUrl: string, pat?: string): Promise<{ 
     const data = await r.json().catch(() => null);
     if (!r.ok) return { error: data?.error || `HTTP ${r.status}` };
     return data;
-  } catch (e) { return { error: String(e) }; }
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
 export async function gitCleanup(path: string): Promise<boolean> {
@@ -659,7 +728,9 @@ export async function gitCleanup(path: string): Promise<boolean> {
       body: JSON.stringify({ path }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -681,7 +752,9 @@ export async function listProjectsFromFilesystem(): Promise<FsProject[] | null> 
     const data = await r.json().catch(() => null);
     if (!Array.isArray(data?.projects)) return null;
     return data.projects as FsProject[];
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -704,8 +777,15 @@ export interface GlobalConfig {
    *  DEV-only. */
   language?: "pt" | "en" | "xx";
   default_provider?:
-    | "claude" | "codex" | "gemini" | "opencode" | "kimi"
-    | "anthropic" | "openai" | "gemini-api" | "openrouter"
+    | "claude"
+    | "codex"
+    | "gemini"
+    | "opencode"
+    | "kimi"
+    | "anthropic"
+    | "openai"
+    | "gemini-api"
+    | "openrouter"
     | "ollama";
   model?: string;
   skills_custom_path?: string;
@@ -716,18 +796,24 @@ export interface GlobalConfig {
   /** Per-id partial overrides for FORMATOS in direction-data. Each value
    *  is a Partial<Formato> — fields the user has edited. Defaults stay
    *  read-only in code; this map is merged on top at runtime. */
-  format_overrides?: Record<string, {
-    nome?: string;
-    descricao?: string;
-    prompt_prefix?: string;
-    anti_slop?: string[];
-  }>;
+  format_overrides?: Record<
+    string,
+    {
+      nome?: string;
+      descricao?: string;
+      prompt_prefix?: string;
+      anti_slop?: string[];
+    }
+  >;
   /** Per-id partial overrides for DIRECTIONS in direction-data. */
-  direction_overrides?: Record<string, {
-    nome?: string;
-    descricao?: string;
-    prompt_addon?: string;
-  }>;
+  direction_overrides?: Record<
+    string,
+    {
+      nome?: string;
+      descricao?: string;
+      prompt_addon?: string;
+    }
+  >;
   /** User-authored formats. Stored alongside the built-ins; the Settings
    *  editor allows creation, edit, delete (built-ins can only be edited or
    *  disabled). Each shape mirrors Formato exactly. */
@@ -786,7 +872,10 @@ export interface GlobalConfig {
   }>;
   /** Builtin rule overrides — partial patches keyed by id. Lets the
    *  user rename or re-categorize a builtin rule without losing it. */
-  builtin_rule_overrides?: Record<string, { title?: string; description?: string; category?: string }>;
+  builtin_rule_overrides?: Record<
+    string,
+    { title?: string; description?: string; category?: string }
+  >;
   /** user-authored rule categories — net-new rule
    *  categories beyond the framework defaults. */
   custom_rule_categories?: Array<{ id: string; label: string; hint?: string }>;
@@ -820,7 +909,9 @@ export async function readGlobalConfig(): Promise<GlobalConfig | null> {
   }
 }
 
-export async function writeGlobalConfig(patch: Partial<GlobalConfig>): Promise<GlobalConfig | null> {
+export async function writeGlobalConfig(
+  patch: Partial<GlobalConfig>,
+): Promise<GlobalConfig | null> {
   try {
     const r = await fetch(`${BRIDGE_URL}/config/write`, {
       method: "POST",
@@ -830,7 +921,9 @@ export async function writeGlobalConfig(patch: Partial<GlobalConfig>): Promise<G
     if (!r.ok) return null;
     const data = await r.json().catch(() => null);
     return (data?.config ?? null) as GlobalConfig | null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 // ─── Editorial commands (verbs) ─────────────────────────────────────────
@@ -844,7 +937,9 @@ export async function listCustomCommands(): Promise<{ id: string; body: string }
     if (!r.ok) return [];
     const data = await r.json().catch(() => null);
     return Array.isArray(data?.commands) ? data.commands : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export async function writeCustomCommand(id: string, body: string): Promise<boolean> {
@@ -855,7 +950,9 @@ export async function writeCustomCommand(id: string, body: string): Promise<bool
       body: JSON.stringify({ id, body }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 export async function deleteCustomCommand(id: string): Promise<boolean> {
@@ -866,7 +963,9 @@ export async function deleteCustomCommand(id: string): Promise<boolean> {
       body: JSON.stringify({ id }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -897,7 +996,9 @@ export async function listDesignSystemsFromFilesystem(): Promise<FsDesignSystem[
     const data = await r.json().catch(() => null);
     if (!Array.isArray(data?.designSystems)) return null;
     return data.designSystems as FsDesignSystem[];
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -926,7 +1027,9 @@ export async function appendChatMessage(
       body: JSON.stringify({ slug, threadId, message }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 export async function readChatMessages(
@@ -956,7 +1059,9 @@ export async function readChatMessages(
       };
     });
     return coerced;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1021,12 +1126,11 @@ export async function writeChatSnapshot(
   }
 }
 
-export async function readChatSnapshot(
-  slug: string,
-  threadId: string,
-): Promise<unknown[] | null> {
+export async function readChatSnapshot(slug: string, threadId: string): Promise<unknown[] | null> {
   try {
-    const r = await fetch(`${BRIDGE_URL}/fs/chat-snapshot?slug=${encodeURIComponent(slug)}&threadId=${encodeURIComponent(threadId)}`);
+    const r = await fetch(
+      `${BRIDGE_URL}/fs/chat-snapshot?slug=${encodeURIComponent(slug)}&threadId=${encodeURIComponent(threadId)}`,
+    );
     if (!r.ok) return null;
     const data = await r.json();
     return Array.isArray(data?.messages) ? (data.messages as unknown[]) : null;
@@ -1040,11 +1144,7 @@ export async function readChatSnapshot(
  * Append a complete turn to the JSONL log. Called once per turn at the
  * moment the AI side reaches a terminal state (done / error / cancelled).
  */
-export async function appendChatTurn(
-  slug: string,
-  threadId: string,
-  turn: Turn,
-): Promise<boolean> {
+export async function appendChatTurn(slug: string, threadId: string, turn: Turn): Promise<boolean> {
   try {
     // Validate before sending — catches bugs where we'd persist a turn
     // that's missing required fields. Throws on schema mismatch.
@@ -1059,8 +1159,13 @@ export async function appendChatTurn(
       // rejected, not just the HTTP code. Bridge logs the same on its
       // side via console.warn since 2026-04-29.
       let detail = "";
-      try { detail = await r.text(); } catch {}
-      console.error(`[appendChatTurn] HTTP ${r.status} for ${slug}/${threadId}, turn=${turn.id}`, detail.slice(0, 300));
+      try {
+        detail = await r.text();
+      } catch {}
+      console.error(
+        `[appendChatTurn] HTTP ${r.status} for ${slug}/${threadId}, turn=${turn.id}`,
+        detail.slice(0, 300),
+      );
       surfaceError(`HTTP ${r.status}: ${detail.slice(0, 120)}`, `appendChatTurn(${slug})`);
       return false;
     }
@@ -1188,7 +1293,9 @@ export async function removeProjectFolder(slug: string): Promise<boolean> {
       body: JSON.stringify({ slug }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -1205,7 +1312,9 @@ export async function removeDsFolder(slug: string): Promise<boolean> {
       body: JSON.stringify({ slug }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -1251,7 +1360,9 @@ export async function fetchWorkspaceInfo(): Promise<WorkspaceInfo | null> {
     const data = await r.json().catch(() => null);
     if (!data?.repoRoot) return null;
     return data as WorkspaceInfo;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1271,7 +1382,9 @@ export async function designSystemsDir(slug: string): Promise<string | null> {
     if (!r.ok) return null;
     const data = await r.json().catch(() => null);
     return data?.path ?? null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 // ─── Skills registry (source-classified) ─────────────────────────────────
@@ -1309,9 +1422,7 @@ export interface SkillsRegistry {
   truncated?: boolean;
 }
 
-export async function fetchSkillsRegistry(
-  cwd: string | null,
-): Promise<SkillsRegistry | null> {
+export async function fetchSkillsRegistry(cwd: string | null): Promise<SkillsRegistry | null> {
   const effectiveCwd = cwd || "";
   try {
     const u = new URL(`${BRIDGE_URL}/skills/registry`);
@@ -1319,7 +1430,9 @@ export async function fetchSkillsRegistry(
     const r = await fetch(u.toString());
     if (!r.ok) return null;
     return await r.json();
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export interface CreateSkillInput {
@@ -1356,11 +1469,16 @@ export async function installSkill(input: CreateSkillInput): Promise<Skill | { e
     const data = await r.json().catch(() => null);
     if (!r.ok) return { error: data?.error || `HTTP ${r.status}` };
     return data as Skill;
-  } catch (e) { return { error: String(e) }; }
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
 /** Edit an existing df-source skill (by id). */
-export async function updateSkill(id: string, patch: UpdateSkillInput): Promise<Skill | { error: string }> {
+export async function updateSkill(
+  id: string,
+  patch: UpdateSkillInput,
+): Promise<Skill | { error: string }> {
   try {
     const r = await fetch(`${BRIDGE_URL}/skills/${encodeURIComponent(id)}`, {
       method: "PATCH",
@@ -1370,7 +1488,9 @@ export async function updateSkill(id: string, patch: UpdateSkillInput): Promise<
     const data = await r.json().catch(() => null);
     if (!r.ok) return { error: data?.error || `HTTP ${r.status}` };
     return data as Skill;
-  } catch (e) { return { error: String(e) }; }
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
 /** Delete a df-source skill (by id). Idempotent. */
@@ -1378,7 +1498,9 @@ export async function deleteSkill(id: string): Promise<boolean> {
   try {
     const r = await fetch(`${BRIDGE_URL}/skills/${encodeURIComponent(id)}`, { method: "DELETE" });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 /** Parse YAML frontmatter from a SKILL.md text blob. Used for import previews. */
@@ -1404,7 +1526,10 @@ export function parseSkillMarkdown(raw: string): {
     const re = new RegExp(`^${key}\\s*:\\s*\\[([^\\]]*)\\]`, "m");
     const m = fm.match(re);
     if (!m) return [];
-    return m[1].split(",").map((s) => s.trim().replace(/^["'](.*)["']$/, "$1")).filter(Boolean);
+    return m[1]
+      .split(",")
+      .map((s) => s.trim().replace(/^["'](.*)["']$/, "$1"))
+      .filter(Boolean);
   };
   return {
     name: pick("name"),
@@ -1417,7 +1542,12 @@ export function parseSkillMarkdown(raw: string): {
   };
 }
 
-export async function fetchUrlViaBridge(url: string): Promise<{ url: string; status: number; contentType: string | null; html: string; size: number } | { error: string }> {
+export async function fetchUrlViaBridge(
+  url: string,
+): Promise<
+  | { url: string; status: number; contentType: string | null; html: string; size: number }
+  | { error: string }
+> {
   try {
     const u = new URL(`${BRIDGE_URL}/fetch-url`);
     u.searchParams.set("url", url);
@@ -1425,7 +1555,9 @@ export async function fetchUrlViaBridge(url: string): Promise<{ url: string; sta
     const data = await r.json().catch(() => null);
     if (!r.ok) return { error: data?.error || `HTTP ${r.status}` };
     return data;
-  } catch (e) { return { error: String(e) }; }
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
 // ─── Filesystem-backed project versions ──
@@ -1452,11 +1584,14 @@ export async function listProjectVersions(slug: string): Promise<BridgeVersion[]
     const data = await r.json().catch(() => null);
     if (!data || !Array.isArray(data.versions)) return null;
     return data.versions as BridgeVersion[];
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function saveProjectVersion(slug: string, version: BridgeVersion): Promise<boolean> {
-  if (!slug || !version || typeof version.id !== "string" || typeof version.html !== "string") return false;
+  if (!slug || !version || typeof version.id !== "string" || typeof version.html !== "string")
+    return false;
   try {
     const r = await fetch(`${BRIDGE_URL}/projects/${encodeURIComponent(slug)}/versions`, {
       method: "POST",
@@ -1464,29 +1599,40 @@ export async function saveProjectVersion(slug: string, version: BridgeVersion): 
       body: JSON.stringify({ version }),
     });
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 export async function readProjectVersion(slug: string, vid: string): Promise<BridgeVersion | null> {
   if (!slug || !vid) return null;
   try {
-    const r = await fetch(`${BRIDGE_URL}/projects/${encodeURIComponent(slug)}/versions/${encodeURIComponent(vid)}`);
+    const r = await fetch(
+      `${BRIDGE_URL}/projects/${encodeURIComponent(slug)}/versions/${encodeURIComponent(vid)}`,
+    );
     if (!r.ok) return null;
     const data = await r.json().catch(() => null);
-    return (data && typeof data === "object" && data.version && typeof data.version === "object")
+    return data && typeof data === "object" && data.version && typeof data.version === "object"
       ? (data.version as BridgeVersion)
       : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function deleteProjectVersion(slug: string, vid: string): Promise<boolean> {
   if (!slug || !vid) return false;
   try {
-    const r = await fetch(`${BRIDGE_URL}/projects/${encodeURIComponent(slug)}/versions/${encodeURIComponent(vid)}`, {
-      method: "DELETE",
-    });
+    const r = await fetch(
+      `${BRIDGE_URL}/projects/${encodeURIComponent(slug)}/versions/${encodeURIComponent(vid)}`,
+      {
+        method: "DELETE",
+      },
+    );
     return r.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 // ─── DB types ──────────────────────────────────────────────────────────────
@@ -1525,7 +1671,12 @@ export type ChatBlock =
   | { type: "text"; content: string }
   | { type: "tool_call"; callId: string; name: string; input: Record<string, unknown> }
   | { type: "tool_result"; callId: string; output: string; isError: boolean }
-  | { type: "question"; header: string; question: string; options: { label: string; description?: string }[] };
+  | {
+      type: "question";
+      header: string;
+      question: string;
+      options: { label: string; description?: string }[];
+    };
 
 export interface DbSession {
   id: string;
@@ -1567,7 +1718,11 @@ type LocalDb = {
 };
 
 const EMPTY_DB = (): LocalDb => ({
-  projects: [], messages: {}, settings: {}, skills: [], sessions: [],
+  projects: [],
+  messages: {},
+  settings: {},
+  skills: [],
+  sessions: [],
 });
 
 function readLocal(): LocalDb {
@@ -1592,8 +1747,9 @@ function readLocal(): LocalDb {
 
 function writeLocal(db: LocalDb) {
   if (typeof localStorage === "undefined") return;
-  try { localStorage.setItem(LS_KEY, JSON.stringify(db)); }
-  catch {}
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(db));
+  } catch {}
 }
 
 const uuid = () =>
@@ -1609,7 +1765,14 @@ export const db = {
   createProject: async (name: string, path: string, mode: string): Promise<DbProject> => {
     const d = readLocal();
     const now = Date.now();
-    const p: DbProject = { id: uuid(), name, path, mode: (mode as "wireframe" | "hifi"), created_at: now, updated_at: now };
+    const p: DbProject = {
+      id: uuid(),
+      name,
+      path,
+      mode: mode as "wireframe" | "hifi",
+      created_at: now,
+      updated_at: now,
+    };
     d.projects.unshift(p);
     writeLocal(d);
     return p;
@@ -1617,9 +1780,15 @@ export const db = {
   touchProject: async (id: string): Promise<void> => {
     const d = readLocal();
     const p = d.projects.find((x) => x.id === id);
-    if (p) { p.updated_at = Date.now(); writeLocal(d); }
+    if (p) {
+      p.updated_at = Date.now();
+      writeLocal(d);
+    }
   },
-  updateProject: async (id: string, fields: Partial<Pick<DbProject, "name" | "path" | "mode">>): Promise<void> => {
+  updateProject: async (
+    id: string,
+    fields: Partial<Pick<DbProject, "name" | "path" | "mode">>,
+  ): Promise<void> => {
     // Tauri side: fall back to touchProject — the command isn't wired yet.
     // Browser side: localStorage direct mutation.
     const d = readLocal();
@@ -1640,12 +1809,17 @@ export const db = {
   getMessages: async (projectId: string): Promise<DbMessage[]> => {
     return readLocal().messages[projectId] ?? [];
   },
-  saveMessage: async (projectId: string, role: string, content: string, isDesign: boolean): Promise<DbMessage> => {
+  saveMessage: async (
+    projectId: string,
+    role: string,
+    content: string,
+    isDesign: boolean,
+  ): Promise<DbMessage> => {
     const d = readLocal();
     const m: DbMessage = {
       id: uuid(),
       project_id: projectId,
-      role: (role as "user" | "assistant"),
+      role: role as "user" | "assistant",
       content,
       is_design: isDesign,
       created_at: Date.now(),
@@ -1666,8 +1840,9 @@ export const db = {
     const m: DbMessage = {
       id: uuid(),
       project_id: projectId,
-      role: (role as "user" | "assistant"),
-      content, is_design: isDesign,
+      role: role as "user" | "assistant",
+      content,
+      is_design: isDesign,
       created_at: Date.now(),
       parts_json,
     };
@@ -1678,22 +1853,37 @@ export const db = {
   setProjectSession: async (projectId: string, sessionId: string | null): Promise<void> => {
     const d = readLocal();
     const p = d.projects.find((x) => x.id === projectId);
-    if (p) { p.session_id = sessionId; p.updated_at = Date.now(); writeLocal(d); }
+    if (p) {
+      p.session_id = sessionId;
+      p.updated_at = Date.now();
+      writeLocal(d);
+    }
   },
   getProjectSession: async (projectId: string): Promise<string | null> => {
     const d = readLocal();
     return d.projects.find((x) => x.id === projectId)?.session_id ?? null;
   },
-  logSession: async (projectId: string, sessionId: string, cwd?: string | null): Promise<DbSession> => {
+  logSession: async (
+    projectId: string,
+    sessionId: string,
+    cwd?: string | null,
+  ): Promise<DbSession> => {
     const d = readLocal();
-    const row: DbSession = { id: uuid(), project_id: projectId, session_id: sessionId, cwd: cwd ?? null, started_at: Date.now() };
+    const row: DbSession = {
+      id: uuid(),
+      project_id: projectId,
+      session_id: sessionId,
+      cwd: cwd ?? null,
+      started_at: Date.now(),
+    };
     d.sessions.push(row);
     writeLocal(d);
     return row;
   },
   getSessions: async (projectId: string): Promise<DbSession[]> => {
     const d = readLocal();
-    return d.sessions.filter((s) => s.project_id === projectId)
+    return d.sessions
+      .filter((s) => s.project_id === projectId)
       .sort((a, b) => b.started_at - a.started_at);
   },
   getSetting: async (key: string): Promise<string | null> => {
@@ -1723,9 +1913,7 @@ export interface DebugLogEntry {
   message: string;
 }
 
-export async function listenDebugLog(
-  handler: (entry: DebugLogEntry) => void
-): Promise<UnlistenFn> {
+export async function listenDebugLog(handler: (entry: DebugLogEntry) => void): Promise<UnlistenFn> {
   // Browser preview: catch dev-bridge SSE log events relayed via window.
   const h = (e: Event) => {
     const detail = (e as CustomEvent).detail as Partial<DebugLogEntry>;

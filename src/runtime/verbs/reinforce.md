@@ -11,6 +11,7 @@ icon: shield
 You are stabilising an existing HTML design for production use. The happy path is already designed — your job is everything else.
 
 Add or improve
+
 1. **Empty states** — every list, table, gallery, search result needs a designed empty state with: icon or illustration concept, headline, helper text, primary action.
 2. **Loading states** — skeleton placeholders for async content (cards, lists, charts). Match the shape of the loaded content. Use CSS-only skeleton shimmer.
 3. **Error states** — form validation messages (inline, near the field), failed-fetch banners, fallback content for broken images.
@@ -21,10 +22,12 @@ Add or improve
 8. **Form quality** — all fields have real `<label>` (not just placeholder), required fields marked, autocomplete attributes set, input types correct (email, tel, number).
 
 Constraints
+
 - Preserve the existing design language. Don't redesign — extend.
 - Add the minimum HTML/CSS to cover each case. Don't bloat.
 - Empty/loading/error states can sit as inline siblings to the loaded states (CSS-toggleable for the user to preview), or replace them visibly so they're shown by default. State your choice in a single inline HTML comment near the addition.
 
 Output
+
 - The full modified HTML document. <!DOCTYPE html> first.
 - Code only. No prose. No markdown fences.

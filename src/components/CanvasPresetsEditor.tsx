@@ -99,7 +99,9 @@ function toItem(preset: CanvasPreset, isCustom: boolean, enabled: boolean, lang:
     // use localized label + hint for builtins. Customs
     // (no entry in i18n table) fall through to preset.name as before.
     title: isCustom ? preset.name : canvasLabel(preset, lang),
-    subtitle: isCustom ? formatCanvasMeta(preset) : formatCanvasMeta(preset, canvasHint(preset, lang)),
+    subtitle: isCustom
+      ? formatCanvasMeta(preset)
+      : formatCanvasMeta(preset, canvasHint(preset, lang)),
     builtin: !isCustom,
     enabled,
     preset,
@@ -153,9 +155,7 @@ function validateCanvasDraft(
     out.errors.name = context.t("settings.padroes.validation.empty.name");
   } else {
     const dup = context.allItems.find(
-      (it) =>
-        it.id !== context.selfId &&
-        it.title.toLowerCase() === name.toLowerCase(),
+      (it) => it.id !== context.selfId && it.title.toLowerCase() === name.toLowerCase(),
     );
     if (dup) out.errors.name = context.t("settings.padroes.validation.duplicate");
   }
@@ -208,11 +208,7 @@ function PresetThumb({ preset, max = 22 }: { preset: CanvasPreset; max?: number 
     w = Math.max(6, Math.round(max * ratio));
   }
   return (
-    <div
-      className="tx-mgr-preview-thumb"
-      style={{ width: w, height: h }}
-      aria-hidden
-    >
+    <div className="tx-mgr-preview-thumb" style={{ width: w, height: h }} aria-hidden>
       <div className="tx-mgr-preview-thumb-fill" />
     </div>
   );
@@ -232,7 +228,9 @@ function PresetThumbLarge({ preset }: { preset: CanvasPreset }) {
             <div className="tx-mgr-preview-thumb-fill" />
           </div>
         </div>
-        <div className="tx-mgr-preview-meta">{t("settings.canvas.preview.label")} · {preset.ratio || "—"}</div>
+        <div className="tx-mgr-preview-meta">
+          {t("settings.canvas.preview.label")} · {preset.ratio || "—"}
+        </div>
       </>
     );
   }
@@ -272,7 +270,16 @@ interface DetailFormProps {
   onToggleEnabled: (id: string, next: boolean) => void;
 }
 
-function DetailForm({ item, allItems, onSave, onDelete, onDeleteBuiltinPermanent, onDuplicate, onCloneBuiltin, onToggleEnabled }: DetailFormProps) {
+function DetailForm({
+  item,
+  allItems,
+  onSave,
+  onDelete,
+  onDeleteBuiltinPermanent,
+  onDuplicate,
+  onCloneBuiltin,
+  onToggleEnabled,
+}: DetailFormProps) {
   const { t, lang } = useT();
   const [draft, setDraft] = useState<Partial<CanvasPreset>>({});
   const [savedTick, setSavedTick] = useState(0);
@@ -313,11 +320,14 @@ function DetailForm({ item, allItems, onSave, onDelete, onDeleteBuiltinPermanent
   const handleSave = async () => {
     if (hasErrors) return;
     const patch: Partial<CanvasPreset> = {};
-    if (draft.name && draft.name.trim() && draft.name !== item.preset.name) patch.name = draft.name.trim();
+    if (draft.name && draft.name.trim() && draft.name !== item.preset.name)
+      patch.name = draft.name.trim();
     if (draft.ratio && draft.ratio !== item.preset.ratio) patch.ratio = draft.ratio;
     if (draft.width !== undefined && draft.width !== item.preset.width) patch.width = draft.width;
-    if (draft.height !== undefined && draft.height !== item.preset.height) patch.height = draft.height;
-    if (draft.hint !== undefined && draft.hint !== (item.preset.hint ?? "")) patch.hint = draft.hint;
+    if (draft.height !== undefined && draft.height !== item.preset.height)
+      patch.height = draft.height;
+    if (draft.hint !== undefined && draft.hint !== (item.preset.hint ?? ""))
+      patch.hint = draft.hint;
     await onSave(item.id, patch);
     setSavedTick((n) => n + 1);
     window.setTimeout(() => setSavedTick(0), 1500);
@@ -330,7 +340,9 @@ function DetailForm({ item, allItems, onSave, onDelete, onDeleteBuiltinPermanent
       <div className="tx-mgr-detail-head">
         <div className="tx-mgr-detail-head-text">
           <span className="tx-mgr-detail-eyebrow">{t("settings.canvas.detail.eyebrow")}</span>
-          <h3 className="tx-mgr-detail-title">{item.builtin ? canvasLabel(item.preset, lang) : item.preset.name}</h3>
+          <h3 className="tx-mgr-detail-title">
+            {item.builtin ? canvasLabel(item.preset, lang) : item.preset.name}
+          </h3>
         </div>
         <div className="tx-mgr-detail-actions">
           <button
@@ -400,7 +412,9 @@ function DetailForm({ item, allItems, onSave, onDelete, onDeleteBuiltinPermanent
             aria-invalid={Boolean(validation.errors.name)}
           />
           {validation.errors.name && (
-            <span className="tx-mgr-field-error" role="alert">{validation.errors.name}</span>
+            <span className="tx-mgr-field-error" role="alert">
+              {validation.errors.name}
+            </span>
           )}
         </div>
         <div className="tx-mgr-field">
@@ -430,13 +444,17 @@ function DetailForm({ item, allItems, onSave, onDelete, onDeleteBuiltinPermanent
               type="number"
               className={`tx-mgr-input tx-mgr-input--mono${validation.errors.width ? " is-invalid" : ""}`}
               value={draft.width ?? ""}
-              onChange={(e) => setDraft((p) => ({ ...p, width: parseInt(e.target.value, 10) || 0 }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, width: parseInt(e.target.value, 10) || 0 }))
+              }
               disabled={isBuiltin}
               min={0}
               aria-invalid={Boolean(validation.errors.width)}
             />
             {validation.errors.width && (
-              <span className="tx-mgr-field-error" role="alert">{validation.errors.width}</span>
+              <span className="tx-mgr-field-error" role="alert">
+                {validation.errors.width}
+              </span>
             )}
           </div>
           <div className="tx-mgr-field">
@@ -448,13 +466,17 @@ function DetailForm({ item, allItems, onSave, onDelete, onDeleteBuiltinPermanent
               type="number"
               className={`tx-mgr-input tx-mgr-input--mono${validation.errors.height ? " is-invalid" : ""}`}
               value={draft.height ?? ""}
-              onChange={(e) => setDraft((p) => ({ ...p, height: parseInt(e.target.value, 10) || 0 }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, height: parseInt(e.target.value, 10) || 0 }))
+              }
               disabled={isBuiltin}
               min={0}
               aria-invalid={Boolean(validation.errors.height)}
             />
             {validation.errors.height && (
-              <span className="tx-mgr-field-error" role="alert">{validation.errors.height}</span>
+              <span className="tx-mgr-field-error" role="alert">
+                {validation.errors.height}
+              </span>
             )}
           </div>
         </div>
@@ -473,8 +495,18 @@ function DetailForm({ item, allItems, onSave, onDelete, onDeleteBuiltinPermanent
           />
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginTop: 6 }}>
-          <span className={`tx-mgr-status${savedTick > 0 ? " is-shown" : ""}`}>{t("settings.canvas.action.saved")}</span>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 6,
+          }}
+        >
+          <span className={`tx-mgr-status${savedTick > 0 ? " is-shown" : ""}`}>
+            {t("settings.canvas.action.saved")}
+          </span>
           {isBuiltin ? (
             <button
               type="button"
@@ -726,8 +758,12 @@ export function CanvasPresetsEditor() {
 
   // ImportExportControls slot removed 2026-05-21 — handlers/exports
   // preserved for future surfaces. Silence TS6133 while they sit idle.
-  void previewImport; void applyImport; void handleResetAll;
-  void buildCanvasPresetsExport; void parseCanvasPresetsImport; void ImportExportControls;
+  void previewImport;
+  void applyImport;
+  void handleResetAll;
+  void buildCanvasPresetsExport;
+  void parseCanvasPresetsImport;
+  void ImportExportControls;
 
   return (
     <TaxonomyManager<CanvasItem>

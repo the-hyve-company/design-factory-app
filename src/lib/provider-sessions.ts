@@ -57,9 +57,7 @@ export const EMPTY_PROVIDER_SESSIONS: ProviderSessions = {
  */
 export async function readProviderSessions(slug: string): Promise<ProviderSessions> {
   try {
-    const r = await fetch(
-      `${BRIDGE_URL}/fs/provider-sessions?slug=${encodeURIComponent(slug)}`,
-    );
+    const r = await fetch(`${BRIDGE_URL}/fs/provider-sessions?slug=${encodeURIComponent(slug)}`);
     if (!r.ok) return EMPTY_PROVIDER_SESSIONS;
     const data = (await r.json().catch(() => null)) as { sessions?: unknown } | null;
     if (!data?.sessions) return EMPTY_PROVIDER_SESSIONS;
@@ -109,8 +107,7 @@ export async function upsertProviderSession(
     sessionId: patch.sessionId ?? existing?.sessionId ?? null,
     created_at: existing?.created_at ?? now,
     last_used_at: now,
-    artifact_version_seen:
-      patch.artifact_version_seen ?? existing?.artifact_version_seen ?? 0,
+    artifact_version_seen: patch.artifact_version_seen ?? existing?.artifact_version_seen ?? 0,
   });
   const updated: ProviderSessions = {
     ...current,

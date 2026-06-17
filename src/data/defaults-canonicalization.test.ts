@@ -13,9 +13,17 @@ import { DEFAULT_CANVAS_PRESETS } from "@/data/canvas-presets";
 import { DEFAULT_FORMAT_TAXONOMY } from "@/data/format-taxonomy";
 import { DEFAULT_BUILTIN_RULES } from "@/data/rules-taxonomy";
 import { DEFAULT_BUILTIN_DIALS, DIAL_KEYS, DIAL_STOPS, stopForValue } from "@/data/dials-taxonomy";
-import { DEFAULT_BUILTIN_COMMANDS, commandsByKind, findCommandByTrigger } from "@/data/commands-taxonomy";
+import {
+  DEFAULT_BUILTIN_COMMANDS,
+  commandsByKind,
+  findCommandByTrigger,
+} from "@/data/commands-taxonomy";
 import { DEFAULT_BUILTIN_SKILLS } from "@/data/skills-taxonomy";
-import { DEFAULT_BUILTIN_PROMPTS, EDITABLE_PROMPT_IDS, getDefaultPromptBody } from "@/data/prompts-taxonomy";
+import {
+  DEFAULT_BUILTIN_PROMPTS,
+  EDITABLE_PROMPT_IDS,
+  getDefaultPromptBody,
+} from "@/data/prompts-taxonomy";
 
 describe("defaults canonicalisation / 7 categories present in /data/", () => {
   it("1) canvas presets — at least 4 entries", () => {
@@ -67,7 +75,9 @@ describe("defaults canonicalisation / 7 categories present in /data/", () => {
 
   it("5c) agent commands carry a non-empty systemPrompt body", () => {
     for (const c of commandsByKind("agent")) {
-      expect(c.agentSystemPrompt?.length, `${c.id} agent body must be non-empty`).toBeGreaterThan(0);
+      expect(c.agentSystemPrompt?.length, `${c.id} agent body must be non-empty`).toBeGreaterThan(
+        0,
+      );
     }
   });
 
@@ -83,7 +93,11 @@ describe("defaults canonicalisation / 7 categories present in /data/", () => {
       const body = getDefaultPromptBody(id);
       expect(body.length, `${id} prompt body must be non-empty`).toBeGreaterThan(50);
     }
-    expect(DEFAULT_BUILTIN_PROMPTS.map((p) => p.id).sort()).toEqual(["generate", "refine", "tweaks"]);
+    expect(DEFAULT_BUILTIN_PROMPTS.map((p) => p.id).sort()).toEqual([
+      "generate",
+      "refine",
+      "tweaks",
+    ]);
   });
 });
 
@@ -110,7 +124,7 @@ describe("defaults canonicalisation / dial value → stop mapping", () => {
     expect(stopForValue(0)).toBe("extremeLow");
     expect(stopForValue(9)).toBe("extremeLow");
     expect(stopForValue(25)).toBe("softLow");
-    expect(stopForValue(50)).toBe(null);  // neutral — no phrase
+    expect(stopForValue(50)).toBe(null); // neutral — no phrase
     expect(stopForValue(75)).toBe("softHigh");
     expect(stopForValue(100)).toBe("extremeHigh");
   });

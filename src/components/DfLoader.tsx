@@ -1,12 +1,12 @@
 import { useId, type CSSProperties } from "react";
 
 export type DfLoaderRelation =
-  | "stream"     // lr02 lemniscate — 3 dots trace a figure-8, crossing at pinch
-  | "heartbeat"  // lr01 encounter — two dots pass through, center bulges at convergence
-  | "triad"      // lr05 knot — 3 overlapping orbits weave through each other
-  | "bloom"      // lr04 coalesce — triangle vertices fall to center, merge, spring back
-  | "cascade"    // lr03 pendulum — 3 dots on shared pivot, staggered swing
-  | "morse";     // lr06 chase — 3 dots on shared circle, variable-speed bunch-spread
+  | "stream" // lr02 lemniscate — 3 dots trace a figure-8, crossing at pinch
+  | "heartbeat" // lr01 encounter — two dots pass through, center bulges at convergence
+  | "triad" // lr05 knot — 3 overlapping orbits weave through each other
+  | "bloom" // lr04 coalesce — triangle vertices fall to center, merge, spring back
+  | "cascade" // lr03 pendulum — 3 dots on shared pivot, staggered swing
+  | "morse"; // lr06 chase — 3 dots on shared circle, variable-speed bunch-spread
 
 export interface DfLoaderProps {
   relation?: DfLoaderRelation;
@@ -56,9 +56,7 @@ export function DfLoader({
         <defs>
           <filter id={gooId} x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
-            <feColorMatrix
-              values="1 0 0 0 0   0 1 0 0 0   0 0 1 0 0   0 0 0 18 -7"
-            />
+            <feColorMatrix values="1 0 0 0 0   0 1 0 0 0   0 0 1 0 0   0 0 0 18 -7" />
           </filter>
         </defs>
         <g className="g" style={{ filter: `url(#${gooId})` }}>
@@ -92,8 +90,22 @@ function renderRelation(relation: DfLoaderRelation) {
       return (
         <>
           <circle className="df-lr-s" cx="0" cy="0" r={R} fill={fill} />
-          <circle className="df-lr-s" cx="0" cy="0" r={R} fill={fill} style={{ animationDelay: "-1067ms" }} />
-          <circle className="df-lr-s" cx="0" cy="0" r={R} fill={fill} style={{ animationDelay: "-2133ms" }} />
+          <circle
+            className="df-lr-s"
+            cx="0"
+            cy="0"
+            r={R}
+            fill={fill}
+            style={{ animationDelay: "-1067ms" }}
+          />
+          <circle
+            className="df-lr-s"
+            cx="0"
+            cy="0"
+            r={R}
+            fill={fill}
+            style={{ animationDelay: "-2133ms" }}
+          />
         </>
       );
     case "cascade":

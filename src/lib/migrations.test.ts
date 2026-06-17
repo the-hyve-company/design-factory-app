@@ -46,8 +46,18 @@ describe("migrateLegacyToolEvents — backfill", () => {
     expect(Array.isArray(out.toolEvents)).toBe(true);
     const events = out.toolEvents as unknown[];
     expect(events).toHaveLength(2);
-    expect(events[0]).toMatchObject({ type: "tool_call", id: "tool_1", name: "Write", provider: "claude" });
-    expect(events[1]).toMatchObject({ type: "tool_result", toolCallId: "tool_1", ok: true, output: "ok" });
+    expect(events[0]).toMatchObject({
+      type: "tool_call",
+      id: "tool_1",
+      name: "Write",
+      provider: "claude",
+    });
+    expect(events[1]).toMatchObject({
+      type: "tool_result",
+      toolCallId: "tool_1",
+      ok: true,
+      output: "ok",
+    });
   });
 
   it("backfills tool_error when legacy result.isError is true", () => {
@@ -113,7 +123,14 @@ describe("migrateLegacyToolEvents — backfill", () => {
       text: "ok",
       tools: [{ id: "t1", name: "Bash", input: {} }],
       toolEvents: [
-        { type: "tool_call", id: "t1", name: "Bash", input: {}, provider: "claude", timestamp: "2026-01-01T00:00:00.000Z" },
+        {
+          type: "tool_call",
+          id: "t1",
+          name: "Bash",
+          input: {},
+          provider: "claude",
+          timestamp: "2026-01-01T00:00:00.000Z",
+        },
       ],
     };
     const out = migrateLegacyToolEvents(m);
@@ -169,7 +186,14 @@ describe("migrateLegacyChatMessages — list helper composes both migrations", (
       {
         role: "claude", // legacy role
         text: "wrote it",
-        tools: [{ id: "t1", name: "Write", input: { file_path: "/x.html" }, result: { content: "ok", isError: false } }],
+        tools: [
+          {
+            id: "t1",
+            name: "Write",
+            input: { file_path: "/x.html" },
+            result: { content: "ok", isError: false },
+          },
+        ],
       },
     ]) as Array<Record<string, unknown>>;
     expect(out).toHaveLength(2);

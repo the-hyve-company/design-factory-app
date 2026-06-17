@@ -48,8 +48,12 @@ export function AttachDsModal({ open, currentDsPath, onSelect, onClose }: Props)
           setList(res);
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [open, t]);
 
   // Sort: currently-attached first, then by name. Stable across opens so
@@ -89,7 +93,9 @@ export function AttachDsModal({ open, currentDsPath, onSelect, onClose }: Props)
     <div
       role="dialog"
       aria-modal="true"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       style={{
         position: "fixed",
         inset: 0,
@@ -144,7 +150,9 @@ export function AttachDsModal({ open, currentDsPath, onSelect, onClose }: Props)
               padding: "4px 8px",
               lineHeight: 1,
             }}
-          >×</button>
+          >
+            ×
+          </button>
         </header>
 
         <div
@@ -155,7 +163,14 @@ export function AttachDsModal({ open, currentDsPath, onSelect, onClose }: Props)
           }}
         >
           {loading && (
-            <div style={{ padding: 28, textAlign: "center", color: "var(--df-text-faint)", fontSize: 12 }}>
+            <div
+              style={{
+                padding: 28,
+                textAlign: "center",
+                color: "var(--df-text-faint)",
+                fontSize: 12,
+              }}
+            >
               {t("attachds.loading")}
             </div>
           )}
@@ -163,73 +178,113 @@ export function AttachDsModal({ open, currentDsPath, onSelect, onClose }: Props)
             <div style={{ padding: 16, color: "#ef5d3b", fontSize: 12 }}>{error}</div>
           )}
           {!loading && !error && sorted.length === 0 && (
-            <div style={{ padding: 28, textAlign: "center", color: "var(--df-text-faint)", fontSize: 12, lineHeight: 1.6 }}>
+            <div
+              style={{
+                padding: 28,
+                textAlign: "center",
+                color: "var(--df-text-faint)",
+                fontSize: 12,
+                lineHeight: 1.6,
+              }}
+            >
               {t("attachds.empty")}
             </div>
           )}
-          {!loading && !error && sorted.map((ds) => {
-            const isActive = ds.path === currentDsPath;
-            return (
-              <button
-                key={ds.path}
-                type="button"
-                onClick={() => void handlePick(ds)}
-                disabled={busy}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  width: "100%",
-                  padding: "10px 12px",
-                  margin: "2px 0",
-                  background: isActive ? "var(--df-bg-section)" : "transparent",
-                  border: "1px solid",
-                  borderColor: isActive ? "var(--df-accent)" : "transparent",
-                  borderRadius: "var(--df-r-md)",
-                  color: "var(--df-text-primary)",
-                  textAlign: "left",
-                  cursor: busy ? "default" : "pointer",
-                  opacity: busy && !isActive ? 0.7 : 1,
-                  transition: "background 100ms ease, border-color 100ms ease",
-                }}
-                onMouseEnter={(e) => { if (!isActive && !busy) e.currentTarget.style.background = "var(--df-bg-section)"; }}
-                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
-              >
-                <div
+          {!loading &&
+            !error &&
+            sorted.map((ds) => {
+              const isActive = ds.path === currentDsPath;
+              return (
+                <button
+                  key={ds.path}
+                  type="button"
+                  onClick={() => void handlePick(ds)}
+                  disabled={busy}
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "var(--df-r-sm)",
-                    background: "var(--df-bg-section)",
-                    border: "1px solid var(--df-border-subtle)",
-                    flexShrink: 0,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    color: "var(--df-text-faint)",
-                    fontFamily: "var(--df-font-mono)",
-                    fontSize: 13,
-                    textTransform: "uppercase",
+                    gap: 12,
+                    width: "100%",
+                    padding: "10px 12px",
+                    margin: "2px 0",
+                    background: isActive ? "var(--df-bg-section)" : "transparent",
+                    border: "1px solid",
+                    borderColor: isActive ? "var(--df-accent)" : "transparent",
+                    borderRadius: "var(--df-r-md)",
+                    color: "var(--df-text-primary)",
+                    textAlign: "left",
+                    cursor: busy ? "default" : "pointer",
+                    opacity: busy && !isActive ? 0.7 : 1,
+                    transition: "background 100ms ease, border-color 100ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive && !busy)
+                      e.currentTarget.style.background = "var(--df-bg-section)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) e.currentTarget.style.background = "transparent";
                   }}
                 >
-                  {ds.name.slice(0, 2)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {ds.name}
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "var(--df-r-sm)",
+                      background: "var(--df-bg-section)",
+                      border: "1px solid var(--df-border-subtle)",
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--df-text-faint)",
+                      fontFamily: "var(--df-font-mono)",
+                      fontSize: 13,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {ds.name.slice(0, 2)}
                   </div>
-                  <div style={{ fontSize: 10, color: "var(--df-text-faint)", fontFamily: "var(--df-font-mono)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {ds.slug}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {ds.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: "var(--df-text-faint)",
+                        fontFamily: "var(--df-font-mono)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {ds.slug}
+                    </div>
                   </div>
-                </div>
-                {isActive && (
-                  <span style={{ fontSize: 10, color: "var(--df-accent)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    {t("attachds.active")}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                  {isActive && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: "var(--df-accent)",
+                        fontWeight: 500,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      {t("attachds.active")}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
         </div>
 
         {currentDsPath && (

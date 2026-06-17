@@ -33,7 +33,15 @@ interface Props {
   title?: string;
 }
 
-export function CustomSelect({ value, options, onChange, width, placeholder, disabled, title }: Props) {
+export function CustomSelect({
+  value,
+  options,
+  onChange,
+  width,
+  placeholder,
+  disabled,
+  title,
+}: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -68,7 +76,10 @@ export function CustomSelect({ value, options, onChange, width, placeholder, dis
   };
 
   return (
-    <div ref={rootRef} style={{ position: "relative", display: "inline-flex", width: width ?? "100%" }}>
+    <div
+      ref={rootRef}
+      style={{ position: "relative", display: "inline-flex", width: width ?? "100%" }}
+    >
       <button
         type="button"
         onClick={() => !disabled && setOpen((o) => !o)}
@@ -78,7 +89,11 @@ export function CustomSelect({ value, options, onChange, width, placeholder, dis
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        {cur?.dot && <span style={{ width: 8, height: 8, borderRadius: "50%", background: cur.dot, flex: "none" }} />}
+        {cur?.dot && (
+          <span
+            style={{ width: 8, height: 8, borderRadius: "50%", background: cur.dot, flex: "none" }}
+          />
+        )}
         <span
           style={{
             flex: 1,
@@ -143,7 +158,9 @@ export function CustomSelect({ value, options, onChange, width, placeholder, dis
                   />
                 )}
                 <span style={{ flex: 1, textAlign: "left" }}>
-                  <div style={{ fontFamily: "var(--df-font-sans)", fontSize: 13 }}>{o.label ?? o.value}</div>
+                  <div style={{ fontFamily: "var(--df-font-sans)", fontSize: 13 }}>
+                    {o.label ?? o.value}
+                  </div>
                   {o.sub && (
                     <div
                       style={{

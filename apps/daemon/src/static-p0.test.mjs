@@ -8,7 +8,9 @@ import { validateArtifactStaticP0Full, DEFAULT_BYTE_FLOOR } from "./static-p0.mj
 
 const HTML_BIG =
   "<!DOCTYPE html><html><head><title>x</title></head><body><h1>Hello</h1>" +
-  "<p>" + "x".repeat(220) + "</p></body></html>";
+  "<p>" +
+  "x".repeat(220) +
+  "</p></body></html>";
 
 describe("validateArtifactStaticP0Full — HTML", () => {
   it("passes for a well-formed document above the floor", () => {
@@ -58,7 +60,9 @@ describe("validateArtifactStaticP0Full — HTML", () => {
 
   it("ignores ids inside <script> body when checking duplicates", () => {
     const html =
-      "<!DOCTYPE html><html><body><div id=\"root\">" + "x".repeat(120) + "</div>" +
+      '<!DOCTYPE html><html><body><div id="root">' +
+      "x".repeat(120) +
+      "</div>" +
       `<script>const tag='id="root"';</script>` +
       "</body></html>";
     const r = validateArtifactStaticP0Full({ type: "text/html", content: html });
@@ -67,9 +71,7 @@ describe("validateArtifactStaticP0Full — HTML", () => {
 
   it("fails unbalanced-tags when <script> never closes", () => {
     const html =
-      "<!DOCTYPE html><html><body><h1>x</h1><script>boom(" +
-      "x".repeat(220) +
-      "</body></html>";
+      "<!DOCTYPE html><html><body><h1>x</h1><script>boom(" + "x".repeat(220) + "</body></html>";
     const r = validateArtifactStaticP0Full({ type: "text/html", content: html });
     expect(r.ok).toBe(false);
     expect(r.reason).toBe("unbalanced-tags");
@@ -101,7 +103,8 @@ describe("validateArtifactStaticP0Full — SVG", () => {
   });
 
   it("fails on missing </svg>", () => {
-    const broken = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect/>` + "x".repeat(220);
+    const broken =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect/>` + "x".repeat(220);
     const r = validateArtifactStaticP0Full({ type: "image/svg+xml", content: broken });
     expect(r.ok).toBe(false);
     expect(r.reason).toBe("invalid-svg");
@@ -155,8 +158,7 @@ describe("validateArtifactStaticP0Full — CSS", () => {
 
   it("ignores braces inside strings/comments", () => {
     const css =
-      `.x { content: "}"; } /* } } */ .y { color: red; }` +
-      " /* " + "x".repeat(200) + " */";
+      `.x { content: "}"; } /* } } */ .y { color: red; }` + " /* " + "x".repeat(200) + " */";
     const r = validateArtifactStaticP0Full({ type: "text/css", content: css });
     expect(r.ok).toBe(true);
   });

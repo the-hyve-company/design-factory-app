@@ -374,7 +374,9 @@ describe("finalize", () => {
       aborted: false,
     };
     await finalize(ctx, s);
-    expect(upsertProviderSession).toHaveBeenCalledWith("smoke", "claude", { sessionId: "new-sess" });
+    expect(upsertProviderSession).toHaveBeenCalledWith("smoke", "claude", {
+      sessionId: "new-sess",
+    });
   });
 
   it("skips persistence when persistProviderSession=false", async () => {
