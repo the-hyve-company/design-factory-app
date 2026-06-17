@@ -4,13 +4,13 @@
   "private": true,
   "license": "Apache-2.0",
   "description": "A local-first AI design workspace for turning prompts into editable HTML artifacts.",
-  "homepage": "https://github.com/the-hyve-company/design-factory#readme",
+  "homepage": "https://github.com/the-hyve-company/design-factory-app#readme",
   "bugs": {
-    "url": "https://github.com/the-hyve-company/design-factory/issues"
+    "url": "https://github.com/the-hyve-company/design-factory-app/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/the-hyve-company/design-factory.git"
+    "url": "git+https://github.com/the-hyve-company/design-factory-app.git"
   },
   "type": "module",
   "engines": {
@@ -22,7 +22,9 @@
   "scripts": {
     "dev": "vite",
     "bridge": "npm start -w @df/daemon",
-    "dev:web": "node scripts/dev-web.mjs",
+    "start": "node scripts/dev-web.mjs --prod",
+    "start:dev": "node scripts/dev-web.mjs --dev",
+    "dev:web": "node scripts/dev-web.mjs --dev",
     "dev:web:legacy": "npm start -w @df/daemon & vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -37,7 +39,9 @@
     "smoke:public-files": "node scripts/public-files-smoke.mjs",
     "test:e2e:providers": "node scripts/e2e-providers.mjs",
     "test:e2e:leak-regression": "node scripts/e2e-leak-regression.mjs",
-    "test:e2e:modals": "node scripts/validate-modals.mjs"
+    "test:e2e:modals": "node scripts/validate-modals.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
@@ -64,6 +68,7 @@
     "@vitest/ui": "^4.1.5",
     "happy-dom": "^20.9.0",
     "playwright": "^1.59.1",
+    "prettier": "^3.8.4",
     "typescript": "^5.5.3",
     "vite": "^7.3.3",
     "vitest": "^4.1.5"

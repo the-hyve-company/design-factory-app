@@ -13,7 +13,23 @@ import { ProviderBanner } from "@/components/ProviderBanner";
 import { TabCornerLeft, TabCornerRight } from "@/components/TabCorner";
 import { EntityCard } from "@/components/EntityCard";
 import { useT, tf } from "@/i18n";
-import { db, readFileViaBridge, refreshBridgeStatus, fetchWorkspaceInfo, writeGlobalConfig, writeBinaryViaBridge, writeFile, listDesignSystemsFromFilesystem, removeDsFolder, readProjectMeta, installSkill, parseSkillMarkdown, deleteSkill, listFolder, type Skill } from "@/lib/claude-bridge";
+import {
+  db,
+  readFileViaBridge,
+  refreshBridgeStatus,
+  fetchWorkspaceInfo,
+  writeGlobalConfig,
+  writeBinaryViaBridge,
+  writeFile,
+  listDesignSystemsFromFilesystem,
+  removeDsFolder,
+  readProjectMeta,
+  installSkill,
+  parseSkillMarkdown,
+  deleteSkill,
+  listFolder,
+  type Skill,
+} from "@/lib/claude-bridge";
 import { slugFromPath } from "@/lib/project-files";
 // CharacterCover import removed 2026-05-21 — Skills now use the soft
 // Logo cover (option E). Component file kept at
@@ -64,19 +80,17 @@ type DesignSystem = DsEntry;
 const projectHtmlCache = new Map<string, { updatedAt: number; html: string }>();
 const projectRatioCache = new Map<string, { updatedAt: number; ratio: RatioId }>();
 // Parsed DS cover palette, keyed by design.md path. DsCardPreview re-read +
-// re-parsed the full design.md on every mount (slow with several DS cards,
-// "capas de ds demorando pra carregar só cores"). Cache the parsed result so
+// re-parsed the full design.md on every mount (slow with several DS cards —
+// DS covers were slow to load just to render their colors). Cache the parsed result so
 // remounts paint instantly. Session-scoped (cleared on full reload).
-const dsColorCache = new Map<string, { state: "ok" | "empty" | "missing"; colors: string[] | null }>();
+const dsColorCache = new Map<
+  string,
+  { state: "ok" | "empty" | "missing"; colors: string[] | null }
+>();
 
 interface HomeScreenProps {
   projects: Project[];
-  onOpenProject: (
-    path: string,
-    name: string,
-    mode: "wireframe" | "hifi",
-    id: string
-  ) => void;
+  onOpenProject: (path: string, name: string, mode: "wireframe" | "hifi", id: string) => void;
   onCreateProject: (
     name: string,
     path: string,
@@ -142,9 +156,11 @@ function prettifyName(raw: string): string {
   // If the source already mixes case (e.g. "My Project"), leave it
   // alone — only the all-lower / all-kebab slugs need title-casing.
   if (/[A-Z]/.test(cleaned) && /[a-z]/.test(cleaned)) return cleaned;
-  return cleaned.split(" ").map((w) => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
+  return cleaned
+    .split(" ")
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
 }
-
 
 export function HomeScreen({
   projects,
@@ -164,10 +180,13 @@ export function HomeScreen({
   // Active tab derives from the URL. `/` → projects, `/templates`, `/design-systems`,
   // `/skills`. Tab click navigates so every state is shareable/reloadable.
   const rightTab: RightTab = PATH_TO_TAB[location.pathname] ?? "projects";
-  const setRightTab = useCallback((next: RightTab) => {
-    const path = TAB_TO_PATH[next];
-    if (path && path !== location.pathname) navigate(path);
-  }, [navigate, location.pathname]);
+  const setRightTab = useCallback(
+    (next: RightTab) => {
+      const path = TAB_TO_PATH[next];
+      if (path && path !== location.pathname) navigate(path);
+    },
+    [navigate, location.pathname],
+  );
   const [projectName, setProjectName] = useState("");
   const [initialPrompt, setInitialPrompt] = useState("");
   const [directionSelection, setDirectionSelection] = useState<DirectionSelection | null>(null);
@@ -179,8 +198,8 @@ export function HomeScreen({
   // Model picked for this new project. Falls back to defaultModelForProvider
   // when no per-provider memory exists. Persisted via writeLastModel so the
   // next New Project session remembers what the user picked.
-  const [createModel, setCreateModel] = useState<string>(() =>
-    readLastModel("claude") ?? defaultModelForProvider("claude"),
+  const [createModel, setCreateModel] = useState<string>(
+    () => readLastModel("claude") ?? defaultModelForProvider("claude"),
   );
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [modelMenuQuery, setModelMenuQuery] = useState("");
@@ -188,12 +207,20 @@ export function HomeScreen({
   const modelRockerRef = useRef<HTMLButtonElement>(null);
   // Computed coords for the menu — anchored to the rocker rect so it
   // opens right above/below the trigger instead of bottom-right of viewport.
-  const [modelMenuCoords, setModelMenuCoords] = useState<{ top: number; left: number; width: number; openUpward: boolean } | null>(null);
+  const [modelMenuCoords, setModelMenuCoords] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    openUpward: boolean;
+  } | null>(null);
   // Live model options for the inline rocker — Ollama/OpenRouter probe
   // runtime, others fall back to the static catalog.
   const { options: liveModelOpts, loading: modelsLoading } = useLiveModelOptions(createProvider);
   // Reset query + close menu when provider switches.
-  useEffect(() => { setShowModelMenu(false); setModelMenuQuery(""); }, [createProvider]);
+  useEffect(() => {
+    setShowModelMenu(false);
+    setModelMenuQuery("");
+  }, [createProvider]);
   // Click-outside handler — closes the floating menu, but ignore the
   // rocker trigger itself (it toggles via aria-expanded).
   useEffect(() => {
@@ -213,7 +240,10 @@ export function HomeScreen({
   // bottom half of the viewport (typical case — prompt bar lives near
   // the bottom of the create card).
   useEffect(() => {
-    if (!showModelMenu) { setModelMenuCoords(null); return; }
+    if (!showModelMenu) {
+      setModelMenuCoords(null);
+      return;
+    }
     const update = () => {
       const r = modelRockerRef.current?.getBoundingClientRect();
       if (!r) return;
@@ -250,22 +280,26 @@ export function HomeScreen({
     // Always trust the bridge's repo root — no more persisted overrides.
     // The old workspace_root / projects_folder settings are intentionally
     // ignored so the user can't end up in a stale directory.
-    fetchWorkspaceInfo().then((info) => {
-      if (!info) return;
-      setProjectsFolder(info.projectsDir);
-      setDefaultCwd(info.repoRoot);
-    }).catch(() => {});
+    fetchWorkspaceInfo()
+      .then((info) => {
+        if (!info) return;
+        setProjectsFolder(info.projectsDir);
+        setDefaultCwd(info.repoRoot);
+      })
+      .catch(() => {});
     // Read the topbar AgentPicker's choice from global config + listen for
     // changes. P0 fix: the prior `if (raw === "claude")` literal silently
     // dropped every other provider, locking the New Project form to Claude.
-    db.getSetting("default_provider").then((raw) => {
-      const parsed = ProviderIdSchema.safeParse(raw);
-      if (parsed.success) {
-        setCreateProvider(parsed.data);
-        const remembered = readLastModel(parsed.data);
-        setCreateModel(remembered ?? defaultModelForProvider(parsed.data));
-      }
-    }).catch(() => {});
+    db.getSetting("default_provider")
+      .then((raw) => {
+        const parsed = ProviderIdSchema.safeParse(raw);
+        if (parsed.success) {
+          setCreateProvider(parsed.data);
+          const remembered = readLastModel(parsed.data);
+          setCreateModel(remembered ?? defaultModelForProvider(parsed.data));
+        }
+      })
+      .catch(() => {});
     const onProviderChange = (e: Event) => {
       const detail = (e as CustomEvent<{ providerId?: string }>).detail;
       const parsed = ProviderIdSchema.safeParse(detail?.providerId);
@@ -332,7 +366,9 @@ export function HomeScreen({
     };
     void tick();
     const iv = setInterval(tick, 6000);
-    const onVisibility = () => { if (!document.hidden) void tick(); };
+    const onVisibility = () => {
+      if (!document.hidden) void tick();
+    };
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
       clearInterval(iv);
@@ -346,7 +382,7 @@ export function HomeScreen({
   // window.confirm — browsers/webviews offer "prevent this page from
   // creating additional dialogs" after the first native dialog, so the
   // SECOND window.confirm() silently returned false and the delete never
-  // fired ("tentei apagar 2 projetos e não funcionou").
+  // fired (deleting two projects in a row silently failed).
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   // DS detach confirm — same in-app modal instead of window.confirm.
@@ -399,7 +435,10 @@ export function HomeScreen({
     // Bridge offline — fall back to DB (legacy path).
     try {
       const raw = await db.getSetting("design_systems").catch(() => null);
-      if (!raw) { setDesignSystems([]); return; }
+      if (!raw) {
+        setDesignSystems([]);
+        return;
+      }
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         const migrated: DesignSystem[] = parsed.map((x: any) => ({
@@ -414,12 +453,16 @@ export function HomeScreen({
       }
     } catch {}
   }, []);
-  useEffect(() => { void reconcileDesignSystems(); }, [reconcileDesignSystems]);
+  useEffect(() => {
+    void reconcileDesignSystems();
+  }, [reconcileDesignSystems]);
 
   // Re-scan on window focus so DSes added via the terminal or another
   // session show up without a page reload.
   useEffect(() => {
-    const onFocus = () => { void reconcileDesignSystems(); };
+    const onFocus = () => {
+      void reconcileDesignSystems();
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [reconcileDesignSystems]);
@@ -453,12 +496,17 @@ export function HomeScreen({
   // first DS in the list when ds_path was unset, which made null DS
   // unreachable from the UI.
   useEffect(() => {
-    if (designSystems.length === 0) { setSelectedDsPath(null); return; }
+    if (designSystems.length === 0) {
+      setSelectedDsPath(null);
+      return;
+    }
     if (selectedDsPath && designSystems.some((d) => d.path === selectedDsPath)) return;
-    db.getSetting("ds_path").then((stored) => {
-      const match = stored && designSystems.find((d) => d.path === stored);
-      setSelectedDsPath(match ? stored : null);
-    }).catch(() => setSelectedDsPath(null));
+    db.getSetting("ds_path")
+      .then((stored) => {
+        const match = stored && designSystems.find((d) => d.path === stored);
+        setSelectedDsPath(match ? stored : null);
+      })
+      .catch(() => setSelectedDsPath(null));
   }, [designSystems, selectedDsPath]);
 
   // Hydrate last-used timestamps from db. One key per DS path so we don't
@@ -467,11 +515,13 @@ export function HomeScreen({
     if (designSystems.length === 0) return;
     (async () => {
       const next: Record<string, number> = {};
-      await Promise.all(designSystems.map(async (ds) => {
-        const raw = await db.getSetting(`ds_lastUsed:${ds.path}`).catch(() => null);
-        const n = raw ? Number(raw) : NaN;
-        if (Number.isFinite(n)) next[ds.path] = n;
-      }));
+      await Promise.all(
+        designSystems.map(async (ds) => {
+          const raw = await db.getSetting(`ds_lastUsed:${ds.path}`).catch(() => null);
+          const n = raw ? Number(raw) : NaN;
+          if (Number.isFinite(n)) next[ds.path] = n;
+        }),
+      );
       setDsLastUsed((prev) => ({ ...prev, ...next }));
     })();
   }, [designSystems]);
@@ -482,12 +532,15 @@ export function HomeScreen({
     void db.setSetting(`ds_lastUsed:${path}`, String(now)).catch(() => {});
   }, []);
 
-  const pickDs = useCallback((ds: DesignSystem) => {
-    setSelectedDsPath(ds.path);
-    void db.setSetting("ds_path", ds.path).catch(() => {});
-    void db.setSetting("ds_name", ds.name).catch(() => {});
-    markDsUsed(ds.path);
-  }, [markDsUsed]);
+  const pickDs = useCallback(
+    (ds: DesignSystem) => {
+      setSelectedDsPath(ds.path);
+      void db.setSetting("ds_path", ds.path).catch(() => {});
+      void db.setSetting("ds_name", ds.name).catch(() => {});
+      markDsUsed(ds.path);
+    },
+    [markDsUsed],
+  );
 
   const clearDsSelection = useCallback(() => {
     setSelectedDsPath(null);
@@ -504,9 +557,12 @@ export function HomeScreen({
       try {
         const content = await readFileViaBridge(ds.designMdPath);
         if (!content) return;
-        const text = typeof content === "string" ? content : (content as any).content ?? "";
+        const text = typeof content === "string" ? content : ((content as any).content ?? "");
         const parsed = parseDesignSystem(text);
-        const hexes = parsed.colors.slice(0, 4).map((c) => c.hex).filter(Boolean);
+        const hexes = parsed.colors
+          .slice(0, 4)
+          .map((c) => c.hex)
+          .filter(Boolean);
         if (hexes.length > 0) {
           setDsColors((prev) => ({ ...prev, [ds.path]: hexes }));
         }
@@ -543,8 +599,8 @@ export function HomeScreen({
   // "Gerar preview visual" the modal toggle, we also navigate into the DS
   // detail Preview tab — that screen has the in-flight polling + "Gerando…"
   // banner, while the home grid card is silent during the ~minute the
-  // daemon spends generating. Founder feedback: "se gerou preview nao foi
-  // pra o lugar certo" — the preview DID land on disk, but nothing in the
+  // daemon spends generating. Reported issue: a generated preview didn't
+  // show up anywhere — the preview DID land on disk, but nothing in the
   // home grid surfaced it; the auto-navigate gives the result a destination.
   const handleDsSaved = (entry: DsEntry, opts?: { openPreview?: boolean }) => {
     const next = [entry, ...designSystems.filter((d) => d.path !== entry.path)];
@@ -607,7 +663,10 @@ export function HomeScreen({
     async (payload: NewProjectFormPayload) => {
       const trimmed = payload.name.trim();
       if (!trimmed) return;
-      const baseSlug = trimmed.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]+/g, "");
+      const baseSlug = trimmed
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]+/g, "");
       // Suffix the path with a short timestamp so two projects that
       // slugify to the same string (e.g. same name + same imported HTML)
       // land in distinct folders. Without this, the meta.json + chat
@@ -659,7 +718,9 @@ export function HomeScreen({
           const bytes = new Uint8Array(bin.length);
           for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
           return new TextDecoder("utf-8").decode(bytes);
-        } catch { return null; }
+        } catch {
+          return null;
+        }
       }
 
       const atts = payload.attachments ?? [];
@@ -714,9 +775,7 @@ export function HomeScreen({
       }
 
       // Text attachments — keep legacy inline behavior (markdown code block).
-      const textBlocks: string[] = textAtts.map(
-        (a) => `\`\`\`\n# ${a.name}\n${a.content}\n\`\`\``,
-      );
+      const textBlocks: string[] = textAtts.map((a) => `\`\`\`\n# ${a.name}\n${a.content}\n\`\`\``);
 
       // Seed prompt — assemble [context block?][text blocks?][user prompt].
       // The context block is added only when attachments produced disk
@@ -726,7 +785,9 @@ export function HomeScreen({
         contextLines.push("<context>");
         contextLines.push(`Project workspace: ${projectPath}`);
         if (primaryHtmlAtt) {
-          contextLines.push(`Primary canvas: ${slug}.html (HTML attached by user — open in canvas)`);
+          contextLines.push(
+            `Primary canvas: ${slug}.html (HTML attached by user — open in canvas)`,
+          );
         }
         if (tabRefs.length > 0) {
           contextLines.push("Other canvas tabs (secondary HTMLs attached):");
@@ -763,7 +824,13 @@ export function HomeScreen({
           designSystem: payload.designSystem,
           provider: payload.provider,
           model: payload.model,
-          attachments: payload.attachments?.map((a) => ({ name: a.name, mime: a.mime, size: a.size, kind: a.kind })) ?? [],
+          attachments:
+            payload.attachments?.map((a) => ({
+              name: a.name,
+              mime: a.mime,
+              size: a.size,
+              kind: a.kind,
+            })) ?? [],
           taste: payload.taste,
           tasteActive: payload.tasteActive,
         },
@@ -772,7 +839,16 @@ export function HomeScreen({
       // to projectPath/{slug}.html so the EditorScreen iframe loads with
       // the user's HTML as the canvas. Secondary HTMLs sit on disk as
       // tab-N-*.html for the editor's boot scan.
-      await onCreateProject(trimmed, projectPath, "hifi", undefined, seed, undefined, primaryHtml, extras);
+      await onCreateProject(
+        trimmed,
+        projectPath,
+        "hifi",
+        undefined,
+        seed,
+        undefined,
+        primaryHtml,
+        extras,
+      );
       setShowNpModal(false);
     },
     [projectsFolder, onCreateProject],
@@ -795,16 +871,20 @@ export function HomeScreen({
       return;
     }
     if (!/^\s*<.+/.test(content) || !content.includes(">")) {
-      setHtmlPasteError("Doesn't look like HTML — must start with a tag like <!DOCTYPE html> or <body>.");
+      setHtmlPasteError(
+        "Doesn't look like HTML — must start with a tag like <!DOCTYPE html> or <body>.",
+      );
       return;
     }
     // Resolve project name: prefer modal input, fall back to sidebar input,
     // then derive from filename, then synth.
     const resolvedName =
-      fromHtmlName.trim()
-      || projectName.trim()
-      || (fromHtmlSourceFile ? fromHtmlSourceFile.replace(/\.html?$/i, "").replace(/[_\s]+/g, "-") : "")
-      || `untitled-${Date.now().toString(36).slice(-4)}`;
+      fromHtmlName.trim() ||
+      projectName.trim() ||
+      (fromHtmlSourceFile
+        ? fromHtmlSourceFile.replace(/\.html?$/i, "").replace(/[_\s]+/g, "-")
+        : "") ||
+      `untitled-${Date.now().toString(36).slice(-4)}`;
 
     setHtmlPasteError(null);
     setFromHtmlSubmitting(true);
@@ -815,7 +895,10 @@ export function HomeScreen({
       // Inline what handleCreate does so we can await + surface errors
       // (handleCreate is fire-and-forget and the caller can't tell if
       // mkdir/write failed).
-      const slug = resolvedName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]+/g, "");
+      const slug = resolvedName
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]+/g, "");
       const seed = initialPrompt.trim() || undefined;
       void writeGlobalConfig({ default_provider: createProvider }).catch(() => {});
       void db.setSetting("default_provider", createProvider).catch(() => {});
@@ -831,7 +914,9 @@ export function HomeScreen({
       setFromHtmlSourceFile(null);
       setInitialPrompt("");
     } catch (e) {
-      setHtmlPasteError(`Couldn't create project: ${String(e instanceof Error ? e.message : e).slice(0, 200)}`);
+      setHtmlPasteError(
+        `Couldn't create project: ${String(e instanceof Error ? e.message : e).slice(0, 200)}`,
+      );
     } finally {
       setFromHtmlSubmitting(false);
     }
@@ -851,7 +936,9 @@ export function HomeScreen({
   // Reset paging when the search query changes — going back to "show
   // first 20" matches each filtered set instead of carrying over a
   // stale offset.
-  useEffect(() => { setProjectsLimit(PROJECTS_PAGE_SIZE); }, [q]);
+  useEffect(() => {
+    setProjectsLimit(PROJECTS_PAGE_SIZE);
+  }, [q]);
   const recentProjects = filtered.slice(0, projectsLimit);
   const hasMoreProjects = filtered.length > projectsLimit;
 
@@ -859,8 +946,8 @@ export function HomeScreen({
   // from the filesystem and keeps the content in state. When the project hasn't
   // been generated yet, the entry stays empty and ProjectCover falls back to its
   // generative dot grid.
-  const [projectHtmls, setProjectHtmls] = useState<Record<string, string>>(
-    () => Object.fromEntries([...projectHtmlCache].map(([id, v]) => [id, v.html])),
+  const [projectHtmls, setProjectHtmls] = useState<Record<string, string>>(() =>
+    Object.fromEntries([...projectHtmlCache].map(([id, v]) => [id, v.html])),
   );
   useEffect(() => {
     let cancelled = false;
@@ -901,15 +988,17 @@ export function HomeScreen({
         await Promise.all(toLoad.slice(i, i + CONCURRENCY).map(loadOne));
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [recentProjects]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Per-project ratio cache. Reads .df/meta.json once per project so the
   // cover thumbnail renders the iframe at the actual aspect (a 9:16 video
   // doesn't get squashed into a 16:9 viewport). Undefined means 'not
   // loaded yet'; ProjectCover defaults to 16:9 in that window.
-  const [projectRatios, setProjectRatios] = useState<Record<string, RatioId>>(
-    () => Object.fromEntries([...projectRatioCache].map(([id, v]) => [id, v.ratio])),
+  const [projectRatios, setProjectRatios] = useState<Record<string, RatioId>>(() =>
+    Object.fromEntries([...projectRatioCache].map(([id, v]) => [id, v.ratio])),
   );
   useEffect(() => {
     let cancelled = false;
@@ -932,7 +1021,9 @@ export function HomeScreen({
         await Promise.all(toLoad.slice(i, i + CONCURRENCY).map(loadOne));
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [recentProjects]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -1001,7 +1092,6 @@ export function HomeScreen({
           opens the modal. */}
       <div className="home-body-v2 home-body-v2--v8">
         <div className="home-stage-v8">
-
           {/* HERO — canonical SkeuHero (DNA reference) for /projects.
               Uses the unified SkeuHero component (size lg + tactile
               CTA slot). Anatomy (ascii grain + corner mark + engraved
@@ -1030,12 +1120,14 @@ export function HomeScreen({
                     aria-label={t("home.cta.aria")}
                   >
                     {/* v16 — Logo replaces the LED bolinha. The mark
-                      * "acende" no hover (opacity + accent + soft glow)
-                      * and "afunda" no active (translateY + bezel pressed).
-                      * User explicit: "sem essa shadow forte". */}
+                     * "acende" no hover (opacity + accent + soft glow)
+                     * and "afunda" no active (translateY + bezel pressed).
+                     * User explicit: "sem essa shadow forte". */}
                     <Logo size={16} className="home-hero-cta-mark" />
                     <span className="home-hero-cta-label">{t("home.hero.cta")}</span>
-                    <span className="home-hero-cta-arrow" aria-hidden="true">→</span>
+                    <span className="home-hero-cta-arrow" aria-hidden="true">
+                      →
+                    </span>
                   </button>
                 }
               />
@@ -1072,9 +1164,21 @@ export function HomeScreen({
           {rightTab === "templates" ? (
             <TemplatesTab
               onUseTemplate={(name, html) => {
-                const slug = (name || "novo-projeto").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 80);
+                const slug = (name || "novo-projeto")
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")
+                  .replace(/[^a-z0-9-]/g, "")
+                  .slice(0, 80);
                 const projectPath = `${projectsFolder.replace(/\/$/, "")}/${slug}-${Date.now().toString(36).slice(-4)}`;
-                void onCreateProject(name || t("home.project.defaultname"), projectPath, "hifi", "template", undefined, undefined, html);
+                void onCreateProject(
+                  name || t("home.project.defaultname"),
+                  projectPath,
+                  "hifi",
+                  "template",
+                  undefined,
+                  undefined,
+                  html,
+                );
               }}
             />
           ) : rightTab === "design-systems" ? (
@@ -1085,13 +1189,22 @@ export function HomeScreen({
               <header className="skills-header">
                 <div>
                   <h2 className="skills-title">{t("home.hero.ds.title")}</h2>
-                  <p className="skills-lede">
-                    {t("home.hero.ds.subtitle")}
-                  </p>
+                  <p className="skills-lede">{t("home.hero.ds.subtitle")}</p>
                 </div>
                 <div className="skills-header-actions">
                   <button className="skills-cta" onClick={handleAddDesignSystem}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
                     {t("home.hero.ds.cta")}
                   </button>
                 </div>
@@ -1100,20 +1213,38 @@ export function HomeScreen({
               {designSystems.length === 0 ? (
                 <div className="skills-empty">
                   <span className="skills-empty-title">{t("home.ds.empty.title")}</span>
-                  <span className="skills-empty-body" dangerouslySetInnerHTML={{ __html: t("home.ds.empty.body") }} />
-                  <button className="skills-cta" onClick={handleAddDesignSystem} style={{ marginTop: 12 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span
+                    className="skills-empty-body"
+                    dangerouslySetInnerHTML={{ __html: t("home.ds.empty.body") }}
+                  />
+                  <button
+                    className="skills-cta"
+                    onClick={handleAddDesignSystem}
+                    style={{ marginTop: 12 }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
                     {t("home.ds.empty.cta")}
                   </button>
                 </div>
               ) : (
                 /* DS cards use EntityCard now — same anatomy
-                  * as Projects + Templates (16:9 thumb + meta footer + delete-x
-                  * affordance on hover). User spec: "por que o card de
-                  * design system eh tao diferente do de projeto e template?
-                  * queria padronizar esses cards." Only the thumb content
-                  * differs (palette band + Aa sample) so DS cards remain
-                  * legible at thumbnail size. */
+                 * as Projects + Templates (16:9 thumb + meta footer + delete-x
+                 * affordance on hover). User spec: "por que o card de
+                 * design system eh tao diferente do de projeto e template?
+                 * queria padronizar esses cards." Only the thumb content
+                 * differs (palette band + Aa sample) so DS cards remain
+                 * legible at thumbnail size. */
                 <div className="home-right-grid">
                   {designSystems.map((ds) => (
                     <EntityCard
@@ -1122,7 +1253,9 @@ export function HomeScreen({
                       title={prettifyName(ds.name)}
                       hoverTitle={ds.path}
                       optionsLabel={t("home.ds.options.aria")}
-                      thumb={<DsCardPreview designMdPath={ds.designMdPath} coverPath={ds.coverPath} />}
+                      thumb={
+                        <DsCardPreview designMdPath={ds.designMdPath} coverPath={ds.coverPath} />
+                      }
                       onOpen={() => onOpenDs?.(ds)}
                       menuOpen={menuOpenFor === `ds:${ds.path}`}
                       onMenuToggle={(open) => setMenuOpenFor(open ? `ds:${ds.path}` : null)}
@@ -1150,10 +1283,22 @@ export function HomeScreen({
               {recentProjects.length === 0 ? (
                 <div className="canvas-empty" style={{ gridColumn: "1 / -1" }}>
                   <div className="canvas-empty-inner">
-                    <div style={{ color: "var(--df-text-secondary)", fontSize: "var(--df-text-md)", fontWeight: 600 }}>
+                    <div
+                      style={{
+                        color: "var(--df-text-secondary)",
+                        fontSize: "var(--df-text-md)",
+                        fontWeight: 600,
+                      }}
+                    >
                       {q ? t("home.empty.search.title") : t("home.empty.projects.title")}
                     </div>
-                    <div style={{ color: "var(--df-text-faint)", fontSize: "var(--df-text-sm)", marginTop: 4 }}>
+                    <div
+                      style={{
+                        color: "var(--df-text-faint)",
+                        fontSize: "var(--df-text-sm)",
+                        marginTop: 4,
+                      }}
+                    >
                       {q ? tf("home.project.search.empty", query) : t("home.empty.projects.body")}
                     </div>
                   </div>
@@ -1204,7 +1349,14 @@ export function HomeScreen({
               {/* "Carregar mais" pager — only shown on the projects tab
                   when filtered.length exceeds the current limit. */}
               {hasMoreProjects && (
-                <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "center", padding: "20px 0 8px" }}>
+                <div
+                  style={{
+                    gridColumn: "1 / -1",
+                    display: "flex",
+                    justifyContent: "center",
+                    padding: "20px 0 8px",
+                  }}
+                >
                   <button
                     type="button"
                     className="df-btn df-btn--secondary"
@@ -1229,8 +1381,20 @@ export function HomeScreen({
       {/* START FROM HTML MODAL */}
       {showFromHtml && (
         <div
-          style={{ position: "fixed", inset: 0, background: "var(--df-surface-overlay)", backdropFilter: "blur(18px) saturate(1.02)", WebkitBackdropFilter: "blur(18px) saturate(1.02)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}
-          onClick={() => { if (!fromHtmlSubmitting) setShowFromHtml(false); }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "var(--df-surface-overlay)",
+            backdropFilter: "blur(18px) saturate(1.02)",
+            WebkitBackdropFilter: "blur(18px) saturate(1.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 200,
+          }}
+          onClick={() => {
+            if (!fromHtmlSubmitting) setShowFromHtml(false);
+          }}
         >
           <div
             style={{
@@ -1240,27 +1404,64 @@ export function HomeScreen({
               borderRadius: "var(--df-r-3xl)",
               boxShadow: "var(--df-shadow-card)",
               padding: 26,
-              display: "flex", flexDirection: "column", gap: 14,
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
               overflow: "hidden",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div>
-              <div style={{ fontFamily: "var(--df-font-mono)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "var(--df-tracking-label)", color: "var(--df-text-muted)", marginBottom: 6 }}>
+              <div
+                style={{
+                  fontFamily: "var(--df-font-mono)",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "var(--df-tracking-label)",
+                  color: "var(--df-text-muted)",
+                  marginBottom: 6,
+                }}
+              >
                 {t("home.fromhtml.kicker")}
               </div>
-              <h2 style={{ margin: 0, fontFamily: "var(--df-font-display)", fontSize: "var(--df-text-lg)", fontWeight: 700, letterSpacing: "var(--df-tracking-display)", color: "var(--df-text-primary)" }}>
+              <h2
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--df-font-display)",
+                  fontSize: "var(--df-text-lg)",
+                  fontWeight: 700,
+                  letterSpacing: "var(--df-tracking-display)",
+                  color: "var(--df-text-primary)",
+                }}
+              >
                 {t("home.fromhtml.title")}
               </h2>
               <p
-                style={{ margin: "6px 0 0", fontSize: "var(--df-text-sm)", color: "var(--df-text-secondary)", lineHeight: 1.55 }}
+                style={{
+                  margin: "6px 0 0",
+                  fontSize: "var(--df-text-sm)",
+                  color: "var(--df-text-secondary)",
+                  lineHeight: 1.55,
+                }}
                 dangerouslySetInnerHTML={{ __html: t("home.fromhtml.body") }}
               />
             </div>
 
             {/* Project name (independent from the sidebar input) */}
             <div>
-              <label style={{ display: "block", fontFamily: "var(--df-font-mono)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "var(--df-tracking-label)", color: "var(--df-text-muted)", marginBottom: 6 }}>
+              <label
+                style={{
+                  display: "block",
+                  fontFamily: "var(--df-font-mono)",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "var(--df-tracking-label)",
+                  color: "var(--df-text-muted)",
+                  marginBottom: 6,
+                }}
+              >
                 {t("home.fromhtml.name.label")}
               </label>
               <input
@@ -1276,7 +1477,10 @@ export function HomeScreen({
             <button
               type="button"
               onClick={() => fromHtmlFileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "copy";
+              }}
               onDrop={async (e) => {
                 e.preventDefault();
                 const f = e.dataTransfer.files?.[0];
@@ -1297,25 +1501,58 @@ export function HomeScreen({
                 borderRadius: "var(--df-r-md)",
                 color: "var(--df-text-secondary)",
                 cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 12,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
                 fontFamily: "inherit",
                 textAlign: "left",
-                transition: "border-color 160ms var(--df-ease-out), background 160ms var(--df-ease-out)",
+                transition:
+                  "border-color 160ms var(--df-ease-out), background 160ms var(--df-ease-out)",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--df-border-hover)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--df-border-subtle)"; }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--df-border-hover)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--df-border-subtle)";
+              }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: "var(--df-text-sm)", fontWeight: 600, color: "var(--df-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <div
+                  style={{
+                    fontSize: "var(--df-text-sm)",
+                    fontWeight: 600,
+                    color: "var(--df-text-primary)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {fromHtmlSourceFile ? fromHtmlSourceFile : t("home.fromhtml.drop.label")}
                 </div>
-                <div style={{ fontSize: "var(--df-text-xs)", color: "var(--df-text-faint)", marginTop: 2 }}>
-                  {fromHtmlSourceFile ? tf("home.fromhtml.drop.replace", htmlPaste.length.toLocaleString()) : t("home.fromhtml.drop.below")}
+                <div
+                  style={{
+                    fontSize: "var(--df-text-xs)",
+                    color: "var(--df-text-faint)",
+                    marginTop: 2,
+                  }}
+                >
+                  {fromHtmlSourceFile
+                    ? tf("home.fromhtml.drop.replace", htmlPaste.length.toLocaleString())
+                    : t("home.fromhtml.drop.below")}
                 </div>
               </div>
             </button>
@@ -1339,8 +1576,14 @@ export function HomeScreen({
 
             <textarea
               value={htmlPaste}
-              onChange={(e) => { setHtmlPaste(e.target.value); setFromHtmlSourceFile(null); setHtmlPasteError(null); }}
-              placeholder={'<!DOCTYPE html>\n<html lang="en">\n  <head>...</head>\n  <body>...</body>\n</html>'}
+              onChange={(e) => {
+                setHtmlPaste(e.target.value);
+                setFromHtmlSourceFile(null);
+                setHtmlPasteError(null);
+              }}
+              placeholder={
+                '<!DOCTYPE html>\n<html lang="en">\n  <head>...</head>\n  <body>...</body>\n</html>'
+              }
               spellCheck={false}
               style={{
                 width: "100%",
@@ -1360,17 +1603,35 @@ export function HomeScreen({
               }}
             />
             {htmlPasteError && (
-              <div style={{ fontSize: "var(--df-text-xs)", color: "var(--df-accent-danger, #C25450)" }}>{htmlPasteError}</div>
+              <div
+                style={{ fontSize: "var(--df-text-xs)", color: "var(--df-accent-danger, #C25450)" }}
+              >
+                {htmlPasteError}
+              </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: "var(--df-font-mono)", fontSize: 10, color: "var(--df-text-faint)" }}>
+              <span
+                style={{
+                  fontFamily: "var(--df-font-mono)",
+                  fontSize: 10,
+                  color: "var(--df-text-faint)",
+                }}
+              >
                 {tf("home.fromhtml.chars", htmlPaste.length.toLocaleString())}
               </span>
               <div style={{ display: "flex", gap: 8 }}>
-                <button className="df-btn df-btn--secondary" onClick={() => setShowFromHtml(false)} disabled={fromHtmlSubmitting}>{t("home.fromhtml.cancel")}</button>
+                <button
+                  className="df-btn df-btn--secondary"
+                  onClick={() => setShowFromHtml(false)}
+                  disabled={fromHtmlSubmitting}
+                >
+                  {t("home.fromhtml.cancel")}
+                </button>
                 <button
                   className="df-btn df-btn--primary"
-                  onClick={() => { void handleStartFromHtml(); }}
+                  onClick={() => {
+                    void handleStartFromHtml();
+                  }}
                   disabled={fromHtmlSubmitting || htmlPaste.trim().length < 20}
                 >
                   {fromHtmlSubmitting ? t("home.fromhtml.creating") : t("home.fromhtml.create")}
@@ -1403,7 +1664,9 @@ export function HomeScreen({
         confirmLabel={t("home.project.action.delete")}
         tone="danger"
         busy={deleteBusy}
-        onClose={() => { if (!deleteBusy) setDeleteTarget(null); }}
+        onClose={() => {
+          if (!deleteBusy) setDeleteTarget(null);
+        }}
         onConfirm={async () => {
           if (!deleteTarget || deleteBusy) return;
           const target = deleteTarget;
@@ -1414,7 +1677,11 @@ export function HomeScreen({
           } catch (err) {
             console.error("[project] delete failed", err);
             window.alert(
-              tf("home.project.delete.failed", target.name, err instanceof Error ? err.message : String(err)),
+              tf(
+                "home.project.delete.failed",
+                target.name,
+                err instanceof Error ? err.message : String(err),
+              ),
             );
           } finally {
             setDeleteBusy(false);
@@ -1425,19 +1692,33 @@ export function HomeScreen({
       {/* RENAME PROJECT MODAL */}
       {renameTarget && (
         <div
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 200,
+          }}
           onClick={() => setRenameTarget(null)}
         >
           <div
             style={{
-              width: 420, background: "var(--df-surface-elevated)",
+              width: 420,
+              background: "var(--df-surface-elevated)",
               borderRadius: "var(--df-r-3xl)",
-              boxShadow: "var(--df-shadow-card)", padding: "var(--df-sp-5)",
-              display: "flex", flexDirection: "column", gap: "var(--df-sp-3)",
+              boxShadow: "var(--df-shadow-card)",
+              padding: "var(--df-sp-5)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--df-sp-3)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ fontSize: "var(--df-text-md)", fontWeight: 600 }}>{t("home.rename.title")}</div>
+            <div style={{ fontSize: "var(--df-text-md)", fontWeight: 600 }}>
+              {t("home.rename.title")}
+            </div>
             <input
               autoFocus
               className="df-input"
@@ -1453,12 +1734,19 @@ export function HomeScreen({
               }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--df-sp-2)" }}>
-              <button className="df-btn df-btn--secondary" onClick={() => setRenameTarget(null)}>{t("home.rename.cancel")}</button>
+              <button className="df-btn df-btn--secondary" onClick={() => setRenameTarget(null)}>
+                {t("home.rename.cancel")}
+              </button>
               <button
                 className="df-btn df-btn--primary"
                 disabled={!renameInput.trim()}
-                onClick={() => { onRenameProject(renameTarget.id, renameInput.trim()); setRenameTarget(null); }}
-              >{t("home.rename.confirm")}</button>
+                onClick={() => {
+                  onRenameProject(renameTarget.id, renameInput.trim());
+                  setRenameTarget(null);
+                }}
+              >
+                {t("home.rename.confirm")}
+              </button>
             </div>
           </div>
         </div>
@@ -1493,7 +1781,14 @@ export function HomeScreen({
               aria-label={t("home.dsall.close")}
               onClick={() => setShowAllDs(false)}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden
+              >
                 <line x1="6" y1="6" x2="18" y2="18" />
                 <line x1="18" y1="6" x2="6" y2="18" />
               </svg>
@@ -1533,7 +1828,9 @@ export function HomeScreen({
                   <div className="dsall-row-name">{ds.name}</div>
                   <div className="dsall-row-sub">
                     {swatches.length > 0
-                      ? (swatches.length === 1 ? t("home.ds.tokens.one") : tf("home.ds.tokens.many", swatches.length))
+                      ? swatches.length === 1
+                        ? t("home.ds.tokens.one")
+                        : tf("home.ds.tokens.many", swatches.length)
                       : t("home.ds.designmd")}
                     <span className="dsall-row-sep">·</span>
                     {ds.source}
@@ -1546,7 +1843,16 @@ export function HomeScreen({
                   </div>
                 </div>
                 {isSelected && (
-                  <svg className="dsall-row-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <svg
+                    className="dsall-row-check"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 )}
@@ -1559,80 +1865,104 @@ export function HomeScreen({
       {/* Screen-level model menu — fixed position, escapes prompt-bar
           overflow + stacking context. Wide enough for OpenRouter's 200+
           catalog. Search appears when the catalog is long. */}
-      {showModelMenu && (() => {
-        const opts = liveModelOpts.length > 0 ? liveModelOpts : getModelsForProvider(createProvider);
-        const filtered = modelMenuQuery.trim()
-          ? opts.filter((o) =>
-              o.label.toLowerCase().includes(modelMenuQuery.toLowerCase()) ||
-              o.id.toLowerCase().includes(modelMenuQuery.toLowerCase())
-            )
-          : opts;
-        const showSearch = opts.length > 8;
-        return (
-          <div
-            ref={modelMenuRef}
-            className="reg-model-menu"
-            role="listbox"
-            style={{
-              top: modelMenuCoords?.top ?? 0,
-              left: modelMenuCoords?.left ?? 0,
-              width: modelMenuCoords?.width ?? 420,
-              right: "auto",
-              bottom: "auto",
-              transform: modelMenuCoords?.openUpward ? "translateY(-100%)" : undefined,
-              visibility: modelMenuCoords ? "visible" : "hidden",
-            }}
-          >
-            {showSearch && (
-              <div style={{ position: "sticky", top: 0, padding: 4, background: "var(--df-surface-elevated)", borderBottom: "1px solid var(--df-border-subtle)" }}>
-                <input
-                  type="text"
-                  autoFocus
-                  value={modelMenuQuery}
-                  onChange={(e) => setModelMenuQuery(e.target.value)}
-                  placeholder={`search ${opts.length} models…`}
+      {showModelMenu &&
+        (() => {
+          const opts =
+            liveModelOpts.length > 0 ? liveModelOpts : getModelsForProvider(createProvider);
+          const filtered = modelMenuQuery.trim()
+            ? opts.filter(
+                (o) =>
+                  o.label.toLowerCase().includes(modelMenuQuery.toLowerCase()) ||
+                  o.id.toLowerCase().includes(modelMenuQuery.toLowerCase()),
+              )
+            : opts;
+          const showSearch = opts.length > 8;
+          return (
+            <div
+              ref={modelMenuRef}
+              className="reg-model-menu"
+              role="listbox"
+              style={{
+                top: modelMenuCoords?.top ?? 0,
+                left: modelMenuCoords?.left ?? 0,
+                width: modelMenuCoords?.width ?? 420,
+                right: "auto",
+                bottom: "auto",
+                transform: modelMenuCoords?.openUpward ? "translateY(-100%)" : undefined,
+                visibility: modelMenuCoords ? "visible" : "hidden",
+              }}
+            >
+              {showSearch && (
+                <div
                   style={{
-                    width: "100%",
-                    padding: "6px 8px",
-                    background: "var(--df-bg-section)",
-                    border: "1px solid var(--df-border-subtle)",
-                    borderRadius: "var(--df-r-sm)",
-                    fontFamily: "var(--df-font-mono)",
-                    fontSize: 11,
-                    color: "var(--df-text-primary)",
-                    outline: "none",
-                    boxSizing: "border-box",
+                    position: "sticky",
+                    top: 0,
+                    padding: 4,
+                    background: "var(--df-surface-elevated)",
+                    borderBottom: "1px solid var(--df-border-subtle)",
                   }}
-                />
-              </div>
-            )}
-            {opts.length === 0 && modelsLoading && (
-              <div style={{ padding: "10px 12px", fontSize: 11, color: "var(--df-text-faint)" }}>{t("common.loading")}</div>
-            )}
-            {filtered.map((m) => (
-              <button
-                key={m.id}
-                role="option"
-                aria-selected={m.id === createModel}
-                onClick={() => {
-                  setCreateModel(m.id);
-                  writeLastModel(createProvider, m.id);
-                  setShowModelMenu(false);
-                  setModelMenuQuery("");
-                }}
-                className={`reg-model-menu-opt${m.id === createModel ? " is-on" : ""}`}
-              >
-                <span style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-start", flex: 1 }}>
-                  <span>{m.label}</span>
-                  {m.sub && <span style={{ fontSize: 10, color: "var(--df-text-faint)" }}>{m.sub}</span>}
-                </span>
-                {m.id === createModel && <span style={{ color: "var(--df-accent-ok)", marginLeft: 8 }}>✓</span>}
-              </button>
-            ))}
-          </div>
-        );
-      })()}
-
+                >
+                  <input
+                    type="text"
+                    autoFocus
+                    value={modelMenuQuery}
+                    onChange={(e) => setModelMenuQuery(e.target.value)}
+                    placeholder={`search ${opts.length} models…`}
+                    style={{
+                      width: "100%",
+                      padding: "6px 8px",
+                      background: "var(--df-bg-section)",
+                      border: "1px solid var(--df-border-subtle)",
+                      borderRadius: "var(--df-r-sm)",
+                      fontFamily: "var(--df-font-mono)",
+                      fontSize: 11,
+                      color: "var(--df-text-primary)",
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              )}
+              {opts.length === 0 && modelsLoading && (
+                <div style={{ padding: "10px 12px", fontSize: 11, color: "var(--df-text-faint)" }}>
+                  {t("common.loading")}
+                </div>
+              )}
+              {filtered.map((m) => (
+                <button
+                  key={m.id}
+                  role="option"
+                  aria-selected={m.id === createModel}
+                  onClick={() => {
+                    setCreateModel(m.id);
+                    writeLastModel(createProvider, m.id);
+                    setShowModelMenu(false);
+                    setModelMenuQuery("");
+                  }}
+                  className={`reg-model-menu-opt${m.id === createModel ? " is-on" : ""}`}
+                >
+                  <span
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 2,
+                      alignItems: "flex-start",
+                      flex: 1,
+                    }}
+                  >
+                    <span>{m.label}</span>
+                    {m.sub && (
+                      <span style={{ fontSize: 10, color: "var(--df-text-faint)" }}>{m.sub}</span>
+                    )}
+                  </span>
+                  {m.id === createModel && (
+                    <span style={{ color: "var(--df-accent-ok)", marginLeft: 8 }}>✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
     </div>
   );
 }
@@ -1686,7 +2016,9 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
   const [toast, setToast] = useState<string | null>(null);
   // skills also use EntityCard now — needs per-card menu open state.
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  const [skillDeleteTarget, setSkillDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [skillDeleteTarget, setSkillDeleteTarget] = useState<{ id: string; name: string } | null>(
+    null,
+  );
   // User ask 2026-05-21: "botao de upload skill ja queria q abrisse
   // dialogo, podendo tambem escolher pasta local". Two hidden inputs
   // drive the file/folder pickers; the visible button toggles a small
@@ -1702,11 +2034,17 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
         const parsed = parseSkillZip(new Uint8Array(await file.arrayBuffer()), file.name);
         const res = await installSkill(parsed.installInput);
         if ("error" in res) flashToast(`Falha: ${res.error}`);
-        else { flashToast(tf("home.skills.toast.imported", res.name)); await rescan(); }
+        else {
+          flashToast(tf("home.skills.toast.imported", res.name));
+          await rescan();
+        }
       } else if (lower.endsWith(".md") || lower.endsWith(".markdown")) {
         const text = await file.text();
         const parsed = parseSkillMarkdown(text);
-        const fallback = file.name.replace(/\.(markdown|md)$/i, "").replace(/[-_]/g, " ").trim();
+        const fallback = file.name
+          .replace(/\.(markdown|md)$/i, "")
+          .replace(/[-_]/g, " ")
+          .trim();
         const name = parsed.name ?? fallback;
         const res = await installSkill({
           name: name || file.name,
@@ -1715,7 +2053,10 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
           body: parsed.body,
         });
         if ("error" in res) flashToast(`Falha: ${res.error}`);
-        else { flashToast(tf("home.skills.toast.imported", res.name)); await rescan(); }
+        else {
+          flashToast(tf("home.skills.toast.imported", res.name));
+          await rescan();
+        }
       } else {
         flashToast(`Tipo de arquivo não suportado: ${file.name}`);
       }
@@ -1727,7 +2068,10 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
     // Walk every selected file; pick those ending in .md. Prefer
     // SKILL.md when sibling .md files compete in the same folder.
     const mds = Array.from(files).filter((f) => /\.md$/i.test(f.name));
-    if (mds.length === 0) { flashToast("Nenhum .md na pasta selecionada"); return; }
+    if (mds.length === 0) {
+      flashToast("Nenhum .md na pasta selecionada");
+      return;
+    }
     const byFolder = new Map<string, File>();
     for (const f of mds) {
       const rel = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
@@ -1736,12 +2080,15 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
       const existing = byFolder.get(folder);
       if (!existing || isSkillMd) byFolder.set(folder, f);
     }
-    let ok = 0; let fail = 0;
+    let ok = 0;
+    let fail = 0;
     for (const [folder, f] of byFolder.entries()) {
       try {
         const text = await f.text();
         const parsed = parseSkillMarkdown(text);
-        const fallback = (folder.split("/").pop() || f.name.replace(/\.md$/i, "")).replace(/[-_]/g, " ").trim();
+        const fallback = (folder.split("/").pop() || f.name.replace(/\.md$/i, ""))
+          .replace(/[-_]/g, " ")
+          .trim();
         const name = parsed.name ?? fallback;
         const res = await installSkill({
           name: name || f.name,
@@ -1749,8 +2096,11 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
           description: parsed.description,
           body: parsed.body,
         });
-        if ("error" in res) fail++; else ok++;
-      } catch { fail++; }
+        if ("error" in res) fail++;
+        else ok++;
+      } catch {
+        fail++;
+      }
     }
     await rescan();
     flashToast(`Importadas ${ok} skill(s)${fail ? `, ${fail} falha(s)` : ""}.`);
@@ -1763,10 +2113,7 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
   // Keep `selected` fresh when the registry updates after an edit/delete.
   useEffect(() => {
     if (!selected) return;
-    const all = [
-      ...bySource.df, ...bySource.project,
-      ...bySource.global, ...bySource.builtin,
-    ];
+    const all = [...bySource.df, ...bySource.project, ...bySource.global, ...bySource.builtin];
     const match = all.find((s) => s.id === selected.id);
     if (match && match !== selected) setSelected(match);
     else if (!match) setSelected(null);
@@ -1774,15 +2121,19 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
 
   // Union of user-editable (df) and project (read-only) skills.
   // Global + builtin are advanced — hidden by default, accessible via Settings.
-  const unified = useMemo(() => [...bySource.df, ...bySource.project], [bySource.df, bySource.project]);
+  const unified = useMemo(
+    () => [...bySource.df, ...bySource.project],
+    [bySource.df, bySource.project],
+  );
 
   const filtered = useMemo(() => {
     if (!search) return unified;
     const q = search.toLowerCase();
-    return unified.filter((s) =>
-      s.name.toLowerCase().includes(q) ||
-      s.trigger.toLowerCase().includes(q) ||
-      (s.description || "").toLowerCase().includes(q)
+    return unified.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.trigger.toLowerCase().includes(q) ||
+        (s.description || "").toLowerCase().includes(q),
     );
   }, [unified, search]);
 
@@ -1793,9 +2144,7 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
       <header className="skills-header">
         <div>
           <h2 className="skills-title">{t("home.hero.skills.title")}</h2>
-          <p className="skills-lede">
-            {t("home.hero.skills.subtitle")}
-          </p>
+          <p className="skills-lede">{t("home.hero.skills.subtitle")}</p>
         </div>
         <div className="skills-header-actions">
           <div style={{ position: "relative" }}>
@@ -1806,20 +2155,53 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
               aria-haspopup="menu"
               aria-expanded={importMenuOpen}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
               {t("home.hero.skills.cta.import")}
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6, transform: importMenuOpen ? "rotate(180deg)" : "none", transition: "transform 120ms ease" }}>
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  opacity: 0.6,
+                  transform: importMenuOpen ? "rotate(180deg)" : "none",
+                  transition: "transform 120ms ease",
+                }}
+              >
                 <path d="m6 9 6 6 6-6" />
               </svg>
             </button>
             {importMenuOpen && (
               <>
-                <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setImportMenuOpen(false)} />
+                <div
+                  style={{ position: "fixed", inset: 0, zIndex: 99 }}
+                  onClick={() => setImportMenuOpen(false)}
+                />
                 <div
                   role="menu"
                   style={{
-                    position: "absolute", top: "calc(100% + 6px)", right: 0,
-                    minWidth: 220, zIndex: 100,
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    right: 0,
+                    minWidth: 220,
+                    zIndex: 100,
                     background: "var(--df-surface-elevated)",
                     border: "1px solid var(--df-border-subtle)",
                     borderRadius: "var(--df-r-lg)",
@@ -1828,20 +2210,41 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
                   }}
                 >
                   {[
-                    { id: "file", label: "Arquivo (.md ou .zip)", onSelect: () => { setImportMenuOpen(false); importFileInputRef.current?.click(); } },
-                    { id: "folder", label: "Pasta local", onSelect: () => { setImportMenuOpen(false); importDirInputRef.current?.click(); } },
+                    {
+                      id: "file",
+                      label: "Arquivo (.md ou .zip)",
+                      onSelect: () => {
+                        setImportMenuOpen(false);
+                        importFileInputRef.current?.click();
+                      },
+                    },
+                    {
+                      id: "folder",
+                      label: "Pasta local",
+                      onSelect: () => {
+                        setImportMenuOpen(false);
+                        importDirInputRef.current?.click();
+                      },
+                    },
                   ].map((opt) => (
                     <button
                       key={opt.id}
                       type="button"
                       onClick={opt.onSelect}
                       style={{
-                        display: "block", width: "100%", padding: "10px 14px",
-                        background: "none", border: "none",
-                        color: "var(--df-text-primary)", fontSize: "var(--df-text-sm)",
-                        textAlign: "left", cursor: "pointer",
+                        display: "block",
+                        width: "100%",
+                        padding: "10px 14px",
+                        background: "none",
+                        border: "none",
+                        color: "var(--df-text-primary)",
+                        fontSize: "var(--df-text-sm)",
+                        textAlign: "left",
+                        cursor: "pointer",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--df-interactive-hover)")}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "var(--df-interactive-hover)")
+                      }
                       onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
                     >
                       {opt.label}
@@ -1877,7 +2280,18 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
             }}
           />
           <button className="skills-cta" onClick={() => setShowCreate(true)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
             {t("home.hero.skills.cta")}
           </button>
         </div>
@@ -1888,8 +2302,17 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
           read-only compat. */}
 
       <div className="skills-search">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
         </svg>
         <input
           type="search"
@@ -1910,8 +2333,23 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
           <div className="skills-empty">
             <span className="skills-empty-title">{t("home.skills.empty.title")}</span>
             <span className="skills-empty-body">{t("home.skills.empty.body")}</span>
-            <button className="skills-cta" onClick={() => setShowCreate(true)} style={{ marginTop: 12 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <button
+              className="skills-cta"
+              onClick={() => setShowCreate(true)}
+              style={{ marginTop: 12 }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
               {t("home.skills.empty.cta")}
             </button>
           </div>
@@ -1924,11 +2362,12 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
         <div className="home-right-grid">
           {filtered.map((s) => {
             const isReadOnly = s.source !== "df";
-            const sourceLabel = s.source === "df"
-              ? t("home.skills.tag.yours")
-              : s.source === "project"
-              ? t("home.skills.tag.project")
-              : s.source;
+            const sourceLabel =
+              s.source === "df"
+                ? t("home.skills.tag.yours")
+                : s.source === "project"
+                  ? t("home.skills.tag.project")
+                  : s.source;
             // User ask 2026-05-21: "remova opcao testar no chat (...)
             // nos 3 pontos deixe apenas apagar e editar". `setSelected`
             // opens the modal in detail/edit view, so a single "Editar"
@@ -1936,7 +2375,8 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
             // skills stay non-editable + non-deletable from the home
             // (they live under projects/<slug>/skills/ and belong to
             // that project's lifecycle).
-            const actions: { label: string; onSelect: () => void; tone?: "default" | "danger" }[] = [];
+            const actions: { label: string; onSelect: () => void; tone?: "default" | "danger" }[] =
+              [];
             if (!isReadOnly) {
               actions.push({
                 label: t("home.skill.action.edit"),
@@ -1945,7 +2385,10 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
               actions.push({
                 label: t("home.skill.action.delete"),
                 tone: "danger" as const,
-                onSelect: () => { setSkillDeleteTarget({ id: s.id, name: s.name }); setMenuOpenId(null); },
+                onSelect: () => {
+                  setSkillDeleteTarget({ id: s.id, name: s.name });
+                  setMenuOpenId(null);
+                },
               });
             }
             return (
@@ -1971,7 +2414,10 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
         <SkillsModalLab
           open
           initialMode={showImport ? "import" : "create"}
-          onClose={() => { setShowCreate(false); setShowImport(false); }}
+          onClose={() => {
+            setShowCreate(false);
+            setShowImport(false);
+          }}
           registry={registryState}
           onCreated={(skill) => {
             setShowCreate(false);
@@ -2013,14 +2459,20 @@ function SkillsTabContent({ cwd }: { cwd: string }) {
         onConfirm={async () => {
           if (!skillDeleteTarget) return;
           const ok = await deleteSkill(skillDeleteTarget.id);
-          if (ok) { flashToast(t("home.skills.toast.deleted")); await rescan(); }
-          else { flashToast(t("home.skill.delete.failed")); }
+          if (ok) {
+            flashToast(t("home.skills.toast.deleted"));
+            await rescan();
+          } else {
+            flashToast(t("home.skill.delete.failed"));
+          }
           setSkillDeleteTarget(null);
         }}
       />
 
       {toast && (
-        <div className="skills-toast" role="status" aria-live="polite">{toast}</div>
+        <div className="skills-toast" role="status" aria-live="polite">
+          {toast}
+        </div>
       )}
     </div>
   );
@@ -2039,7 +2491,9 @@ function DsCardPreview({ designMdPath, coverPath }: { designMdPath: string; cove
   const { t } = useT();
   const cached = dsColorCache.get(designMdPath);
   const [colors, setColors] = useState<string[] | null>(cached?.colors ?? null);
-  const [state, setState] = useState<"loading" | "ok" | "empty" | "missing">(cached?.state ?? "loading");
+  const [state, setState] = useState<"loading" | "ok" | "empty" | "missing">(
+    cached?.state ?? "loading",
+  );
   const [coverDataUri, setCoverDataUri] = useState<string | null>(null);
 
   // Cover image (when present) takes over the whole thumb band — full
@@ -2047,46 +2501,74 @@ function DsCardPreview({ designMdPath, coverPath }: { designMdPath: string; cove
   // load the design.md colors in parallel so a future cover removal
   // falls back instantly to the palette view without a re-fetch.
   useEffect(() => {
-    if (!coverPath) { setCoverDataUri(null); return; }
+    if (!coverPath) {
+      setCoverDataUri(null);
+      return;
+    }
     let cancelled = false;
-    readFileViaBridge(coverPath).then((f) => {
-      if (cancelled) return;
-      // /fs/read returns binary as `data:application/octet-stream;base64,…`.
-      // For images we need the right MIME so <img src> renders correctly.
-      if (f?.content?.startsWith("data:")) {
-        const ext = coverPath.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase();
-        const mime = ext === "jpg" || ext === "jpeg" ? "image/jpeg"
-                  : ext === "webp" ? "image/webp"
-                  : "image/png";
-        const base64 = f.content.split(",")[1] || "";
-        setCoverDataUri(`data:${mime};base64,${base64}`);
-      }
-    }).catch(() => setCoverDataUri(null));
-    return () => { cancelled = true; };
+    readFileViaBridge(coverPath)
+      .then((f) => {
+        if (cancelled) return;
+        // /fs/read returns binary as `data:application/octet-stream;base64,…`.
+        // For images we need the right MIME so <img src> renders correctly.
+        if (f?.content?.startsWith("data:")) {
+          const ext = coverPath.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase();
+          const mime =
+            ext === "jpg" || ext === "jpeg"
+              ? "image/jpeg"
+              : ext === "webp"
+                ? "image/webp"
+                : "image/png";
+          const base64 = f.content.split(",")[1] || "";
+          setCoverDataUri(`data:${mime};base64,${base64}`);
+        }
+      })
+      .catch(() => setCoverDataUri(null));
+    return () => {
+      cancelled = true;
+    };
   }, [coverPath]);
 
   useEffect(() => {
     // Already cached from a prior mount → skip the disk read + parse entirely.
     if (dsColorCache.has(designMdPath)) return;
     let cancelled = false;
-    readFileViaBridge(designMdPath).then((f) => {
-      if (cancelled) return;
-      if (!f) { dsColorCache.set(designMdPath, { state: "missing", colors: null }); setState("missing"); return; }
-      const content = (f.content ?? "").trim();
-      if (content.length < 40) { dsColorCache.set(designMdPath, { state: "empty", colors: null }); setState("empty"); return; }
-      try {
-        const parsed = parseDesignSystem(content);
-        const hex = parsed.colors
-          .map((c) => c.hex)
-          .filter((v) => /^#[0-9a-f]{3,8}$/i.test(v))
-          .slice(0, 4); // user: 4 main colors only — 6 was too busy
-        if (hex.length > 0) { dsColorCache.set(designMdPath, { state: "ok", colors: hex }); setColors(hex); setState("ok"); }
-        else { dsColorCache.set(designMdPath, { state: "empty", colors: null }); setState("empty"); }
-      } catch {
-        setState("empty");
-      }
-    }).catch(() => setState("missing"));
-    return () => { cancelled = true; };
+    readFileViaBridge(designMdPath)
+      .then((f) => {
+        if (cancelled) return;
+        if (!f) {
+          dsColorCache.set(designMdPath, { state: "missing", colors: null });
+          setState("missing");
+          return;
+        }
+        const content = (f.content ?? "").trim();
+        if (content.length < 40) {
+          dsColorCache.set(designMdPath, { state: "empty", colors: null });
+          setState("empty");
+          return;
+        }
+        try {
+          const parsed = parseDesignSystem(content);
+          const hex = parsed.colors
+            .map((c) => c.hex)
+            .filter((v) => /^#[0-9a-f]{3,8}$/i.test(v))
+            .slice(0, 4); // user: 4 main colors only — 6 was too busy
+          if (hex.length > 0) {
+            dsColorCache.set(designMdPath, { state: "ok", colors: hex });
+            setColors(hex);
+            setState("ok");
+          } else {
+            dsColorCache.set(designMdPath, { state: "empty", colors: null });
+            setState("empty");
+          }
+        } catch {
+          setState("empty");
+        }
+      })
+      .catch(() => setState("missing"));
+    return () => {
+      cancelled = true;
+    };
   }, [designMdPath]);
 
   // Cover present → render it full-bleed and let the palette/Aa fallback
@@ -2119,7 +2601,17 @@ function DsCardPreview({ designMdPath, coverPath }: { designMdPath: string; cove
   if (state === "empty" || state === "missing" || !colors) {
     return (
       <div className="ds-card-thumb-band ds-card-thumb-band--empty">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
           <circle cx="12" cy="12" r="10" />
           <line x1="12" y1="8" x2="12" y2="12" />
           <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -2141,11 +2633,7 @@ function DsCardPreview({ designMdPath, coverPath }: { designMdPath: string; cove
     <div className="ds-card-thumb-band">
       <div className="ds-card-thumb-swatches" aria-hidden>
         {palette.map((c, i) => (
-          <span
-            key={`${c}-${i}`}
-            className="ds-card-thumb-swatch"
-            style={{ background: c }}
-          />
+          <span key={`${c}-${i}`} className="ds-card-thumb-swatch" style={{ background: c }} />
         ))}
       </div>
     </div>
@@ -2164,16 +2652,20 @@ function SkillCardPreview({ skill, sourceLabel }: { skill: Skill; sourceLabel: s
   // chip dropped from the thumb. sourceLabel still threads through (the
   // card subtitle / hoverTitle can use it elsewhere). Logo DF soft
   // stays — flat neutral background + low-contrast DF logo centred.
-  void skill; void sourceLabel;
+  void skill;
+  void sourceLabel;
   return (
     <div
       className="skill-card-thumb"
       style={{
         position: "relative",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         background: "var(--df-bg-section)",
         color: "var(--df-text-faint)",
-        width: "100%", height: "100%",
+        width: "100%",
+        height: "100%",
       }}
     >
       <Logo size={48} style={{ opacity: 0.22 }} />
@@ -2207,7 +2699,9 @@ function TemplatesTab({ onUseTemplate }: { onUseTemplate: (name: string, html: s
   }, []);
   const persist = (next: SavedTemplate[]) => {
     setTemplates(next);
-    try { localStorage.setItem("df:templates", JSON.stringify(next)); } catch {}
+    try {
+      localStorage.setItem("df:templates", JSON.stringify(next));
+    } catch {}
   };
   const handleDelete = (id: string) => {
     persist(templates.filter((tpl) => tpl.id !== id));
@@ -2247,9 +2741,7 @@ function TemplatesTab({ onUseTemplate }: { onUseTemplate: (name: string, html: s
       <header className="skills-header">
         <div>
           <h2 className="skills-title">{t("home.hero.templates.title")}</h2>
-          <p className="skills-lede">
-            {t("home.hero.templates.subtitle")}
-          </p>
+          <p className="skills-lede">{t("home.hero.templates.subtitle")}</p>
         </div>
       </header>
 
@@ -2257,10 +2749,24 @@ function TemplatesTab({ onUseTemplate }: { onUseTemplate: (name: string, html: s
         <div className="home-right-grid">
           <div className="canvas-empty" style={{ gridColumn: "1 / -1" }}>
             <div className="canvas-empty-inner">
-              <div style={{ color: "var(--df-text-secondary)", fontSize: "var(--df-text-md)", fontWeight: 600 }}>
+              <div
+                style={{
+                  color: "var(--df-text-secondary)",
+                  fontSize: "var(--df-text-md)",
+                  fontWeight: 600,
+                }}
+              >
                 {t("home.empty.templates.title")}
               </div>
-              <div style={{ color: "var(--df-text-faint)", fontSize: "var(--df-text-sm)", marginTop: 6, maxWidth: 420, lineHeight: 1.5 }}>
+              <div
+                style={{
+                  color: "var(--df-text-faint)",
+                  fontSize: "var(--df-text-sm)",
+                  marginTop: 6,
+                  maxWidth: 420,
+                  lineHeight: 1.5,
+                }}
+              >
                 {t("home.empty.templates.body")}
               </div>
             </div>
@@ -2277,22 +2783,27 @@ function TemplatesTab({ onUseTemplate }: { onUseTemplate: (name: string, html: s
               optionsLabel={t("home.template.options.aria")}
               thumb={
                 <div className="entity-card-template-thumb">
-                  <iframe
-                    srcDoc={tpl.html}
-                    title={tpl.name}
-                    sandbox=""
-                    aria-hidden
-                  />
+                  <iframe srcDoc={tpl.html} title={tpl.name} sandbox="" aria-hidden />
                 </div>
               }
               onOpen={() => onUseTemplate(tpl.name, tpl.html)}
               menuOpen={menuOpenId === tpl.id}
               onMenuToggle={(open) => setMenuOpenId(open ? tpl.id : null)}
               actions={[
-                { label: t("home.template.action.use"), onSelect: () => onUseTemplate(tpl.name, tpl.html) },
+                {
+                  label: t("home.template.action.use"),
+                  onSelect: () => onUseTemplate(tpl.name, tpl.html),
+                },
                 { label: t("home.template.action.rename"), onSelect: () => handleRename(tpl.id) },
-                { label: t("home.template.action.duplicate"), onSelect: () => handleDuplicate(tpl.id) },
-                { label: t("home.template.action.delete"), onSelect: () => handleDelete(tpl.id), tone: "danger" },
+                {
+                  label: t("home.template.action.duplicate"),
+                  onSelect: () => handleDuplicate(tpl.id),
+                },
+                {
+                  label: t("home.template.action.delete"),
+                  onSelect: () => handleDelete(tpl.id),
+                  tone: "danger",
+                },
               ]}
             />
           ))}

@@ -7,7 +7,7 @@
 //
 // When a user has 0.1.x installed (or whatever Moonshot ships next as
 // 0.3+), the adapter spawns but the CLI exits non-zero with cryptic
-// stderr and the founder sees no actionable hint. This module:
+// stderr and the user sees no actionable hint. This module:
 //
 //   1. probes `<bin> --version` once per process and caches the result;
 //   2. exposes `kimiVersionHint(version)` that returns a non-null
@@ -39,7 +39,12 @@ export async function detectKimiVersion(bin = "kimi", spawnOpts = null) {
   if (cachedVersion !== undefined) return cachedVersion;
   cachedVersion = await new Promise((resolve) => {
     let resolved = false;
-    const settle = (v) => { if (!resolved) { resolved = true; resolve(v); } };
+    const settle = (v) => {
+      if (!resolved) {
+        resolved = true;
+        resolve(v);
+      }
+    };
     try {
       const child = spawn(bin, ["--version"], {
         stdio: ["ignore", "pipe", "pipe"],
@@ -47,13 +52,20 @@ export async function detectKimiVersion(bin = "kimi", spawnOpts = null) {
         shell: process.platform === "win32",
       });
       let stdout = "";
-      child.stdout?.on("data", (c) => { stdout += c.toString("utf8"); });
+      child.stdout?.on("data", (c) => {
+        stdout += c.toString("utf8");
+      });
       child.on("error", () => settle(null));
       child.on("close", () => {
         const match = stdout.match(/(\d+\.\d+(?:\.\d+)?)/);
         settle(match ? match[1] : null);
       });
-      setTimeout(() => { try { child.kill("SIGTERM"); } catch {} settle(null); }, 3000);
+      setTimeout(() => {
+        try {
+          child.kill("SIGTERM");
+        } catch {}
+        settle(null);
+      }, 3000);
     } catch {
       settle(null);
     }
@@ -62,7 +74,9 @@ export async function detectKimiVersion(bin = "kimi", spawnOpts = null) {
 }
 
 /** Reset the probe cache. Test-only — production resets on process restart. */
-export function __resetKimiVersionCache() { cachedVersion = undefined; }
+export function __resetKimiVersionCache() {
+  cachedVersion = undefined;
+}
 
 /**
  * Compare a probed version string against the tested range.

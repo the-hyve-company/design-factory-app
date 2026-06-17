@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and discussion
-    url: https://github.com/the-hyve-company/design-factory/discussions
+    url: https://github.com/the-hyve-company/design-factory-app/discussions
     about: For general questions, ideas not yet ready for an issue, and conversations.
   - name: Security disclosures
-    url: https://github.com/the-hyve-company/design-factory/security/advisories/new
+    url: https://github.com/the-hyve-company/design-factory-app/security/advisories/new
     about: Report a vulnerability privately. See SECURITY.md.

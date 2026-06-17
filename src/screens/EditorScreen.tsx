@@ -4,7 +4,23 @@ import { slugFromPath } from "@/lib/project-files";
 import { Logo } from "@/components/Logo";
 import { AgentPicker } from "@/components/AgentPicker";
 import { ChatHistoryDropdown } from "@/components/ChatHistoryDropdown";
-import { BRIDGE_URL, writeFile, db, refreshBridgeStatus, gitSnapshot, writeBinaryViaBridge, pathExists, readGlobalConfig, writeGlobalConfig, readProjectMeta, writeProjectMeta, listProjectVersions, saveProjectVersion, deleteProjectVersion, type ChatBlock } from "@/lib/claude-bridge";
+import {
+  BRIDGE_URL,
+  writeFile,
+  db,
+  refreshBridgeStatus,
+  gitSnapshot,
+  writeBinaryViaBridge,
+  pathExists,
+  readGlobalConfig,
+  writeGlobalConfig,
+  readProjectMeta,
+  writeProjectMeta,
+  listProjectVersions,
+  saveProjectVersion,
+  deleteProjectVersion,
+  type ChatBlock,
+} from "@/lib/claude-bridge";
 import { useSkillRegistry } from "@/hooks/useSkillRegistry";
 function formatDuration(ms: number): string {
   if (!ms || ms < 1000) return `${Math.max(0, Math.round(ms))}ms`;
@@ -45,7 +61,17 @@ import {
   record as recordTurn,
   attachProjectSlug as recAttachSlug,
 } from "@/lib/turn-recorder";
-import { buildTweaksPrompt, parseTweaksResponse, TWEAKS_SYSTEM_PROMPT, workspaceContextPreamble, invokeConsult, looksLikeQuestion, GENERATE_CORE_SYSTEM, REFINE_SYSTEM, type ProjectContext } from "@/runtime/prompt-invoker";
+import {
+  buildTweaksPrompt,
+  parseTweaksResponse,
+  TWEAKS_SYSTEM_PROMPT,
+  workspaceContextPreamble,
+  invokeConsult,
+  looksLikeQuestion,
+  GENERATE_CORE_SYSTEM,
+  REFINE_SYSTEM,
+  type ProjectContext,
+} from "@/runtime/prompt-invoker";
 import { migrateLegacyChatMessages } from "@/lib/migrations";
 import {
   readProviderSessions,
@@ -67,9 +93,7 @@ import { CanvasStage } from "@/components/CanvasStage";
 import { DfLoader } from "@/components/DfLoader";
 import { ShortcutsOverlay } from "@/components/ShortcutsOverlay";
 import type { EditOverrides } from "@/components/EditDrawer";
-import {
-  InlineEditPanel,
-} from "@/components/InlineEditPanel";
+import { InlineEditPanel } from "@/components/InlineEditPanel";
 import {
   injectInlineEditListenerIntoHtml,
   listenInlineEditFromIframe,
@@ -80,7 +104,12 @@ import {
 import { TerminalDrawer } from "@/components/TerminalDrawer";
 import { SlashMenu } from "@/components/SlashMenu";
 import { findMatches, triggerAtCursor, type SlashCommand } from "@/components/slash-data";
-import { invokeSearchReplaceEdit, applyPatches, applyPatchesToDom, type HtmlPatch } from "@/runtime/patch-invoker";
+import {
+  invokeSearchReplaceEdit,
+  applyPatches,
+  applyPatchesToDom,
+  type HtmlPatch,
+} from "@/runtime/patch-invoker";
 import { sendUserTurn, isTurnPipelineV2Enabled } from "@/runtime/send-user-turn";
 import { assembleTurnBlocks, type TurnPreviewBlock } from "@/runtime/turn-pipeline";
 import { FileManager } from "@/components/FileManager";
@@ -96,14 +125,30 @@ import { injectOverlayIntoHtml } from "@/runtime/element-overlay";
 import { injectNavGuardIntoHtml } from "@/runtime/viewport-fit";
 import { useT, tf } from "@/i18n";
 import { injectTweaksListenerIntoHtml, listenTweaksFromIframe } from "@/runtime/tweaks-bridge";
-import { buildCanonicalPlusBlock, describeCanonicalPlus, type CanonicalPlusInput, type DialDirection, type DialKey } from "@/runtime/canonical-plus-prompt";
+import {
+  buildCanonicalPlusBlock,
+  describeCanonicalPlus,
+  type CanonicalPlusInput,
+  type DialDirection,
+  type DialKey,
+} from "@/runtime/canonical-plus-prompt";
 import { readTasteDialOverrides } from "@/components/TasteDialEditor";
 import { parseSceneManifest } from "@/runtime/scene-manifest";
 import { type DirectionSelection } from "@/data/direction-data";
 import { createPortal } from "react-dom";
-import { readFileViaBridge, listFolder, readChatMessages, readChatTurns, appendChatTurn, writeChatSnapshot, readChatSnapshot, type FsEntry, type FsFile } from "@/lib/claude-bridge";
+import {
+  readFileViaBridge,
+  listFolder,
+  readChatMessages,
+  readChatTurns,
+  appendChatTurn,
+  writeChatSnapshot,
+  readChatSnapshot,
+  type FsEntry,
+  type FsFile,
+} from "@/lib/claude-bridge";
 import { persistOrRecoverTurn } from "@/lib/chat-persist";
-import {surfaceError, warn} from "@/lib/error-surface";
+import { surfaceError, warn } from "@/lib/error-surface";
 import type { Turn } from "@/lib/chat-turns";
 import { spawnStream } from "@/runtime/cli-spawner";
 import { getProvider } from "@/providers/registry";
@@ -122,7 +167,6 @@ import { ModelRocker } from "@/components/NewProjectFormSkeu";
 import { SearchableDropdown } from "@/components/SearchableDropdown";
 import { parseDesignSystem } from "@/lib/ds-google";
 import { listDesignSystemsFromFilesystem, type FsDesignSystem } from "@/lib/claude-bridge";
-
 
 // Model catalog + pretty-name helpers live in src/providers/model-lists.ts so
 // Settings and EditorScreen stay in sync about what models exist per provider.
@@ -175,7 +219,9 @@ function resolvePreviewSandbox(): string {
     const params = new URLSearchParams(window.location.search);
     if (params.get("strictSandbox") === "1") return PREVIEW_SANDBOX_STRICT;
     if (window.localStorage?.getItem("DF_STRICT_SANDBOX") === "1") return PREVIEW_SANDBOX_STRICT;
-  } catch { /* private mode / strict csp */ }
+  } catch {
+    /* private mode / strict csp */
+  }
   return PREVIEW_SANDBOX_PERMISSIVE;
 }
 
@@ -271,7 +317,11 @@ interface ChatMessage {
 // historical snapshots. Extracted to `@/lib/chat-sanitizer` so the
 // invariants are unit-testable. See that module for
 // full documentation of the three sweeps (empty, dedup, leaked-HTML).
-import { sanitizeMessages as sanitizeMessagesImpl, INTERRUPTED_RESPONSE_MARKER, TRUNCATED_RESPONSE_MARKER } from "@/lib/chat-sanitizer";
+import {
+  sanitizeMessages as sanitizeMessagesImpl,
+  INTERRUPTED_RESPONSE_MARKER,
+  TRUNCATED_RESPONSE_MARKER,
+} from "@/lib/chat-sanitizer";
 function sanitizeMessages(msgs: ChatMessage[]): { messages: ChatMessage[]; cleaned: number } {
   return sanitizeMessagesImpl(msgs);
 }
@@ -303,10 +353,10 @@ interface Comment {
 interface Version {
   id: string;
   html: string;
-  name?: string;        // Optional human name — named saves persist indefinitely
-  note?: string;        // Optional 1-line note explaining the save
+  name?: string; // Optional human name — named saves persist indefinitely
+  note?: string; // Optional 1-line note explaining the save
   createdAt: number;
-  auto: boolean;        // true = generated automatically, false = user-named
+  auto: boolean; // true = generated automatically, false = user-named
 }
 
 function computeSelector(el: Element): string {
@@ -316,7 +366,13 @@ function computeSelector(el: Element): string {
   let node: Element | null = el;
   while (node && node.nodeType === 1 && parts.length < 6) {
     let sel = node.tagName.toLowerCase();
-    const cls = (node.getAttribute("class") || "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((c) => `.${CSS.escape(c)}`).join("");
+    const cls = (node.getAttribute("class") || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((c) => `.${CSS.escape(c)}`)
+      .join("");
     sel += cls;
     // Disambiguate with :nth-of-type when needed
     const parent = node.parentElement;
@@ -366,7 +422,11 @@ function fileToDataUrl(f: File): Promise<string> {
 // Anthropic's recommended long-edge cap and is plenty for a reference logo /
 // palette. Returns the original data URL untouched when already small or if
 // anything fails (canvas blocked, decode error).
-async function downscaleImageDataUrl(dataUrl: string, mime: string, maxDim = 1568): Promise<{ dataUrl: string; mime: string }> {
+async function downscaleImageDataUrl(
+  dataUrl: string,
+  mime: string,
+  maxDim = 1568,
+): Promise<{ dataUrl: string; mime: string }> {
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const i = new Image();
@@ -393,12 +453,27 @@ async function downscaleImageDataUrl(dataUrl: string, mime: string, maxDim = 156
   }
 }
 
-export function EditorScreen({ projectId, projectName, projectPath, mode, startMode = "prototype", initialPrompt, theme, onThemeChange, onHome, onOpenSettings, onDuplicateProject }: EditorScreenProps) {
+export function EditorScreen({
+  projectId,
+  projectName,
+  projectPath,
+  mode,
+  startMode = "prototype",
+  initialPrompt,
+  theme,
+  onThemeChange,
+  onHome,
+  onOpenSettings,
+  onDuplicateProject,
+}: EditorScreenProps) {
   // subscribe to language changes so the topbar Share menu and any
   // other PT/EN strings re-render when the user flips the toggle in
   // Settings. Ignored cost — useT is a 1-line subscription.
   const { t } = useT();
-  const projectFileName = `${(projectName || "untitled").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}.html`;
+  const projectFileName = `${(projectName || "untitled")
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")}.html`;
   // User ask 2026-05-18: file manager opens as the FIRST tab so the
   // project surface is "files" before anything else. The preview tab is
   // created on-demand when the agent writes an HTML file. Until then the
@@ -411,7 +486,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
 
   // Keep the primary tab name in sync with projectFileName
   useEffect(() => {
-    setCanvasTabs((prev) => prev.map((t) => t.id === "main" ? { ...t, name: projectFileName } : t));
+    setCanvasTabs((prev) =>
+      prev.map((t) => (t.id === "main" ? { ...t, name: projectFileName } : t)),
+    );
   }, [projectFileName]);
 
   const currentTab = canvasTabs.find((t) => t.id === activeCanvasTab) ?? canvasTabs[0];
@@ -419,7 +496,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   const openFilesTab = useCallback(() => {
     // Reuse an existing 'files' tab if present
     const existing = canvasTabs.find((t) => t.kind === "files");
-    if (existing) { setActiveCanvasTab(existing.id); return; }
+    if (existing) {
+      setActiveCanvasTab(existing.id);
+      return;
+    }
     const id = `files-${Date.now()}`;
     // Resolve root: prefer projectPath, else settings.workspace_root, else /
     // Project folder is always the root — claude's workspace_root is separate
@@ -429,69 +509,87 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     setActiveCanvasTab(id);
   }, [canvasTabs, projectPath]);
 
-  const openFileTab = useCallback(async (entry: FsEntry) => {
-    // Reload the file content from disk every time — callers include Claude's
-    // Write/Edit tool-result hook, which wants the tab to reflect the fresh
-    // file. If a tab is already open for this path, update its content + tools
-    // state in place and activate it; otherwise push a new tab.
-    // Read fresh content from disk. The read can fail transiently (file
-    // briefly locked mid-write, bridge hiccup, race). When it does we must
-    // STILL focus an already-open tab for this path — bailing here left
-    // the click a silent no-op even though the tab existed, which is the
-    // "clico no html já aberto e não abre a aba" repro. So don't return on
-    // read failure; only skip the content refresh / new-tab creation below.
-    const file = await readFileViaBridge(entry.path);
-    // If the file is the project's primary HTML (slug.html), it's already
-    // represented by the main preview tab — switch to it instead of opening
-    // a duplicate file tab. User repro 2026-05-20: opening slug.html via
-    // the Files gallery produced two tabs with identical content.
-    //
-    // 2026-05-26 follow-up: dedup also has to be atomic. The previous
-    // implementation read `canvasTabs` from the closure, so two concurrent
-    // open calls (React StrictMode double-invoke in dev, or a fast double-
-    // click) both saw `existing=undefined` and each appended a fresh tab.
-    // Both checks (primary-html short-circuit AND existing-file merge) now
-    // run inside the setCanvasTabs callback against `prev`, so the second
-    // invocation sees the first one's append.
-    // BUG-22: compare paths separator-insensitively. primaryHtmlPath is built
-    // with a literal "/" while entry.path comes from the daemon via Node
-    // path.join → all "\" on Windows. The raw `===` never matched ("…\dir/file"
-    // vs "…\dir\file"), so isPrimary was always false on Windows and the
-    // project's primary HTML opened as a DUPLICATE file tab next to the main
-    // preview — the "2 tabs do mesmo html" the user kept seeing. Normalize
-    // both sides (and the existing-tab filePath check) to forward slashes.
-    const normPath = (p: string | null | undefined) => (p || "").replace(/\\/g, "/").replace(/\/+$/, "");
-    const entryPathNorm = normPath(entry.path);
-    const primaryHtmlPathNorm = projectPath
-      ? `${normPath(projectPath)}/${projectFileName}`
-      : null;
-    const isPrimary = primaryHtmlPathNorm && entryPathNorm === primaryHtmlPathNorm;
-    const newId = `file-${Date.now()}`;
-    let nextActive: string | null = null;
-    setCanvasTabs((prev) => {
-      if (isPrimary && prev.some((t) => t.id === "main")) {
-        nextActive = "main";
-        return prev;
-      }
-      const existing = prev.find((t) => t.kind === "file" && normPath(t.filePath) === entryPathNorm);
-      if (existing) {
-        nextActive = existing.id;
-        // Refresh content only when the read succeeded; otherwise just
-        // focus the existing tab with its current content.
-        return file
-          ? prev.map((t) => t.id === existing.id
-              ? { ...t, fileContent: file.content, fileIsText: file.isText }
-              : t)
-          : prev;
-      }
-      // Opening a brand-new tab needs content — if the read failed there's
-      // nothing to render, so leave tabs untouched for the not-yet-open case.
-      if (!file) return prev;
-      nextActive = newId;
-      return [...prev, { id: newId, name: entry.name, kind: "file", filePath: entry.path, fileContent: file.content, fileIsText: file.isText }];
-    });
-    if (nextActive) setActiveCanvasTab(nextActive);
-  }, [projectPath, projectFileName]);
+  const openFileTab = useCallback(
+    async (entry: FsEntry) => {
+      // Reload the file content from disk every time — callers include Claude's
+      // Write/Edit tool-result hook, which wants the tab to reflect the fresh
+      // file. If a tab is already open for this path, update its content + tools
+      // state in place and activate it; otherwise push a new tab.
+      // Read fresh content from disk. The read can fail transiently (file
+      // briefly locked mid-write, bridge hiccup, race). When it does we must
+      // STILL focus an already-open tab for this path — bailing here left
+      // the click a silent no-op even though the tab existed, which is the
+      // "clicking an already-open HTML doesn't open its tab" repro. So don't return on
+      // read failure; only skip the content refresh / new-tab creation below.
+      const file = await readFileViaBridge(entry.path);
+      // If the file is the project's primary HTML (slug.html), it's already
+      // represented by the main preview tab — switch to it instead of opening
+      // a duplicate file tab. User repro 2026-05-20: opening slug.html via
+      // the Files gallery produced two tabs with identical content.
+      //
+      // 2026-05-26 follow-up: dedup also has to be atomic. The previous
+      // implementation read `canvasTabs` from the closure, so two concurrent
+      // open calls (React StrictMode double-invoke in dev, or a fast double-
+      // click) both saw `existing=undefined` and each appended a fresh tab.
+      // Both checks (primary-html short-circuit AND existing-file merge) now
+      // run inside the setCanvasTabs callback against `prev`, so the second
+      // invocation sees the first one's append.
+      // BUG-22: compare paths separator-insensitively. primaryHtmlPath is built
+      // with a literal "/" while entry.path comes from the daemon via Node
+      // path.join → all "\" on Windows. The raw `===` never matched ("…\dir/file"
+      // vs "…\dir\file"), so isPrimary was always false on Windows and the
+      // project's primary HTML opened as a DUPLICATE file tab next to the main
+      // preview — the "2 tabs do mesmo html" the user kept seeing. Normalize
+      // both sides (and the existing-tab filePath check) to forward slashes.
+      const normPath = (p: string | null | undefined) =>
+        (p || "").replace(/\\/g, "/").replace(/\/+$/, "");
+      const entryPathNorm = normPath(entry.path);
+      const primaryHtmlPathNorm = projectPath
+        ? `${normPath(projectPath)}/${projectFileName}`
+        : null;
+      const isPrimary = primaryHtmlPathNorm && entryPathNorm === primaryHtmlPathNorm;
+      const newId = `file-${Date.now()}`;
+      let nextActive: string | null = null;
+      setCanvasTabs((prev) => {
+        if (isPrimary && prev.some((t) => t.id === "main")) {
+          nextActive = "main";
+          return prev;
+        }
+        const existing = prev.find(
+          (t) => t.kind === "file" && normPath(t.filePath) === entryPathNorm,
+        );
+        if (existing) {
+          nextActive = existing.id;
+          // Refresh content only when the read succeeded; otherwise just
+          // focus the existing tab with its current content.
+          return file
+            ? prev.map((t) =>
+                t.id === existing.id
+                  ? { ...t, fileContent: file.content, fileIsText: file.isText }
+                  : t,
+              )
+            : prev;
+        }
+        // Opening a brand-new tab needs content — if the read failed there's
+        // nothing to render, so leave tabs untouched for the not-yet-open case.
+        if (!file) return prev;
+        nextActive = newId;
+        return [
+          ...prev,
+          {
+            id: newId,
+            name: entry.name,
+            kind: "file",
+            filePath: entry.path,
+            fileContent: file.content,
+            fileIsText: file.isText,
+          },
+        ];
+      });
+      if (nextActive) setActiveCanvasTab(nextActive);
+    },
+    [projectPath, projectFileName],
+  );
 
   const addTerminalTab = useCallback(() => {
     const id = `term-${Date.now()}`;
@@ -502,25 +600,28 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
 
   // openVideoTab removed alongside the Video toolbar pill.
 
-  const closeCanvasTab = useCallback((id: string) => {
-    // User rule: always keep at least ONE tab open. Closing the last
-    // tab would leave the canvas area empty with nothing to show. HTML
-    // preview tab (main) loses its special "can never close" treatment
-    // — it can be closed when other tabs exist, and re-created when
-    // iframeHtml updates (see effect below).
-    setCanvasTabs((prev) => {
-      if (prev.length <= 1) return prev; // can't close the last tab
-      const next = prev.filter((t) => t.id !== id);
-      if (activeCanvasTab === id) setActiveCanvasTab(next[0]?.id ?? "main");
-      // If the main (HTML preview) tab was closed, also clear iframe
-      // state so reopening from a fresh generation starts clean.
-      if (id === "main") {
-        setIframeHtml(null);
-        setIframeKey((k) => k + 1);
-      }
-      return next;
-    });
-  }, [activeCanvasTab]);
+  const closeCanvasTab = useCallback(
+    (id: string) => {
+      // User rule: always keep at least ONE tab open. Closing the last
+      // tab would leave the canvas area empty with nothing to show. HTML
+      // preview tab (main) loses its special "can never close" treatment
+      // — it can be closed when other tabs exist, and re-created when
+      // iframeHtml updates (see effect below).
+      setCanvasTabs((prev) => {
+        if (prev.length <= 1) return prev; // can't close the last tab
+        const next = prev.filter((t) => t.id !== id);
+        if (activeCanvasTab === id) setActiveCanvasTab(next[0]?.id ?? "main");
+        // If the main (HTML preview) tab was closed, also clear iframe
+        // state so reopening from a fresh generation starts clean.
+        if (id === "main") {
+          setIframeHtml(null);
+          setIframeKey((k) => k + 1);
+        }
+        return next;
+      });
+    },
+    [activeCanvasTab],
+  );
   const [chatTab, setChatTab] = useState<ChatTab>("chat");
   // Mode is toggleable: clicking the active pill again deactivates the mode
   // (canvasMode → null = no mode, preview only). Initial state is null so a
@@ -562,8 +663,8 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     });
     // Surface the preview when it first materialises. Without this the tab
     // appears but the canvas stays on the Files tree and the user has to
-    // click it (founder/Gabi 2026-05-27: "a aba apareceu mas não abriu
-    // automático"). Only switch from the default Files tab, so later edits
+    // click it (reported: the tab appeared but didn't open
+    // automatically). Only switch from the default Files tab, so later edits
     // don't yank the user off a tab they navigated to on purpose.
     setActiveCanvasTab((cur) => (cur === "files" ? "main" : cur));
   }, [iframeHtml, projectFileName]);
@@ -588,7 +689,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   });
   useEffect(() => {
     if (!projectId) return;
-    try { window.localStorage.setItem(`df:active-thread:${projectId}`, activeThreadId); } catch {}
+    try {
+      window.localStorage.setItem(`df:active-thread:${projectId}`, activeThreadId);
+    } catch {}
   }, [projectId, activeThreadId]);
   // Re-hydrate when the user navigates between projects — each project
   // has its own active-thread localStorage key.
@@ -613,11 +716,15 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     return raw >= CHAT_MIN && raw <= CHAT_MAX ? raw : CHAT_DEFAULT;
   });
   const chatWidthRef = useRef(chatWidth);
-  useEffect(() => { chatWidthRef.current = chatWidth; }, [chatWidth]);
+  useEffect(() => {
+    chatWidthRef.current = chatWidth;
+  }, [chatWidth]);
   const [presenting, setPresenting] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const [showCommentInput, setShowCommentInput] = useState(false);
-  const [commentTarget, setCommentTarget] = useState<{ selector: string; snippet: string } | null>(null);
+  const [commentTarget, setCommentTarget] = useState<{ selector: string; snippet: string } | null>(
+    null,
+  );
   const [comments, setComments] = useState<Comment[]>([]);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentDraft, setEditingCommentDraft] = useState<string>("");
@@ -671,27 +778,30 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // 'patch'; falls back to srcDoc replace + scroll preservation. Other paths
   // (generate, version restore, reload, history undo/redo) keep calling
   // setIframeHtml directly — the mirror effect below picks them up automatically.
-  const setIframeContent = useCallback((next: { html: string; mode?: "replace" | "patch"; patches?: HtmlPatch[] }) => {
-    const iframe = iframeRef.current;
-    const mode = next.mode ?? "replace";
+  const setIframeContent = useCallback(
+    (next: { html: string; mode?: "replace" | "patch"; patches?: HtmlPatch[] }) => {
+      const iframe = iframeRef.current;
+      const mode = next.mode ?? "replace";
 
-    if (mode === "patch" && next.patches && next.patches.length > 0 && iframe?.contentDocument) {
-      const result = applyPatchesToDom(iframe, next.patches);
-      if (!("failedAt" in result)) {
-        // DOM patched successfully — sync state without triggering srcDoc reload.
-        suppressNextReloadRef.current = true;
-        setIframeHtml(next.html);
-        validateCommentSelectorsAll();
-        return;
+      if (mode === "patch" && next.patches && next.patches.length > 0 && iframe?.contentDocument) {
+        const result = applyPatchesToDom(iframe, next.patches);
+        if (!("failedAt" in result)) {
+          // DOM patched successfully — sync state without triggering srcDoc reload.
+          suppressNextReloadRef.current = true;
+          setIframeHtml(next.html);
+          validateCommentSelectorsAll();
+          return;
+        }
+        // Fall through to replace path on partial / failed patch.
       }
-      // Fall through to replace path on partial / failed patch.
-    }
 
-    if (iframe?.contentWindow) {
-      pendingScrollRestoreRef.current = iframe.contentWindow.scrollY;
-    }
-    setIframeHtml(next.html);
-  }, [validateCommentSelectorsAll]);
+      if (iframe?.contentWindow) {
+        pendingScrollRestoreRef.current = iframe.contentWindow.scrollY;
+      }
+      setIframeHtml(next.html);
+    },
+    [validateCommentSelectorsAll],
+  );
   const [bridgeAvailable, setBridgeAvailable] = useState<boolean | null>(null);
   const [dsPath, setDsPath] = useState<string | null>(null);
   const [dsName, setDsName] = useState<string | null>(null);
@@ -728,11 +838,19 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       try {
         const content = await readFileViaBridge(ds.designMdPath);
         if (!content) return;
-        const text = typeof content === "string" ? content : (content as { content?: string })?.content ?? "";
+        const text =
+          typeof content === "string"
+            ? content
+            : ((content as { content?: string })?.content ?? "");
         const parsed = parseDesignSystem(text);
-        const hexes = parsed.colors.slice(0, 4).map((c) => c.hex).filter(Boolean);
+        const hexes = parsed.colors
+          .slice(0, 4)
+          .map((c) => c.hex)
+          .filter(Boolean);
         if (hexes.length > 0) setDsSwatchCache((prev) => ({ ...prev, [ds.path]: hexes }));
-      } catch { /* swallow — best effort */ }
+      } catch {
+        /* swallow — best effort */
+      }
     });
   }, [designSystems]); // eslint-disable-line react-hooks/exhaustive-deps
   const [workspaceRoot, setWorkspaceRoot] = useState<string | null>(null);
@@ -748,8 +866,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // Loaded once on mount from db.settings (`tasteDial:${dial}:${side}`).
   // Forwarded to buildCanonicalPlusBlock on every turn so the user's
   // edits in Settings → Taste actually show up in the system prompt.
-  const [tasteDialOverrides, setTasteDialOverrides] = useState<Partial<Record<DialKey, Partial<DialDirection>>>>({});
-  const [inlineEditSelection, setInlineEditSelection] = useState<InlineEditSelectPayload | null>(null);
+  const [tasteDialOverrides, setTasteDialOverrides] = useState<
+    Partial<Record<DialKey, Partial<DialDirection>>>
+  >({});
+  const [inlineEditSelection, setInlineEditSelection] = useState<InlineEditSelectPayload | null>(
+    null,
+  );
   const [inlineEditDirty, setInlineEditDirty] = useState(false);
   const [inlineEditSaving, setInlineEditSaving] = useState(false);
   // Iframe bounding rect — re-measured on selection so the floating
@@ -811,9 +933,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // removable chip in the composer (like the DS chip); × deactivates it so
   // it stops being injected — the user typically wants Format/Rules/Taste to
   // shape the FIRST prompt then steps back on refines. Persisted per project.
-  const [canonicalActive, setCanonicalActive] = useState<{ format: boolean; rules: boolean; taste: boolean }>(
-    { format: true, rules: true, taste: true },
-  );
+  const [canonicalActive, setCanonicalActive] = useState<{
+    format: boolean;
+    rules: boolean;
+    taste: boolean;
+  }>({ format: true, rules: true, taste: true });
   // `canonicalPlusInjectedRef` + the companion `canonicalPlusInjected:${id}`
   // persistent flag were dropped 2026-05-17 (audit P0-C). The block is now
   // injected as a compact summary into the system prompt on EVERY turn, so
@@ -854,7 +978,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               const cfg = await (await import("@/lib/claude-bridge")).readGlobalConfig();
               const arr = (cfg as Record<string, unknown> | null)?.commands_disabled;
               return Array.isArray(arr) ? (arr as string[]) : [];
-            } catch { return []; }
+            } catch {
+              return [];
+            }
           },
           async () => {
             try {
@@ -863,8 +989,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               if (!raw) return [];
               const arr = JSON.parse(raw);
               return Array.isArray(arr) ? (arr as string[]) : [];
-            } catch { return []; }
-          }
+            } catch {
+              return [];
+            }
+          },
         );
         if (!cancelled) setVerbs(all);
       } catch (e) {
@@ -872,21 +1000,33 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       }
     };
     void load();
-    const onChanged = () => { void load(); };
+    const onChanged = () => {
+      void load();
+    };
     window.addEventListener("df-verbs-changed", onChanged);
-    return () => { cancelled = true; window.removeEventListener("df-verbs-changed", onChanged); };
+    return () => {
+      cancelled = true;
+      window.removeEventListener("df-verbs-changed", onChanged);
+    };
   }, []);
   // originalToken preserves what the user actually typed before navigation
   // (e.g. "/can") so Escape restores it. During arrow navigation the input
   // briefly shows the highlighted trigger while the cursor + start position
   // stay anchored to the typed token.
-  const [slashState, setSlashState] = useState<{ token: string; start: number; hi: number; originalToken: string } | null>(null);
+  const [slashState, setSlashState] = useState<{
+    token: string;
+    start: number;
+    hi: number;
+    originalToken: string;
+  } | null>(null);
   // answeredQuestions maps a question block's raw text -> the label the
   // user picked. Once answered, the buttons disable and a follow-up
   // prompt is auto-sent so Claude can continue. Keyed by raw text so
   // questions in different messages don't collide.
   const [answeredQuestions, setAnsweredQuestions] = useState<Record<string, string>>({});
-  const [attachedFiles, setAttachedFiles] = useState<Array<{ name: string; size: number; content: string; mime: string; preview?: string }>>([]);
+  const [attachedFiles, setAttachedFiles] = useState<
+    Array<{ name: string; size: number; content: string; mime: string; preview?: string }>
+  >([]);
   // Drag-active flag for the chat composer. Toggled by onDragOver/onDragLeave.
   const [composerDragActive, setComposerDragActive] = useState(false);
   // True when the chat log is scrolled away from the bottom while messages
@@ -907,8 +1047,7 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // button was the sole reader). The setter is still wired so the map
   // stays in sync with disk for future surfaces (Settings panel,
   // command palette). Underscore prefix silences the unused-var lint.
-  const [, setProviderSessions] =
-    useState<ProviderSessions>(EMPTY_PROVIDER_SESSIONS);
+  const [, setProviderSessions] = useState<ProviderSessions>(EMPTY_PROVIDER_SESSIONS);
   // "Run claude login" banner — set by onAuthRequired. Dismiss on next
   // successful stream init.
   const [authRequiredBanner, setAuthRequiredBanner] = useState<string | null>(null);
@@ -967,18 +1106,24 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       // Legacy migration: localStorage was the previous source of truth.
       if (ratioStorageKey && typeof localStorage !== "undefined") {
         let raw: string | null = null;
-        try { raw = localStorage.getItem(ratioStorageKey); } catch {}
+        try {
+          raw = localStorage.getItem(ratioStorageKey);
+        } catch {}
         if (isVideoRatio(raw)) {
           setVideoRatio(raw);
           ratioPersistTouchedRef.current = true;
           if (meta) {
             await writeProjectMeta(slug, { ...meta, video_ratio: raw });
           }
-          try { localStorage.removeItem(ratioStorageKey); } catch {}
+          try {
+            localStorage.removeItem(ratioStorageKey);
+          } catch {}
         }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId, projectPath, ratioStorageKey]);
   // Persist to .df/meta.json on every user-initiated change.
   useEffect(() => {
@@ -993,15 +1138,21 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       if (current.video_ratio === videoRatio) return;
       await writeProjectMeta(slug, { ...current, video_ratio: videoRatio });
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId, projectPath, videoRatio]);
   // Numeric aspect for JS sizing (CSS aspect-ratio + max-* combo silently
   // fails when both width AND height are 100% — the constraint takes over
   // and the ratio is dropped). Same pattern VideoTab uses.
-  const videoAspectNum = videoRatio === "9:16" ? 9 / 16
-    : videoRatio === "1:1" ? 1 / 1
-    : videoRatio === "4k" ? 16 / 9
-    : 16 / 9;
+  const videoAspectNum =
+    videoRatio === "9:16"
+      ? 9 / 16
+      : videoRatio === "1:1"
+        ? 1 / 1
+        : videoRatio === "4k"
+          ? 16 / 9
+          : 16 / 9;
   // Wrap iframe content so html/body fill the letterbox, regardless of
   // any fixed dimensions inside the original markup. Plain HTML projects
   // skip wrapping so site layouts continue to flow naturally.
@@ -1191,10 +1342,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         const name = tool.name;
         const inp = (tool.input ?? {}) as Record<string, unknown>;
         const filePath =
-          (typeof inp.file_path === "string" && inp.file_path)
-          || (typeof inp.path === "string" && inp.path)
-          || (typeof inp.filename === "string" && inp.filename)
-          || "";
+          (typeof inp.file_path === "string" && inp.file_path) ||
+          (typeof inp.path === "string" && inp.path) ||
+          (typeof inp.filename === "string" && inp.filename) ||
+          "";
         const fileLeaf = filePath ? filePath.split("/").pop() || filePath : "";
         if (name === "Read" || name === "ReadFile") {
           return fileLeaf ? tf("chat.tool.verb.read.one", fileLeaf) : t("chat.status.reading");
@@ -1295,7 +1446,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         e.preventDefault();
         const stepMs = e.shiftKey ? 1000 : 33;
         const dir = e.key === "ArrowRight" ? 1 : -1;
-        window.dispatchEvent(new CustomEvent("df:transport", { detail: { action: "step", deltaMs: dir * stepMs } }));
+        window.dispatchEvent(
+          new CustomEvent("df:transport", { detail: { action: "step", deltaMs: dir * stepMs } }),
+        );
         return;
       }
       // ? — open shortcuts overlay.
@@ -1335,9 +1488,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // — a null value just means the first turn will seed the session.
   useEffect(() => {
     if (!projectId) return;
-    db.getProjectSession(projectId).then((sid) => {
-      if (sid) setClaudeSessionId(sid);
-    }).catch(() => {});
+    db.getProjectSession(projectId)
+      .then((sid) => {
+        if (sid) setClaudeSessionId(sid);
+      })
+      .catch(() => {});
   }, [projectId]);
 
   // Provider Handoff Layer v1: persistence helper declared early so the
@@ -1363,11 +1518,15 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   useEffect(() => {
     if (!projectPath) return;
     let cancelled = false;
-    pathExists(projectPath).then((exists) => {
-      if (cancelled) return;
-      setMissingPathBanner(exists ? null : projectPath);
-    }).catch(() => {});
-    return () => { cancelled = true; };
+    pathExists(projectPath)
+      .then((exists) => {
+        if (cancelled) return;
+        setMissingPathBanner(exists ? null : projectPath);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [projectPath]);
 
   // Re-probe the dev bridge when the tab/window comes back to foreground.
@@ -1387,8 +1546,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // global `workspace_root`. If neither is set, `workspaceRoot` stays null and
   // claude spawns in the project folder.
   useEffect(() => {
-    db.getSetting("ds_path").then((p) => setDsPath(p)).catch(() => {});
-    db.getSetting("ds_name").then((n) => setDsName(n)).catch(() => {});
+    db.getSetting("ds_path")
+      .then((p) => setDsPath(p))
+      .catch(() => {});
+    db.getSetting("ds_name")
+      .then((n) => setDsName(n))
+      .catch(() => {});
     // User QA 2026-05-15: same root cause as the model guard above —
     // the original whitelist only knew 4 provider ids. V1 beta ships 10
     // (claude, codex, gemini, opencode, kimi, anthropic, openai,
@@ -1396,7 +1559,8 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     // single source of truth.
     (async () => {
       const fromFs = await readGlobalConfig();
-      const p = fromFs?.default_provider ?? (await db.getSetting("default_provider").catch(() => null));
+      const p =
+        fromFs?.default_provider ?? (await db.getSetting("default_provider").catch(() => null));
       const parsed = ProviderIdSchema.safeParse(p);
       if (parsed.success) {
         setSelectedProvider(parsed.data);
@@ -1479,7 +1643,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   //   {dsPath}/design.md  (primary, @google/design.md spec)
   //   {dsPath}/DESIGN.md  (fallback for uppercase)
   useEffect(() => {
-    if (!dsPath) { setDsMarkdown(null); return; }
+    if (!dsPath) {
+      setDsMarkdown(null);
+      return;
+    }
     let cancelled = false;
     (async () => {
       const candidates = [
@@ -1490,7 +1657,13 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         try {
           const file = await readFileViaBridge(p);
           if (cancelled) return;
-          if (file && typeof file === "object" && "content" in file && typeof file.content === "string" && file.content.length > 0) {
+          if (
+            file &&
+            typeof file === "object" &&
+            "content" in file &&
+            typeof file.content === "string" &&
+            file.content.length > 0
+          ) {
             setDsMarkdown(file.content);
             return;
           }
@@ -1500,7 +1673,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       // fall back to "read design.md yourself" path.
       if (!cancelled) setDsMarkdown(null);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [dsPath]);
 
   // Old EditDrawer hydrate/persist removed alongside the drawer (user
@@ -1622,12 +1797,14 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   useEffect(() => {
     if (!projectId) return;
     const tabKey = `iframe-scroll:${projectId}:${activeCanvasTab}`;
-    db.getSetting(tabKey).then((raw) => {
-      if (typeof raw !== "string") return;
-      const y = Number(raw);
-      if (!Number.isFinite(y)) return;
-      pendingScrollRestoreRef.current = y;
-    }).catch(() => {});
+    db.getSetting(tabKey)
+      .then((raw) => {
+        if (typeof raw !== "string") return;
+        const y = Number(raw);
+        if (!Number.isFinite(y)) return;
+        pendingScrollRestoreRef.current = y;
+      })
+      .catch(() => {});
   }, [projectId, activeCanvasTab]);
 
   // OLD: two useEffects injected <style id="__df-edit-overrides__"> with
@@ -1660,7 +1837,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           setVersions(fromFs as Version[]);
           // Refresh the DB cache so subsequent boots stay fast even if the
           // bridge briefly drops. Best-effort.
-          db.setSetting(`versions:${projectId}`, JSON.stringify(fromFs)).catch(warn("setSetting:versions::projectId"));
+          db.setSetting(`versions:${projectId}`, JSON.stringify(fromFs)).catch(
+            warn("setSetting:versions::projectId"),
+          );
           return;
         }
       }
@@ -1692,81 +1871,101 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       } catch {}
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId, projectPath]);
 
-  const persistVersions = useCallback((list: Version[]) => {
-    setVersions(list);
-    if (projectId) db.setSetting(`versions:${projectId}`, JSON.stringify(list)).catch(warn("setSetting:versions::projectId"));
-    // mirror to filesystem. Best-effort — DB cache is still the
-    // synchronous source. We diff against the previous list inside the
-    // callback would be more efficient, but persistVersions is called
-    // O(N) times per session (N = number of named saves + auto checkpoints
-    // for the project) and each call is at most one extra POST per new
-    // version, so N writes total is acceptable.
-    const slug = slugFromPath(projectPath ?? "");
-    if (slug) {
-      void (async () => {
-        for (const v of list) {
-          await saveProjectVersion(slug, {
-            id: v.id,
-            html: v.html,
-            ...(v.name ? { name: v.name } : {}),
-            ...(v.note ? { note: v.note } : {}),
-            createdAt: v.createdAt,
-            auto: v.auto,
-          }).catch(() => false);
-        }
-      })();
-    }
-  }, [projectId, projectPath]);
+  const persistVersions = useCallback(
+    (list: Version[]) => {
+      setVersions(list);
+      if (projectId)
+        db.setSetting(`versions:${projectId}`, JSON.stringify(list)).catch(
+          warn("setSetting:versions::projectId"),
+        );
+      // mirror to filesystem. Best-effort — DB cache is still the
+      // synchronous source. We diff against the previous list inside the
+      // callback would be more efficient, but persistVersions is called
+      // O(N) times per session (N = number of named saves + auto checkpoints
+      // for the project) and each call is at most one extra POST per new
+      // version, so N writes total is acceptable.
+      const slug = slugFromPath(projectPath ?? "");
+      if (slug) {
+        void (async () => {
+          for (const v of list) {
+            await saveProjectVersion(slug, {
+              id: v.id,
+              html: v.html,
+              ...(v.name ? { name: v.name } : {}),
+              ...(v.note ? { note: v.note } : {}),
+              createdAt: v.createdAt,
+              auto: v.auto,
+            }).catch(() => false);
+          }
+        })();
+      }
+    },
+    [projectId, projectPath],
+  );
 
   // Helper used by verb runs, approval detection, and post-generate hooks.
   // Skips consecutive dupes; caps auto entries at 20 (named are unbounded).
-  const autoCheckpoint = useCallback((html: string, label?: string) => {
-    if (!projectId || !html || html.trim().length < 40) return;
-    const slug = slugFromPath(projectPath ?? "");
-    setVersions((prev) => {
-      const lastAuto = [...prev].reverse().find((v) => v.auto);
-      if (lastAuto && lastAuto.html === html) return prev;
-      const next: Version = {
-        id: crypto.randomUUID(),
-        html,
-        createdAt: Date.now(),
-        auto: true,
-        ...(label ? { name: label } : {}),
-      };
-      const kept = [...prev, next];
-      const autoCount = kept.filter((v) => v.auto).length;
-      let final = kept;
-      let prunedIds: string[] = [];
-      if (autoCount > 20) {
-        let dropped = 0;
-        final = kept.filter((v) => {
-          if (v.auto && dropped < autoCount - 20) { dropped += 1; prunedIds.push(v.id); return false; }
-          return true;
-        });
-      }
-      db.setSetting(`versions:${projectId}`, JSON.stringify(final)).catch(warn("setSetting:versions::projectId"));
-      // mirror to filesystem (best-effort).
-      if (slug) {
-        void saveProjectVersion(slug, {
-          id: next.id, html: next.html,
-          ...(next.name ? { name: next.name } : {}),
-          createdAt: next.createdAt, auto: next.auto,
-        }).catch(() => false);
-        // Drop the pruned files so disk doesn't grow unbounded.
-        for (const pid of prunedIds) {
-          void deleteProjectVersion(slug, pid).catch(() => false);
+  const autoCheckpoint = useCallback(
+    (html: string, label?: string) => {
+      if (!projectId || !html || html.trim().length < 40) return;
+      const slug = slugFromPath(projectPath ?? "");
+      setVersions((prev) => {
+        const lastAuto = [...prev].reverse().find((v) => v.auto);
+        if (lastAuto && lastAuto.html === html) return prev;
+        const next: Version = {
+          id: crypto.randomUUID(),
+          html,
+          createdAt: Date.now(),
+          auto: true,
+          ...(label ? { name: label } : {}),
+        };
+        const kept = [...prev, next];
+        const autoCount = kept.filter((v) => v.auto).length;
+        let final = kept;
+        let prunedIds: string[] = [];
+        if (autoCount > 20) {
+          let dropped = 0;
+          final = kept.filter((v) => {
+            if (v.auto && dropped < autoCount - 20) {
+              dropped += 1;
+              prunedIds.push(v.id);
+              return false;
+            }
+            return true;
+          });
         }
-      }
-      return final;
-    });
-  }, [projectId, projectPath]);
+        db.setSetting(`versions:${projectId}`, JSON.stringify(final)).catch(
+          warn("setSetting:versions::projectId"),
+        );
+        // mirror to filesystem (best-effort).
+        if (slug) {
+          void saveProjectVersion(slug, {
+            id: next.id,
+            html: next.html,
+            ...(next.name ? { name: next.name } : {}),
+            createdAt: next.createdAt,
+            auto: next.auto,
+          }).catch(() => false);
+          // Drop the pruned files so disk doesn't grow unbounded.
+          for (const pid of prunedIds) {
+            void deleteProjectVersion(slug, pid).catch(() => false);
+          }
+        }
+        return final;
+      });
+    },
+    [projectId, projectPath],
+  );
 
   // Approval-phrase detector — when the user signals satisfaction, snap a
   // checkpoint so they can return to the approved state later. Bilingual.
-  const APPROVAL_RE = /\b(perfeito|perfect|ficou bom|isso mesmo|ta perfeito|approved|aprovado|love it|exactly|ship it|pode deployar|ta otimo|ta ótimo|excelente)\b/i;
+  const APPROVAL_RE =
+    /\b(perfeito|perfect|ficou bom|isso mesmo|ta perfeito|approved|aprovado|love it|exactly|ship it|pode deployar|ta otimo|ta ótimo|excelente)\b/i;
 
   // Pending checkpoint label — set right before an async operation that
   // will update iframeHtml. The effect below fires the checkpoint as
@@ -1782,19 +1981,27 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // Load comments for this project
   useEffect(() => {
     if (!projectId) return;
-    db.getSetting(`comments:${projectId}`).then((raw) => {
-      if (!raw) return;
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) setComments(parsed);
-      } catch {}
-    }).catch(() => {});
+    db.getSetting(`comments:${projectId}`)
+      .then((raw) => {
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) setComments(parsed);
+        } catch {}
+      })
+      .catch(() => {});
   }, [projectId]);
 
-  const persistComments = useCallback((list: Comment[]) => {
-    setComments(list);
-    if (projectId) db.setSetting(`comments:${projectId}`, JSON.stringify(list)).catch(warn("setSetting:comments::projectId"));
-  }, [projectId]);
+  const persistComments = useCallback(
+    (list: Comment[]) => {
+      setComments(list);
+      if (projectId)
+        db.setSetting(`comments:${projectId}`, JSON.stringify(list)).catch(
+          warn("setSetting:comments::projectId"),
+        );
+    },
+    [projectId],
+  );
 
   // Inject click handler into iframe when Comment mode is active (same-origin via allow-same-origin)
   useEffect(() => {
@@ -1935,10 +2142,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // Probe dev bridge status
   useEffect(() => {
     let cancelled = false;
-    const probe = () => refreshBridgeStatus().then((s) => { if (!cancelled) setBridgeAvailable(s.available); });
+    const probe = () =>
+      refreshBridgeStatus().then((s) => {
+        if (!cancelled) setBridgeAvailable(s.available);
+      });
     probe();
     const interval = window.setInterval(probe, 8000);
-    return () => { cancelled = true; window.clearInterval(interval); };
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
   }, []);
 
   // Seed prompt from example (one-time per PROJECT, persisted in db so HMR
@@ -1968,7 +2181,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         if (parsed && typeof parsed.formatoId === "string") setProjectDirection(parsed);
       } catch {}
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
   // When direction loads (or changes), pre-seed videoRatio from canvas
   // override. ratioPersistTouchedRef gates this — if the mount effect
@@ -1996,31 +2211,32 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // patches ds_path + ds_name (or clears them on null), writes back.
   // Triggers a re-read of the design.md content via the dsPath effect
   // so the next prompt's system message inlines the new tokens.
-  const handleAttachDs = useCallback(async (ds: FsDesignSystem | null) => {
-    const slug = projectPath ? slugFromPath(projectPath) : "";
-    if (!slug) {
-      setAttachDsOpen(false);
-      return;
-    }
-    const next = ds
-      ? { path: ds.path, name: ds.name }
-      : { path: null, name: null };
-    setDsPath(next.path);
-    setDsName(next.name);
-    try {
-      const current = await readProjectMeta(slug);
-      if (current) {
-        await writeProjectMeta(slug, {
-          ...current,
-          ds_path: next.path ?? undefined,
-          ds_name: next.name ?? undefined,
-        });
+  const handleAttachDs = useCallback(
+    async (ds: FsDesignSystem | null) => {
+      const slug = projectPath ? slugFromPath(projectPath) : "";
+      if (!slug) {
+        setAttachDsOpen(false);
+        return;
       }
-    } catch (err) {
-      console.warn("[ds-attach] writeProjectMeta failed", err);
-    }
-    setAttachDsOpen(false);
-  }, [projectPath]);
+      const next = ds ? { path: ds.path, name: ds.name } : { path: null, name: null };
+      setDsPath(next.path);
+      setDsName(next.name);
+      try {
+        const current = await readProjectMeta(slug);
+        if (current) {
+          await writeProjectMeta(slug, {
+            ...current,
+            ds_path: next.path ?? undefined,
+            ds_name: next.name ?? undefined,
+          });
+        }
+      } catch (err) {
+        console.warn("[ds-attach] writeProjectMeta failed", err);
+      }
+      setAttachDsOpen(false);
+    },
+    [projectPath],
+  );
 
   // Ratio-change state machine.
   // The Video tab inspector requests a ratio change instead of applying it
@@ -2029,7 +2245,14 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   type RatioChangeState =
     | { phase: "idle" }
     | { phase: "confirming"; targetRatio: VideoRatioId }
-    | { phase: "regenerating"; targetRatio: VideoRatioId; tokensCount: number; startedAt: number; abort: () => void; backup: string }
+    | {
+        phase: "regenerating";
+        targetRatio: VideoRatioId;
+        tokensCount: number;
+        startedAt: number;
+        abort: () => void;
+        backup: string;
+      }
     | { phase: "error"; message: string };
   const [ratioChange, setRatioChange] = useState<RatioChangeState>({ phase: "idle" });
 
@@ -2047,7 +2270,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     const html = iframeHtml ?? "";
     const slug = projectPath ? slugFromPath(projectPath) : "";
     if (!slug || !projectPath) {
-      setRatioChange({ phase: "error", message: "Projeto sem path resolvido — não consigo regenerar." });
+      setRatioChange({
+        phase: "error",
+        message: "Projeto sem path resolvido — não consigo regenerar.",
+      });
       return;
     }
 
@@ -2059,7 +2285,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       newRatio: targetRatio,
       config: { model: selectedModel, agent: selectedProvider, cwd: projectPath },
       onTokens: (count) => {
-        setRatioChange((prev) => prev.phase === "regenerating" ? { ...prev, tokensCount: count } : prev);
+        setRatioChange((prev) =>
+          prev.phase === "regenerating" ? { ...prev, tokensCount: count } : prev,
+        );
       },
     });
 
@@ -2072,30 +2300,40 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       backup: html,
     });
 
-    promise.then((result) => {
-      // Success — orchestrator already wrote the file and meta.json.
-      setIframeHtml(result.html);
-      setVideoRatioWithOverride(targetRatio);
-      setRatioChange({ phase: "idle" });
-    }).catch((err: unknown) => {
-      const reason = err instanceof RegenError ? err.message : String(err);
-      // Restore from in-memory backup. writeFile is defensive — even if the
-      // orchestrator never persisted (cancel before onDone), this ensures
-      // disk matches the iframe state the user saw before clicking.
-      const htmlPath = `${projectPath.replace(/\/$/, "")}/${projectFileName}`;
-      writeFile(htmlPath, html).catch((e) => {
-        console.warn("[ratio-regen] restore writeFile failed (continuing):", e);
-      });
-      setIframeHtml(html);
-      // Cancel is a deliberate user action — stay quiet (idle) instead of
-      // surfacing an error toast.
-      if (err instanceof RegenError && err.kind === "cancelled") {
+    promise
+      .then((result) => {
+        // Success — orchestrator already wrote the file and meta.json.
+        setIframeHtml(result.html);
+        setVideoRatioWithOverride(targetRatio);
         setRatioChange({ phase: "idle" });
-      } else {
-        setRatioChange({ phase: "error", message: reason });
-      }
-    });
-  }, [ratioChange, iframeHtml, projectPath, videoRatio, selectedModel, selectedProvider, setVideoRatioWithOverride]);
+      })
+      .catch((err: unknown) => {
+        const reason = err instanceof RegenError ? err.message : String(err);
+        // Restore from in-memory backup. writeFile is defensive — even if the
+        // orchestrator never persisted (cancel before onDone), this ensures
+        // disk matches the iframe state the user saw before clicking.
+        const htmlPath = `${projectPath.replace(/\/$/, "")}/${projectFileName}`;
+        writeFile(htmlPath, html).catch((e) => {
+          console.warn("[ratio-regen] restore writeFile failed (continuing):", e);
+        });
+        setIframeHtml(html);
+        // Cancel is a deliberate user action — stay quiet (idle) instead of
+        // surfacing an error toast.
+        if (err instanceof RegenError && err.kind === "cancelled") {
+          setRatioChange({ phase: "idle" });
+        } else {
+          setRatioChange({ phase: "error", message: reason });
+        }
+      });
+  }, [
+    ratioChange,
+    iframeHtml,
+    projectPath,
+    videoRatio,
+    selectedModel,
+    selectedProvider,
+    setVideoRatioWithOverride,
+  ]);
 
   const onCancelRegen = useCallback(() => {
     if (ratioChange.phase !== "regenerating") return;
@@ -2132,7 +2370,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       } catch {}
       if (!cancelled) setAutoSentHydrated(true);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
   useEffect(() => {
     if (!autoSentHydrated) return;
@@ -2155,7 +2395,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         if (!cancelled) setTasteDialOverrides(overrides);
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   // Load canonicalPlus payload saved by App.tsx when the project was
@@ -2234,7 +2476,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         }
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   // Load the per-project canonical+ active toggles (which of Format/Rules/
@@ -2247,27 +2491,41 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       .then((raw) => {
         if (cancelled || !raw) return;
         try {
-          const parsed = JSON.parse(raw) as Partial<{ format: boolean; rules: boolean; taste: boolean }>;
+          const parsed = JSON.parse(raw) as Partial<{
+            format: boolean;
+            rules: boolean;
+            taste: boolean;
+          }>;
           setCanonicalActive((prev) => ({
             format: parsed.format ?? prev.format,
             rules: parsed.rules ?? prev.rules,
             taste: parsed.taste ?? prev.taste,
           }));
-        } catch { /* malformed — keep defaults */ }
+        } catch {
+          /* malformed — keep defaults */
+        }
       })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   // Deactivate a canonical+ element (Format/Rules/Taste) + persist. Mirrors
   // the DS chip's detach affordance.
-  const deactivateCanonical = useCallback((key: "format" | "rules" | "taste") => {
-    setCanonicalActive((prev) => {
-      const next = { ...prev, [key]: false };
-      if (projectId) db.setSetting(`canonicalActive:${projectId}`, JSON.stringify(next)).catch(warn("setSetting:canonicalActive"));
-      return next;
-    });
-  }, [projectId]);
+  const deactivateCanonical = useCallback(
+    (key: "format" | "rules" | "taste") => {
+      setCanonicalActive((prev) => {
+        const next = { ...prev, [key]: false };
+        if (projectId)
+          db.setSetting(`canonicalActive:${projectId}`, JSON.stringify(next)).catch(
+            warn("setSetting:canonicalActive"),
+          );
+        return next;
+      });
+    },
+    [projectId],
+  );
 
   // (The per-turn filtered canonical+ payload is computed inside handleSend
   // from a fresh disk read — see the canonicalSummary block there — to dodge
@@ -2285,10 +2543,18 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   useEffect(() => {
     if (!showFullPrompt) return;
     let cancelled = false;
-    getBuiltinPrompt(iframeHtml ? "refine" : "generate", iframeHtml ? REFINE_SYSTEM : GENERATE_CORE_SYSTEM, projectId)
-      .then((c) => { if (!cancelled) setInspectorCore(c); })
+    getBuiltinPrompt(
+      iframeHtml ? "refine" : "generate",
+      iframeHtml ? REFINE_SYSTEM : GENERATE_CORE_SYSTEM,
+      projectId,
+    )
+      .then((c) => {
+        if (!cancelled) setInspectorCore(c);
+      })
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [showFullPrompt, iframeHtml, projectId]);
 
   // The exact blocks the engine would assemble for the next turn, for the
@@ -2320,7 +2586,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           primaryFile: projectFileName,
           workspaceRoot: workspaceRoot ?? projectPath ?? undefined,
           iframeHtml: iframeHtml ?? undefined,
-          designSystem: { path: dsPath ?? undefined, name: dsName ?? undefined, markdown: dsMarkdown ?? undefined },
+          designSystem: {
+            path: dsPath ?? undefined,
+            name: dsName ?? undefined,
+            markdown: dsMarkdown ?? undefined,
+          },
           model: selectedModel,
         },
       },
@@ -2329,16 +2599,36 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         return extras ? { preambleExtras: extras } : {};
       })(),
     );
-  }, [showFullPrompt, inspectorCore, canonicalPlusPayload, canonicalActive, tasteDialOverrides, input, selectedProvider, projectId, projectPath, projectFileName, workspaceRoot, iframeHtml, dsPath, dsName, dsMarkdown, selectedModel]);
+  }, [
+    showFullPrompt,
+    inspectorCore,
+    canonicalPlusPayload,
+    canonicalActive,
+    tasteDialOverrides,
+    input,
+    selectedProvider,
+    projectId,
+    projectPath,
+    projectFileName,
+    workspaceRoot,
+    iframeHtml,
+    dsPath,
+    dsName,
+    dsMarkdown,
+    selectedModel,
+  ]);
 
-  const handleModelChange = useCallback((m: string) => {
-    setSelectedModel(m);
-    setShowModelMenu(false);
-    // Mirror into per-provider last-model key + shared `model` key + FS config.
-    writeLastModel(selectedProvider, m);
-    void writeGlobalConfig({ model: m }).catch(warn("writeGlobalConfig:model"));
-    db.setSetting("model", m).catch(warn("setSetting:model"));
-  }, [selectedProvider]);
+  const handleModelChange = useCallback(
+    (m: string) => {
+      setSelectedModel(m);
+      setShowModelMenu(false);
+      // Mirror into per-provider last-model key + shared `model` key + FS config.
+      writeLastModel(selectedProvider, m);
+      void writeGlobalConfig({ model: m }).catch(warn("writeGlobalConfig:model"));
+      db.setSetting("model", m).catch(warn("setSetting:model"));
+    },
+    [selectedProvider],
+  );
 
   // Record the REAL model the provider reported (modelName, from the `meta`
   // stream event via useClaude) against the alias the user picked. Closes
@@ -2355,7 +2645,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // for everything else and on probe failure). User hit a bug where the
   // static Codex list contained speculative IDs the provider rejected —
   // using the live probe wherever possible eliminates that whole class.
-  const { options: currentModelOptions, loading: modelsLoading, source: modelsSource } = useLiveModelOptions(selectedProvider);
+  const {
+    options: currentModelOptions,
+    loading: modelsLoading,
+    source: modelsSource,
+  } = useLiveModelOptions(selectedProvider);
   const [customModelInput, setCustomModelInput] = useState("");
 
   // Force-reset selectedModel whenever the provider changes — even if the
@@ -2399,7 +2693,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         const primaryPath = `${projectPath.replace(/\/+$/, "")}/${projectFileName}`;
         try {
           const f = await readFileViaBridge(primaryPath);
-          if (f && typeof f === "object" && "content" in f && typeof (f as FsFile).content === "string") {
+          if (
+            f &&
+            typeof f === "object" &&
+            "content" in f &&
+            typeof (f as FsFile).content === "string"
+          ) {
             fromDisk = (f as FsFile).content;
           }
         } catch {}
@@ -2414,7 +2713,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               const firstHtml = listing.entries.find((e) => !e.isDir && /\.html?$/i.test(e.name));
               if (firstHtml) {
                 const f = await readFileViaBridge(firstHtml.path);
-                if (f && typeof f === "object" && "content" in f && typeof (f as FsFile).content === "string") {
+                if (
+                  f &&
+                  typeof f === "object" &&
+                  "content" in f &&
+                  typeof (f as FsFile).content === "string"
+                ) {
                   fromDisk = (f as FsFile).content;
                 }
               }
@@ -2452,7 +2756,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         }
       } catch {}
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // Re-run if the project's disk identity changes (slug rename or
     // migration); iframe follows the file.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2531,7 +2837,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         return [...prev, ...additions];
       });
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, projectPath]);
 
@@ -2628,40 +2936,50 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             // instead of regressing to the inline-text behavior. Older turns
             // without `attachments` keep the legacy text-prepend look (their
             // text already carries the markdown raw).
-            const rehydratedAttachments = Array.isArray(turn.user?.attachments) && turn.user.attachments.length > 0
-              ? turn.user.attachments.map((a) => ({
-                  name: a.name,
-                  size: a.size,
-                  mime: a.mime,
-                  // Attachment.kind is optional in the on-disk schema for
-                  // backward-compat; default unknowns to "binary" so the
-                  // chip glyph stays sensible.
-                  kind: (a.kind ?? "binary") as "image" | "text" | "html" | "binary",
-                  path: a.path,
-                  content: a.content,
-                }))
-              : undefined;
+            const rehydratedAttachments =
+              Array.isArray(turn.user?.attachments) && turn.user.attachments.length > 0
+                ? turn.user.attachments.map((a) => ({
+                    name: a.name,
+                    size: a.size,
+                    mime: a.mime,
+                    // Attachment.kind is optional in the on-disk schema for
+                    // backward-compat; default unknowns to "binary" so the
+                    // chip glyph stays sensible.
+                    kind: (a.kind ?? "binary") as "image" | "text" | "html" | "binary",
+                    path: a.path,
+                    content: a.content,
+                  }))
+                : undefined;
             loaded.push({
               role: "user",
               text: turn.user?.text ?? "",
               attachments: rehydratedAttachments,
               ts: baseTs,
               turn_id: turn.id,
-              verb: turn.user?.verb ? {
-                id: turn.user.verb.id,
-                label: turn.user.verb.label,
-                category: turn.user.verb.category as "evaluate" | "refine" | "direction" | "enhance" | "fix" | "export",
-                modifiesHtml: turn.user.verb.modifiesHtml,
-                status: "done",
-                elapsedMs: turn.ai?.duration_ms,
-              } : undefined,
+              verb: turn.user?.verb
+                ? {
+                    id: turn.user.verb.id,
+                    label: turn.user.verb.label,
+                    category: turn.user.verb.category as
+                      | "evaluate"
+                      | "refine"
+                      | "direction"
+                      | "enhance"
+                      | "fix"
+                      | "export",
+                    modifiesHtml: turn.user.verb.modifiesHtml,
+                    status: "done",
+                    elapsedMs: turn.ai?.duration_ms,
+                  }
+                : undefined,
             });
             if (turn.ai) {
               // F1.1 — rehydrate per-message stats from disk so the
               // permanent footer renders immediately on reload. Tokens
               // are stored as a nested `{ in, out }` on the turn (schema
               // optional); flatten back into the message fields here.
-              const aiTokensRaw = (turn.ai as unknown as { tokens?: { in?: number; out?: number } }).tokens;
+              const aiTokensRaw = (turn.ai as unknown as { tokens?: { in?: number; out?: number } })
+                .tokens;
               const aiCostUsd = (turn.ai as unknown as { cost_usd?: number }).cost_usd;
               const aiTtftMs = (turn.ai as unknown as { ttft_ms?: number }).ttft_ms;
               loaded.push({
@@ -2675,7 +2993,8 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                 turn_id: turn.id,
                 streaming: false,
                 version_id: turn.ai.html_snapshot_id,
-                durationMs: typeof turn.ai.duration_ms === "number" ? turn.ai.duration_ms : undefined,
+                durationMs:
+                  typeof turn.ai.duration_ms === "number" ? turn.ai.duration_ms : undefined,
                 tokensIn: typeof aiTokensRaw?.in === "number" ? aiTokensRaw.in : undefined,
                 tokensOut: typeof aiTokensRaw?.out === "number" ? aiTokensRaw.out : undefined,
                 costUsd: typeof aiCostUsd === "number" ? aiCostUsd : undefined,
@@ -2691,14 +3010,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             // readChatMessages already coerces legacy role:"claude" → "assistant"
             // (see Provider Handoff Layer v0). Tag provider for assistant turns
             // so older chats render with a Claude badge.
-            loaded = fromFs.map((m, i): ChatMessage => ({
-              role: m.role,
-              provider: m.role === "assistant" ? "claude" : undefined,
-              text: m.text,
-              isDesign: m.is_design,
-              ts: typeof m.ts === "number" ? m.ts : i + 1,
-              turn_id: `legacy-${typeof m.ts === "number" ? m.ts : i}`,
-            }));
+            loaded = fromFs.map(
+              (m, i): ChatMessage => ({
+                role: m.role,
+                provider: m.role === "assistant" ? "claude" : undefined,
+                text: m.text,
+                isDesign: m.is_design,
+                ts: typeof m.ts === "number" ? m.ts : i + 1,
+                turn_id: `legacy-${typeof m.ts === "number" ? m.ts : i}`,
+              }),
+            );
           }
         }
       }
@@ -2746,15 +3067,20 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             (m) => (m?.role === "user" || m?.role === "assistant") && typeof m?.text === "string",
           ) as unknown as ChatMessage[];
           const dropped = snap.length - valid.length;
-          if (dropped > 0) console.warn("[chat-load] dropped", dropped, "malformed snapshot entries");
+          if (dropped > 0)
+            console.warn("[chat-load] dropped", dropped, "malformed snapshot entries");
           const { messages: sanitized } = sanitizeMessages(valid);
           setMessages(sanitized);
           // Snapshot turns may not be in chat.jsonl yet — leave dedup empty
           // so the persist effect re-emits finalized turns to disk.
           persistedTurnIdsRef.current = new Set();
         } else {
-          const rawNew = await db.getSetting(`tmsg:${projectId}:${activeThreadId}`).catch(() => null);
-          const rawLegacy = rawNew ? null : await db.getSetting(`tmsg:${activeThreadId}`).catch(() => null);
+          const rawNew = await db
+            .getSetting(`tmsg:${projectId}:${activeThreadId}`)
+            .catch(() => null);
+          const rawLegacy = rawNew
+            ? null
+            : await db.getSetting(`tmsg:${activeThreadId}`).catch(() => null);
           const raw = rawNew ?? rawLegacy;
           if (myLoadId !== chatLoadIdRef.current) return;
           try {
@@ -2782,7 +3108,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       }
       chatHydratedRef.current = true;
       setChatHydratedTrigger((n) => n + 1);
-      db.setSetting(`activeThread:${projectId}`, activeThreadId).catch(warn("setSetting:activeThread::projectId"));
+      db.setSetting(`activeThread:${projectId}`, activeThreadId).catch(
+        warn("setSetting:activeThread::projectId"),
+      );
     })();
   }, [projectId, activeThreadId, projectSlug]);
 
@@ -2795,7 +3123,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     // Per-project cache. Old code used a shared key (`tmsg:${activeThreadId}`)
     // which was overwritten every project switch — fixed here so each
     // project keeps its own cache and recovery from cache is reliable.
-    db.setSetting(`tmsg:${projectId}:${activeThreadId}`, JSON.stringify(messages.slice(-200))).catch(warn("setSetting:tmsg::projectId::activeThreadId"));
+    db.setSetting(
+      `tmsg:${projectId}:${activeThreadId}`,
+      JSON.stringify(messages.slice(-200)),
+    ).catch(warn("setSetting:tmsg::projectId::activeThreadId"));
     if (!projectSlug) return;
 
     const written = persistedTurnIdsRef.current;
@@ -2834,20 +3165,25 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       // Pick the most informative claude (the LAST one that has text or
       // tools or isDesign) — collapses the streaming placeholder + the
       // terminal "Design generated" + any patch summary into one ai field.
-      const claudeText = claudes.map((c) => c.text).filter(Boolean).join("\n\n");
+      const claudeText = claudes
+        .map((c) => c.text)
+        .filter(Boolean)
+        .join("\n\n");
       const isDesign = claudes.some((c) => c.isDesign);
       const tools: ToolUseRecord[] = [];
       for (const c of claudes) if (c.tools && c.tools.length) tools.push(...c.tools);
       // Skip turns where neither side has any persistable signal yet.
-      if (!userMsg.text && !claudeText && !isDesign && tools.length === 0 && !userMsg.verb) continue;
+      if (!userMsg.text && !claudeText && !isDesign && tools.length === 0 && !userMsg.verb)
+        continue;
       // Fix (Bug 4): if the assistant existed (has provider/model)
       // but produced no text/tools/isDesign signal, persist a fallback
       // marker so reload doesn't see a "missing" assistant. Without this
       // the turn round-trips as ai.text="" and sanitizeMessages used to
       // drop it. The marker is visible in chat as "[empty response]".
       const hasAssistantEvidence = claudes.some((c) => c.provider || c.model);
-      const persistedClaudeText = claudeText
-        || (hasAssistantEvidence && tools.length === 0 && !isDesign ? "[empty response]" : "");
+      const persistedClaudeText =
+        claudeText ||
+        (hasAssistantEvidence && tools.length === 0 && !isDesign ? "[empty response]" : "");
 
       const turn: Turn = {
         id: turn_id,
@@ -2858,56 +3194,64 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           // the chip row instead of regressing to inline text. Skip the
           // `content` field on disk for image attachments — the file lives
           // in `.df-attachments/` already, the chip just needs `path`.
-          attachments: userMsg.attachments && userMsg.attachments.length > 0
-            ? userMsg.attachments.map((a) => ({
-                name: a.name,
-                size: a.size,
-                mime: a.mime,
-                kind: a.kind,
-                path: a.path,
-                // Drop bulky inline content for images (path is canonical);
-                // keep it for text/html so re-opens render the chip preview.
-                content: a.kind === "image" ? undefined : a.content,
-              }))
-            : undefined,
-          verb: userMsg.verb ? {
-            id: userMsg.verb.id,
-            label: userMsg.verb.label,
-            category: userMsg.verb.category ?? "refine",
-            modifiesHtml: !!userMsg.verb.modifiesHtml,
-          } : null,
-        },
-        ai: claudes.length > 0 ? (() => {
-          // F1.1 — Pull permanent stats from the LAST assistant msg in the
-          // group (V2 finalize populates these). Falls back to verb timing
-          // for legacy verb dispatches that don't carry tokens/cost.
-          const finalClaude = claudes[claudes.length - 1];
-          const statDurationMs = typeof finalClaude?.durationMs === "number"
-            ? finalClaude.durationMs
-            : userMsg.verb?.elapsedMs;
-          const tokensIn = finalClaude?.tokensIn;
-          const tokensOut = finalClaude?.tokensOut;
-          return {
-            text: persistedClaudeText,
-            tools,
-            // Provider Handoff Layer v1: persist which model spoke this
-            // turn so the badge re-renders correctly after reload. Pulled
-            // off the FIRST assistant msg in the group — they all share
-            // the same provider within a single turn.
-            provider: claudes[0]?.provider,
-            model: claudes[0]?.model,
-            is_design: isDesign,
-            status: (verbStatus === "failed" ? "error" : "done") as "error" | "done",
-            duration_ms: statDurationMs,
-            tokens: (typeof tokensIn === "number" || typeof tokensOut === "number")
-              ? { in: tokensIn, out: tokensOut }
+          attachments:
+            userMsg.attachments && userMsg.attachments.length > 0
+              ? userMsg.attachments.map((a) => ({
+                  name: a.name,
+                  size: a.size,
+                  mime: a.mime,
+                  kind: a.kind,
+                  path: a.path,
+                  // Drop bulky inline content for images (path is canonical);
+                  // keep it for text/html so re-opens render the chip preview.
+                  content: a.kind === "image" ? undefined : a.content,
+                }))
               : undefined,
-            cost_usd: finalClaude?.costUsd,
-            ttft_ms: finalClaude?.ttftMs,
-            error: claudes.find((c) => c.text.startsWith("[error]"))?.text,
-            html_snapshot_id: claudes.find((c) => c.version_id)?.version_id,
-          };
-        })() : null,
+          verb: userMsg.verb
+            ? {
+                id: userMsg.verb.id,
+                label: userMsg.verb.label,
+                category: userMsg.verb.category ?? "refine",
+                modifiesHtml: !!userMsg.verb.modifiesHtml,
+              }
+            : null,
+        },
+        ai:
+          claudes.length > 0
+            ? (() => {
+                // F1.1 — Pull permanent stats from the LAST assistant msg in the
+                // group (V2 finalize populates these). Falls back to verb timing
+                // for legacy verb dispatches that don't carry tokens/cost.
+                const finalClaude = claudes[claudes.length - 1];
+                const statDurationMs =
+                  typeof finalClaude?.durationMs === "number"
+                    ? finalClaude.durationMs
+                    : userMsg.verb?.elapsedMs;
+                const tokensIn = finalClaude?.tokensIn;
+                const tokensOut = finalClaude?.tokensOut;
+                return {
+                  text: persistedClaudeText,
+                  tools,
+                  // Provider Handoff Layer v1: persist which model spoke this
+                  // turn so the badge re-renders correctly after reload. Pulled
+                  // off the FIRST assistant msg in the group — they all share
+                  // the same provider within a single turn.
+                  provider: claudes[0]?.provider,
+                  model: claudes[0]?.model,
+                  is_design: isDesign,
+                  status: (verbStatus === "failed" ? "error" : "done") as "error" | "done",
+                  duration_ms: statDurationMs,
+                  tokens:
+                    typeof tokensIn === "number" || typeof tokensOut === "number"
+                      ? { in: tokensIn, out: tokensOut }
+                      : undefined,
+                  cost_usd: finalClaude?.costUsd,
+                  ttft_ms: finalClaude?.ttftMs,
+                  error: claudes.find((c) => c.text.startsWith("[error]"))?.text,
+                  html_snapshot_id: claudes.find((c) => c.version_id)?.version_id,
+                };
+              })()
+            : null,
       };
       readyTurns.push(turn);
     }
@@ -2923,7 +3267,14 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           return false;
         });
         if (!ok) {
-          console.warn("[chat] appendChatTurn failed for turn", turn.id, "slug:", projectSlug, "thread:", activeThreadId);
+          console.warn(
+            "[chat] appendChatTurn failed for turn",
+            turn.id,
+            "slug:",
+            projectSlug,
+            "thread:",
+            activeThreadId,
+          );
         }
       }
     })();
@@ -2940,8 +3291,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     }
     if (messages.length === 0) return;
     const handle = window.setTimeout(() => {
-      void writeChatSnapshot(projectSlug, activeThreadId, messages)
-        .catch((e) => console.error("[snapshot] threw:", e));
+      void writeChatSnapshot(projectSlug, activeThreadId, messages).catch((e) =>
+        console.error("[snapshot] threw:", e),
+      );
     }, 600);
     return () => window.clearTimeout(handle);
   }, [messages, projectSlug, activeThreadId]);
@@ -3036,9 +3388,15 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         // BUG-29 follow-up: require the design to have CHANGED this turn
         // (iframeHtml differs from the pre-turn baseline), so a thin/empty
         // response after a prior design isn't mislabeled "Design generated".
-        const designChangedThisTurn = Boolean(iframeHtml) && iframeHtml !== designBaselineRef.current;
+        const designChangedThisTurn =
+          Boolean(iframeHtml) && iframeHtml !== designBaselineRef.current;
         if (status === "done" && !hasText && !hasTools && designChangedThisTurn) {
-          next[next.length - 1] = { ...last, text: "Design generated", isDesign: true, streaming: false };
+          next[next.length - 1] = {
+            ...last,
+            text: "Design generated",
+            isDesign: true,
+            streaming: false,
+          };
         } else {
           next[next.length - 1] = { ...last, tools: finalTools, streaming: false };
         }
@@ -3052,7 +3410,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     // it actually looks like an HTML document. Otherwise onToolResult
     // (which re-reads from disk after Write) owns the iframe state and
     // chat prose stays in the chat panel.
-    if (status === "done" && output && looksLikeHtmlOutput(output) && lastPushedOutputRef.current !== output) {
+    if (
+      status === "done" &&
+      output &&
+      looksLikeHtmlOutput(output) &&
+      lastPushedOutputRef.current !== output
+    ) {
       lastPushedOutputRef.current = output;
       setIframeHtml(output);
 
@@ -3080,7 +3443,17 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         // this terminal "Design generated" with the user prompt of the same
         // turn (instead of starting its own turn).
         const turn_id = last?.turn_id;
-        const done: ChatMessage = stamp({ role: "assistant", provider: selectedProvider, model: selectedModel, text: "Design generated", isDesign: true, tools: snapshot, streaming: false, turn_id, version_id: versionId });
+        const done: ChatMessage = stamp({
+          role: "assistant",
+          provider: selectedProvider,
+          model: selectedModel,
+          text: "Design generated",
+          isDesign: true,
+          tools: snapshot,
+          streaming: false,
+          turn_id,
+          version_id: versionId,
+        });
         // Replace the empty claude placeholder (pushed at send) rather than
         // appending — otherwise the chat shows Thinking placeholder + Done.
         if (last?.role === "assistant" && !last.text && !last.isDesign) {
@@ -3110,11 +3483,13 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               return blocks;
             }),
           ];
-          db.saveMessageStructured(projectId, "assistant", "Design generated", parts, true).catch(() => {
-            // Fall back to legacy write if structured save somehow fails (e.g.
-            // older build of the Rust side). Data is never lost.
-            db.saveMessage(projectId, "assistant", "Design generated", true).catch(() => {});
-          });
+          db.saveMessageStructured(projectId, "assistant", "Design generated", parts, true).catch(
+            () => {
+              // Fall back to legacy write if structured save somehow fails (e.g.
+              // older build of the Rust side). Data is never lost.
+              db.saveMessage(projectId, "assistant", "Design generated", true).catch(() => {});
+            },
+          );
         } else {
           db.saveMessage(projectId, "assistant", "Design generated", true).catch(() => {});
         }
@@ -3137,8 +3512,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           // mirror to filesystem (best-effort).
           if (autoCheckpointSlug) {
             void saveProjectVersion(autoCheckpointSlug, {
-              id: next.id, html: next.html,
-              createdAt: next.createdAt, auto: next.auto,
+              id: next.id,
+              html: next.html,
+              createdAt: next.createdAt,
+              auto: next.auto,
             }).catch(() => false);
           }
           if (autoCount > 20) {
@@ -3146,10 +3523,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             let dropped = 0;
             const prunedIds: string[] = [];
             const pruned = kept.filter((v) => {
-              if (v.auto && dropped < autoCount - 20) { dropped += 1; prunedIds.push(v.id); return false; }
+              if (v.auto && dropped < autoCount - 20) {
+                dropped += 1;
+                prunedIds.push(v.id);
+                return false;
+              }
               return true;
             });
-            db.setSetting(`versions:${projectId}`, JSON.stringify(pruned)).catch(warn("setSetting:versions::projectId"));
+            db.setSetting(`versions:${projectId}`, JSON.stringify(pruned)).catch(
+              warn("setSetting:versions::projectId"),
+            );
             // drop pruned auto-checkpoint files from disk too.
             if (autoCheckpointSlug) {
               for (const pid of prunedIds) {
@@ -3158,7 +3541,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             }
             return pruned;
           }
-          db.setSetting(`versions:${projectId}`, JSON.stringify(kept)).catch(warn("setSetting:versions::projectId"));
+          db.setSetting(`versions:${projectId}`, JSON.stringify(kept)).catch(
+            warn("setSetting:versions::projectId"),
+          );
           return kept;
         });
       }
@@ -3196,19 +3581,21 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // Persist history stack whenever it changes
   useEffect(() => {
     if (!projectId || history.length === 0) return;
-    db.setSetting(`history:${projectId}`, JSON.stringify(history.slice(-10))).catch(warn("setSetting:history::projectId"));
+    db.setSetting(`history:${projectId}`, JSON.stringify(history.slice(-10))).catch(
+      warn("setSetting:history::projectId"),
+    );
   }, [history, projectId]);
 
   // Safety net: when a stream finishes and the iframe is STILL empty, try
   // reading the project's primary file from disk. Covers the case where
   // the agent wrote the HTML via a tool call but neither onToolCall (path
   // mismatch) nor the "Design generated" branch (output didn't look like
-  // HTML — agent only streamed prose) refreshed the iframe. User
-  // reported "terminou de gerar e nao apareceu o html" on a regenerated
-  // session — this catches it from the file-system side. 2026-04-27.
+  // HTML — agent only streamed prose) refreshed the iframe. Reported
+  // that generation finished but the HTML didn't appear on a regenerated
+  // session — this catches it from the file-system side.
   //
-  // User QA 2026-05-17: "tive que recarregar a pagina pra aparecer
-  // o html, mesmo rodando com claude". The single 200ms delay was too
+  // QA follow-up: the page had to be reloaded for the HTML to appear,
+  // even when running with Claude. The single 200ms delay was too
   // tight for slower providers (codex's exec, kimi's -w indexing, big
   // BYOK turns) — the file landed on disk a beat after the safety net
   // fired, the read returned no content, and the user had to F5 to
@@ -3235,16 +3622,18 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           if (!html || html.length < 50) continue;
           setIframeHtml(html);
           lastPushedOutputRef.current = html;
-          if (projectId) void db.setSetting(`html:${projectId}`, html).catch(warn("setSetting:html::projectId"));
+          if (projectId)
+            void db.setSetting(`html:${projectId}`, html).catch(warn("setSetting:html::projectId"));
           return;
         } catch {
           // file not ready yet — try next interval
         }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [status, iframeHtml, projectPath, projectFileName, projectId]);
-
 
   // Auto-scroll behaviour. Default = follow the stream. We turn it off only
   // if the user manually scrolls up during a streaming turn — then a "jump
@@ -3297,7 +3686,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         errorPushedRef.current = error;
         setMessages((prev) => {
           const last = prev[prev.length - 1];
-          const err: ChatMessage = stamp({ role: "assistant", text: `[error] ${error}`, streaming: false, turn_id: last?.turn_id });
+          const err: ChatMessage = stamp({
+            role: "assistant",
+            text: `[error] ${error}`,
+            streaming: false,
+            turn_id: last?.turn_id,
+          });
           // Replace the Thinking placeholder on error so we don't leave a
           // dangling empty slot above the error.
           if (last?.role === "assistant" && !last.text && !last.isDesign) {
@@ -3363,21 +3757,18 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     // persist_status badge surfaces the outcome ("saving" → terminal).
     // surfaceError fires on any "failed" result so the user sees a
     // toast instead of silent data loss.
-    const persistInitialTurn = async (
-      id: string,
-      user: Turn["user"],
-    ): Promise<void> => {
-      const result = await persistOrRecoverTurn(
-        projectSlug,
-        projectId ?? null,
-        activeThreadId,
-        { id, ts: Date.now(), user, ai: null },
+    const persistInitialTurn = async (id: string, user: Turn["user"]): Promise<void> => {
+      const result = await persistOrRecoverTurn(projectSlug, projectId ?? null, activeThreadId, {
+        id,
+        ts: Date.now(),
+        user,
+        ai: null,
+      });
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.role === "user" && m.turn_id === id ? { ...m, persist_status: result.status } : m,
+        ),
       );
-      setMessages((prev) => prev.map((m) =>
-        m.role === "user" && m.turn_id === id
-          ? { ...m, persist_status: result.status }
-          : m,
-      ));
       if (result.status === "failed") {
         surfaceError(
           new Error(`turn ${id} could not be persisted (${result.reason ?? "unknown"})`),
@@ -3405,11 +3796,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       attachmentsForChip = attachedFiles.map((f): import("@/lib/schemas").ChatAttachment => {
         const isImage = f.mime.startsWith("image/");
         const isHtml = f.mime === "text/html" || /\.html?$/i.test(f.name);
-        const isTextLike = !isImage && (
-          f.mime.startsWith("text/")
-          || /^application\/(json|javascript|xml)/.test(f.mime)
-          || /\.(md|ts|tsx|jsx|js|json|yml|yaml|txt|csv|css)$/i.test(f.name)
-        );
+        const isTextLike =
+          !isImage &&
+          (f.mime.startsWith("text/") ||
+            /^application\/(json|javascript|xml)/.test(f.mime) ||
+            /\.(md|ts|tsx|jsx|js|json|yml|yaml|txt|csv|css)$/i.test(f.name));
         return {
           name: f.name,
           size: f.size,
@@ -3424,21 +3815,23 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       // Build the inline prompt block sent to the provider (unchanged shape so
       // existing model behavior is preserved). This block does NOT land in
       // message.text — only in the prompt string the agent sees.
-      const attachBlock = attachedFiles.map((f) => {
-        if (f.mime.startsWith("image/")) {
-          // Detect absolute paths cross-platform — POSIX (`/`, `~`) AND Windows
-          // (`C:\…`, `\\server\share`). Without the Windows branch, image
-          // attachments written to .df-attachments/ on Windows leaked through
-          // as `[image: x.svg attached as data URL]\nC:\...\x.svg` and the agent
-          // had no way to read the file.
-          const isAbsPath = /^[A-Za-z]:[\\/]|^[\\/]/.test(f.content) || f.content.startsWith("~");
-          if (isAbsPath) {
-            return `[attached image: ${f.content}]`;
+      const attachBlock = attachedFiles
+        .map((f) => {
+          if (f.mime.startsWith("image/")) {
+            // Detect absolute paths cross-platform — POSIX (`/`, `~`) AND Windows
+            // (`C:\…`, `\\server\share`). Without the Windows branch, image
+            // attachments written to .df-attachments/ on Windows leaked through
+            // as `[image: x.svg attached as data URL]\nC:\...\x.svg` and the agent
+            // had no way to read the file.
+            const isAbsPath = /^[A-Za-z]:[\\/]|^[\\/]/.test(f.content) || f.content.startsWith("~");
+            if (isAbsPath) {
+              return `[attached image: ${f.content}]`;
+            }
+            return `[image: ${f.name} (${(f.size / 1024).toFixed(0)}kb) attached as data URL]\n${f.content}`;
           }
-          return `[image: ${f.name} (${(f.size / 1024).toFixed(0)}kb) attached as data URL]\n${f.content}`;
-        }
-        return `--- ${f.name} (${(f.size / 1024).toFixed(0)}kb) ---\n${f.content}\n--- end of ${f.name} ---`;
-      }).join("\n\n");
+          return `--- ${f.name} (${(f.size / 1024).toFixed(0)}kb) ---\n${f.content}\n--- end of ${f.name} ---`;
+        })
+        .join("\n\n");
       userMsg = `${attachBlock}\n\n${userMsg}`;
       setAttachedFiles([]);
     }
@@ -3480,21 +3873,33 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       const verbTurnId = `t${Date.now()}`;
       setMessages((prev) => {
         verbIndex = prev.length;
-        const next: ChatMessage[] = [...prev, stamp({
-          role: "user",
-          text: `/${verbHit.verb.id}`,
-          verb: {
-            id: verbHit.verb.id,
-            label: verbHit.verb.label,
-            status: "running",
-            modifiesHtml: verbHit.verb.modifiesHtml,
-            category: verbHit.verb.category,
-          },
-          turn_id: verbTurnId,
-          persist_status: "saving",
-        })];
+        const next: ChatMessage[] = [
+          ...prev,
+          stamp({
+            role: "user",
+            text: `/${verbHit.verb.id}`,
+            verb: {
+              id: verbHit.verb.id,
+              label: verbHit.verb.label,
+              status: "running",
+              modifiesHtml: verbHit.verb.modifiesHtml,
+              category: verbHit.verb.category,
+            },
+            turn_id: verbTurnId,
+            persist_status: "saving",
+          }),
+        ];
         if (verbReadOnly) {
-          next.push(stamp({ role: "assistant", provider: selectedProvider, model: selectedModel, text: "", streaming: true, turn_id: verbTurnId }));
+          next.push(
+            stamp({
+              role: "assistant",
+              provider: selectedProvider,
+              model: selectedModel,
+              text: "",
+              streaming: true,
+              turn_id: verbTurnId,
+            }),
+          );
         }
         return next;
       });
@@ -3552,17 +3957,34 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         if (verbHit.verb.modifiesHtml && iframeHtml) {
           autoCheckpoint(iframeHtml, `after ${verbHit.verb.label.toLowerCase()}`);
         }
-        setMessages((prev) => prev.map((m, i) => i === verbIndex && m.verb ? {
-          ...m,
-          verb: { ...m.verb, status: "done", elapsedMs: Date.now() - verbStartedAt },
-        } : m));
+        setMessages((prev) =>
+          prev.map((m, i) =>
+            i === verbIndex && m.verb
+              ? {
+                  ...m,
+                  verb: { ...m.verb, status: "done", elapsedMs: Date.now() - verbStartedAt },
+                }
+              : m,
+          ),
+        );
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         console.error(`[verb] /${verbHit.verb.id} failed`, e);
-        setMessages((prev) => prev.map((m, i) => i === verbIndex && m.verb ? {
-          ...m,
-          verb: { ...m.verb, status: "failed", errorMsg: msg.slice(0, 120), elapsedMs: Date.now() - verbStartedAt },
-        } : m));
+        setMessages((prev) =>
+          prev.map((m, i) =>
+            i === verbIndex && m.verb
+              ? {
+                  ...m,
+                  verb: {
+                    ...m.verb,
+                    status: "failed",
+                    errorMsg: msg.slice(0, 120),
+                    elapsedMs: Date.now() - verbStartedAt,
+                  },
+                }
+              : m,
+          ),
+        );
       } finally {
         setActiveVerb(null);
       }
@@ -3596,14 +4018,35 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             "",
             "---",
             "",
-            args ? `## User request\n\n${args}` : "## User request\n\n(no additional args — execute the skill with defaults)",
-          ].filter(Boolean).join("\n");
+            args
+              ? `## User request\n\n${args}`
+              : "## User request\n\n(no additional args — execute the skill with defaults)",
+          ]
+            .filter(Boolean)
+            .join("\n");
           // Keep the visibleText in the message history (so it reads nicely),
           // but send the expanded payload to the LLM.
         }
       }
       setInput("");
-      setMessages((prev) => [...prev, stamp({ role: "user", text: visibleText, attachments: attachmentsForChip, turn_id: turnId, persist_status: "saving" }), stamp({ role: "assistant", provider: selectedProvider, model: selectedModel, text: "", streaming: true, turn_id: turnId })]);
+      setMessages((prev) => [
+        ...prev,
+        stamp({
+          role: "user",
+          text: visibleText,
+          attachments: attachmentsForChip,
+          turn_id: turnId,
+          persist_status: "saving",
+        }),
+        stamp({
+          role: "assistant",
+          provider: selectedProvider,
+          model: selectedModel,
+          text: "",
+          streaming: true,
+          turn_id: turnId,
+        }),
+      ]);
       if (projectId) db.saveMessage(projectId, "user", visibleText, false).catch(() => {});
       // Await durable persist before sendSkillCommand so a tab close
       // before the skill returns can't drop the user's command.
@@ -3625,13 +4068,31 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     designBaselineRef.current = iframeHtml;
     recordTurn("client", "handleSend", {
       visibleText_preview: visibleText.slice(0, 80),
-      provider: selectedProvider, model: selectedModel,
+      provider: selectedProvider,
+      model: selectedModel,
     });
     // Push user message + an empty claude placeholder so the Thinking… state
     // is visible from send through first streaming chunk. Without the
     // placeholder, the chat shows nothing between user message and first
     // chunk and the user has no feedback.
-    setMessages((prev) => [...prev, stamp({ role: "user", text: visibleText, attachments: attachmentsForChip, turn_id: turnId, persist_status: "saving" }), stamp({ role: "assistant", provider: selectedProvider, model: selectedModel, text: "", streaming: true, turn_id: turnId })]);
+    setMessages((prev) => [
+      ...prev,
+      stamp({
+        role: "user",
+        text: visibleText,
+        attachments: attachmentsForChip,
+        turn_id: turnId,
+        persist_status: "saving",
+      }),
+      stamp({
+        role: "assistant",
+        provider: selectedProvider,
+        model: selectedModel,
+        text: "",
+        streaming: true,
+        turn_id: turnId,
+      }),
+    ]);
     if (projectId) {
       db.saveMessage(projectId, "user", visibleText, false).catch(() => {});
     }
@@ -3731,7 +4192,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       if (projectId) {
         const raw = await db.getSetting(`canonicalPlus:${projectId}`).catch(() => null);
         if (raw) {
-          try { canonicalForTurn = JSON.parse(raw) as CanonicalPlusInput; } catch { /* keep state */ }
+          try {
+            canonicalForTurn = JSON.parse(raw) as CanonicalPlusInput;
+          } catch {
+            /* keep state */
+          }
         }
       }
       const filteredCanonical: CanonicalPlusInput | null = canonicalForTurn
@@ -3752,7 +4217,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       const canonicalSummary = filteredCanonical
         ? buildCanonicalPlusBlock(filteredCanonical, tasteDialOverrides)
         : "";
-      recordTurn("client", "canonical+", { hasPayload: !!canonicalForTurn, blockLen: canonicalSummary.length, head: canonicalSummary.slice(0, 200) });
+      recordTurn("client", "canonical+", {
+        hasPayload: !!canonicalForTurn,
+        blockLen: canonicalSummary.length,
+        head: canonicalSummary.slice(0, 200),
+      });
       // The editable system core (Settings → Prompts). Generation gets the
       // generate core; an edit (existing HTML) gets the refine core. Wired
       // here so editing in Settings actually affects the V2 turn — before,
@@ -3770,7 +4239,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           providerId: selectedProvider,
           projectId: projectId ?? "",
           threadId: "main",
-          mode: (chatMode === "ask" || (chatMode === "auto" && looksLikeQuestion(visibleText))) ? "ask" : "chat",
+          mode:
+            chatMode === "ask" || (chatMode === "auto" && looksLikeQuestion(visibleText))
+              ? "ask"
+              : "chat",
           context: (() => {
             // If the active canvas tab is an HTML file tab, treat THAT as
             // the agent's edit target — its content goes into iframeHtml,
@@ -3779,15 +4251,17 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             // working on another HTML in a file tab. User repro
             // 2026-05-20: "tem q identificar aba aberta como objetivo do
             // q quer editar".
-            const fileTabHtml = (
-              currentTab?.kind === "file"
-              && currentTab.fileIsText !== false
-              && /\.html?$/i.test(currentTab.filePath ?? "")
-              && typeof currentTab.fileContent === "string"
-            ) ? currentTab.fileContent : null;
-            const fileTabName = fileTabHtml && currentTab?.filePath
-              ? currentTab.filePath.split("/").pop() ?? projectFileName
-              : null;
+            const fileTabHtml =
+              currentTab?.kind === "file" &&
+              currentTab.fileIsText !== false &&
+              /\.html?$/i.test(currentTab.filePath ?? "") &&
+              typeof currentTab.fileContent === "string"
+                ? currentTab.fileContent
+                : null;
+            const fileTabName =
+              fileTabHtml && currentTab?.filePath
+                ? (currentTab.filePath.split("/").pop() ?? projectFileName)
+                : null;
             return {
               projectPath: projectPath || "~/design-factory/projeto",
               primaryFile: fileTabName ?? projectFileName,
@@ -3814,21 +4288,36 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           sideChannels: {
             onText: (chunk) => {
               accumulated += chunk;
-              patchAssistant((m) => ({ ...m, text: accumulated, tools: liveTools.length > 0 ? [...liveTools] : m.tools }));
+              patchAssistant((m) => ({
+                ...m,
+                text: accumulated,
+                tools: liveTools.length > 0 ? [...liveTools] : m.tools,
+              }));
             },
             onToolCall: (call) => {
               const idx = liveTools.findIndex((t) => t.id === call.id);
-              if (idx >= 0) liveTools[idx] = { ...liveTools[idx], name: call.name, input: call.input };
+              if (idx >= 0)
+                liveTools[idx] = { ...liveTools[idx], name: call.name, input: call.input };
               // F2.2 — stamp startedAt on first sighting so each chip can
               // render the relative `t+X.Xs` offset from the turn's ts.
               // Duplicate stream events (Claude emits content_block_stop +
               // message terminal back-to-back) keep the original anchor.
-              else liveTools.push({ id: call.id, name: call.name, input: call.input, startedAt: Date.now() });
+              else
+                liveTools.push({
+                  id: call.id,
+                  name: call.name,
+                  input: call.input,
+                  startedAt: Date.now(),
+                });
               patchAssistant((m) => ({ ...m, tools: [...liveTools] }));
             },
             onToolResult: (tr) => {
               const idx = liveTools.findIndex((t) => t.id === tr.id);
-              if (idx >= 0) liveTools[idx] = { ...liveTools[idx], result: { content: tr.content, isError: tr.isError } };
+              if (idx >= 0)
+                liveTools[idx] = {
+                  ...liveTools[idx],
+                  result: { content: tr.content, isError: tr.isError },
+                };
               patchAssistant((m) => ({ ...m, tools: [...liveTools] }));
             },
             onSessionId: (sid) => {
@@ -3851,22 +4340,29 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       // · duration · tokens · cost). Falls back to the TurnResult's
       // wall-clock duration if the provider didn't surface its own.
       const v2Usage = finalAssistant?.usage;
-      const v2DurationMs = typeof v2Usage?.durationMs === "number"
-        ? v2Usage.durationMs
-        : (typeof v2Result.duration_ms === "number" ? v2Result.duration_ms : undefined);
+      const v2DurationMs =
+        typeof v2Usage?.durationMs === "number"
+          ? v2Usage.durationMs
+          : typeof v2Result.duration_ms === "number"
+            ? v2Result.duration_ms
+            : undefined;
       if (finalAssistant) {
         patchAssistant((m) => ({
           ...m,
           text: finalAssistant.text,
           streaming: false,
-          tools: finalAssistant.tools && finalAssistant.tools.length > 0 ? [...finalAssistant.tools] : m.tools,
+          tools:
+            finalAssistant.tools && finalAssistant.tools.length > 0
+              ? [...finalAssistant.tools]
+              : m.tools,
           doneReport: finalAssistant.doneReport,
           // provider-tagged canonical events. Empty array means a text-only
           // provider — keep the existing field rather than spread an empty
           // array (keeps the cached message payload compact).
-          toolEvents: finalAssistant.toolEvents && finalAssistant.toolEvents.length > 0
-            ? finalAssistant.toolEvents
-            : m.toolEvents,
+          toolEvents:
+            finalAssistant.toolEvents && finalAssistant.toolEvents.length > 0
+              ? finalAssistant.toolEvents
+              : m.toolEvents,
           // F1.1 — Permanent stats footer fields.
           durationMs: v2DurationMs,
           tokensIn: typeof v2Usage?.inputTokens === "number" ? v2Usage.inputTokens : undefined,
@@ -3893,7 +4389,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               setIframeHtml(f.content);
               lastPushedOutputRef.current = f.content;
               if (projectId) {
-                db.setSetting(`html:${projectId}`, f.content).catch(warn("setSetting:html:post-v2"));
+                db.setSetting(`html:${projectId}`, f.content).catch(
+                  warn("setSetting:html:post-v2"),
+                );
               }
             }
           }
@@ -3929,22 +4427,26 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       // assistant placeholder paired with this turn so the chat
       // surface renders a "resposta interrompida" banner with Retry.
       onInterrupted: () => {
-        setMessages((prev) => prev.map((m) =>
-          m.role === "assistant" && m.turn_id === turnId
-            ? { ...m, text: INTERRUPTED_RESPONSE_MARKER, streaming: false }
-            : m,
-        ));
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.role === "assistant" && m.turn_id === turnId
+              ? { ...m, text: INTERRUPTED_RESPONSE_MARKER, streaming: false }
+              : m,
+          ),
+        );
       },
       // Same shape — provider returned `done` with a suspiciously thin
       // payload (user repro: 4-char "Você" with zero tools). We
       // overwrite the placeholder with the truncated marker so the
       // bubble can show the structured error UI.
       onSuspiciousDone: () => {
-        setMessages((prev) => prev.map((m) =>
-          m.role === "assistant" && m.turn_id === turnId
-            ? { ...m, text: TRUNCATED_RESPONSE_MARKER, streaming: false }
-            : m,
-        ));
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.role === "assistant" && m.turn_id === turnId
+              ? { ...m, text: TRUNCATED_RESPONSE_MARKER, streaming: false }
+              : m,
+          ),
+        );
       },
       // When Claude writes/edits the project's HTML file, open it in
       // a tab and refresh the iframe by reading the file from disk.
@@ -4001,11 +4503,19 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           await new Promise((r) => setTimeout(r, 120));
           try {
             const fresh = await readFileViaBridge(resolved);
-            if (fresh && typeof fresh === "object" && "content" in fresh && typeof (fresh as FsFile).content === "string") {
+            if (
+              fresh &&
+              typeof fresh === "object" &&
+              "content" in fresh &&
+              typeof (fresh as FsFile).content === "string"
+            ) {
               const html = (fresh as FsFile).content;
               setIframeHtml(html);
               lastPushedOutputRef.current = html;
-              if (projectId) void db.setSetting(`html:${projectId}`, html).catch(warn("setSetting:html::projectId"));
+              if (projectId)
+                void db
+                  .setSetting(`html:${projectId}`, html)
+                  .catch(warn("setSetting:html::projectId"));
               // Provider Handoff Layer v1: bump snapshot_version so the
               // next provider switch knows L3 needs to re-ship. Best-effort.
               if (projectSlug) {
@@ -4038,9 +4548,7 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     // invokeConsult, which streams a text-only response without
     // firing Write/Edit tools. The chatMode toggle in the input bar
     // forces Ask or Edit; Auto uses the looksLikeQuestion heuristic.
-    const wantsAsk =
-      chatMode === "ask" ||
-      (chatMode === "auto" && looksLikeQuestion(userMsg));
+    const wantsAsk = chatMode === "ask" || (chatMode === "auto" && looksLikeQuestion(userMsg));
     if (wantsAsk) {
       // The user + assistant placeholders were already pushed by the regular
       // path above (around line 2314). Re-pushing here used to double the
@@ -4109,9 +4617,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         setManualBusy("patching...");
         const patchResp = await invokeSearchReplaceEdit(userMsg, ctx).catch(() => null);
         setManualBusy(null);
-        const applied = patchResp && patchResp.patches.length > 0
-          ? applyPatches(iframeHtml, patchResp.patches)
-          : null;
+        const applied =
+          patchResp && patchResp.patches.length > 0
+            ? applyPatches(iframeHtml, patchResp.patches)
+            : null;
         if (applied && "applied" in applied && applied.html) {
           // Success: update iframe via setIframeContent — tries DOM in-place
           // patch first (preserves scroll, form state, animations); falls back
@@ -4131,7 +4640,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           });
           lastPushedOutputRef.current = applied.html;
           if (projectId) {
-            db.setSetting(`html:${projectId}`, applied.html).catch(warn("setSetting:html::projectId"));
+            db.setSetting(`html:${projectId}`, applied.html).catch(
+              warn("setSetting:html::projectId"),
+            );
           }
           // Persist to disk too — the user's session 2026-04-29 had
           // patches reported as "Patched · Translated…" but reload kept
@@ -4171,7 +4682,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           const note = diffLines.length
             ? `${head}\n\n\`\`\`diff\n${diffLines.join("\n")}\n\`\`\``
             : head;
-          setMessages((prev) => [...prev, stamp({ role: "assistant", text: note, turn_id: turnId })]);
+          setMessages((prev) => [
+            ...prev,
+            stamp({ role: "assistant", text: note, turn_id: turnId }),
+          ]);
           if (projectId) db.saveMessage(projectId, "assistant", note, false).catch(() => {});
         } else {
           // Patch path didn't fit (no patches OR a search string didn't match)
@@ -4189,7 +4703,7 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // walked read-only for compat). useSkillRegistry hook handles
   // scan-on-cwd-change + throttled focus rescan.
   //
-  // User bug 2026-05-21: "não tá mostrando as 9 skills instaladas".
+  // Bug: installed skills weren't being shown.
   // Previous `slashScanCwd = workspaceRoot || projectPath || null` fell
   // back to `projectPath` (the project's own folder, e.g.
   // `.../projects/untitled-xyz`) when no global workspace_root was set.
@@ -4252,30 +4766,33 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // — otherwise the list collapses to the single selected option and further
   // arrow nav breaks. Matches only change when the user TYPES.
   const slashMatches = useMemo(
-    () => slashState ? findMatches(slashState.originalToken, dynamicCommands) : [],
-    [slashState?.originalToken, dynamicCommands]
+    () => (slashState ? findMatches(slashState.originalToken, dynamicCommands) : []),
+    [slashState?.originalToken, dynamicCommands],
   );
 
-  const insertSlashCommand = useCallback((cmd: SlashCommand, opts?: { addArgsSpace?: boolean }) => {
-    if (!slashState) return;
-    const addArgsSpace = opts?.addArgsSpace ?? false;
-    const start = slashState.start;
-    const before = input.slice(0, start);
-    const after = input.slice(start + slashState.token.length);
-    const insert = addArgsSpace && cmd.withArgs ? `${cmd.trigger} ` : cmd.trigger;
-    const next = before + insert + after;
-    setInput(next);
-    setSlashState(null);
-    // Restore cursor after the inserted trigger
-    requestAnimationFrame(() => {
-      const el = textareaRef.current;
-      if (el) {
-        const pos = before.length + insert.length;
-        el.focus();
-        el.setSelectionRange(pos, pos);
-      }
-    });
-  }, [slashState, input]);
+  const insertSlashCommand = useCallback(
+    (cmd: SlashCommand, opts?: { addArgsSpace?: boolean }) => {
+      if (!slashState) return;
+      const addArgsSpace = opts?.addArgsSpace ?? false;
+      const start = slashState.start;
+      const before = input.slice(0, start);
+      const after = input.slice(start + slashState.token.length);
+      const insert = addArgsSpace && cmd.withArgs ? `${cmd.trigger} ` : cmd.trigger;
+      const next = before + insert + after;
+      setInput(next);
+      setSlashState(null);
+      // Restore cursor after the inserted trigger
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (el) {
+          const pos = before.length + insert.length;
+          el.focus();
+          el.setSelectionRange(pos, pos);
+        }
+      });
+    },
+    [slashState, input],
+  );
 
   // Live preview helper — rewrites the input so it shows the highlighted
   // trigger without committing the slashState. Used by arrow navigation.
@@ -4308,7 +4825,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        previewHighlight(slashState, (slashState.hi - 1 + slashMatches.length) % slashMatches.length);
+        previewHighlight(
+          slashState,
+          (slashState.hi - 1 + slashMatches.length) % slashMatches.length,
+        );
         return;
       }
       // Enter inserts the highlighted trigger into the prompt and closes the
@@ -4320,7 +4840,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         return;
       }
       // Tab inserts + keeps focus with trailing space for args.
-      if (e.key === "Tab") { e.preventDefault(); insertSlashCommand(slashMatches[slashState.hi], { addArgsSpace: true }); return; }
+      if (e.key === "Tab") {
+        e.preventDefault();
+        insertSlashCommand(slashMatches[slashState.hi], { addArgsSpace: true });
+        return;
+      }
       if (e.key === "Escape") {
         e.preventDefault();
         // Restore the originally typed token so user doesn't lose what they wrote.
@@ -4339,400 +4863,518 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     }
   };
 
-  const sendSkillCommand = useCallback(async (prompt: string) => {
-    // Route through the selected provider. Agent selection happens ONLY via
-    // `@agent-name` mention at the start of the prompt — there's no global
-    // default agent setting anymore. Claude is the only provider that honours
-    // --agent; others degrade to plain text.
-    let routedAgent: string | undefined;
-    let effectivePrompt = prompt;
-    const mentionMatch = prompt.match(/^@([a-z0-9-]+)(?:\s+([\s\S]*))?$/i);
-    if (mentionMatch) {
-      routedAgent = mentionMatch[1].toLowerCase();
-      effectivePrompt = (mentionMatch[2] ?? "").trim() || "Hi.";
-    }
+  const sendSkillCommand = useCallback(
+    async (prompt: string) => {
+      // Route through the selected provider. Agent selection happens ONLY via
+      // `@agent-name` mention at the start of the prompt — there's no global
+      // default agent setting anymore. Claude is the only provider that honours
+      // --agent; others degrade to plain text.
+      let routedAgent: string | undefined;
+      let effectivePrompt = prompt;
+      const mentionMatch = prompt.match(/^@([a-z0-9-]+)(?:\s+([\s\S]*))?$/i);
+      if (mentionMatch) {
+        routedAgent = mentionMatch[1].toLowerCase();
+        effectivePrompt = (mentionMatch[2] ?? "").trim() || "Hi.";
+      }
 
-    // Prepend conversation history so follow-up commands see prior context.
-    // Parity with invokeGenerateBase (regular chat) which already does this.
-    // Excludes the two messages just pushed (current user + empty claude
-    // placeholder) so we don't echo them back.
-    const historyLines = messages
-      .slice(0, Math.max(0, messages.length - 2))
-      .filter((m) => !m.isDesign)
-      .map((m) => `${m.role === "user" ? "User" : "Claude"}: ${m.text}`)
-      .filter((line) => line.trim())
-      .join("\n");
-    if (historyLines) {
-      effectivePrompt = `${historyLines}\n\nUser: ${effectivePrompt}`;
-    }
+      // Prepend conversation history so follow-up commands see prior context.
+      // Parity with invokeGenerateBase (regular chat) which already does this.
+      // Excludes the two messages just pushed (current user + empty claude
+      // placeholder) so we don't echo them back.
+      const historyLines = messages
+        .slice(0, Math.max(0, messages.length - 2))
+        .filter((m) => !m.isDesign)
+        .map((m) => `${m.role === "user" ? "User" : "Claude"}: ${m.text}`)
+        .filter((line) => line.trim())
+        .join("\n");
+      if (historyLines) {
+        effectivePrompt = `${historyLines}\n\nUser: ${effectivePrompt}`;
+      }
 
-    // Build the system prompt so skills + @agent invocations see the
-    // same workspace context as regular generate/refine — including the
-    // ::question protocol that replaces AskUserQuestion + the PROJECT_PATH
-    // hint. Without this, Claude hits the forbidden harness tools AND has
-    // no idea where the project files live.
-    const skillCtx: ProjectContext = {
-      projectId,
-      projectPath: projectPath || "~/design-factory/projeto",
-      primaryFile: projectFileName,
-      mode,
-      conversationHistory: [], // already inlined above
-      hasDesignSystem: Boolean(dsPath),
-      designSystemPath: dsPath,
-      designSystemName: dsName,
-      designSystemMarkdown: dsMarkdown,
-      cwd: workspaceRoot ?? projectPath ?? undefined,
-      currentHtml: iframeHtml ?? undefined,
-      model: selectedModel,
-    };
-    const preamble = workspaceContextPreamble(skillCtx);
-    // Inline the current HTML (if present) so skills that need to "look at"
-    // the project see the actual content, not just the path.
-    const currentFileBlock = iframeHtml
-      ? `\n\n## Current ${projectFileName} content\n\n\`\`\`html\n${iframeHtml}\n\`\`\`\n`
-      : "";
-    const skillSystemPrompt = `${preamble}${currentFileBlock}`;
+      // Build the system prompt so skills + @agent invocations see the
+      // same workspace context as regular generate/refine — including the
+      // ::question protocol that replaces AskUserQuestion + the PROJECT_PATH
+      // hint. Without this, Claude hits the forbidden harness tools AND has
+      // no idea where the project files live.
+      const skillCtx: ProjectContext = {
+        projectId,
+        projectPath: projectPath || "~/design-factory/projeto",
+        primaryFile: projectFileName,
+        mode,
+        conversationHistory: [], // already inlined above
+        hasDesignSystem: Boolean(dsPath),
+        designSystemPath: dsPath,
+        designSystemName: dsName,
+        designSystemMarkdown: dsMarkdown,
+        cwd: workspaceRoot ?? projectPath ?? undefined,
+        currentHtml: iframeHtml ?? undefined,
+        model: selectedModel,
+      };
+      const preamble = workspaceContextPreamble(skillCtx);
+      // Inline the current HTML (if present) so skills that need to "look at"
+      // the project see the actual content, not just the path.
+      const currentFileBlock = iframeHtml
+        ? `\n\n## Current ${projectFileName} content\n\n\`\`\`html\n${iframeHtml}\n\`\`\`\n`
+        : "";
+      const skillSystemPrompt = `${preamble}${currentFileBlock}`;
 
-    const provider = getProvider(selectedProvider) ?? getProvider("claude")!;
-    const isClaude = provider.meta.id === "claude";
-    let accumulated = "";
-    const liveTools: ToolUseRecord[] = [];
-    try {
-      await new Promise<void>((resolve) => {
-        void provider.stream(
-          effectivePrompt,
-          {
-            model: selectedModel,
-            cwd: workspaceRoot ?? projectPath ?? undefined,
-            systemPrompt: skillSystemPrompt,
-            ...(isClaude && routedAgent ? { agent: routedAgent } : {}),
-          },
-          {
-            onText: (t) => {
-              accumulated += t;
-              setMessages((prev) => {
-                const next = [...prev];
-                const last = next[next.length - 1];
-                if (last?.role === "assistant") next[next.length - 1] = { ...last, text: accumulated, tools: [...liveTools] };
-                return next;
-              });
+      const provider = getProvider(selectedProvider) ?? getProvider("claude")!;
+      const isClaude = provider.meta.id === "claude";
+      let accumulated = "";
+      const liveTools: ToolUseRecord[] = [];
+      try {
+        await new Promise<void>((resolve) => {
+          void provider.stream(
+            effectivePrompt,
+            {
+              model: selectedModel,
+              cwd: workspaceRoot ?? projectPath ?? undefined,
+              systemPrompt: skillSystemPrompt,
+              ...(isClaude && routedAgent ? { agent: routedAgent } : {}),
             },
-            onToolCall: (call) => {
-              recordTurn("tool", "tool_call", {
-                id: call.id, name: call.name,
-                file_path: (call.input?.file_path ?? call.input?.path) as string | undefined,
-                liveToolsBefore: liveTools.length,
-              });
-              // Dedup por id — CLI/bridge podem emitir o mesmo tool_call duas
-              // vezes (stream_event content_block_stop + message terminal).
-              // User reportou "Claude pensando duplicado" em 2026-04-23.
-              const existing = liveTools.findIndex((t) => t.id === call.id);
-              if (existing >= 0) {
-                liveTools[existing] = { ...liveTools[existing], name: call.name, input: call.input };
-              } else {
-                // F2.2 — stamp startedAt on first sighting (same pattern as
-                // the V2 onToolCall above).
-                liveTools.push({ id: call.id, name: call.name, input: call.input, startedAt: Date.now() });
-              }
-              setMessages((prev) => {
-                const next = [...prev];
-                const last = next[next.length - 1];
-                if (last?.role === "assistant") next[next.length - 1] = { ...last, tools: [...liveTools] };
-                return next;
-              });
-            },
-            onToolResult: (tr) => {
-              recordTurn("tool", "tool_result", {
-                id: tr.id, isError: tr.isError,
-                content_len: typeof tr.content === "string" ? tr.content.length : 0,
-              });
-              const idx = liveTools.findIndex((t) => t.id === tr.id);
-              if (idx >= 0) liveTools[idx] = { ...liveTools[idx], result: { content: tr.content, isError: tr.isError } };
-              setMessages((prev) => {
-                const next = [...prev];
-                const last = next[next.length - 1];
-                if (last?.role === "assistant") next[next.length - 1] = { ...last, tools: [...liveTools] };
-                return next;
-              });
-              // W9+ (slimmed 2026-05-03): refresh the iframe when Claude
-              // writes the primary HTML, but DON'T auto-open a code tab.
-              // Auto-opening duplicated tabs (raw vs resolved path bypassed
-              // openFileTab's dedup → 2-3 tabs per turn). Code view now via
-              // FileManager click only — preview already shows the result.
-              if (!tr.isError && idx >= 0) {
-                const call = liveTools[idx];
-                const toolName = call.name;
-                const rawPath = (call.input?.file_path ?? call.input?.path) as string | undefined;
-                if ((toolName === "Write" || toolName === "Edit") && rawPath) {
-                  const isHtml = /\.(html?|svg)$/i.test(rawPath);
-                  // Some providers send a relative path (just the filename)
-                  // even though they wrote into the project cwd. Resolve
-                  // against projectPath when not absolute so the bridge read
-                  // hits the right file.
-                  const resolvedPath = rawPath.startsWith("/")
-                    ? rawPath
-                    : projectPath ? `${projectPath.replace(/\/$/, "")}/${rawPath.replace(/^\.?\//, "")}` : rawPath;
-                  const inProject = projectPath && resolvedPath.startsWith(projectPath);
-                  recordTurn("iframe", "tool_result_reload_attempt", {
-                    toolName, rawPath, resolvedPath, projectPath, isHtml, inProject,
+            {
+              onText: (t) => {
+                accumulated += t;
+                setMessages((prev) => {
+                  const next = [...prev];
+                  const last = next[next.length - 1];
+                  if (last?.role === "assistant")
+                    next[next.length - 1] = { ...last, text: accumulated, tools: [...liveTools] };
+                  return next;
+                });
+              },
+              onToolCall: (call) => {
+                recordTurn("tool", "tool_call", {
+                  id: call.id,
+                  name: call.name,
+                  file_path: (call.input?.file_path ?? call.input?.path) as string | undefined,
+                  liveToolsBefore: liveTools.length,
+                });
+                // Dedup por id — CLI/bridge podem emitir o mesmo tool_call duas
+                // vezes (stream_event content_block_stop + message terminal).
+                // User reportou "Claude pensando duplicado" em 2026-04-23.
+                const existing = liveTools.findIndex((t) => t.id === call.id);
+                if (existing >= 0) {
+                  liveTools[existing] = {
+                    ...liveTools[existing],
+                    name: call.name,
+                    input: call.input,
+                  };
+                } else {
+                  // F2.2 — stamp startedAt on first sighting (same pattern as
+                  // the V2 onToolCall above).
+                  liveTools.push({
+                    id: call.id,
+                    name: call.name,
+                    input: call.input,
+                    startedAt: Date.now(),
                   });
-                  if (isHtml && !inProject) {
-                    recordTurn("iframe", "blocked_path_not_in_project", {
-                      rawPath, projectPath,
-                    }, { level: "warn" });
+                }
+                setMessages((prev) => {
+                  const next = [...prev];
+                  const last = next[next.length - 1];
+                  if (last?.role === "assistant")
+                    next[next.length - 1] = { ...last, tools: [...liveTools] };
+                  return next;
+                });
+              },
+              onToolResult: (tr) => {
+                recordTurn("tool", "tool_result", {
+                  id: tr.id,
+                  isError: tr.isError,
+                  content_len: typeof tr.content === "string" ? tr.content.length : 0,
+                });
+                const idx = liveTools.findIndex((t) => t.id === tr.id);
+                if (idx >= 0)
+                  liveTools[idx] = {
+                    ...liveTools[idx],
+                    result: { content: tr.content, isError: tr.isError },
+                  };
+                setMessages((prev) => {
+                  const next = [...prev];
+                  const last = next[next.length - 1];
+                  if (last?.role === "assistant")
+                    next[next.length - 1] = { ...last, tools: [...liveTools] };
+                  return next;
+                });
+                // W9+ (slimmed 2026-05-03): refresh the iframe when Claude
+                // writes the primary HTML, but DON'T auto-open a code tab.
+                // Auto-opening duplicated tabs (raw vs resolved path bypassed
+                // openFileTab's dedup → 2-3 tabs per turn). Code view now via
+                // FileManager click only — preview already shows the result.
+                if (!tr.isError && idx >= 0) {
+                  const call = liveTools[idx];
+                  const toolName = call.name;
+                  const rawPath = (call.input?.file_path ?? call.input?.path) as string | undefined;
+                  if ((toolName === "Write" || toolName === "Edit") && rawPath) {
+                    const isHtml = /\.(html?|svg)$/i.test(rawPath);
+                    // Some providers send a relative path (just the filename)
+                    // even though they wrote into the project cwd. Resolve
+                    // against projectPath when not absolute so the bridge read
+                    // hits the right file.
+                    const resolvedPath = rawPath.startsWith("/")
+                      ? rawPath
+                      : projectPath
+                        ? `${projectPath.replace(/\/$/, "")}/${rawPath.replace(/^\.?\//, "")}`
+                        : rawPath;
+                    const inProject = projectPath && resolvedPath.startsWith(projectPath);
+                    recordTurn("iframe", "tool_result_reload_attempt", {
+                      toolName,
+                      rawPath,
+                      resolvedPath,
+                      projectPath,
+                      isHtml,
+                      inProject,
+                    });
+                    if (isHtml && !inProject) {
+                      recordTurn(
+                        "iframe",
+                        "blocked_path_not_in_project",
+                        {
+                          rawPath,
+                          projectPath,
+                        },
+                        { level: "warn" },
+                      );
+                    }
+                    if (isHtml && inProject) {
+                      void (async () => {
+                        // Retry with small backoff — codex/kimi/big BYOK writes
+                        // can land on disk a beat after the tool_result fires,
+                        // making the first read return empty content. User
+                        // QA 2026-05-18 reported "Writing teste-gooey.html"
+                        // shown but iframe stayed empty until manual reload.
+                        const delays = [0, 200, 500, 1200];
+                        for (const delay of delays) {
+                          if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+                          try {
+                            const fresh = await readFileViaBridge(resolvedPath);
+                            if (
+                              fresh &&
+                              typeof fresh === "object" &&
+                              "content" in fresh &&
+                              typeof (fresh as FsFile).content === "string"
+                            ) {
+                              const html = (fresh as FsFile).content;
+                              if (html && html.length >= 50) {
+                                recordTurn("iframe", "hydrated_from_tool_result", {
+                                  resolvedPath,
+                                  bytes: html.length,
+                                  delay,
+                                });
+                                setIframeHtml(html);
+                                lastPushedOutputRef.current = html;
+                                if (projectId)
+                                  void db
+                                    .setSetting(`html:${projectId}`, html)
+                                    .catch(warn("setSetting:html::projectId"));
+                                return;
+                              }
+                            }
+                          } catch {
+                            /* file not ready yet — next interval */
+                          }
+                        }
+                        recordTurn(
+                          "iframe",
+                          "tool_result_reload_failed_after_retries",
+                          {
+                            resolvedPath,
+                            delays_tried: delays,
+                          },
+                          { level: "warn" },
+                        );
+                      })();
+                    }
                   }
-                  if (isHtml && inProject) {
-                    void (async () => {
-                      // Retry with small backoff — codex/kimi/big BYOK writes
-                      // can land on disk a beat after the tool_result fires,
-                      // making the first read return empty content. User
-                      // QA 2026-05-18 reported "Writing teste-gooey.html"
-                      // shown but iframe stayed empty until manual reload.
-                      const delays = [0, 200, 500, 1200];
+                }
+              },
+              onDone: (full) => {
+                const finalText = full || accumulated;
+                setMessages((prev) => {
+                  const next = [...prev];
+                  const last = next[next.length - 1];
+                  if (last?.role === "assistant") {
+                    next[next.length - 1] = {
+                      ...last,
+                      text: finalText || "(no response)",
+                      tools: liveTools.length > 0 ? [...liveTools] : undefined,
+                      streaming: false,
+                    };
+                  }
+                  return next;
+                });
+                // Persist with tool blocks when tools fired this turn — without
+                // this, a reload drops the tool chips ("Writing teste-gooey.html")
+                // even though the file is on disk and the iframe rehydrated.
+                // User QA 2026-05-18 — reported "recarreguei e sumiu a
+                // mensagem do claude mas abriu o html".
+                if (projectId && finalText) {
+                  if (liveTools.length > 0) {
+                    const parts: ChatBlock[] = [
+                      { type: "text", content: finalText },
+                      ...liveTools.flatMap((t) => {
+                        const blocks: ChatBlock[] = [
+                          { type: "tool_call", callId: t.id, name: t.name, input: t.input },
+                        ];
+                        if (t.result) {
+                          blocks.push({
+                            type: "tool_result",
+                            callId: t.id,
+                            output: t.result.content,
+                            isError: t.result.isError,
+                          });
+                        }
+                        return blocks;
+                      }),
+                    ];
+                    db.saveMessageStructured(projectId, "assistant", finalText, parts, false).catch(
+                      () => {
+                        db.saveMessage(projectId, "assistant", finalText, false).catch(() => {});
+                      },
+                    );
+                  } else {
+                    db.saveMessage(projectId, "assistant", finalText, false).catch(() => {});
+                  }
+                }
+                // 3rd-layer safety net for iframe hydration. User QA 2026-05-18
+                // reported the iframe still empty after Write completed despite
+                // the onToolResult retry — likely the bridge never relayed the
+                // tool_result SSE for that turn (race vs message_stop), so we
+                // walk Write/Edit tools at onDone and try once more from disk.
+                const writeTools = liveTools.filter(
+                  (t) =>
+                    (t.name === "Write" || t.name === "Edit") &&
+                    typeof (t.input?.file_path ?? t.input?.path) === "string",
+                );
+                if (writeTools.length > 0 && projectPath) {
+                  void (async () => {
+                    for (const t of writeTools) {
+                      const raw = (t.input?.file_path ?? t.input?.path) as string;
+                      if (!/\.(html?|svg)$/i.test(raw)) continue;
+                      const resolved = raw.startsWith("/")
+                        ? raw
+                        : `${projectPath.replace(/\/$/, "")}/${raw.replace(/^\.?\//, "")}`;
+                      if (!resolved.startsWith(projectPath)) continue;
+                      const delays = [0, 300, 800];
                       for (const delay of delays) {
                         if (delay > 0) await new Promise((r) => setTimeout(r, delay));
                         try {
-                          const fresh = await readFileViaBridge(resolvedPath);
-                          if (fresh && typeof fresh === "object" && "content" in fresh && typeof (fresh as FsFile).content === "string") {
+                          const fresh = await readFileViaBridge(resolved);
+                          if (
+                            fresh &&
+                            typeof fresh === "object" &&
+                            "content" in fresh &&
+                            typeof (fresh as FsFile).content === "string"
+                          ) {
                             const html = (fresh as FsFile).content;
-                            if (html && html.length >= 50) {
-                              recordTurn("iframe", "hydrated_from_tool_result", {
-                                resolvedPath, bytes: html.length, delay,
+                            if (html && html.length >= 50 && lastPushedOutputRef.current !== html) {
+                              recordTurn("iframe", "hydrated_from_onDone_sweep", {
+                                resolved,
+                                bytes: html.length,
+                                delay,
                               });
                               setIframeHtml(html);
                               lastPushedOutputRef.current = html;
-                              if (projectId) void db.setSetting(`html:${projectId}`, html).catch(warn("setSetting:html::projectId"));
+                              if (projectId)
+                                void db
+                                  .setSetting(`html:${projectId}`, html)
+                                  .catch(warn("setSetting:html::projectId"));
                               return;
                             }
                           }
-                        } catch { /* file not ready yet — next interval */ }
+                        } catch {
+                          /* retry */
+                        }
                       }
-                      recordTurn("iframe", "tool_result_reload_failed_after_retries", {
-                        resolvedPath, delays_tried: delays,
-                      }, { level: "warn" });
-                    })();
-                  }
+                    }
+                  })();
                 }
-              }
-            },
-            onDone: (full) => {
-              const finalText = full || accumulated;
-              setMessages((prev) => {
-                const next = [...prev];
-                const last = next[next.length - 1];
-                if (last?.role === "assistant") {
-                  next[next.length - 1] = {
-                    ...last,
-                    text: finalText || "(no response)",
-                    tools: liveTools.length > 0 ? [...liveTools] : undefined,
-                    streaming: false,
-                  };
-                }
-                return next;
-              });
-              // Persist with tool blocks when tools fired this turn — without
-              // this, a reload drops the tool chips ("Writing teste-gooey.html")
-              // even though the file is on disk and the iframe rehydrated.
-              // User QA 2026-05-18 — reported "recarreguei e sumiu a
-              // mensagem do claude mas abriu o html".
-              if (projectId && finalText) {
-                if (liveTools.length > 0) {
-                  const parts: ChatBlock[] = [
-                    { type: "text", content: finalText },
-                    ...liveTools.flatMap((t) => {
-                      const blocks: ChatBlock[] = [
-                        { type: "tool_call", callId: t.id, name: t.name, input: t.input },
-                      ];
-                      if (t.result) {
-                        blocks.push({
-                          type: "tool_result",
-                          callId: t.id,
-                          output: t.result.content,
-                          isError: t.result.isError,
+                // Artifact-channel providers (Kimi, BYOK Anthropic/OpenAI/Gemini/
+                // OpenRouter, Ollama, OpenCode) wrap the HTML in
+                // <artifact identifier=... type=... title=...>...</artifact>
+                // inside the text stream — they don't fire Write tool calls. Parse
+                // the final text and hydrate iframe + persist the HTML to the
+                // project file. User QA 2026-05-18 — Kimi turn left iframe
+                // empty until manual reload, despite the artifact being in finalText.
+                if (finalText && finalText.includes("<artifact")) {
+                  void (async () => {
+                    try {
+                      const parsed = await parseArtifact(finalText);
+                      if (parsed.status !== "artifact") {
+                        recordTurn(
+                          "artifact",
+                          "parse_non_artifact",
+                          {
+                            status: parsed.status,
+                            reason: "reason" in parsed ? parsed.reason : undefined,
+                            text_len: finalText.length,
+                          },
+                          { level: "warn" },
+                        );
+                        return;
+                      }
+                      const isHtml =
+                        /html/i.test(parsed.artifact.type) ||
+                        /\.(html?|svg)$/i.test(parsed.artifact.identifier);
+                      if (!isHtml) {
+                        recordTurn("artifact", "parsed_non_html", {
+                          type: parsed.artifact.type,
+                          identifier: parsed.artifact.identifier,
+                        });
+                        return;
+                      }
+                      const html = parsed.artifact.content;
+                      if (!html || html.length < 50) {
+                        recordTurn("artifact", "parsed_too_short", { bytes: html?.length ?? 0 });
+                        return;
+                      }
+                      if (lastPushedOutputRef.current === html) {
+                        recordTurn("artifact", "duplicate_skip", { bytes: html.length });
+                        return;
+                      }
+                      recordTurn("artifact", "hydrated_iframe", {
+                        bytes: html.length,
+                        identifier: parsed.artifact.identifier,
+                      });
+                      setIframeHtml(html);
+                      lastPushedOutputRef.current = html;
+                      if (projectId)
+                        void db
+                          .setSetting(`html:${projectId}`, html)
+                          .catch(warn("setSetting:html::projectId"));
+                      // Persist to the project file so the disk version matches
+                      // what the iframe shows — reloads and Files-tab opens read
+                      // the same source of truth.
+                      if (projectPath && projectFileName) {
+                        const target = `${projectPath.replace(/\/$/, "")}/${projectFileName}`;
+                        await writeFile(target, html).catch((e) => {
+                          recordTurn(
+                            "artifact",
+                            "write_file_failed",
+                            { target, err: String(e) },
+                            { level: "error" },
+                          );
                         });
                       }
-                      return blocks;
-                    }),
-                  ];
-                  db.saveMessageStructured(projectId, "assistant", finalText, parts, false).catch(() => {
-                    db.saveMessage(projectId, "assistant", finalText, false).catch(() => {});
-                  });
-                } else {
-                  db.saveMessage(projectId, "assistant", finalText, false).catch(() => {});
+                    } catch (e) {
+                      recordTurn("artifact", "parse_threw", { err: String(e) }, { level: "error" });
+                    }
+                  })();
                 }
-              }
-              // 3rd-layer safety net for iframe hydration. User QA 2026-05-18
-              // reported the iframe still empty after Write completed despite
-              // the onToolResult retry — likely the bridge never relayed the
-              // tool_result SSE for that turn (race vs message_stop), so we
-              // walk Write/Edit tools at onDone and try once more from disk.
-              const writeTools = liveTools.filter(
-                (t) => (t.name === "Write" || t.name === "Edit")
-                  && typeof (t.input?.file_path ?? t.input?.path) === "string"
-              );
-              if (writeTools.length > 0 && projectPath) {
-                void (async () => {
-                  for (const t of writeTools) {
-                    const raw = (t.input?.file_path ?? t.input?.path) as string;
-                    if (!/\.(html?|svg)$/i.test(raw)) continue;
-                    const resolved = raw.startsWith("/")
-                      ? raw
-                      : `${projectPath.replace(/\/$/, "")}/${raw.replace(/^\.?\//, "")}`;
-                    if (!resolved.startsWith(projectPath)) continue;
-                    const delays = [0, 300, 800];
-                    for (const delay of delays) {
-                      if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+                recordTurn("client", "onDone", {
+                  text_len: finalText?.length ?? 0,
+                  tools_count: liveTools.length,
+                  has_artifact: finalText?.includes("<artifact") ?? false,
+                });
+                recEndTurn({ reason: "done" });
+                resolve();
+              },
+              onError: (err) => {
+                recordTurn(
+                  "client",
+                  "onError",
+                  { err: String(err).slice(0, 200) },
+                  { level: "error" },
+                );
+                setMessages((prev) => {
+                  const next = [...prev];
+                  const last = next[next.length - 1];
+                  if (last?.role === "assistant") {
+                    next[next.length - 1] = { ...last, text: `[error] ${err}`, streaming: false };
+                  }
+                  return next;
+                });
+                // Disk-sweep fallback: when the stream errored AFTER a Write
+                // tool to project HTML already ran, the SDK skips the
+                // tool_result callback and the canvas stays empty even
+                // though the file is on disk. User hit this with the
+                // 'audit' project on 2026-04-29 — claude rate-limit between
+                // Write success and tool_result, html landed but iframe
+                // never refreshed, user had to open Files manually.
+                // Sweep ALL Write/Edit calls in liveTools — the tool_result
+                // not having fired means we don't know which succeeded, so
+                // try to read each candidate; first successful HTML wins.
+                const writes = liveTools.filter(
+                  (t) =>
+                    (t.name === "Write" || t.name === "Edit") &&
+                    typeof t.input?.file_path === "string" &&
+                    /\.(html?)$/i.test(t.input.file_path as string),
+                );
+                if (writes.length > 0 && projectPath) {
+                  void (async () => {
+                    for (const w of writes) {
+                      const fp = (w.input?.file_path ?? w.input?.path) as string | undefined;
+                      if (!fp || !fp.startsWith(projectPath)) continue;
                       try {
-                        const fresh = await readFileViaBridge(resolved);
-                        if (fresh && typeof fresh === "object" && "content" in fresh
-                            && typeof (fresh as FsFile).content === "string") {
+                        const fresh = await readFileViaBridge(fp);
+                        if (
+                          fresh &&
+                          typeof fresh === "object" &&
+                          "content" in fresh &&
+                          typeof (fresh as FsFile).content === "string"
+                        ) {
                           const html = (fresh as FsFile).content;
-                          if (html && html.length >= 50 && lastPushedOutputRef.current !== html) {
-                            recordTurn("iframe", "hydrated_from_onDone_sweep", {
-                              resolved, bytes: html.length, delay,
+                          if (html && html.length > 0) {
+                            recordTurn("iframe", "hydrated_from_error_sweep", {
+                              fp,
+                              bytes: html.length,
                             });
                             setIframeHtml(html);
                             lastPushedOutputRef.current = html;
-                            if (projectId) void db.setSetting(`html:${projectId}`, html).catch(warn("setSetting:html::projectId"));
-                            return;
+                            if (projectId)
+                              void db
+                                .setSetting(`html:${projectId}`, html)
+                                .catch(warn("setSetting:html::projectId"));
+                            break;
                           }
                         }
-                      } catch { /* retry */ }
-                    }
-                  }
-                })();
-              }
-              // Artifact-channel providers (Kimi, BYOK Anthropic/OpenAI/Gemini/
-              // OpenRouter, Ollama, OpenCode) wrap the HTML in
-              // <artifact identifier=... type=... title=...>...</artifact>
-              // inside the text stream — they don't fire Write tool calls. Parse
-              // the final text and hydrate iframe + persist the HTML to the
-              // project file. User QA 2026-05-18 — Kimi turn left iframe
-              // empty until manual reload, despite the artifact being in finalText.
-              if (finalText && finalText.includes("<artifact")) {
-                void (async () => {
-                  try {
-                    const parsed = await parseArtifact(finalText);
-                    if (parsed.status !== "artifact") {
-                      recordTurn("artifact", "parse_non_artifact", {
-                        status: parsed.status,
-                        reason: "reason" in parsed ? parsed.reason : undefined,
-                        text_len: finalText.length,
-                      }, { level: "warn" });
-                      return;
-                    }
-                    const isHtml = /html/i.test(parsed.artifact.type) || /\.(html?|svg)$/i.test(parsed.artifact.identifier);
-                    if (!isHtml) {
-                      recordTurn("artifact", "parsed_non_html", {
-                        type: parsed.artifact.type, identifier: parsed.artifact.identifier,
-                      });
-                      return;
-                    }
-                    const html = parsed.artifact.content;
-                    if (!html || html.length < 50) {
-                      recordTurn("artifact", "parsed_too_short", { bytes: html?.length ?? 0 });
-                      return;
-                    }
-                    if (lastPushedOutputRef.current === html) {
-                      recordTurn("artifact", "duplicate_skip", { bytes: html.length });
-                      return;
-                    }
-                    recordTurn("artifact", "hydrated_iframe", {
-                      bytes: html.length, identifier: parsed.artifact.identifier,
-                    });
-                    setIframeHtml(html);
-                    lastPushedOutputRef.current = html;
-                    if (projectId) void db.setSetting(`html:${projectId}`, html).catch(warn("setSetting:html::projectId"));
-                    // Persist to the project file so the disk version matches
-                    // what the iframe shows — reloads and Files-tab opens read
-                    // the same source of truth.
-                    if (projectPath && projectFileName) {
-                      const target = `${projectPath.replace(/\/$/, "")}/${projectFileName}`;
-                      await writeFile(target, html).catch((e) => {
-                        recordTurn("artifact", "write_file_failed", { target, err: String(e) }, { level: "error" });
-                      });
-                    }
-                  } catch (e) {
-                    recordTurn("artifact", "parse_threw", { err: String(e) }, { level: "error" });
-                  }
-                })();
-              }
-              recordTurn("client", "onDone", {
-                text_len: finalText?.length ?? 0,
-                tools_count: liveTools.length,
-                has_artifact: finalText?.includes("<artifact") ?? false,
-              });
-              recEndTurn({ reason: "done" });
-              resolve();
-            },
-            onError: (err) => {
-              recordTurn("client", "onError", { err: String(err).slice(0, 200) }, { level: "error" });
-              setMessages((prev) => {
-                const next = [...prev];
-                const last = next[next.length - 1];
-                if (last?.role === "assistant") {
-                  next[next.length - 1] = { ...last, text: `[error] ${err}`, streaming: false };
-                }
-                return next;
-              });
-              // Disk-sweep fallback: when the stream errored AFTER a Write
-              // tool to project HTML already ran, the SDK skips the
-              // tool_result callback and the canvas stays empty even
-              // though the file is on disk. User hit this with the
-              // 'audit' project on 2026-04-29 — claude rate-limit between
-              // Write success and tool_result, html landed but iframe
-              // never refreshed, user had to open Files manually.
-              // Sweep ALL Write/Edit calls in liveTools — the tool_result
-              // not having fired means we don't know which succeeded, so
-              // try to read each candidate; first successful HTML wins.
-              const writes = liveTools.filter(
-                (t) => (t.name === "Write" || t.name === "Edit") &&
-                  typeof t.input?.file_path === "string" &&
-                  /\.(html?)$/i.test(t.input.file_path as string),
-              );
-              if (writes.length > 0 && projectPath) {
-                void (async () => {
-                  for (const w of writes) {
-                    const fp = (w.input?.file_path ?? w.input?.path) as string | undefined;
-                    if (!fp || !fp.startsWith(projectPath)) continue;
-                    try {
-                      const fresh = await readFileViaBridge(fp);
-                      if (fresh && typeof fresh === "object" && "content" in fresh && typeof (fresh as FsFile).content === "string") {
-                        const html = (fresh as FsFile).content;
-                        if (html && html.length > 0) {
-                          recordTurn("iframe", "hydrated_from_error_sweep", { fp, bytes: html.length });
-                          setIframeHtml(html);
-                          lastPushedOutputRef.current = html;
-                          if (projectId) void db.setSetting(`html:${projectId}`, html).catch(warn("setSetting:html::projectId"));
-                          break;
-                        }
+                      } catch (e) {
+                        recordTurn(
+                          "iframe",
+                          "error_sweep_read_failed",
+                          { fp, err: String(e) },
+                          { level: "warn" },
+                        );
                       }
-                    } catch (e) {
-                      recordTurn("iframe", "error_sweep_read_failed", { fp, err: String(e) }, { level: "warn" });
                     }
-                  }
-                })();
-              }
-              recEndTurn({ reason: "error" });
-              resolve();
+                  })();
+                }
+                recEndTurn({ reason: "error" });
+                resolve();
+              },
             },
+          );
+        });
+      } catch (e) {
+        showToast(`Command failed: ${String(e).slice(0, 80)}`);
+        // Make absolutely sure the streaming flag clears even if the stream
+        // throws before onError fires (bridge crash, abort, etc).
+        setMessages((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (last?.role === "assistant" && last.streaming) {
+            next[next.length - 1] = { ...last, streaming: false };
           }
-        );
-      });
-    } catch (e) {
-      showToast(`Command failed: ${String(e).slice(0, 80)}`);
-      // Make absolutely sure the streaming flag clears even if the stream
-      // throws before onError fires (bridge crash, abort, etc).
-      setMessages((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        if (last?.role === "assistant" && last.streaming) {
-          next[next.length - 1] = { ...last, streaming: false };
-        }
-        return next;
-      });
-    }
-  }, [selectedModel, selectedProvider, workspaceRoot, projectId, showToast, projectPath, projectFileName, mode, dsPath, startMode, iframeHtml, messages]);
+          return next;
+        });
+      }
+    },
+    [
+      selectedModel,
+      selectedProvider,
+      workspaceRoot,
+      projectId,
+      showToast,
+      projectPath,
+      projectFileName,
+      mode,
+      dsPath,
+      startMode,
+      iframeHtml,
+      messages,
+    ],
+  );
 
   // Save image files to the project folder (`.df-attachments/`) and
   // reference them by absolute path in the prompt. Claude picks them
@@ -4749,48 +5391,83 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // 50MB video / PSD / zip can't run through arrayBuffer() and freeze the UI
   // before the per-kind branch rejects it.
   const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB
-  const handleAttach = useCallback(async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const newOnes: Array<{ name: string; size: number; content: string; mime: string; preview?: string }> = [];
-    for (const f of Array.from(files)) {
-      if (f.size > MAX_ATTACHMENT_BYTES) {
-        showToast(`${f.name} too large (>${(MAX_ATTACHMENT_BYTES / (1024 * 1024)).toFixed(0)}MB) — skip`);
-        continue;
-      }
-      const mime = f.type || "application/octet-stream";
-      const isImage = mime.startsWith("image/");
-      if (isImage) {
-        if (!projectPath) { showToast(t("editor.toast.saveFirst")); continue; }
-        if (f.size > 5 * 1024 * 1024) { showToast(`${f.name} too large (>5MB)`); continue; }
-        const rawDataUrl = await fileToDataUrl(f);
-        // Downscale huge images so the agent isn't handed a 12-megapixel
-        // logo (which stalled Kimi past the turn watchdog and breaks API
-        // vision limits). Falls back to the original on any failure.
-        const { dataUrl, mime: outMime } = await downscaleImageDataUrl(rawDataUrl, mime);
-        const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-        const ext = outMime === "image/jpeg" ? "jpg" : outMime === "image/png" ? "png" : (f.name.split(".").pop() || "png");
-        const baseName = f.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9._-]/g, "_");
-        const safeName = `${Date.now().toString(36)}-${baseName}.${ext}`;
-        const dir = `${projectPath.replace(/\/$/, "")}/.df-attachments`;
-        const diskPath = `${dir}/${safeName}`;
-        const written = await writeBinaryViaBridge(diskPath, base64);
-        if (!written) {
-          showToast(`Failed to save ${f.name}`);
+  const handleAttach = useCallback(
+    async (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      const newOnes: Array<{
+        name: string;
+        size: number;
+        content: string;
+        mime: string;
+        preview?: string;
+      }> = [];
+      for (const f of Array.from(files)) {
+        if (f.size > MAX_ATTACHMENT_BYTES) {
+          showToast(
+            `${f.name} too large (>${(MAX_ATTACHMENT_BYTES / (1024 * 1024)).toFixed(0)}MB) — skip`,
+          );
           continue;
         }
-        newOnes.push({ name: f.name, size: f.size, content: diskPath, mime: outMime, preview: dataUrl });
-      } else {
-        if (f.size > 500 * 1024) { showToast(`${f.name} too large (>500kb)`); continue; }
-        const isText = mime.startsWith("text/") || /^(application\/(json|javascript|xml|html))/.test(mime) || /\.(md|ts|tsx|jsx|js|json|yml|yaml|txt|csv|html|css)$/i.test(f.name);
-        let content: string;
-        if (isText) content = await f.text();
-        else content = await fileToDataUrl(f);
-        newOnes.push({ name: f.name, size: f.size, content, mime });
+        const mime = f.type || "application/octet-stream";
+        const isImage = mime.startsWith("image/");
+        if (isImage) {
+          if (!projectPath) {
+            showToast(t("editor.toast.saveFirst"));
+            continue;
+          }
+          if (f.size > 5 * 1024 * 1024) {
+            showToast(`${f.name} too large (>5MB)`);
+            continue;
+          }
+          const rawDataUrl = await fileToDataUrl(f);
+          // Downscale huge images so the agent isn't handed a 12-megapixel
+          // logo (which stalled Kimi past the turn watchdog and breaks API
+          // vision limits). Falls back to the original on any failure.
+          const { dataUrl, mime: outMime } = await downscaleImageDataUrl(rawDataUrl, mime);
+          const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+          const ext =
+            outMime === "image/jpeg"
+              ? "jpg"
+              : outMime === "image/png"
+                ? "png"
+                : f.name.split(".").pop() || "png";
+          const baseName = f.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9._-]/g, "_");
+          const safeName = `${Date.now().toString(36)}-${baseName}.${ext}`;
+          const dir = `${projectPath.replace(/\/$/, "")}/.df-attachments`;
+          const diskPath = `${dir}/${safeName}`;
+          const written = await writeBinaryViaBridge(diskPath, base64);
+          if (!written) {
+            showToast(`Failed to save ${f.name}`);
+            continue;
+          }
+          newOnes.push({
+            name: f.name,
+            size: f.size,
+            content: diskPath,
+            mime: outMime,
+            preview: dataUrl,
+          });
+        } else {
+          if (f.size > 500 * 1024) {
+            showToast(`${f.name} too large (>500kb)`);
+            continue;
+          }
+          const isText =
+            mime.startsWith("text/") ||
+            /^(application\/(json|javascript|xml|html))/.test(mime) ||
+            /\.(md|ts|tsx|jsx|js|json|yml|yaml|txt|csv|html|css)$/i.test(f.name);
+          let content: string;
+          if (isText) content = await f.text();
+          else content = await fileToDataUrl(f);
+          newOnes.push({ name: f.name, size: f.size, content, mime });
+        }
       }
-    }
-    setAttachedFiles((prev) => [...prev, ...newOnes]);
-    if (newOnes.length) showToast(`Attached ${newOnes.length} file${newOnes.length === 1 ? "" : "s"}`);
-  }, [projectPath, showToast]);
+      setAttachedFiles((prev) => [...prev, ...newOnes]);
+      if (newOnes.length)
+        showToast(`Attached ${newOnes.length} file${newOnes.length === 1 ? "" : "s"}`);
+    },
+    [projectPath, showToast],
+  );
 
   // Auto-send seeded prompt once bridge is ready (browser) or immediately in Tauri.
   //
@@ -4801,7 +5478,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   //   250ms timeout  — lets the textarea commit the seed + gives the bridge
   //                    probe a tick to settle before firing the stream.
   const handleSendRef = useRef(handleSend);
-  useEffect(() => { handleSendRef.current = handleSend; });
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  });
   // BUG-16/17: auto-send the seed prompt on a new project. The previous
   // single-setTimeout(250) approach was fragile: the effect cleanup cancels
   // the pending timer whenever ANY dep re-emits, and if the timer was lost in
@@ -4842,7 +5521,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       const ready = !!initialPrompt && statusRef.current === "idle";
       if (ready) {
         autoSendRef.current = true;
-        if (projectId) db.setSetting(`auto-sent:${projectId}`, "true").catch(warn("setSetting:auto-sent::projectId"));
+        if (projectId)
+          db.setSetting(`auto-sent:${projectId}`, "true").catch(
+            warn("setSetting:auto-sent::projectId"),
+          );
         // Pass the seed text explicitly (BUG-17) so handleSend doesn't depend
         // on its possibly-stale `input` closure or the seed effect timing.
         const sendText = inputRef.current.trim() || initialPrompt;
@@ -4858,14 +5540,20 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     };
     // Kick off after a short beat so the seed input + provider state settle.
     const starter = window.setTimeout(tick, 250);
-    return () => { cancelled = true; window.clearTimeout(starter); };
+    return () => {
+      cancelled = true;
+      window.clearTimeout(starter);
+    };
   }, [initialPrompt, projectId, autoSentHydrated, providerHydrated]);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex >= 0 && historyIndex < history.length - 1;
 
   const handleSaveVersion = useCallback(() => {
-    if (!iframeHtml) { showToast(t("editor.toast.nothingToSave")); return; }
+    if (!iframeHtml) {
+      showToast(t("editor.toast.nothingToSave"));
+      return;
+    }
     const name = saveVersionName.trim() || new Date().toLocaleString();
     const next: Version = {
       id: crypto.randomUUID(),
@@ -4881,60 +5569,78 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     // Also snapshot the project folder to git so the version is recoverable
     // via the CLI — a real branchable checkpoint, not just a localStorage row.
     if (projectPath) {
-      gitSnapshot(projectPath, name).then((r) => {
-        if (r && !("error" in r)) {
-          // Quiet success — tag sits in the repo. No extra toast.
-        }
-      }).catch(() => {});
+      gitSnapshot(projectPath, name)
+        .then((r) => {
+          if (r && !("error" in r)) {
+            // Quiet success — tag sits in the repo. No extra toast.
+          }
+        })
+        .catch(() => {});
     }
   }, [iframeHtml, saveVersionName, versions, persistVersions, showToast, projectPath]);
 
-  const handleRestoreVersion = useCallback((v: Version) => {
-    if (!v?.html) return;
-    setIframeHtml(v.html);
-    setHistory((prev) => {
-      const idx = historyIndexRef.current;
-      const base = idx >= 0 ? prev.slice(0, idx + 1) : [];
-      const next = [...base, v.html];
-      historyIndexRef.current = next.length - 1;
-      setHistoryIndex(next.length - 1);
-      return next;
-    });
-    lastPushedOutputRef.current = v.html;
-    if (projectId) db.setSetting(`html:${projectId}`, v.html).catch(warn("setSetting:html::projectId"));
-    setShowVersions(false);
-    showToast(`Restored: ${v.name ?? new Date(v.createdAt).toLocaleString()}`);
-  }, [projectId, showToast]);
+  const handleRestoreVersion = useCallback(
+    (v: Version) => {
+      if (!v?.html) return;
+      setIframeHtml(v.html);
+      setHistory((prev) => {
+        const idx = historyIndexRef.current;
+        const base = idx >= 0 ? prev.slice(0, idx + 1) : [];
+        const next = [...base, v.html];
+        historyIndexRef.current = next.length - 1;
+        setHistoryIndex(next.length - 1);
+        return next;
+      });
+      lastPushedOutputRef.current = v.html;
+      if (projectId)
+        db.setSetting(`html:${projectId}`, v.html).catch(warn("setSetting:html::projectId"));
+      setShowVersions(false);
+      showToast(`Restored: ${v.name ?? new Date(v.createdAt).toLocaleString()}`);
+    },
+    [projectId, showToast],
+  );
 
   // Per-turn Restore: user clicks the Restore button on a previous AI
   // response → revert iframe AND drop a marker turn into the chat so the
   // history shows clearly "we rolled back". Doesn't truncate later turns
   // (user explicitly chose this — "mantém histórico").
-  const handleRestoreFromTurn = useCallback((versionId: string) => {
-    const v = versions.find((x) => x.id === versionId);
-    if (!v) {
-      showToast(t("editor.toast.snapshotNotFound"));
-      return;
-    }
-    handleRestoreVersion(v);
-    const markerTurnId = `t${Date.now()}`;
-    setMessages((prev) => [
-      ...prev,
-      stamp({ role: "user", text: "(restored)", turn_id: markerTurnId }),
-      stamp({ role: "assistant", text: `Rolled back to ${new Date(v.createdAt).toLocaleString()}`, turn_id: markerTurnId, isDesign: true, version_id: v.id }),
-    ]);
-  }, [versions, handleRestoreVersion, showToast]);
+  const handleRestoreFromTurn = useCallback(
+    (versionId: string) => {
+      const v = versions.find((x) => x.id === versionId);
+      if (!v) {
+        showToast(t("editor.toast.snapshotNotFound"));
+        return;
+      }
+      handleRestoreVersion(v);
+      const markerTurnId = `t${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        stamp({ role: "user", text: "(restored)", turn_id: markerTurnId }),
+        stamp({
+          role: "assistant",
+          text: `Rolled back to ${new Date(v.createdAt).toLocaleString()}`,
+          turn_id: markerTurnId,
+          isDesign: true,
+          version_id: v.id,
+        }),
+      ]);
+    },
+    [versions, handleRestoreVersion, showToast],
+  );
 
-  const handleDeleteVersion = useCallback((id: string) => {
-    persistVersions(versions.filter((v) => v.id !== id));
-    // explicit drop on disk so the deleted version doesn't reappear
-    // on the next list (persistVersions only writes the SURVIVING set,
-    // it doesn't know which file to remove).
-    const slug = slugFromPath(projectPath ?? "");
-    if (slug) {
-      void deleteProjectVersion(slug, id).catch(() => false);
-    }
-  }, [versions, persistVersions, projectPath]);
+  const handleDeleteVersion = useCallback(
+    (id: string) => {
+      persistVersions(versions.filter((v) => v.id !== id));
+      // explicit drop on disk so the deleted version doesn't reappear
+      // on the next list (persistVersions only writes the SURVIVING set,
+      // it doesn't know which file to remove).
+      const slug = slugFromPath(projectPath ?? "");
+      if (slug) {
+        void deleteProjectVersion(slug, id).catch(() => false);
+      }
+    },
+    [versions, persistVersions, projectPath],
+  );
 
   const handleUndo = useCallback(() => {
     if (!canUndo) return;
@@ -4963,13 +5669,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // Switch to a different chat thread (or a brand-new one). The chat-load
   // useEffect already keys on activeThreadId; setting it triggers the
   // hydrate path (or empty-state for a fresh threadId).
-  const handleSwitchThread = useCallback((nextThreadId: string) => {
-    if (!nextThreadId || nextThreadId === activeThreadId) return;
-    setMessages([]);
-    persistedTurnIdsRef.current = new Set();
-    setActiveThreadId(nextThreadId);
-    showToast(nextThreadId === "main" ? "Switched to main chat" : "Switched chat");
-  }, [activeThreadId, showToast]);
+  const handleSwitchThread = useCallback(
+    (nextThreadId: string) => {
+      if (!nextThreadId || nextThreadId === activeThreadId) return;
+      setMessages([]);
+      persistedTurnIdsRef.current = new Set();
+      setActiveThreadId(nextThreadId);
+      showToast(nextThreadId === "main" ? "Switched to main chat" : "Switched chat");
+    },
+    [activeThreadId, showToast],
+  );
 
   const handleReload = useCallback(async () => {
     // Preserve the user's scroll position across the manual reload — the load
@@ -4998,7 +5707,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       const primaryPath = `${projectPath.replace(/\/+$/, "")}/${projectFileName}`;
       try {
         const f = await readFileViaBridge(primaryPath);
-        if (f && typeof f === "object" && "content" in f && typeof (f as FsFile).content === "string") {
+        if (
+          f &&
+          typeof f === "object" &&
+          "content" in f &&
+          typeof (f as FsFile).content === "string"
+        ) {
           fromDisk = (f as FsFile).content;
         }
       } catch {}
@@ -5009,7 +5723,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             const firstHtml = listing.entries.find((e) => !e.isDir && /\.html?$/i.test(e.name));
             if (firstHtml) {
               const f = await readFileViaBridge(firstHtml.path);
-              if (f && typeof f === "object" && "content" in f && typeof (f as FsFile).content === "string") {
+              if (
+                f &&
+                typeof f === "object" &&
+                "content" in f &&
+                typeof (f as FsFile).content === "string"
+              ) {
                 fromDisk = (f as FsFile).content;
               }
             }
@@ -5039,7 +5758,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
 
   const handleShareDownloadZip = useCallback(async () => {
     setShowExportMenu(false);
-    if (!projectId) { showToast(t("editor.share.toast.no.project")); return; }
+    if (!projectId) {
+      showToast(t("editor.share.toast.no.project"));
+      return;
+    }
     // Fix (Bug 1, regression report): the daemon's
     // GET /projects/:slug/zip expects the *folder slug* (the basename of
     // projectPath, e.g. "gooey", "df-lp"). The frontend used to pass
@@ -5048,16 +5770,21 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     // daemon then ran toLowerCase()+slug-normalize on the UUID and looked
     // up <repoRoot>/projects/<uuid>/, which never exists → 404 "project
     // not found". Use the folder slug derived from projectPath instead.
-    const folderSlug = projectPath
-      ? slugFromPath(projectPath) || ""
-      : "";
-    if (!folderSlug) { showToast(t("editor.share.toast.no.project")); return; }
+    const folderSlug = projectPath ? slugFromPath(projectPath) || "" : "";
+    if (!folderSlug) {
+      showToast(t("editor.share.toast.no.project"));
+      return;
+    }
     showToast(t("editor.share.toast.zip.preparing"));
     try {
       // Browser handles the streaming download via <a download> + GET URL.
       // Letting the daemon set Content-Disposition keeps the filename in
       // sync with the slug even if projectName drifts from the folder.
-      const safe = projectName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "design";
+      const safe =
+        projectName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "design";
       const url = `${BRIDGE_URL}/projects/${encodeURIComponent(folderSlug)}/zip`;
       const a = document.createElement("a");
       a.href = url;
@@ -5082,7 +5809,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       if (!iframeHtml) return null;
       return { html: iframeHtml, filename: projectFileName || "index.html" };
     }
-    if (currentTab.kind === "file" && currentTab.filePath && currentTab.fileIsText && /\.html?$/i.test(currentTab.filePath)) {
+    if (
+      currentTab.kind === "file" &&
+      currentTab.filePath &&
+      currentTab.fileIsText &&
+      /\.html?$/i.test(currentTab.filePath)
+    ) {
       const html = currentTab.fileContent ?? "";
       if (!html) return null;
       const base = currentTab.filePath.split("/").filter(Boolean).pop() || "index.html";
@@ -5093,7 +5825,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
 
   const handleShareDownloadHtml = useCallback(() => {
     setShowExportMenu(false);
-    if (!activeHtmlForDownload) { showToast(t("editor.share.toast.no.design")); return; }
+    if (!activeHtmlForDownload) {
+      showToast(t("editor.share.toast.no.design"));
+      return;
+    }
     try {
       const blob = new Blob([activeHtmlForDownload.html], { type: "text/html;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -5102,7 +5837,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       a.download = activeHtmlForDownload.filename;
       document.body.appendChild(a);
       a.click();
-      setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 100);
+      setTimeout(() => {
+        a.remove();
+        URL.revokeObjectURL(url);
+      }, 100);
       showToast(t("editor.share.toast.html.done"));
     } catch (e) {
       showToast(tf("editor.share.toast.zip.failed", String(e).slice(0, 60)));
@@ -5111,10 +5849,18 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
 
   const handleShareSaveTemplate = useCallback(() => {
     setShowExportMenu(false);
-    if (!iframeHtml) { showToast(t("editor.share.toast.no.design")); return; }
+    if (!iframeHtml) {
+      showToast(t("editor.share.toast.no.design"));
+      return;
+    }
     try {
       const raw = localStorage.getItem("df:templates") || "[]";
-      const arr = JSON.parse(raw) as Array<{ id: string; name: string; html: string; createdAt: number }>;
+      const arr = JSON.parse(raw) as Array<{
+        id: string;
+        name: string;
+        html: string;
+        createdAt: number;
+      }>;
       arr.unshift({
         id: `tpl-${Date.now().toString(36)}`,
         name: projectName,
@@ -5130,7 +5876,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
 
   const handleShareDuplicate = useCallback(() => {
     setShowExportMenu(false);
-    if (!onDuplicateProject) { showToast(t("editor.share.toast.duplicate.unavail")); return; }
+    if (!onDuplicateProject) {
+      showToast(t("editor.share.toast.duplicate.unavail"));
+      return;
+    }
     void onDuplicateProject(projectId);
     showToast(tf("editor.share.toast.duplicating", projectName));
   }, [onDuplicateProject, projectId, projectName, showToast, t]);
@@ -5148,7 +5897,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // "Reveal in Finder" button.
   const handleShareCopyPath = useCallback(() => {
     setShowExportMenu(false);
-    if (!projectPath) { showToast(t("editor.share.toast.no.project")); return; }
+    if (!projectPath) {
+      showToast(t("editor.share.toast.no.project"));
+      return;
+    }
     const text = projectPath;
     const fallbackCopy = () => {
       try {
@@ -5162,14 +5914,19 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         document.execCommand("copy");
         ta.remove();
         return true;
-      } catch { return false; }
+      } catch {
+        return false;
+      }
     };
     const done = (ok: boolean) => {
       if (ok) showToast(`Caminho copiado: ${text}`);
       else showToast(`Não foi possível copiar. Caminho: ${text}`);
     };
     if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
-      void navigator.clipboard.writeText(text).then(() => done(true)).catch(() => done(fallbackCopy()));
+      void navigator.clipboard
+        .writeText(text)
+        .then(() => done(true))
+        .catch(() => done(fallbackCopy()));
     } else {
       done(fallbackCopy());
     }
@@ -5182,7 +5939,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // path to act on even when GUI integration breaks (SSH, headless).
   const handleShareOpenFolder = useCallback(async () => {
     setShowExportMenu(false);
-    if (!projectPath) { showToast(t("editor.share.toast.no.project")); return; }
+    if (!projectPath) {
+      showToast(t("editor.share.toast.no.project"));
+      return;
+    }
     const { openFolderViaBridge } = await import("@/lib/claude-bridge");
     const res = await openFolderViaBridge(projectPath);
     if ("error" in res) {
@@ -5200,11 +5960,22 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // Resolve which HTML the Tweaks flow should operate on. User ask
   // 2026-05-20: projects can be multi-doc + multi-html — Tweaks should
   // honour whichever HTML tab is active, not just the main preview.
-  const tweaksHtmlSource = (): null | { kind: "main"; html: string } | { kind: "file"; html: string; tabId: string; filePath: string } => {
-    if (currentTab?.kind === "file" && currentTab.fileIsText !== false
-        && typeof currentTab.fileContent === "string"
-        && /\.html?$/i.test(currentTab.filePath ?? "")) {
-      return { kind: "file", html: currentTab.fileContent, tabId: currentTab.id, filePath: currentTab.filePath! };
+  const tweaksHtmlSource = ():
+    | null
+    | { kind: "main"; html: string }
+    | { kind: "file"; html: string; tabId: string; filePath: string } => {
+    if (
+      currentTab?.kind === "file" &&
+      currentTab.fileIsText !== false &&
+      typeof currentTab.fileContent === "string" &&
+      /\.html?$/i.test(currentTab.filePath ?? "")
+    ) {
+      return {
+        kind: "file",
+        html: currentTab.fileContent,
+        tabId: currentTab.id,
+        filePath: currentTab.filePath!,
+      };
     }
     if (iframeHtml) return { kind: "main", html: iframeHtml };
     return null;
@@ -5250,7 +6021,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     // sees what's happening while it runs.
     const requestLabel = request || "all visual aspects";
     const tweaksTurnId = `t${Date.now()}`;
-    const userMsg: ChatMessage = stamp({ role: "user", text: `[tweaks] ${requestLabel}`, turn_id: tweaksTurnId });
+    const userMsg: ChatMessage = stamp({
+      role: "user",
+      text: `[tweaks] ${requestLabel}`,
+      turn_id: tweaksTurnId,
+    });
     setMessages((prev) => [...prev, userMsg]);
     if (projectId) db.saveMessage(projectId, "user", userMsg.text, false).catch(() => {});
 
@@ -5299,7 +6074,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                 return next;
               });
             },
-            onDone: () => { tweaksAbortRef.current = null; resolve(); },
+            onDone: () => {
+              tweaksAbortRef.current = null;
+              resolve();
+            },
             onError: (err) => {
               tweaksAbortRef.current = null;
               setMessages((prev) => {
@@ -5317,14 +6095,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             providerId: selectedProvider,
             model: selectedModel,
             cwd: workspaceRoot ?? projectPath ?? undefined,
-          }
+          },
         );
         // spawnStream returns Promise<UnlistenFn>. Wire the abort into the
         // ref once the stream is actually listening.
         void maybeUnlisten.then((unlisten) => {
           tweaksAbortRef.current = () => {
             cancelled = true;
-            try { unlisten(); } catch {}
+            try {
+              unlisten();
+            } catch {}
             tweaksAbortRef.current = null;
             setMessages((prev) => {
               const next = [...prev];
@@ -5338,7 +6118,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           };
         });
       });
-      if (cancelled) { return; }
+      if (cancelled) {
+        return;
+      }
       void placeholderIdx; // unused aside from distinct identity above
 
       const cfg = parseTweaksResponse(accumulated);
@@ -5369,7 +6151,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         });
         lastPushedOutputRef.current = cfg.refactoredHtml;
         if (projectId) {
-          db.setSetting(`html:${projectId}`, cfg.refactoredHtml).catch(warn("setSetting:html::projectId"));
+          db.setSetting(`html:${projectId}`, cfg.refactoredHtml).catch(
+            warn("setSetting:html::projectId"),
+          );
         }
       } else {
         // File-tab Tweaks — write to disk + update the file tab's content so
@@ -5380,9 +6164,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         } catch (e) {
           warn("writeFile:tweaks-file-tab")(e);
         }
-        setCanvasTabs((prev) => prev.map((t) =>
-          t.id === source.tabId ? { ...t, fileContent: cfg.refactoredHtml, fileIsText: true } : t
-        ));
+        setCanvasTabs((prev) =>
+          prev.map((t) =>
+            t.id === source.tabId ? { ...t, fileContent: cfg.refactoredHtml, fileIsText: true } : t,
+          ),
+        );
       }
 
       const readyMsg = cfg.summary
@@ -5404,8 +6190,6 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       setTweaksRequest("");
     }
   }, [tweaksRequest, iframeHtml, currentTab, selectedModel, projectId, showToast]);
-
-
 
   const handleCanvasClick = useCallback(() => {
     // Now handled by the injected iframe listener (sets commentTarget + opens popup).
@@ -5436,232 +6220,296 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   }, [commentDraft, commentTarget, comments, persistComments, showToast]);
 
   /** Scroll iframe preview to the commented element and pulse-outline it briefly. */
-  const handleJumpToComment = useCallback((c: Comment) => {
-    if (!iframeRef.current) return;
-    try {
-      const doc = iframeRef.current.contentDocument;
-      if (!doc) return;
-      const el = doc.querySelector(c.selector) as HTMLElement | null;
-      if (!el) { showToast(t("editor.toast.elementNotFound")); return; }
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Flash: inject a short-lived outline class
-      const key = `__df-jump-${Date.now()}`;
-      el.setAttribute("data-df-jump", key);
-      const style = doc.createElement("style");
-      style.textContent = `[data-df-jump="${key}"] {
+  const handleJumpToComment = useCallback(
+    (c: Comment) => {
+      if (!iframeRef.current) return;
+      try {
+        const doc = iframeRef.current.contentDocument;
+        if (!doc) return;
+        const el = doc.querySelector(c.selector) as HTMLElement | null;
+        if (!el) {
+          showToast(t("editor.toast.elementNotFound"));
+          return;
+        }
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        // Flash: inject a short-lived outline class
+        const key = `__df-jump-${Date.now()}`;
+        el.setAttribute("data-df-jump", key);
+        const style = doc.createElement("style");
+        style.textContent = `[data-df-jump="${key}"] {
         outline: 3px solid #5faa54 !important;
         outline-offset: 3px !important;
         transition: outline-color 800ms ease;
       }`;
-      doc.head.appendChild(style);
-      window.setTimeout(() => {
-        try { el.removeAttribute("data-df-jump"); style.remove(); } catch {}
-      }, 1400);
-    } catch {}
-  }, [showToast]);
+        doc.head.appendChild(style);
+        window.setTimeout(() => {
+          try {
+            el.removeAttribute("data-df-jump");
+            style.remove();
+          } catch {}
+        }, 1400);
+      } catch {}
+    },
+    [showToast],
+  );
 
-  const handleSaveEditedComment = useCallback((id: string) => {
-    const text = editingCommentDraft.trim();
-    if (!text) { setEditingCommentId(null); return; }
-    setComments((prev) => {
-      const next = prev.map((c) => c.id === id ? { ...c, text, sent: false } : c);
-      persistComments(next);
-      return next;
-    });
-    setEditingCommentId(null);
-    setEditingCommentDraft("");
-  }, [editingCommentDraft, persistComments]);
-
-  const handleDeleteComment = useCallback((id: string) => {
-    persistComments(comments.filter((c) => c.id !== id));
-  }, [comments, persistComments]);
-
-  const sendCommentBatch = useCallback(async (toSend: Comment[]) => {
-    if (!iframeHtml || toSend.length === 0) return;
-    const instruction = toSend.length === 1
-      ? `Apply this comment. Target element: ${toSend[0].selector}\nComment: ${toSend[0].text}`
-      : [
-          "Apply these comments to the HTML. Each comment targets a specific element via CSS selector.",
-          "",
-          ...toSend.map((c, i) => `${i + 1}. Selector: ${c.selector}\n   Comment: ${c.text}`),
-        ].join("\n");
-    // Mark these as sent
-    const sentIds = new Set(toSend.map((c) => c.id));
-    persistComments(comments.map((c) => (sentIds.has(c.id) ? { ...c, sent: true } : c)));
-    setChatTab("chat");
-
-    // User repro 2026-05-08: comment batch was applied but the chat
-    // showed nothing — patch path only stamped a terminal assistant note,
-    // applyStyle fallback streamed into limbo, and neither created the
-    // user-side bubble that would let the user see what they sent.
-    // Without that bubble the chat history reads as a stray AI line
-    // ("mensagem cortada"). Here we mirror handleSend's setup: stamp
-    // a user message that summarises the batch, push an assistant
-    // streaming placeholder (turn_id-paired), and persist the user
-    // turn through the same durable layer the audit Fase 1 wired up.
-    const turnId = `tcomm-${Date.now().toString(36)}`;
-    const visibleText = toSend.length === 1
-      ? `Aplicar comentário · ${toSend[0].text.slice(0, 80)}`
-      : `Aplicar ${toSend.length} comentários ao design`;
-    setMessages((prev) => [
-      ...prev,
-      stamp({ role: "user", text: visibleText, turn_id: turnId, persist_status: "saving" }),
-      stamp({ role: "assistant", provider: selectedProvider, model: selectedModel, text: "", streaming: true, turn_id: turnId }),
-    ]);
-    // Auditor follow-up to PR #115 (P0.1): the previous version
-    // used a fire-and-forget call wrapped in `if (projectSlug)`,
-    // which was wrong on two axes — the user bubble could appear
-    // before any durable write (fire-and-forget = no await), and
-    // projectSlug==null bypassed persistence entirely (the helper
-    // already handles null slug by going straight to local recovery).
-    // Both contracts (Audit Fase 1 #4 turn-before-provider +
-    // Fase 1 #5 recovery-on-no-slug) were leaking on this path.
-    //
-    // Fix: await the helper (so the provider stream doesn't fire before
-    // the turn is durable somewhere), and pass slug as nullable so the
-    // helper's no-slug → recovery branch kicks in for projects that
-    // haven't been hydrated yet. surfaceError already covers the failed
-    // path inside persistInitialTurn-style helpers; we mirror the chat
-    // path's badge semantics for parity.
-    const persistResult = await persistOrRecoverTurn(
-      projectSlug ?? null,
-      projectId ?? null,
-      activeThreadId,
-      {
-        id: turnId,
-        ts: Date.now(),
-        user: { text: visibleText, attachments: [], verb: null },
-        ai: null,
-      },
-    );
-    setMessages((prev) => prev.map((m) =>
-      m.role === "user" && m.turn_id === turnId
-        ? { ...m, persist_status: persistResult.status }
-        : m,
-    ));
-    if (persistResult.status === "failed") {
-      surfaceError(
-        new Error(`comment batch turn ${turnId} could not be persisted (${persistResult.reason ?? "unknown"})`),
-        "sendCommentBatch[persist]",
-        "error",
-      );
-    }
-
-    const ctx = {
-      projectId,
-      projectPath: projectPath || "~/design-factory/projeto",
-      primaryFile: projectFileName,
-      mode,
-      conversationHistory: [],
-      hasDesignSystem: Boolean(dsPath),
-      designSystemPath: dsPath,
-      designSystemName: dsName,
-      designSystemMarkdown: dsMarkdown,
-      cwd: workspaceRoot ?? projectPath ?? undefined,
-      currentHtml: iframeHtml,
-      model: selectedModel,
-      providerId: selectedProvider,
-      sessionId: selectedProvider === "claude" ? claudeSessionId : null,
-    };
-
-    // Fix (Bug 2, regression report): "qnd usei comments e
-    // patch ele duplicou o conteudo no mesmo html inves de editar". Old
-    // path went straight to `applyStyle` (full-regen via REFINE_SYSTEM),
-    // which asks the LLM to emit the FULL modified HTML. With long docs
-    // the model occasionally APPENDS instead of REPLACES — the section
-    // it changed lands at the end while the original survives intact,
-    // doubling the visible content. The chat-path (handleSend) already
-    // mitigates this by trying `invokeSearchReplaceEdit` (small JSON
-    // search/replace patches) first, then falling back to applyStyle
-    // only when no patches fit. We mirror that here so comment-mode
-    // edits are surgical when possible.
-    try {
-      setManualBusy("patching...");
-      const patchResp = await invokeSearchReplaceEdit(instruction, ctx).catch(() => null);
-      setManualBusy(null);
-      const applied = patchResp && patchResp.patches.length > 0
-        ? applyPatches(iframeHtml, patchResp.patches)
-        : null;
-      if (applied && "applied" in applied && applied.html) {
-        // Successful patch — update iframe + history + persist, identical
-        // to handleSend's patch branch. Skips the full applyStyle stream.
-        setIframeContent({
-          html: applied.html,
-          mode: "patch",
-          patches: patchResp!.patches,
-        });
-        setHistory((prev) => {
-          const idx = historyIndexRef.current;
-          const base = idx >= 0 ? prev.slice(0, idx + 1) : [];
-          const next = [...base, applied.html];
-          historyIndexRef.current = next.length - 1;
-          setHistoryIndex(next.length - 1);
-          return next;
-        });
-        lastPushedOutputRef.current = applied.html;
-        if (projectId) {
-          db.setSetting(`html:${projectId}`, applied.html).catch(warn("setSetting:html::projectId"));
-        }
-        if (projectPath) {
-          // BUG-31: persist to projectFileName, not {slug}.html (see the
-          // search-replace path) — avoids the duplicate ghost HTML when the
-          // project name and folder slug differ.
-          const filePath = `${projectPath.replace(/\/$/, "")}/${projectFileName}`;
-          writeFile(filePath, applied.html).catch((e) => {
-            console.warn("[comment-patch] failed to persist to disk", filePath, e);
-          });
-        }
-        const summary = patchResp!.summary || `Applied ${applied.applied} patch(es) to ${toSend.length} comment(s)`;
-        const note = `Comments resolvidos · ${summary}`;
-        // Replace the streaming assistant placeholder with the resolved
-        // note in-place — keeping the same turn_id pairs the assistant
-        // bubble with the user bubble we stamped at the top of the
-        // function. Without this the bubble would either stay empty
-        // ("Thinking…") forever or the new note would land as a
-        // separate orphan assistant entry.
-        setMessages((prev) => prev.map((m) =>
-          m.role === "assistant" && m.turn_id === turnId
-            ? { ...m, text: note, streaming: false }
-            : m,
-        ));
-        if (projectId) {
-          db.saveMessage(projectId, "assistant", note, false).catch(warn("saveMessage:comment-patch"));
-        }
+  const handleSaveEditedComment = useCallback(
+    (id: string) => {
+      const text = editingCommentDraft.trim();
+      if (!text) {
+        setEditingCommentId(null);
         return;
       }
-    } catch (e) {
-      setManualBusy(null);
-      console.warn("[comment-patch] patch path threw, falling back to applyStyle", e);
-    }
+      setComments((prev) => {
+        const next = prev.map((c) => (c.id === id ? { ...c, text, sent: false } : c));
+        persistComments(next);
+        return next;
+      });
+      setEditingCommentId(null);
+      setEditingCommentDraft("");
+    },
+    [editingCommentDraft, persistComments],
+  );
 
-    // Fallback: full-regen via applyStyle (legacy behavior).
-    await applyStyle(instruction, ctx, {
-      onSession: (sid: string) => {
-        persistProviderSession(sid);
-        setAuthRequiredBanner(null);
-        if (projectId) {
-          db.setProjectSession(projectId, sid).catch(() => {});
-          db.logSession(projectId, sid, workspaceRoot ?? undefined).catch(() => {});
+  const handleDeleteComment = useCallback(
+    (id: string) => {
+      persistComments(comments.filter((c) => c.id !== id));
+    },
+    [comments, persistComments],
+  );
+
+  const sendCommentBatch = useCallback(
+    async (toSend: Comment[]) => {
+      if (!iframeHtml || toSend.length === 0) return;
+      const instruction =
+        toSend.length === 1
+          ? `Apply this comment. Target element: ${toSend[0].selector}\nComment: ${toSend[0].text}`
+          : [
+              "Apply these comments to the HTML. Each comment targets a specific element via CSS selector.",
+              "",
+              ...toSend.map((c, i) => `${i + 1}. Selector: ${c.selector}\n   Comment: ${c.text}`),
+            ].join("\n");
+      // Mark these as sent
+      const sentIds = new Set(toSend.map((c) => c.id));
+      persistComments(comments.map((c) => (sentIds.has(c.id) ? { ...c, sent: true } : c)));
+      setChatTab("chat");
+
+      // User repro 2026-05-08: comment batch was applied but the chat
+      // showed nothing — patch path only stamped a terminal assistant note,
+      // applyStyle fallback streamed into limbo, and neither created the
+      // user-side bubble that would let the user see what they sent.
+      // Without that bubble the chat history reads as a stray AI line
+      // ("mensagem cortada"). Here we mirror handleSend's setup: stamp
+      // a user message that summarises the batch, push an assistant
+      // streaming placeholder (turn_id-paired), and persist the user
+      // turn through the same durable layer the audit Fase 1 wired up.
+      const turnId = `tcomm-${Date.now().toString(36)}`;
+      const visibleText =
+        toSend.length === 1
+          ? `Aplicar comentário · ${toSend[0].text.slice(0, 80)}`
+          : `Aplicar ${toSend.length} comentários ao design`;
+      setMessages((prev) => [
+        ...prev,
+        stamp({ role: "user", text: visibleText, turn_id: turnId, persist_status: "saving" }),
+        stamp({
+          role: "assistant",
+          provider: selectedProvider,
+          model: selectedModel,
+          text: "",
+          streaming: true,
+          turn_id: turnId,
+        }),
+      ]);
+      // Auditor follow-up to PR #115 (P0.1): the previous version
+      // used a fire-and-forget call wrapped in `if (projectSlug)`,
+      // which was wrong on two axes — the user bubble could appear
+      // before any durable write (fire-and-forget = no await), and
+      // projectSlug==null bypassed persistence entirely (the helper
+      // already handles null slug by going straight to local recovery).
+      // Both contracts (Audit Fase 1 #4 turn-before-provider +
+      // Fase 1 #5 recovery-on-no-slug) were leaking on this path.
+      //
+      // Fix: await the helper (so the provider stream doesn't fire before
+      // the turn is durable somewhere), and pass slug as nullable so the
+      // helper's no-slug → recovery branch kicks in for projects that
+      // haven't been hydrated yet. surfaceError already covers the failed
+      // path inside persistInitialTurn-style helpers; we mirror the chat
+      // path's badge semantics for parity.
+      const persistResult = await persistOrRecoverTurn(
+        projectSlug ?? null,
+        projectId ?? null,
+        activeThreadId,
+        {
+          id: turnId,
+          ts: Date.now(),
+          user: { text: visibleText, attachments: [], verb: null },
+          ai: null,
+        },
+      );
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.role === "user" && m.turn_id === turnId
+            ? { ...m, persist_status: persistResult.status }
+            : m,
+        ),
+      );
+      if (persistResult.status === "failed") {
+        surfaceError(
+          new Error(
+            `comment batch turn ${turnId} could not be persisted (${persistResult.reason ?? "unknown"})`,
+          ),
+          "sendCommentBatch[persist]",
+          "error",
+        );
+      }
+
+      const ctx = {
+        projectId,
+        projectPath: projectPath || "~/design-factory/projeto",
+        primaryFile: projectFileName,
+        mode,
+        conversationHistory: [],
+        hasDesignSystem: Boolean(dsPath),
+        designSystemPath: dsPath,
+        designSystemName: dsName,
+        designSystemMarkdown: dsMarkdown,
+        cwd: workspaceRoot ?? projectPath ?? undefined,
+        currentHtml: iframeHtml,
+        model: selectedModel,
+        providerId: selectedProvider,
+        sessionId: selectedProvider === "claude" ? claudeSessionId : null,
+      };
+
+      // Fix (Bug 2, regression report): "qnd usei comments e
+      // patch ele duplicou o conteudo no mesmo html inves de editar". Old
+      // path went straight to `applyStyle` (full-regen via REFINE_SYSTEM),
+      // which asks the LLM to emit the FULL modified HTML. With long docs
+      // the model occasionally APPENDS instead of REPLACES — the section
+      // it changed lands at the end while the original survives intact,
+      // doubling the visible content. The chat-path (handleSend) already
+      // mitigates this by trying `invokeSearchReplaceEdit` (small JSON
+      // search/replace patches) first, then falling back to applyStyle
+      // only when no patches fit. We mirror that here so comment-mode
+      // edits are surgical when possible.
+      try {
+        setManualBusy("patching...");
+        const patchResp = await invokeSearchReplaceEdit(instruction, ctx).catch(() => null);
+        setManualBusy(null);
+        const applied =
+          patchResp && patchResp.patches.length > 0
+            ? applyPatches(iframeHtml, patchResp.patches)
+            : null;
+        if (applied && "applied" in applied && applied.html) {
+          // Successful patch — update iframe + history + persist, identical
+          // to handleSend's patch branch. Skips the full applyStyle stream.
+          setIframeContent({
+            html: applied.html,
+            mode: "patch",
+            patches: patchResp!.patches,
+          });
+          setHistory((prev) => {
+            const idx = historyIndexRef.current;
+            const base = idx >= 0 ? prev.slice(0, idx + 1) : [];
+            const next = [...base, applied.html];
+            historyIndexRef.current = next.length - 1;
+            setHistoryIndex(next.length - 1);
+            return next;
+          });
+          lastPushedOutputRef.current = applied.html;
+          if (projectId) {
+            db.setSetting(`html:${projectId}`, applied.html).catch(
+              warn("setSetting:html::projectId"),
+            );
+          }
+          if (projectPath) {
+            // BUG-31: persist to projectFileName, not {slug}.html (see the
+            // search-replace path) — avoids the duplicate ghost HTML when the
+            // project name and folder slug differ.
+            const filePath = `${projectPath.replace(/\/$/, "")}/${projectFileName}`;
+            writeFile(filePath, applied.html).catch((e) => {
+              console.warn("[comment-patch] failed to persist to disk", filePath, e);
+            });
+          }
+          const summary =
+            patchResp!.summary ||
+            `Applied ${applied.applied} patch(es) to ${toSend.length} comment(s)`;
+          const note = `Comments resolvidos · ${summary}`;
+          // Replace the streaming assistant placeholder with the resolved
+          // note in-place — keeping the same turn_id pairs the assistant
+          // bubble with the user bubble we stamped at the top of the
+          // function. Without this the bubble would either stay empty
+          // ("Thinking…") forever or the new note would land as a
+          // separate orphan assistant entry.
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.role === "assistant" && m.turn_id === turnId
+                ? { ...m, text: note, streaming: false }
+                : m,
+            ),
+          );
+          if (projectId) {
+            db.saveMessage(projectId, "assistant", note, false).catch(
+              warn("saveMessage:comment-patch"),
+            );
+          }
+          return;
         }
-      },
-      onAuthRequired: (detail: string) => setAuthRequiredBanner(detail),
-    });
-  }, [iframeHtml, comments, persistComments, applyStyle, projectId, projectPath, projectFileName, mode, dsPath, dsName, dsMarkdown, startMode, workspaceRoot, selectedModel, selectedProvider, claudeSessionId, persistProviderSession, setIframeContent]);
+      } catch (e) {
+        setManualBusy(null);
+        console.warn("[comment-patch] patch path threw, falling back to applyStyle", e);
+      }
+
+      // Fallback: full-regen via applyStyle (legacy behavior).
+      await applyStyle(instruction, ctx, {
+        onSession: (sid: string) => {
+          persistProviderSession(sid);
+          setAuthRequiredBanner(null);
+          if (projectId) {
+            db.setProjectSession(projectId, sid).catch(() => {});
+            db.logSession(projectId, sid, workspaceRoot ?? undefined).catch(() => {});
+          }
+        },
+        onAuthRequired: (detail: string) => setAuthRequiredBanner(detail),
+      });
+    },
+    [
+      iframeHtml,
+      comments,
+      persistComments,
+      applyStyle,
+      projectId,
+      projectPath,
+      projectFileName,
+      mode,
+      dsPath,
+      dsName,
+      dsMarkdown,
+      startMode,
+      workspaceRoot,
+      selectedModel,
+      selectedProvider,
+      claudeSessionId,
+      persistProviderSession,
+      setIframeContent,
+    ],
+  );
 
   const handleSendComments = useCallback(async () => {
     await sendCommentBatch(comments.filter((c) => !c.sent));
   }, [sendCommentBatch, comments]);
 
-  const handleSendOneComment = useCallback(async (id: string) => {
-    const c = comments.find((x) => x.id === id);
-    if (!c || c.sent) return;
-    await sendCommentBatch([c]);
-  }, [sendCommentBatch, comments]);
+  const handleSendOneComment = useCallback(
+    async (id: string) => {
+      const c = comments.find((x) => x.id === id);
+      if (!c || c.sent) return;
+      await sendCommentBatch([c]);
+    },
+    [sendCommentBatch, comments],
+  );
 
   const handleClearSentComments = useCallback(() => {
     persistComments(comments.filter((c) => !c.sent));
   }, [comments, persistComments]);
-
 
   const handlePaletteAction = useCallback(
     (id: string) => {
@@ -5698,7 +6546,7 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           break;
       }
     },
-    [iframeHtml, handleUndo, handleRedo, showToast]
+    [iframeHtml, handleUndo, handleRedo, showToast],
   );
 
   const hasContent = messages.length > 0 || status === "streaming";
@@ -5752,7 +6600,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     const completed = tools.filter((tool) => tool.result).length;
     // Live text excerpt — last ~80 chars stripped of fences for the
     // unobtrusive preview line under the status label.
-    const trimmed = text.trim().replace(/^```[\s\S]*?\n/, "").replace(/```$/, "");
+    const trimmed = text
+      .trim()
+      .replace(/^```[\s\S]*?\n/, "")
+      .replace(/```$/, "");
     const previewSource = trimmed.slice(-110).replace(/\s+/g, " ").trim();
     return {
       tokens,
@@ -5821,11 +6672,18 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         }
         if (newest) setLastWrittenFile(newest);
         baseline = current;
-      } catch { /* swallow — polling is best-effort */ }
+      } catch {
+        /* swallow — polling is best-effort */
+      }
     };
     void poll();
-    const id = window.setInterval(() => { void poll(); }, 2500);
-    return () => { cancelled = true; window.clearInterval(id); };
+    const id = window.setInterval(() => {
+      void poll();
+    }, 2500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, [isProcessingTurn, projectPath]);
 
   // F3.3 — Inline flash when a file is written. The poller above already
@@ -5833,7 +6691,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // changes to that and pushes a transient "X.html escrito" toast that
   // self-dismisses after 3s. Helps the user see the factory work
   // landing on disk in real-time, not just inside the status banner.
-  const [recentWriteFlash, setRecentWriteFlash] = useState<{ name: string; at: number } | null>(null);
+  const [recentWriteFlash, setRecentWriteFlash] = useState<{ name: string; at: number } | null>(
+    null,
+  );
   const lastFlashedFileRef = useRef<string | null>(null);
   useEffect(() => {
     if (!lastWrittenFile) {
@@ -5868,7 +6728,7 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           }}
         >
           <span>
-            <strong>Claude CLI not authenticated.</strong> {authRequiredBanner} {" "}
+            <strong>Claude CLI not authenticated.</strong> {authRequiredBanner}{" "}
             <a
               href="https://code.claude.com/docs/en/"
               target="_blank"
@@ -5961,7 +6821,11 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
 
           {/* LEFT — home + chat tabs */}
           <div className="topbar-left">
-            <button className="topbar-home" title={t("editor.tooltip.allProjects")} onClick={onHome}>
+            <button
+              className="topbar-home"
+              title={t("editor.tooltip.allProjects")}
+              onClick={onHome}
+            >
               <Logo size={16} />
             </button>
             <nav className="topbar-chat-tabs">
@@ -6004,17 +6868,37 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                     </>
                   )}
                   {t.kind === "terminal" ? (
-                    <svg className="topbar-file-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                      className="topbar-file-tab-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <polyline points="4 17 10 11 4 5" />
                       <line x1="12" y1="19" x2="20" y2="19" />
                     </svg>
                   ) : t.kind === "video" ? (
-                    <svg className="topbar-file-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      className="topbar-file-tab-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="m22 8-6 4 6 4V8Z" />
                       <rect x="2" y="6" width="14" height="12" rx="2" />
                     </svg>
                   ) : (
-                    <svg className="topbar-file-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                      className="topbar-file-tab-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                       <polyline points="14 2 14 8 20 8" />
                     </svg>
@@ -6023,8 +6907,13 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   <button
                     className="topbar-file-tab-close"
                     aria-label="Close"
-                    onClick={(e) => { e.stopPropagation(); closeCanvasTab(t.id); }}
-                  >×</button>
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeCanvasTab(t.id);
+                    }}
+                  >
+                    ×
+                  </button>
                 </div>
               );
             })}
@@ -6049,49 +6938,197 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                 title={t("editor.share.button.title")}
                 onClick={() => setShowExportMenu((v) => !v)}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
                   <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
                   <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                 </svg>
                 {t("editor.share.button")}
-                <svg className="btn-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 10, height: 10, opacity: 0.7, transform: showExportMenu ? "rotate(180deg)" : "none", transition: "transform 120ms ease" }}>
+                <svg
+                  className="btn-chevron"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    width: 10,
+                    height: 10,
+                    opacity: 0.7,
+                    transform: showExportMenu ? "rotate(180deg)" : "none",
+                    transition: "transform 120ms ease",
+                  }}
+                >
                   <path d="m6 9 6 6 6-6" />
                 </svg>
               </button>
               {showExportMenu && (
                 <>
-                  <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setShowExportMenu(false)} />
-                  <div style={{
-                    position: "absolute",
-                    top: "calc(100% + 6px)",
-                    right: 0,
-                    minWidth: 260,
-                    background: "var(--df-surface-elevated)",
-                    borderRadius: "var(--df-r-lg)",
-                    boxShadow: "var(--df-shadow-card)",
-                    overflow: "hidden",
-                    zIndex: 100,
-                    animation: "df-dropdown-fade 120ms ease-out",
-                  }}>
+                  <div
+                    style={{ position: "fixed", inset: 0, zIndex: 99 }}
+                    onClick={() => setShowExportMenu(false)}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 6px)",
+                      right: 0,
+                      minWidth: 260,
+                      background: "var(--df-surface-elevated)",
+                      borderRadius: "var(--df-r-lg)",
+                      boxShadow: "var(--df-shadow-card)",
+                      overflow: "hidden",
+                      zIndex: 100,
+                      animation: "df-dropdown-fade 120ms ease-out",
+                    }}
+                  >
                     {/* Share menu items. HTML standalone surfaces only
                         when the active canvas tab is an HTML file
                         (main preview or a .html file tab). Sub-line
                         descriptions were dropped on user ask
                         2026-05-22 — labels stand on their own. */}
                     {[
-                      ...(activeHtmlForDownload ? [{ id: "html", label: t("editor.share.html.label"), handler: handleShareDownloadHtml, disabled: false,
-                        icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg> }] : []),
-                      { id: "zip", label: t("editor.share.zip.label"), handler: handleShareDownloadZip, disabled: false,
-                        icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8v13H3V8" /><path d="M1 3h22v5H1z" /><path d="M10 12h4" /></svg> },
-                      { id: "template", label: t("editor.share.template.label"), handler: handleShareSaveTemplate, disabled: false,
-                        icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg> },
-                      { id: "duplicate", label: t("editor.share.duplicate.label"), handler: handleShareDuplicate, disabled: false,
-                        icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="8" width="14" height="14" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg> },
-                      { id: "openfolder", label: "Abrir pasta do projeto", handler: handleShareOpenFolder, disabled: !projectPath,
-                        icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2" /></svg> },
-                      { id: "copypath", label: "Copiar caminho do projeto", handler: handleShareCopyPath, disabled: !projectPath,
-                        icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg> },
+                      ...(activeHtmlForDownload
+                        ? [
+                            {
+                              id: "html",
+                              label: t("editor.share.html.label"),
+                              handler: handleShareDownloadHtml,
+                              disabled: false,
+                              icon: (
+                                <svg
+                                  width="15"
+                                  height="15"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                  <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                              ),
+                            },
+                          ]
+                        : []),
+                      {
+                        id: "zip",
+                        label: t("editor.share.zip.label"),
+                        handler: handleShareDownloadZip,
+                        disabled: false,
+                        icon: (
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 8v13H3V8" />
+                            <path d="M1 3h22v5H1z" />
+                            <path d="M10 12h4" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        id: "template",
+                        label: t("editor.share.template.label"),
+                        handler: handleShareSaveTemplate,
+                        disabled: false,
+                        icon: (
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        id: "duplicate",
+                        label: t("editor.share.duplicate.label"),
+                        handler: handleShareDuplicate,
+                        disabled: false,
+                        icon: (
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect x="8" y="8" width="14" height="14" rx="2" ry="2" />
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        id: "openfolder",
+                        label: "Abrir pasta do projeto",
+                        handler: handleShareOpenFolder,
+                        disabled: !projectPath,
+                        icon: (
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        id: "copypath",
+                        label: "Copiar caminho do projeto",
+                        handler: handleShareCopyPath,
+                        disabled: !projectPath,
+                        icon: (
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                        ),
+                      },
                     ].map((opt) => (
                       <button
                         key={opt.id}
@@ -6112,10 +7149,19 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                           textAlign: "left",
                           opacity: opt.disabled ? 0.5 : 1,
                         }}
-                        onMouseEnter={(e) => { if (!opt.disabled) e.currentTarget.style.background = "var(--df-interactive-hover)"; }}
+                        onMouseEnter={(e) => {
+                          if (!opt.disabled)
+                            e.currentTarget.style.background = "var(--df-interactive-hover)";
+                        }}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
                       >
-                        <span style={{ display: "grid", placeItems: "center", color: "var(--df-text-muted)" }}>
+                        <span
+                          style={{
+                            display: "grid",
+                            placeItems: "center",
+                            color: "var(--df-text-muted)",
+                          }}
+                        >
                           {opt.icon}
                         </span>
                         <span>{opt.label}</span>
@@ -6138,10 +7184,7 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         </header>
 
         {/* BODY */}
-        <div
-          className="editor-body"
-          style={{ gridTemplateColumns: `${chatWidth}px 1fr` }}
-        >
+        <div className="editor-body" style={{ gridTemplateColumns: `${chatWidth}px 1fr` }}>
           {/* SIDEBAR */}
           <aside className="editor-sidebar">
             {/* Edge drag — invisible 6px strip on the right border. Uses pointer
@@ -6158,7 +7201,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                 document.body.style.cursor = "col-resize";
                 const onMove = (ev: PointerEvent) => {
                   if (ev.pointerId !== e.pointerId) return;
-                  const next = Math.max(CHAT_MIN, Math.min(CHAT_MAX, startW + (ev.clientX - startX)));
+                  const next = Math.max(
+                    CHAT_MIN,
+                    Math.min(CHAT_MAX, startW + (ev.clientX - startX)),
+                  );
                   setChatWidth(next);
                 };
                 const finish = () => {
@@ -6166,10 +7212,14 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   target.removeEventListener("pointerup", finish);
                   target.removeEventListener("pointercancel", finish);
                   target.removeEventListener("lostpointercapture", finish);
-                  try { target.releasePointerCapture(e.pointerId); } catch {}
+                  try {
+                    target.releasePointerCapture(e.pointerId);
+                  } catch {}
                   document.body.style.userSelect = "";
                   document.body.style.cursor = "";
-                  try { localStorage.setItem("df-chat-width", String(chatWidthRef.current)); } catch {}
+                  try {
+                    localStorage.setItem("df-chat-width", String(chatWidthRef.current));
+                  } catch {}
                 };
                 target.addEventListener("pointermove", onMove);
                 target.addEventListener("pointerup", finish);
@@ -6178,7 +7228,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               }}
               style={{
                 position: "absolute",
-                top: 0, right: -3, bottom: 0,
+                top: 0,
+                right: -3,
+                bottom: 0,
                 width: 6,
                 cursor: "col-resize",
                 zIndex: 20,
@@ -6189,12 +7241,14 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             />
             {/* Chat history button — floats top-right of the chat panel,
                 independent of which sub-view (chat / comments) is active. */}
-            <div style={{
-              position: "absolute",
-              top: 10,
-              right: 14,
-              zIndex: 1200,
-            }}>
+            <div
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 14,
+                zIndex: 1200,
+              }}
+            >
               <ChatHistoryDropdown
                 projectSlug={projectSlug ?? ""}
                 activeThreadId={activeThreadId}
@@ -6202,19 +7256,47 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               />
             </div>
             {chatTab === "comments" ? (
-              <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
-                <div style={{ flex: 1, overflowY: "auto", padding: "72px var(--df-sp-4) var(--df-sp-4)" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    flex: 1,
+                    overflowY: "auto",
+                    padding: "72px var(--df-sp-4) var(--df-sp-4)",
+                  }}
+                >
                   {comments.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "var(--df-sp-6) var(--df-sp-2)" }}>
-                      <div style={{ color: "var(--df-text-secondary)", fontSize: "var(--df-text-sm)", marginBottom: 4 }}>
+                      <div
+                        style={{
+                          color: "var(--df-text-secondary)",
+                          fontSize: "var(--df-text-sm)",
+                          marginBottom: 4,
+                        }}
+                      >
                         No comments yet
                       </div>
-                      <div style={{ color: "var(--df-text-faint)", fontSize: "var(--df-text-xs)", lineHeight: 1.5 }}>
-                        Switch to Comment mode in the canvas toolbar, then click any element in the preview to pin a note.
+                      <div
+                        style={{
+                          color: "var(--df-text-faint)",
+                          fontSize: "var(--df-text-xs)",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        Switch to Comment mode in the canvas toolbar, then click any element in the
+                        preview to pin a note.
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--df-sp-3)" }}>
+                    <div
+                      style={{ display: "flex", flexDirection: "column", gap: "var(--df-sp-3)" }}
+                    >
                       {comments.map((c) => (
                         <div
                           key={c.id}
@@ -6231,28 +7313,57 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                             onClick={() => handleJumpToComment(c)}
                             title="Jump to element in preview"
                             style={{
-                              display: "flex", alignItems: "center", gap: 4,
-                              width: "100%", textAlign: "left",
-                              padding: 0, marginBottom: 4, marginRight: 24,
-                              background: "transparent", border: "none",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                              width: "100%",
+                              textAlign: "left",
+                              padding: 0,
+                              marginBottom: 4,
+                              marginRight: 24,
+                              background: "transparent",
+                              border: "none",
                               fontFamily: "var(--df-font-mono)",
                               fontSize: "var(--df-text-xs)",
                               color: "var(--df-text-faint)",
                               cursor: "pointer",
                               overflow: "hidden",
                             }}
-                            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--df-text-muted)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--df-text-faint)")}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.color = "var(--df-text-muted)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.color = "var(--df-text-faint)")
+                            }
                           >
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                            <svg
+                              width="10"
+                              height="10"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              style={{ flexShrink: 0 }}
+                            >
                               <polyline points="15 3 21 3 21 9" />
                               <line x1="10" y1="14" x2="21" y2="3" />
                               <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
                             </svg>
-                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <span
+                              style={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
                               {c.selector}
                             </span>
-                            {c.sent && <span style={{ marginLeft: 4, color: "var(--df-text-faint)" }}>· sent</span>}
+                            {c.sent && (
+                              <span style={{ marginLeft: 4, color: "var(--df-text-faint)" }}>
+                                · sent
+                              </span>
+                            )}
                           </button>
                           {editingCommentId === c.id ? (
                             <textarea
@@ -6261,8 +7372,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                               onChange={(e) => setEditingCommentDraft(e.target.value)}
                               onBlur={() => handleSaveEditedComment(c.id)}
                               onKeyDown={(e) => {
-                                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSaveEditedComment(c.id);
-                                if (e.key === "Escape") { setEditingCommentId(null); setEditingCommentDraft(""); }
+                                if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                                  handleSaveEditedComment(c.id);
+                                if (e.key === "Escape") {
+                                  setEditingCommentId(null);
+                                  setEditingCommentDraft("");
+                                }
                               }}
                               style={{
                                 width: "100%",
@@ -6280,7 +7395,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                             />
                           ) : (
                             <div
-                              onClick={() => { setEditingCommentId(c.id); setEditingCommentDraft(c.text); }}
+                              onClick={() => {
+                                setEditingCommentId(c.id);
+                                setEditingCommentDraft(c.text);
+                              }}
                               title="Click to edit"
                               style={{
                                 fontSize: "var(--df-text-sm)",
@@ -6297,13 +7415,21 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                             onClick={() => handleDeleteComment(c.id)}
                             title="Delete comment"
                             style={{
-                              position: "absolute", top: 6, right: 6,
-                              width: 20, height: 20, borderRadius: 4,
-                              background: "transparent", border: "none",
-                              color: "var(--df-text-faint)", fontSize: 14,
+                              position: "absolute",
+                              top: 6,
+                              right: 6,
+                              width: 20,
+                              height: 20,
+                              borderRadius: 4,
+                              background: "transparent",
+                              border: "none",
+                              color: "var(--df-text-faint)",
+                              fontSize: 14,
                               cursor: "pointer",
                             }}
-                          >×</button>
+                          >
+                            ×
+                          </button>
                           {!c.sent && (
                             <button
                               onClick={() => handleSendOneComment(c.id)}
@@ -6328,7 +7454,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                               }}
                             >
                               Send
-                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <svg
+                                width="9"
+                                height="9"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
                                 <path d="m5 12 14 0" />
                                 <path d="m13 6 6 6-6 6" />
                               </svg>
@@ -6339,18 +7474,22 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                     </div>
                   )}
                 </div>
-                <div style={{
-                  padding: "var(--df-sp-3) var(--df-sp-4)",
-                  borderTop: "1px solid var(--df-border-subtle)",
-                  display: "flex",
-                  gap: "var(--df-sp-2)",
-                  alignItems: "center",
-                }}>
+                <div
+                  style={{
+                    padding: "var(--df-sp-3) var(--df-sp-4)",
+                    borderTop: "1px solid var(--df-border-subtle)",
+                    display: "flex",
+                    gap: "var(--df-sp-2)",
+                    alignItems: "center",
+                  }}
+                >
                   <button
                     className="df-btn df-btn--primary"
                     style={{ flex: 1, justifyContent: "center" }}
                     onClick={handleSendComments}
-                    disabled={comments.filter((c) => !c.sent).length === 0 || status === "streaming"}
+                    disabled={
+                      comments.filter((c) => !c.sent).length === 0 || status === "streaming"
+                    }
                   >
                     Send {comments.filter((c) => !c.sent).length || ""} to Claude
                   </button>
@@ -6367,7 +7506,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                 </div>
               </div>
             ) : hasContent ? (
-              <div className="chat-log" ref={chatLogRef} onScroll={handleChatLogScroll} style={{ position: "relative" }}>
+              <div
+                className="chat-log"
+                ref={chatLogRef}
+                onScroll={handleChatLogScroll}
+                style={{ position: "relative" }}
+              >
                 {/* F3.3 — Transient flash when the FS poller catches a new
                     file write. Self-dismisses after 3s. Positioned over the
                     chat log so it doesn't push existing messages around. */}
@@ -6398,7 +7542,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                       animation: "df-write-flash 280ms ease-out",
                     }}
                   >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
                     <span style={{ color: "var(--df-text-primary)", fontWeight: 500 }}>
@@ -6442,113 +7595,139 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                     typeof prev.ts === "number" &&
                     typeof msg.ts === "number" &&
                     msg.ts - prev.ts > SESSION_GAP_MS;
-                  const breakTime = isSessionBreak && typeof msg.ts === "number"
-                    ? new Date(msg.ts).toLocaleString(undefined, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
-                    : "";
+                  const breakTime =
+                    isSessionBreak && typeof msg.ts === "number"
+                      ? new Date(msg.ts).toLocaleString(undefined, {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "";
                   return (
-                  <div key={i}>
-                    {isProviderSwitch && (
-                      <div
-                        data-testid="chat-provider-switch"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          margin: "16px 0 12px",
-                          fontSize: 10,
-                          color: "var(--df-text-faint)",
-                          fontFamily: "var(--df-font-mono)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.08em",
+                    <div key={i}>
+                      {isProviderSwitch && (
+                        <div
+                          data-testid="chat-provider-switch"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            margin: "16px 0 12px",
+                            fontSize: 10,
+                            color: "var(--df-text-faint)",
+                            fontFamily: "var(--df-font-mono)",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.08em",
+                          }}
+                        >
+                          <span
+                            style={{ flex: 1, height: 1, background: "var(--df-border-subtle)" }}
+                          />
+                          <span>{tf("chat.provider.switch", msg.provider ?? "")}</span>
+                          <span
+                            style={{ flex: 1, height: 1, background: "var(--df-border-subtle)" }}
+                          />
+                        </div>
+                      )}
+                      {isSessionBreak && (
+                        <div
+                          data-testid="chat-session-break"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            margin: "20px 0 16px",
+                            fontSize: 10,
+                            color: "var(--df-text-faint)",
+                            fontFamily: "var(--df-font-mono)",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.08em",
+                          }}
+                        >
+                          <span
+                            style={{ flex: 1, height: 1, background: "var(--df-border-subtle)" }}
+                          />
+                          <span>{tf("chat.session.break", breakTime)}</span>
+                          <span
+                            style={{ flex: 1, height: 1, background: "var(--df-border-subtle)" }}
+                          />
+                        </div>
+                      )}
+                      <ChatMessage
+                        role={msg.role}
+                        provider={msg.provider}
+                        model={msg.model}
+                        text={msg.text}
+                        attachments={msg.attachments}
+                        isDesign={msg.isDesign}
+                        tools={msg.tools}
+                        toolEvents={msg.toolEvents}
+                        streaming={msg.streaming}
+                        verb={msg.verb}
+                        versionId={msg.version_id}
+                        doneReport={msg.doneReport}
+                        persistStatus={msg.persist_status}
+                        durationMs={msg.durationMs}
+                        tokensIn={msg.tokensIn}
+                        tokensOut={msg.tokensOut}
+                        costUsd={msg.costUsd}
+                        ttftMs={msg.ttftMs}
+                        turnStartedAt={msg.ts}
+                        onRestore={handleRestoreFromTurn}
+                        answeredQuestions={answeredQuestions}
+                        onAnswerQuestion={(answer) => handleQuestionAnswer(i, msg.text, answer)}
+                        onOpenSettings={onOpenSettings}
+                        onRetry={() => {
+                          // Find the last user message before this error and re-send it.
+                          // Walks backward from this index so error mid-thread retries the
+                          // turn that produced it, not whichever was last globally.
+                          for (let j = i - 1; j >= 0; j--) {
+                            if (messages[j].role === "user") {
+                              setInput(messages[j].text);
+                              // Defer send so the input state lands first.
+                              window.setTimeout(() => {
+                                void handleSendRef.current();
+                              }, 0);
+                              return;
+                            }
+                          }
                         }}
-                      >
-                        <span style={{ flex: 1, height: 1, background: "var(--df-border-subtle)" }} />
-                        <span>{tf("chat.provider.switch", msg.provider ?? "")}</span>
-                        <span style={{ flex: 1, height: 1, background: "var(--df-border-subtle)" }} />
-                      </div>
-                    )}
-                    {isSessionBreak && (
-                      <div
-                        data-testid="chat-session-break"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          margin: "20px 0 16px",
-                          fontSize: 10,
-                          color: "var(--df-text-faint)",
-                          fontFamily: "var(--df-font-mono)",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.08em",
-                        }}
-                      >
-                        <span style={{ flex: 1, height: 1, background: "var(--df-border-subtle)" }} />
-                        <span>{tf("chat.session.break", breakTime)}</span>
-                        <span style={{ flex: 1, height: 1, background: "var(--df-border-subtle)" }} />
-                      </div>
-                    )}
-                  <ChatMessage
-                    role={msg.role}
-                    provider={msg.provider}
-                    model={msg.model}
-                    text={msg.text}
-                    attachments={msg.attachments}
-                    isDesign={msg.isDesign}
-                    tools={msg.tools}
-                    toolEvents={msg.toolEvents}
-                    streaming={msg.streaming}
-                    verb={msg.verb}
-                    versionId={msg.version_id}
-                    doneReport={msg.doneReport}
-                    persistStatus={msg.persist_status}
-                    durationMs={msg.durationMs}
-                    tokensIn={msg.tokensIn}
-                    tokensOut={msg.tokensOut}
-                    costUsd={msg.costUsd}
-                    ttftMs={msg.ttftMs}
-                    turnStartedAt={msg.ts}
-                    onRestore={handleRestoreFromTurn}
-                    answeredQuestions={answeredQuestions}
-                    onAnswerQuestion={(answer) => handleQuestionAnswer(i, msg.text, answer)}
-                    onOpenSettings={onOpenSettings}
-                    onRetry={() => {
-                      // Find the last user message before this error and re-send it.
-                      // Walks backward from this index so error mid-thread retries the
-                      // turn that produced it, not whichever was last globally.
-                      for (let j = i - 1; j >= 0; j--) {
-                        if (messages[j].role === "user") {
-                          setInput(messages[j].text);
-                          // Defer send so the input state lands first.
-                          window.setTimeout(() => { void handleSendRef.current(); }, 0);
-                          return;
-                        }
-                      }
-                    }}
-                  />
-                  </div>
+                      />
+                    </div>
                   );
                 })}
                 {status === "done" && result && (
-                  <div style={{
-                    marginTop: "var(--df-sp-3)",
-                    padding: "8px 12px",
-                    background: "var(--df-surface-raised)",
-                    border: "1px solid var(--df-border-subtle)",
-                    borderRadius: "var(--df-r-md)",
-                    fontFamily: "var(--df-font-mono)",
-                    fontSize: "var(--df-text-xs)",
-                    color: "var(--df-text-muted)",
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "wrap",
-                    lineHeight: 1.5,
-                  }}>
+                  <div
+                    style={{
+                      marginTop: "var(--df-sp-3)",
+                      padding: "8px 12px",
+                      background: "var(--df-surface-raised)",
+                      border: "1px solid var(--df-border-subtle)",
+                      borderRadius: "var(--df-r-md)",
+                      fontFamily: "var(--df-font-mono)",
+                      fontSize: "var(--df-text-xs)",
+                      color: "var(--df-text-muted)",
+                      display: "flex",
+                      gap: 10,
+                      flexWrap: "wrap",
+                      lineHeight: 1.5,
+                    }}
+                  >
                     {modelName && <span>{modelName}</span>}
-                    {typeof result.durationMs === "number" && <span>· {formatDuration(result.durationMs)}</span>}
-                    {typeof result.inputTokens === "number" && typeof result.outputTokens === "number" && (
-                      <span>· {result.inputTokens.toLocaleString()} in / {result.outputTokens.toLocaleString()} out</span>
+                    {typeof result.durationMs === "number" && (
+                      <span>· {formatDuration(result.durationMs)}</span>
                     )}
-                    {typeof result.costUsd === "number" && <span>· ${result.costUsd.toFixed(4)}</span>}
+                    {typeof result.inputTokens === "number" &&
+                      typeof result.outputTokens === "number" && (
+                        <span>
+                          · {result.inputTokens.toLocaleString()} in /{" "}
+                          {result.outputTokens.toLocaleString()} out
+                        </span>
+                      )}
+                    {typeof result.costUsd === "number" && (
+                      <span>· ${result.costUsd.toFixed(4)}</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -6627,8 +7806,12 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                         cursor: "pointer",
                         transition: "border-color 200ms",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--df-border-strong)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--df-border-subtle)")}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.borderColor = "var(--df-border-strong)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.borderColor = "var(--df-border-subtle)")
+                      }
                     >
                       {t(key)}
                     </button>
@@ -6665,7 +7848,17 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   cursor: "pointer",
                 }}
               >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <polyline points="19 12 12 19 5 12" />
                 </svg>
@@ -6696,39 +7889,48 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   <span
                     aria-hidden
                     style={{
-                      width: 7, height: 7, borderRadius: "50%",
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
                       background: "var(--df-accent-user, var(--df-accent-ok))",
-                      boxShadow: "0 0 0 4px color-mix(in srgb, var(--df-accent-user, var(--df-accent-ok)) 14%, transparent)",
+                      boxShadow:
+                        "0 0 0 4px color-mix(in srgb, var(--df-accent-user, var(--df-accent-ok)) 14%, transparent)",
                       animation: "df-global-status-breath 1400ms ease-in-out infinite",
                       flexShrink: 0,
                     }}
                   />
-                  <span style={{
-                    fontFamily: "var(--df-font-mono)",
-                    fontSize: 11,
-                    letterSpacing: "0.02em",
-                    color: "var(--df-text-primary)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    flex: 1,
-                    minWidth: 0,
-                  }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--df-font-mono)",
+                      fontSize: 11,
+                      letterSpacing: "0.02em",
+                      color: "var(--df-text-primary)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
                     {canvasStatusLabel}
                   </span>
-                  <span style={{
-                    fontFamily: "var(--df-font-mono)",
-                    fontSize: 10,
-                    letterSpacing: "0.04em",
-                    color: "var(--df-text-muted)",
-                    display: "flex",
-                    gap: 8,
-                    alignItems: "center",
-                    flexShrink: 0,
-                  }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--df-font-mono)",
+                      fontSize: 10,
+                      letterSpacing: "0.04em",
+                      color: "var(--df-text-muted)",
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      flexShrink: 0,
+                    }}
+                  >
                     <span title="Elapsed time">{formatTurnElapsed(turnElapsedMs)}</span>
                     {turnStats && turnStats.tokens > 0 && (
-                      <span title="Estimated output tokens">~{formatTurnTokens(turnStats.tokens)} tok</span>
+                      <span title="Estimated output tokens">
+                        ~{formatTurnTokens(turnStats.tokens)} tok
+                      </span>
                     )}
                     {turnStats && turnStats.toolsTotal > 0 && (
                       <span title="Tool calls (completed / total)">
@@ -6743,7 +7945,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                     {(status === "streaming" || tweaksLoading) && (
                       <button
                         type="button"
-                        onClick={status === "streaming" ? cancelStream : () => tweaksAbortRef.current?.()}
+                        onClick={
+                          status === "streaming" ? cancelStream : () => tweaksAbortRef.current?.()
+                        }
                         style={{
                           background: "transparent",
                           border: "1px solid var(--df-border-subtle)",
@@ -6763,16 +7967,18 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   </span>
                 </div>
                 {turnStats && turnStats.preview && (
-                  <div style={{
-                    fontFamily: "var(--df-font-body)",
-                    fontSize: 11,
-                    color: "var(--df-text-faint)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    paddingLeft: 17,
-                    opacity: 0.85,
-                  }}>
+                  <div
+                    style={{
+                      fontFamily: "var(--df-font-body)",
+                      fontSize: 11,
+                      color: "var(--df-text-faint)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      paddingLeft: 17,
+                      opacity: 0.85,
+                    }}
+                  >
                     {turnStats.preview}
                   </div>
                 )}
@@ -6824,42 +8030,83 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                       matches={slashMatches}
                       highlightIdx={slashState.hi}
                       onSelect={insertSlashCommand}
-                      onHover={(idx) => setSlashState((prev) => prev ? { ...prev, hi: idx } : prev)}
+                      onHover={(idx) =>
+                        setSlashState((prev) => (prev ? { ...prev, hi: idx } : prev))
+                      }
                       anchor={chatInputBoxRef.current}
                     />
                   )}
-                  {(dsName || attachedFiles.length > 0
-                    || !!(canonicalChips?.format && canonicalActive.format)
-                    || !!(canonicalChips && canonicalChips.rulesCount > 0 && canonicalActive.rules)
-                    || !!(canonicalChips && canonicalChips.tasteCount > 0 && canonicalActive.taste)) && (
-                    <div style={{
-                      display: "flex", flexWrap: "wrap", gap: 6,
-                      padding: "10px 14px 0",
-                    }}>
+                  {(dsName ||
+                    attachedFiles.length > 0 ||
+                    !!(canonicalChips?.format && canonicalActive.format) ||
+                    !!(canonicalChips && canonicalChips.rulesCount > 0 && canonicalActive.rules) ||
+                    !!(
+                      canonicalChips &&
+                      canonicalChips.tasteCount > 0 &&
+                      canonicalActive.taste
+                    )) && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                        padding: "10px 14px 0",
+                      }}
+                    >
                       {dsName && (
                         // Removable DS pill — clicking × detaches the
                         // design system mid-project. The user can
                         // re-pick from Settings or from the project
                         // setup.
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", gap: 6,
-                          padding: "2px 8px",
-                          background: "var(--df-tint-ok)",
-                          border: "1px solid var(--df-border-subtle)",
-                          borderRadius: "var(--df-r-sm)",
-                          fontFamily: "var(--df-font-mono)",
-                          fontSize: 10, color: "var(--df-accent-ok)",
-                          maxWidth: 220,
-                        }}>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "2px 8px",
+                            background: "var(--df-tint-ok)",
+                            border: "1px solid var(--df-border-subtle)",
+                            borderRadius: "var(--df-r-sm)",
+                            fontFamily: "var(--df-font-mono)",
+                            fontSize: 10,
+                            color: "var(--df-accent-ok)",
+                            maxWidth: 220,
+                          }}
+                        >
+                          <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            style={{ flexShrink: 0 }}
+                          >
                             <circle cx="13.5" cy="6.5" r="2.5" />
                             <circle cx="17.5" cy="10.5" r="2.5" />
                             <circle cx="8.5" cy="7.5" r="2.5" />
                             <circle cx="6.5" cy="12.5" r="2.5" />
                             <path d="M12 2a10 10 0 1 0 0 20 4 4 0 0 1 0-8 2 2 0 0 0 0-4Z" />
                           </svg>
-                          <span style={{ color: "var(--df-text-faint)", textTransform: "uppercase", letterSpacing: "0.08em" }}>DS</span>
-                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={dsPath ?? dsName}>
+                          <span
+                            style={{
+                              color: "var(--df-text-faint)",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.08em",
+                            }}
+                          >
+                            DS
+                          </span>
+                          <span
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={dsPath ?? dsName}
+                          >
                             {dsName}
                           </span>
                           <button
@@ -6875,24 +8122,37 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                               // re-attaches the DS — detach didn't stick across a
                               // tab switch. Rewrite the payload without the DS.
                               if (projectId) {
-                                void db.getSetting(`canonicalPlus:${projectId}`)
+                                void db
+                                  .getSetting(`canonicalPlus:${projectId}`)
                                   .then((raw) => {
                                     if (!raw) return;
                                     try {
                                       const cp = JSON.parse(raw) as Record<string, unknown>;
                                       if ("designSystem" in cp) {
                                         delete cp.designSystem;
-                                        return db.setSetting(`canonicalPlus:${projectId}`, JSON.stringify(cp));
+                                        return db.setSetting(
+                                          `canonicalPlus:${projectId}`,
+                                          JSON.stringify(cp),
+                                        );
                                       }
-                                    } catch { /* malformed — leave as-is */ }
+                                    } catch {
+                                      /* malformed — leave as-is */
+                                    }
                                   })
                                   .catch(warn("detach:canonicalPlus"));
                               }
                               showToast(t("editor.toast.dsDetached"));
                             }}
                             title="Detach design system"
-                            style={{ color: "var(--df-text-faint)", fontSize: 11, cursor: "pointer", padding: "0 2px" }}
-                          >×</button>
+                            style={{
+                              color: "var(--df-text-faint)",
+                              fontSize: 11,
+                              cursor: "pointer",
+                              padding: "0 2px",
+                            }}
+                          >
+                            ×
+                          </button>
                         </span>
                       )}
                       {canonicalChips?.format && canonicalActive.format && (
@@ -6924,22 +8184,30 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                           attachments={attachedFiles.map((f) => {
                             const isImage = f.mime.startsWith("image/");
                             const isHtml = f.mime === "text/html" || /\.html?$/i.test(f.name);
-                            const isTextLike = !isImage && (
-                              f.mime.startsWith("text/")
-                              || /^application\/(json|javascript|xml)/.test(f.mime)
-                              || /\.(md|ts|tsx|jsx|js|json|yml|yaml|txt|csv|css)$/i.test(f.name)
-                            );
+                            const isTextLike =
+                              !isImage &&
+                              (f.mime.startsWith("text/") ||
+                                /^application\/(json|javascript|xml)/.test(f.mime) ||
+                                /\.(md|ts|tsx|jsx|js|json|yml|yaml|txt|csv|css)$/i.test(f.name));
                             return {
                               name: f.name,
                               size: f.size,
                               mime: f.mime,
-                              kind: (isHtml ? "html" : isImage ? "image" : isTextLike ? "text" : "binary") as "image" | "text" | "html" | "binary",
+                              kind: (isHtml
+                                ? "html"
+                                : isImage
+                                  ? "image"
+                                  : isTextLike
+                                    ? "text"
+                                    : "binary") as "image" | "text" | "html" | "binary",
                               path: isImage ? f.content : undefined,
                               content: isImage ? undefined : f.content,
                               preview: f.preview,
                             };
                           })}
-                          onRemove={(idx) => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          onRemove={(idx) =>
+                            setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))
+                          }
                           align="start"
                         />
                       )}
@@ -6952,8 +8220,8 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                       canvasMode === "edit"
                         ? t("editor.input.placeholder.edit")
                         : iframeHtml
-                        ? t("editor.input.placeholder.change")
-                        : t("editor.input.placeholder.create")
+                          ? t("editor.input.placeholder.change")
+                          : t("editor.input.placeholder.create")
                     }
                     value={input}
                     onChange={(e) => {
@@ -6991,7 +8259,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                         title={t("editor.tooltip.attach")}
                         onClick={() => fileInputRef.current?.click()}
                       >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <path d="m21 12-9 9a6 6 0 0 1-8.5-8.5l9-9a4 4 0 0 1 5.7 5.7l-9 9a2 2 0 0 1-2.8-2.8l8.5-8.5" />
                         </svg>
                       </button>
@@ -7015,7 +8292,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                         aria-expanded={dsDropdownOpen}
                       >
                         {/* Palette icon */}
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <circle cx="13.5" cy="6.5" r="1.5" />
                           <circle cx="17.5" cy="10.5" r="1.5" />
                           <circle cx="8.5" cy="7.5" r="1.5" />
@@ -7027,27 +8313,37 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                         open={dsDropdownOpen && designSystems.length > 0}
                         onClose={() => setDsDropdownOpen(false)}
                         items={[
-                          ...designSystems.map((ds): import("@/components/SearchableDropdown").SearchableDropdownItem<FsDesignSystem> => {
-                            const swatches = (dsSwatchCache[ds.path] ?? []).slice(0, 4);
-                            const padded = [
-                              ...swatches,
-                              ...Array(Math.max(0, 4 - swatches.length)).fill("var(--df-surface-raised)"),
-                            ];
-                            return {
-                              id: ds.path,
-                              label: ds.name,
-                              sub: ds.path.split("/").slice(-2).join("/"),
-                              searchText: `${ds.path} ${ds.slug ?? ""}`,
-                              payload: ds,
-                              leading: (
-                                <span className="cnp-ds-dropdown-swatches" aria-hidden>
-                                  {padded.map((sw, i) => (
-                                    <span key={i} className="cnp-ds-dropdown-sw" style={{ background: sw }} />
-                                  ))}
-                                </span>
-                              ),
-                            };
-                          }),
+                          ...designSystems.map(
+                            (
+                              ds,
+                            ): import("@/components/SearchableDropdown").SearchableDropdownItem<FsDesignSystem> => {
+                              const swatches = (dsSwatchCache[ds.path] ?? []).slice(0, 4);
+                              const padded = [
+                                ...swatches,
+                                ...Array(Math.max(0, 4 - swatches.length)).fill(
+                                  "var(--df-surface-raised)",
+                                ),
+                              ];
+                              return {
+                                id: ds.path,
+                                label: ds.name,
+                                sub: ds.path.split("/").slice(-2).join("/"),
+                                searchText: `${ds.path} ${ds.slug ?? ""}`,
+                                payload: ds,
+                                leading: (
+                                  <span className="cnp-ds-dropdown-swatches" aria-hidden>
+                                    {padded.map((sw, i) => (
+                                      <span
+                                        key={i}
+                                        className="cnp-ds-dropdown-sw"
+                                        style={{ background: sw }}
+                                      />
+                                    ))}
+                                  </span>
+                                ),
+                              };
+                            },
+                          ),
                           { id: "__ds_more__", label: "More design systems…", footerAction: true },
                         ]}
                         selectedId={dsPath}
@@ -7079,7 +8375,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                         type="file"
                         multiple
                         style={{ display: "none" }}
-                        onChange={(e) => { handleAttach(e.target.files); e.target.value = ""; }}
+                        onChange={(e) => {
+                          handleAttach(e.target.files);
+                          e.target.value = "";
+                        }}
                       />
 
                       <button
@@ -7088,22 +8387,39 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                         onClick={async () => {
                           if (isRecording) {
                             // Stop active recognition. onend handler will flip state.
-                            try { (recognitionRef.current as { stop: () => void } | null)?.stop(); }
-                            catch { /* already stopped */ }
+                            try {
+                              (recognitionRef.current as { stop: () => void } | null)?.stop();
+                            } catch {
+                              /* already stopped */
+                            }
                             return;
                           }
                           // Prefer Web Speech API (realtime, in-browser, free).
                           // Fallback: MediaRecorder + Groq Whisper on stop.
-                          const SR = (window as unknown as { SpeechRecognition?: new () => unknown; webkitSpeechRecognition?: new () => unknown }).SpeechRecognition
-                            ?? (window as unknown as { webkitSpeechRecognition?: new () => unknown }).webkitSpeechRecognition;
+                          const SR =
+                            (
+                              window as unknown as {
+                                SpeechRecognition?: new () => unknown;
+                                webkitSpeechRecognition?: new () => unknown;
+                              }
+                            ).SpeechRecognition ??
+                            (window as unknown as { webkitSpeechRecognition?: new () => unknown })
+                              .webkitSpeechRecognition;
                           if (SR) {
                             try {
-                              recognitionBaselineRef.current = (textareaRef.current?.value ?? input).replace(/\s+$/, "");
+                              recognitionBaselineRef.current = (
+                                textareaRef.current?.value ?? input
+                              ).replace(/\s+$/, "");
                               const r = new SR() as {
                                 continuous: boolean;
                                 interimResults: boolean;
                                 lang: string;
-                                onresult: (e: { resultIndex: number; results: { isFinal: boolean; 0: { transcript: string } }[] & { length: number } }) => void;
+                                onresult: (e: {
+                                  resultIndex: number;
+                                  results: { isFinal: boolean; 0: { transcript: string } }[] & {
+                                    length: number;
+                                  };
+                                }) => void;
                                 onerror: (e: { error: string }) => void;
                                 onend: () => void;
                                 start: () => void;
@@ -7125,7 +8441,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                                   else interim += t;
                                 }
                                 const baseline = recognitionBaselineRef.current;
-                                const combined = (baseline ? baseline + " " : "") + (finalText + interim).trimStart();
+                                const combined =
+                                  (baseline ? baseline + " " : "") +
+                                  (finalText + interim).trimStart();
                                 setInput(combined);
                               };
 
@@ -7153,9 +8471,20 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                         style={isRecording ? { color: "var(--df-accent-danger)" } : undefined}
                       >
                         {isRecording ? (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1" /></svg>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="6" width="12" height="12" rx="1" />
+                          </svg>
                         ) : (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
                             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                             <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                             <line x1="12" x2="12" y1="19" y2="22" />
@@ -7193,142 +8522,203 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                           onClick={() => setShowModelMenu((v) => !v)}
                         >
                           <span className="model-selector-dot" />
-                          <span>{currentModelOptions.find((o) => o.id === selectedModel)?.label ?? selectedModel}</span>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6, transform: showModelMenu ? "rotate(180deg)" : "none", transition: "transform 120ms ease" }}>
+                          <span>
+                            {currentModelOptions.find((o) => o.id === selectedModel)?.label ??
+                              selectedModel}
+                          </span>
+                          <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            style={{
+                              opacity: 0.6,
+                              transform: showModelMenu ? "rotate(180deg)" : "none",
+                              transition: "transform 120ms ease",
+                            }}
+                          >
                             <path d="m6 9 6 6 6-6" />
                           </svg>
                         </button>
-                        {showModelMenu && modelBtnRef.current && createPortal(
-                          <>
-                            <div style={{ position: "fixed", inset: 0, zIndex: 99 }} onClick={() => setShowModelMenu(false)} />
-                            <div style={(() => {
-                              const r = modelBtnRef.current!.getBoundingClientRect();
-                              return {
-                                position: "fixed",
-                                bottom: window.innerHeight - r.top + 6,
-                                left: Math.max(8, r.right - 220),
-                                minWidth: 220,
-                                background: "var(--df-surface-elevated)",
-                                borderRadius: "var(--df-r-lg)",
-                                boxShadow: "var(--df-shadow-card)",
-                                overflow: "hidden",
-                                zIndex: 100,
-                                animation: "df-dropdown-fade 120ms ease-out",
-                              } as React.CSSProperties;
-                            })()}>
-                              {/* Source banner — be transparent about whether the list
+                        {showModelMenu &&
+                          modelBtnRef.current &&
+                          createPortal(
+                            <>
+                              <div
+                                style={{ position: "fixed", inset: 0, zIndex: 99 }}
+                                onClick={() => setShowModelMenu(false)}
+                              />
+                              <div
+                                style={(() => {
+                                  const r = modelBtnRef.current!.getBoundingClientRect();
+                                  return {
+                                    position: "fixed",
+                                    bottom: window.innerHeight - r.top + 6,
+                                    left: Math.max(8, r.right - 220),
+                                    minWidth: 220,
+                                    background: "var(--df-surface-elevated)",
+                                    borderRadius: "var(--df-r-lg)",
+                                    boxShadow: "var(--df-shadow-card)",
+                                    overflow: "hidden",
+                                    zIndex: 100,
+                                    animation: "df-dropdown-fade 120ms ease-out",
+                                  } as React.CSSProperties;
+                                })()}
+                              >
+                                {/* Source banner — be transparent about whether the list
                                   was probed live or fell back to the static catalog.
                                   Users hit a Codex bug where a static-only ID didn't
                                   exist on his account; making the source explicit
                                   helps him decide whether to trust the list. */}
-                              <div style={{
-                                padding: "8px 12px",
-                                fontSize: 10,
-                                fontFamily: "var(--df-font-mono)",
-                                color: "var(--df-text-faint)",
-                                letterSpacing: "0.04em",
-                                textTransform: "uppercase",
-                                borderBottom: "1px solid var(--df-border-subtle)",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                gap: 8,
-                              }}>
-                                <span>
-                                  {modelsLoading
-                                    ? "probing…"
-                                    : modelsSource === "live"
-                                      ? `live · ${currentModelOptions.length}`
-                                      : `catalog · ${currentModelOptions.length}`}
-                                </span>
-                                {modelsSource === "static" && (selectedProvider === "ollama" || selectedProvider === "openrouter") && (
-                                  <span style={{ color: "var(--df-accent-warn)" }}>probe failed</span>
-                                )}
-                              </div>
-                              {currentModelOptions.length === 0 ? (
-                                <div style={{
-                                  padding: "10px 14px",
-                                  fontSize: "var(--df-text-xs)",
-                                  fontFamily: "var(--df-font-mono)",
-                                  color: "var(--df-text-faint)",
-                                  lineHeight: 1.55,
-                                }}>
-                                  No models configured.
-                                </div>
-                              ) : (
-                                <div style={{ maxHeight: 320, overflowY: "auto" }}>
-                                  {currentModelOptions.map((m) => (
-                                    <button
-                                      key={m.id}
-                                      onClick={() => handleModelChange(m.id)}
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        width: "100%",
-                                        padding: "9px 12px",
-                                        background: m.id === selectedModel ? "var(--df-interactive-hover)" : "none",
-                                        border: "none",
-                                        color: "var(--df-text-primary)",
-                                        fontSize: "var(--df-text-sm)",
-                                        cursor: "pointer",
-                                        textAlign: "left",
-                                      }}
-                                    >
-                                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{m.label}</span>
-                                      <span style={{ fontFamily: "var(--df-font-mono)", fontSize: "var(--df-text-xs)", color: "var(--df-text-faint)", flexShrink: 0, marginLeft: 12 }}>
-                                        {m.sub}
+                                <div
+                                  style={{
+                                    padding: "8px 12px",
+                                    fontSize: 10,
+                                    fontFamily: "var(--df-font-mono)",
+                                    color: "var(--df-text-faint)",
+                                    letterSpacing: "0.04em",
+                                    textTransform: "uppercase",
+                                    borderBottom: "1px solid var(--df-border-subtle)",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    gap: 8,
+                                  }}
+                                >
+                                  <span>
+                                    {modelsLoading
+                                      ? "probing…"
+                                      : modelsSource === "live"
+                                        ? `live · ${currentModelOptions.length}`
+                                        : `catalog · ${currentModelOptions.length}`}
+                                  </span>
+                                  {modelsSource === "static" &&
+                                    (selectedProvider === "ollama" ||
+                                      selectedProvider === "openrouter") && (
+                                      <span style={{ color: "var(--df-accent-warn)" }}>
+                                        probe failed
                                       </span>
-                                    </button>
-                                  ))}
+                                    )}
                                 </div>
-                              )}
-                              {/* Custom model input — escape hatch for any provider.
+                                {currentModelOptions.length === 0 ? (
+                                  <div
+                                    style={{
+                                      padding: "10px 14px",
+                                      fontSize: "var(--df-text-xs)",
+                                      fontFamily: "var(--df-font-mono)",
+                                      color: "var(--df-text-faint)",
+                                      lineHeight: 1.55,
+                                    }}
+                                  >
+                                    No models configured.
+                                  </div>
+                                ) : (
+                                  <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                                    {currentModelOptions.map((m) => (
+                                      <button
+                                        key={m.id}
+                                        onClick={() => handleModelChange(m.id)}
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "space-between",
+                                          width: "100%",
+                                          padding: "9px 12px",
+                                          background:
+                                            m.id === selectedModel
+                                              ? "var(--df-interactive-hover)"
+                                              : "none",
+                                          border: "none",
+                                          color: "var(--df-text-primary)",
+                                          fontSize: "var(--df-text-sm)",
+                                          cursor: "pointer",
+                                          textAlign: "left",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                            flex: 1,
+                                            minWidth: 0,
+                                          }}
+                                        >
+                                          {m.label}
+                                        </span>
+                                        <span
+                                          style={{
+                                            fontFamily: "var(--df-font-mono)",
+                                            fontSize: "var(--df-text-xs)",
+                                            color: "var(--df-text-faint)",
+                                            flexShrink: 0,
+                                            marginLeft: 12,
+                                          }}
+                                        >
+                                          {m.sub}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                {/* Custom model input — escape hatch for any provider.
                                   Power user knows the exact id; just paste + enter. */}
-                              <div style={{ borderTop: "1px solid var(--df-border-subtle)", padding: "8px 10px", display: "flex", gap: 6, alignItems: "center" }}>
-                                <input
-                                  type="text"
-                                  value={customModelInput}
-                                  onChange={(e) => setCustomModelInput(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" && customModelInput.trim()) {
+                                <div
+                                  style={{
+                                    borderTop: "1px solid var(--df-border-subtle)",
+                                    padding: "8px 10px",
+                                    display: "flex",
+                                    gap: 6,
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <input
+                                    type="text"
+                                    value={customModelInput}
+                                    onChange={(e) => setCustomModelInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" && customModelInput.trim()) {
+                                        handleModelChange(customModelInput.trim());
+                                        setCustomModelInput("");
+                                        setShowModelMenu(false);
+                                      }
+                                    }}
+                                    placeholder={t("editor.input.modelIdPlaceholder")}
+                                    style={{
+                                      flex: 1,
+                                      minWidth: 0,
+                                      background: "var(--df-bg-base)",
+                                      border: "1px solid var(--df-border-subtle)",
+                                      borderRadius: "var(--df-r-sm)",
+                                      padding: "5px 8px",
+                                      fontSize: 11,
+                                      fontFamily: "var(--df-font-mono)",
+                                      color: "var(--df-text-primary)",
+                                      outline: "none",
+                                    }}
+                                    spellCheck={false}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="df-tactile df-tactile--sm"
+                                    onClick={() => {
+                                      if (!customModelInput.trim()) return;
                                       handleModelChange(customModelInput.trim());
                                       setCustomModelInput("");
                                       setShowModelMenu(false);
-                                    }
-                                  }}
-                                  placeholder={t("editor.input.modelIdPlaceholder")}
-                                  style={{
-                                    flex: 1,
-                                    minWidth: 0,
-                                    background: "var(--df-bg-base)",
-                                    border: "1px solid var(--df-border-subtle)",
-                                    borderRadius: "var(--df-r-sm)",
-                                    padding: "5px 8px",
-                                    fontSize: 11,
-                                    fontFamily: "var(--df-font-mono)",
-                                    color: "var(--df-text-primary)",
-                                    outline: "none",
-                                  }}
-                                  spellCheck={false}
-                                />
-                                <button
-                                  type="button"
-                                  className="df-tactile df-tactile--sm"
-                                  onClick={() => {
-                                    if (!customModelInput.trim()) return;
-                                    handleModelChange(customModelInput.trim());
-                                    setCustomModelInput("");
-                                    setShowModelMenu(false);
-                                  }}
-                                  disabled={!customModelInput.trim()}
-                                >
-                                  use
-                                </button>
+                                    }}
+                                    disabled={!customModelInput.trim()}
+                                  >
+                                    use
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          </>,
-                          document.body
-                        )}
+                            </>,
+                            document.body,
+                          )}
                       </span>
                       <button
                         className="chat-input-send"
@@ -7337,21 +8727,36 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                           status === "streaming"
                             ? cancelStream
                             : tweaksLoading
-                            ? () => tweaksAbortRef.current?.()
-                            : () => { void handleSend(); }
+                              ? () => tweaksAbortRef.current?.()
+                              : () => {
+                                  void handleSend();
+                                }
                         }
                         title={
-                          status === "streaming" || tweaksLoading
-                            ? "Cancel (Esc)"
-                            : "Send (⌘↵)"
+                          status === "streaming" || tweaksLoading ? "Cancel (Esc)" : "Send (⌘↵)"
                         }
                       >
                         {status === "streaming" || tweaksLoading ? (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            stroke="none"
+                          >
                             <rect x="6" y="6" width="12" height="12" rx="1.5" />
                           </svg>
                         ) : (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
                             <path d="m5 12 14 0" />
                             <path d="m13 6 6 6-6 6" />
                           </svg>
@@ -7365,9 +8770,7 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
           </aside>
 
           {/* CANVAS */}
-          <section
-            className="editor-canvas"
-          >
+          <section className="editor-canvas">
             <div className="canvas-toolbar">
               <div className="toolbar-group">
                 <button
@@ -7375,7 +8778,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   title={iframeHtml ? "Reload preview" : "Check disk for new HTML"}
                   onClick={handleReload}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
                     <path d="M21 3v5h-5" />
                     <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
@@ -7389,7 +8801,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   disabled={!canUndo}
                   style={!canUndo ? { opacity: 0.35, cursor: "not-allowed" } : undefined}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M3 7v6h6" />
                     <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
                   </svg>
@@ -7401,7 +8822,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   disabled={!canRedo}
                   style={!canRedo ? { opacity: 0.35, cursor: "not-allowed" } : undefined}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M21 7v6h-6" />
                     <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13" />
                   </svg>
@@ -7413,7 +8843,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   disabled={!iframeHtml}
                   style={!iframeHtml ? { opacity: 0.35, cursor: "not-allowed" } : undefined}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M3 3v5h5" />
                     <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
                     <path d="M12 7v5l4 2" />
@@ -7426,7 +8865,16 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   disabled={!iframeHtml}
                   style={!iframeHtml ? { opacity: 0.35, cursor: "not-allowed" } : undefined}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
                     <polyline points="17 21 17 13 7 13 7 21" />
                     <polyline points="7 3 7 8 15 8" />
@@ -7437,13 +8885,31 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               <div className="toolbar-divider" />
               <div className="toolbar-group">
                 <ToolbarPill id="terminal" label="Terminal" active={false} onClick={addTerminalTab}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <polyline points="4 17 10 11 4 5" />
                     <line x1="12" y1="19" x2="20" y2="19" />
                   </svg>
                 </ToolbarPill>
                 <ToolbarPill id="files" label="Files" active={false} onClick={openFilesTab}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                   </svg>
                 </ToolbarPill>
@@ -7455,20 +8921,39 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               <div className="toolbar-divider" />
               <div className="toolbar-group">
                 <div ref={tweaksAnchorRef} style={{ position: "relative", display: "inline-flex" }}>
-                  <ToolbarPill id="tweaks" label="Tweaks" active={canvasMode === "tweaks"} onClick={() => {
-                    // Tweaks pill is dual-purpose: it toggles the canvas mode
-                    // (off → tweaks, tweaks → off) AND opens the prompt card.
-                    // The prompt card is the primary action — always show it,
-                    // even when toggling off, so the user can still issue
-                    // a tweak request without re-clicking.
-                    toggleMode("tweaks");
-                    handleOpenTweaks();
-                  }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="4" x2="4" y1="21" y2="14" /><line x1="4" x2="4" y1="10" y2="3" />
-                      <line x1="12" x2="12" y1="21" y2="12" /><line x1="12" x2="12" y1="8" y2="3" />
-                      <line x1="20" x2="20" y1="21" y2="16" /><line x1="20" x2="20" y1="12" y2="3" />
-                      <line x1="2" x2="6" y1="14" y2="14" /><line x1="10" x2="14" y1="8" y2="8" /><line x1="18" x2="22" y1="16" y2="16" />
+                  <ToolbarPill
+                    id="tweaks"
+                    label="Tweaks"
+                    active={canvasMode === "tweaks"}
+                    onClick={() => {
+                      // Tweaks pill is dual-purpose: it toggles the canvas mode
+                      // (off → tweaks, tweaks → off) AND opens the prompt card.
+                      // The prompt card is the primary action — always show it,
+                      // even when toggling off, so the user can still issue
+                      // a tweak request without re-clicking.
+                      toggleMode("tweaks");
+                      handleOpenTweaks();
+                    }}
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="4" x2="4" y1="21" y2="14" />
+                      <line x1="4" x2="4" y1="10" y2="3" />
+                      <line x1="12" x2="12" y1="21" y2="12" />
+                      <line x1="12" x2="12" y1="8" y2="3" />
+                      <line x1="20" x2="20" y1="21" y2="16" />
+                      <line x1="20" x2="20" y1="12" y2="3" />
+                      <line x1="2" x2="6" y1="14" y2="14" />
+                      <line x1="10" x2="14" y1="8" y2="8" />
+                      <line x1="18" x2="22" y1="16" y2="16" />
                     </svg>
                   </ToolbarPill>
                   {showTweaksRequest && (
@@ -7489,8 +8974,15 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                         animation: "df-verb-pill-in 200ms cubic-bezier(0.22, 1, 0.36, 1)",
                       }}
                     >
-                      <div style={{ fontSize: "var(--df-text-xs)", color: "var(--df-text-muted)", lineHeight: 1.45 }}>
-                        {hasBuiltInTweaks ? "Add or adjust knobs." : "Build a tweaks panel."} Leave blank for a comprehensive set.
+                      <div
+                        style={{
+                          fontSize: "var(--df-text-xs)",
+                          color: "var(--df-text-muted)",
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        {hasBuiltInTweaks ? "Add or adjust knobs." : "Build a tweaks panel."} Leave
+                        blank for a comprehensive set.
                       </div>
                       <textarea
                         autoFocus
@@ -7506,70 +8998,129 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                         }}
                         style={{ minHeight: 64, resize: "vertical", fontSize: "var(--df-text-xs)" }}
                       />
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--df-sp-2)" }}>
-                        <button className="df-btn df-btn--secondary" onClick={() => setShowTweaksRequest(false)}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: "var(--df-sp-2)",
+                        }}
+                      >
+                        <button
+                          className="df-btn df-btn--secondary"
+                          onClick={() => setShowTweaksRequest(false)}
+                        >
                           Cancel
                         </button>
-                        <button className="df-btn df-btn--primary" onClick={handleGenerateTweaks} disabled={tweaksLoading}>
-                          {tweaksLoading ? "Building..." : (hasBuiltInTweaks ? "Update" : "Build")}
+                        <button
+                          className="df-btn df-btn--primary"
+                          onClick={handleGenerateTweaks}
+                          disabled={tweaksLoading}
+                        >
+                          {tweaksLoading ? "Building..." : hasBuiltInTweaks ? "Update" : "Build"}
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
-                <ToolbarPill id="comment" label="Comment" active={canvasMode === "comment"} onClick={() => {
-                  // Comment + Edit only work against the main iframe. When the
-                  // user is on a file tab and the main tab also exists, auto-
-                  // switch so the activation is visible. If the file tab IS
-                  // the only HTML surface (no main yet), promote it to main
-                  // by copying its content into iframeHtml — this materialises
-                  // the main tab and lets the user edit inline. User ask
-                  // 2026-05-20: "tem q identificar aba aberta como objetivo".
-                  if (canvasMode !== "comment") {
-                    if (canvasTabs.some((t) => t.id === "main")) {
-                      setActiveCanvasTab("main");
-                    } else if (currentTab?.kind === "file"
-                        && currentTab.fileIsText !== false
-                        && /\.html?$/i.test(currentTab.filePath ?? "")
-                        && typeof currentTab.fileContent === "string") {
-                      setIframeHtml(currentTab.fileContent);
-                      // main tab auto-created by the iframeHtml effect; the
-                      // activeCanvasTab swap follows in the next render via
-                      // the effect order. Force it now too so feedback is
-                      // immediate.
-                      setActiveCanvasTab("main");
+                <ToolbarPill
+                  id="comment"
+                  label="Comment"
+                  active={canvasMode === "comment"}
+                  onClick={() => {
+                    // Comment + Edit only work against the main iframe. When the
+                    // user is on a file tab and the main tab also exists, auto-
+                    // switch so the activation is visible. If the file tab IS
+                    // the only HTML surface (no main yet), promote it to main
+                    // by copying its content into iframeHtml — this materialises
+                    // the main tab and lets the user edit inline. The open
+                    // tab needs to be recognized as the active target.
+                    if (canvasMode !== "comment") {
+                      if (canvasTabs.some((t) => t.id === "main")) {
+                        setActiveCanvasTab("main");
+                      } else if (
+                        currentTab?.kind === "file" &&
+                        currentTab.fileIsText !== false &&
+                        /\.html?$/i.test(currentTab.filePath ?? "") &&
+                        typeof currentTab.fileContent === "string"
+                      ) {
+                        setIframeHtml(currentTab.fileContent);
+                        // main tab auto-created by the iframeHtml effect; the
+                        // activeCanvasTab swap follows in the next render via
+                        // the effect order. Force it now too so feedback is
+                        // immediate.
+                        setActiveCanvasTab("main");
+                      }
                     }
-                  }
-                  toggleMode("comment");
-                }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    toggleMode("comment");
+                  }}
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                 </ToolbarPill>
                 {/* Select pill is not part of the current public surface. */}
-                <ToolbarPill id="edit" label="Edit" active={canvasMode === "edit"} onClick={() => {
-                  if (canvasMode !== "edit") {
-                    if (canvasTabs.some((t) => t.id === "main")) {
-                      setActiveCanvasTab("main");
-                    } else if (currentTab?.kind === "file"
-                        && currentTab.fileIsText !== false
-                        && /\.html?$/i.test(currentTab.filePath ?? "")
-                        && typeof currentTab.fileContent === "string") {
-                      setIframeHtml(currentTab.fileContent);
-                      setActiveCanvasTab("main");
+                <ToolbarPill
+                  id="edit"
+                  label="Edit"
+                  active={canvasMode === "edit"}
+                  onClick={() => {
+                    if (canvasMode !== "edit") {
+                      if (canvasTabs.some((t) => t.id === "main")) {
+                        setActiveCanvasTab("main");
+                      } else if (
+                        currentTab?.kind === "file" &&
+                        currentTab.fileIsText !== false &&
+                        /\.html?$/i.test(currentTab.filePath ?? "") &&
+                        typeof currentTab.fileContent === "string"
+                      ) {
+                        setIframeHtml(currentTab.fileContent);
+                        setActiveCanvasTab("main");
+                      }
                     }
-                  }
-                  toggleMode("edit");
-                }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    toggleMode("edit");
+                  }}
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <rect x="3" y="3" width="14" height="18" rx="1" />
                     <line x1="7" y1="8" x2="13" y2="8" />
                     <line x1="7" y1="12" x2="13" y2="12" />
                     <line x1="7" y1="16" x2="10" y2="16" />
                   </svg>
                 </ToolbarPill>
-                <ToolbarPill id="prompt" label="Prompt" active={false} onClick={() => setShowFullPrompt(true)}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <ToolbarPill
+                  id="prompt"
+                  label="Prompt"
+                  active={false}
+                  onClick={() => setShowFullPrompt(true)}
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                     <line x1="9" y1="13" x2="15" y2="13" />
@@ -7582,14 +9133,26 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                 <button
                   className="df-btn df-btn--ghost df-btn--sm"
                   onClick={() => {
-                    if (!iframeHtml) { showToast(t("editor.toast.generateFirst")); return; }
+                    if (!iframeHtml) {
+                      showToast(t("editor.toast.generateFirst"));
+                      return;
+                    }
                     setPresenting(true);
                   }}
                   disabled={!iframeHtml}
                   title="Present fullscreen (Esc to exit)"
                   style={!iframeHtml ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>
                   Present
@@ -7606,59 +9169,80 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                 JSX (single source of truth now). */}
 
             {/* Persist non-preview tabs (keep their state while hidden). */}
-            {canvasTabs.filter((t) => t.kind !== "preview").map((tab) => {
-              const visible = tab.id === activeCanvasTab;
-              const style: React.CSSProperties = {
-                flex: 1, minHeight: 0,
-                display: visible ? "flex" : "none",
-                flexDirection: "column",
-              };
-              if (tab.kind === "terminal") {
-                return (
-                  <div key={tab.id} style={{ ...style, position: "relative" }}>
-                    <TerminalDrawer inline onClose={() => closeCanvasTab(tab.id)} />
-                  </div>
-                );
-              }
-              if (tab.kind === "files") {
-                return (
-                  <div key={tab.id} style={style}>
-                    <FileManager
-                      initialPath={tab.rootPath ?? "/"}
-                      onOpen={openFileTab}
-                      onClose={() => closeCanvasTab(tab.id)}
-                      refreshKey={filesRefreshKey}
-                    />
-                  </div>
-                );
-              }
-              if (tab.kind === "file") {
-                return (
-                  <div key={tab.id} style={style}>
-                    <FileView
-                      name={tab.name}
-                      path={tab.filePath ?? ""}
-                      content={tab.fileContent ?? ""}
-                      isText={tab.fileIsText !== false}
-                    />
-                  </div>
-                );
-              }
-              if (tab.kind === "video") {
-                // legacy video tabs (from older sessions) render as
-                // an empty placeholder so existing state stays parseable.
-                // Closing the tab removes it permanently from .df state.
-                return (
-                  <div key={tab.id} style={{ ...style, alignItems: "center", justifyContent: "center", padding: "32px" }}>
-                    <div style={{ maxWidth: 360, textAlign: "center", color: "var(--df-text-muted)", fontSize: "var(--df-text-sm)", lineHeight: 1.5 }}>
-                      <p>Video editing is deferred to a later wave.</p>
-                      <p style={{ marginTop: 12 }}>Close this tab to remove it from the project.</p>
+            {canvasTabs
+              .filter((t) => t.kind !== "preview")
+              .map((tab) => {
+                const visible = tab.id === activeCanvasTab;
+                const style: React.CSSProperties = {
+                  flex: 1,
+                  minHeight: 0,
+                  display: visible ? "flex" : "none",
+                  flexDirection: "column",
+                };
+                if (tab.kind === "terminal") {
+                  return (
+                    <div key={tab.id} style={{ ...style, position: "relative" }}>
+                      <TerminalDrawer inline onClose={() => closeCanvasTab(tab.id)} />
                     </div>
-                  </div>
-                );
-              }
-              return null;
-            })}
+                  );
+                }
+                if (tab.kind === "files") {
+                  return (
+                    <div key={tab.id} style={style}>
+                      <FileManager
+                        initialPath={tab.rootPath ?? "/"}
+                        onOpen={openFileTab}
+                        onClose={() => closeCanvasTab(tab.id)}
+                        refreshKey={filesRefreshKey}
+                      />
+                    </div>
+                  );
+                }
+                if (tab.kind === "file") {
+                  return (
+                    <div key={tab.id} style={style}>
+                      <FileView
+                        name={tab.name}
+                        path={tab.filePath ?? ""}
+                        content={tab.fileContent ?? ""}
+                        isText={tab.fileIsText !== false}
+                      />
+                    </div>
+                  );
+                }
+                if (tab.kind === "video") {
+                  // legacy video tabs (from older sessions) render as
+                  // an empty placeholder so existing state stays parseable.
+                  // Closing the tab removes it permanently from .df state.
+                  return (
+                    <div
+                      key={tab.id}
+                      style={{
+                        ...style,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "32px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          maxWidth: 360,
+                          textAlign: "center",
+                          color: "var(--df-text-muted)",
+                          fontSize: "var(--df-text-sm)",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        <p>Video editing is deferred to a later wave.</p>
+                        <p style={{ marginTop: 12 }}>
+                          Close this tab to remove it from the project.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })}
             {/* Preview tab slot (iframe + overlays, loader, or empty state).
                 User repro 2026-05-08: switching tabs (Files / Terminal /
                 file open) used to UNMOUNT the preview iframe — it re-rendered
@@ -7679,12 +9263,17 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                 flexDirection: "column",
               }}
             >
-            {iframeHtml ? (
-              <div
-                className="canvas-stage"
-                style={{ padding: 0, display: "flex", flexDirection: "column", position: "relative" }}
-              >
-                {/* Streaming overlay removed 2026-05-20. The sweeping light
+              {iframeHtml ? (
+                <div
+                  className="canvas-stage"
+                  style={{
+                    padding: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    position: "relative",
+                  }}
+                >
+                  {/* Streaming overlay removed 2026-05-20. The sweeping light
                     band was gated on `status === "streaming"` which only
                     triggers for Claude's legacy runStream path — V2 turns
                     (Codex/Kimi/Gemini/API providers) never lit it up, so
@@ -7693,105 +9282,136 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                     rápido, faz sentido?". Single source of truth for in-
                     flight feedback is now the global status banner at the
                     top of the canvas (driven by isProcessingTurn). */}
-                {canvasMode && canvasMode !== "tweaks" && (
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "var(--df-sp-2)",
-                    padding: "8px 14px",
-                    background: "var(--df-surface-raised)",
-                    borderBottom: "1px solid var(--df-border-subtle)",
-                    fontSize: "var(--df-text-xs)",
-                    color: "var(--df-text-secondary)",
-                    flexShrink: 0,
-                  }}>
-                    <span style={{ fontFamily: "var(--df-font-mono)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--df-text-primary)", fontWeight: 600 }}>
-                      {canvasMode}
-                    </span>
-                    <span>
-                      {canvasMode === "comment" && "click anywhere on the preview to leave a note"}
-                      {canvasMode === "edit" && "click an element in the preview to edit it inline"}
-                    </span>
-                  </div>
-                )}
-                <CanvasStage
-                  isVideoProject={isVideoProject}
-                  aspectNum={videoAspectNum}
-                  ratioId={isVideoProject ? videoRatio : undefined}
-                  onClick={handleCanvasClick}
-                  cursor={canvasMode === "comment" ? "crosshair" : "default"}
-                >
-                  <iframe
-                    key={`preview-${iframeKey}-${isVideoProject ? videoRatio : "html"}`}
-                    ref={iframeRef}
-                    srcDoc={iframeSrcDocFinal ?? undefined}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      border: "none",
-                      background: "white",
-                      display: "block",
-                    }}
-                    title="preview"
-                    sandbox={PREVIEW_SANDBOX}
-                  />
-                </CanvasStage>
-                {/* The sandbox posture badge is intentionally absent
+                  {canvasMode && canvasMode !== "tweaks" && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "var(--df-sp-2)",
+                        padding: "8px 14px",
+                        background: "var(--df-surface-raised)",
+                        borderBottom: "1px solid var(--df-border-subtle)",
+                        fontSize: "var(--df-text-xs)",
+                        color: "var(--df-text-secondary)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "var(--df-font-mono)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.04em",
+                          color: "var(--df-text-primary)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {canvasMode}
+                      </span>
+                      <span>
+                        {canvasMode === "comment" &&
+                          "click anywhere on the preview to leave a note"}
+                        {canvasMode === "edit" &&
+                          "click an element in the preview to edit it inline"}
+                      </span>
+                    </div>
+                  )}
+                  <CanvasStage
+                    isVideoProject={isVideoProject}
+                    aspectNum={videoAspectNum}
+                    ratioId={isVideoProject ? videoRatio : undefined}
+                    onClick={handleCanvasClick}
+                    cursor={canvasMode === "comment" ? "crosshair" : "default"}
+                  >
+                    <iframe
+                      key={`preview-${iframeKey}-${isVideoProject ? videoRatio : "html"}`}
+                      ref={iframeRef}
+                      srcDoc={iframeSrcDocFinal ?? undefined}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        border: "none",
+                        background: "white",
+                        display: "block",
+                      }}
+                      title="preview"
+                      sandbox={PREVIEW_SANDBOX}
+                    />
+                  </CanvasStage>
+                  {/* The sandbox posture badge is intentionally absent
                     from the UI. The sandbox config (PREVIEW_SANDBOX)
                     still applies to the iframe — only the visible
                     badge is gone. */}
-                {/* Canvas-pinned status pill removed 2026-05-20 — the global
+                  {/* Canvas-pinned status pill removed 2026-05-20 — the global
                     processing banner above (rendered right after canvas-toolbar)
                     is the single source of truth across every tab. User
                     repro: status was appearing twice on the preview tab. */}
-                {isProcessingTurn && !iframeHtml && (
-                  // Fresh project: no prior artifact to keep visible. Keep
-                  // the bloom centred so the empty canvas doesn't look
-                  // dead, but lighter alpha so the banner above reads
-                  // first. Uses isProcessingTurn (not raw status) so the
-                  // loader pops in the moment the user clicks send,
-                  // before the upstream stream actually opens.
-                  <div style={{
-                    position: "absolute", inset: 0, zIndex: 4,
-                    background: "color-mix(in srgb, var(--df-bg-base) 92%, transparent)",
-                    display: "grid", placeItems: "center",
-                    pointerEvents: "none",
-                  }}>
-                    <DfLoader relation="bloom" size={220} />
-                  </div>
-                )}
-                {canvasMode === "edit" && iframeHtml && (
-                  <InlineEditPanel
-                    selection={inlineEditSelection}
-                    iframeRect={inlineEditIframeRect}
-                    onApplyStyle={handleInlineEditApplyStyle}
-                    onApplyText={handleInlineEditApplyText}
-                    onSave={handleInlineEditSave}
-                    onCancel={handleInlineEditCancel}
-                    dirty={inlineEditDirty}
-                    saving={inlineEditSaving}
-                  />
-                )}
-                {/* v23: ElementInspectorPanel render removed alongside select mode. */}
-              </div>
-            ) : isProcessingTurn ? (
-              <div style={{ flex: 1, display: "grid", placeItems: "center", background: "var(--df-bg-base)" }}>
-                <DfLoader relation="bloom" size={260} />
-              </div>
-            ) : (
-              <div className="canvas-empty">
-                <div className="canvas-empty-inner">
-                  <svg className="canvas-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                  </svg>
-                  <div className="canvas-empty-title">{projectName || "New project"}</div>
-                  <div className="canvas-empty-sub">
-                    Describe what to create in the chat. Claude will generate your design.
+                  {isProcessingTurn && !iframeHtml && (
+                    // Fresh project: no prior artifact to keep visible. Keep
+                    // the bloom centred so the empty canvas doesn't look
+                    // dead, but lighter alpha so the banner above reads
+                    // first. Uses isProcessingTurn (not raw status) so the
+                    // loader pops in the moment the user clicks send,
+                    // before the upstream stream actually opens.
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        zIndex: 4,
+                        background: "color-mix(in srgb, var(--df-bg-base) 92%, transparent)",
+                        display: "grid",
+                        placeItems: "center",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <DfLoader relation="bloom" size={220} />
+                    </div>
+                  )}
+                  {canvasMode === "edit" && iframeHtml && (
+                    <InlineEditPanel
+                      selection={inlineEditSelection}
+                      iframeRect={inlineEditIframeRect}
+                      onApplyStyle={handleInlineEditApplyStyle}
+                      onApplyText={handleInlineEditApplyText}
+                      onSave={handleInlineEditSave}
+                      onCancel={handleInlineEditCancel}
+                      dirty={inlineEditDirty}
+                      saving={inlineEditSaving}
+                    />
+                  )}
+                  {/* v23: ElementInspectorPanel render removed alongside select mode. */}
+                </div>
+              ) : isProcessingTurn ? (
+                <div
+                  style={{
+                    flex: 1,
+                    display: "grid",
+                    placeItems: "center",
+                    background: "var(--df-bg-base)",
+                  }}
+                >
+                  <DfLoader relation="bloom" size={260} />
+                </div>
+              ) : (
+                <div className="canvas-empty">
+                  <div className="canvas-empty-inner">
+                    <svg
+                      className="canvas-empty-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    <div className="canvas-empty-title">{projectName || "New project"}</div>
+                    <div className="canvas-empty-sub">
+                      Describe what to create in the chat. Claude will generate your design.
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
 
             {/* Regen overlay — appears over the canvas while a ratio
@@ -7810,7 +9430,6 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         {/* Debug log no longer renders inline — it lives inside the
             Diagnostics drawer (scope=dev-log), opened via the Inspector
             button in the footer or ⌘⇧D. */}
-
       </div>
 
       {/* CMD PALETTE */}
@@ -7818,10 +9437,23 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         <div className="cmd-overlay" onClick={() => setShowCmdPalette(false)}>
           <div className="cmd-modal" onClick={(e) => e.stopPropagation()}>
             <div className="cmd-search">
-              <svg className="cmd-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+              <svg
+                className="cmd-search-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
               </svg>
-              <input className="cmd-search-input" placeholder={t("editor.cmd.searchPlaceholder")} autoFocus />
+              <input
+                className="cmd-search-input"
+                placeholder={t("editor.cmd.searchPlaceholder")}
+                autoFocus
+              />
               <span className="cmd-kbd">Esc</span>
             </div>
             <div className="cmd-section">
@@ -7838,10 +9470,23 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   key={item.id}
                   className="cmd-item"
                   onClick={() => handlePaletteAction(item.id)}
-                  style={{ width: "100%", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                  style={{
+                    width: "100%",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
                 >
                   <div className="cmd-item-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>
                   </div>
@@ -7850,9 +9495,15 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               ))}
             </div>
             <div className="cmd-footer">
-              <span className="cmd-footer-hint"><span className="cmd-kbd">↑↓</span> navigate</span>
-              <span className="cmd-footer-hint"><span className="cmd-kbd">↵</span> select</span>
-              <span className="cmd-footer-hint"><span className="cmd-kbd">Esc</span> close</span>
+              <span className="cmd-footer-hint">
+                <span className="cmd-kbd">↑↓</span> navigate
+              </span>
+              <span className="cmd-footer-hint">
+                <span className="cmd-kbd">↵</span> select
+              </span>
+              <span className="cmd-footer-hint">
+                <span className="cmd-kbd">Esc</span> close
+              </span>
             </div>
           </div>
         </div>
@@ -7863,9 +9514,13 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
         <div
           className="present-stage"
           style={{
-            position: "fixed", inset: 0, zIndex: 500,
+            position: "fixed",
+            inset: 0,
+            zIndex: 500,
             background: "#000",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -7874,7 +9529,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             onClick={() => setPresenting(false)}
             title={t("editor.present.exit")}
             style={{
-              position: "absolute", top: 16, right: 16, zIndex: 502,
+              position: "absolute",
+              top: 16,
+              right: 16,
+              zIndex: 502,
               padding: "7px 14px",
               background: "#fff",
               border: "none",
@@ -7884,7 +9542,9 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               fontWeight: 600,
               borderRadius: "var(--df-r-md)",
               cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 6,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
               boxShadow: "0 2px 10px rgba(0,0,0,0.35)",
             }}
           >
@@ -7896,9 +9556,8 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               stretching the content to fill the viewport. */}
           <div
             style={{
-              aspectRatio: videoRatio === "9:16" ? "9 / 16"
-                : videoRatio === "1:1" ? "1 / 1"
-                : "16 / 9",
+              aspectRatio:
+                videoRatio === "9:16" ? "9 / 16" : videoRatio === "1:1" ? "1 / 1" : "16 / 9",
               maxWidth: "100%",
               maxHeight: "100%",
               width: "100%",
@@ -7984,29 +9643,63 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       {/* VERSION HISTORY PANEL */}
       {showVersions && (
         <div
-          style={{ position: "fixed", inset: 0, background: "var(--df-surface-overlay)", backdropFilter: "blur(14px) saturate(1.02)", WebkitBackdropFilter: "blur(14px) saturate(1.02)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "var(--df-surface-overlay)",
+            backdropFilter: "blur(14px) saturate(1.02)",
+            WebkitBackdropFilter: "blur(14px) saturate(1.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 200,
+          }}
           onClick={() => setShowVersions(false)}
         >
           <div
             style={{
-              width: 560, maxHeight: "80vh",
+              width: 560,
+              maxHeight: "80vh",
               background: "var(--df-surface-elevated)",
               borderRadius: "var(--df-r-3xl)",
               boxShadow: "var(--df-shadow-card)",
-              display: "flex", flexDirection: "column", overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ padding: "var(--df-sp-4) var(--df-sp-5)", borderBottom: "1px solid var(--df-border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div
+              style={{
+                padding: "var(--df-sp-4) var(--df-sp-5)",
+                borderBottom: "1px solid var(--df-border-subtle)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <div>
-                <div style={{ fontSize: "var(--df-text-md)", fontWeight: 600 }}>Version history</div>
-                <div style={{ fontSize: "var(--df-text-xs)", color: "var(--df-text-muted)", marginTop: 2 }}>
-                  {versions.length} version{versions.length === 1 ? "" : "s"} · {versions.filter((v) => !v.auto).length} named · {versions.filter((v) => v.auto).length} auto
+                <div style={{ fontSize: "var(--df-text-md)", fontWeight: 600 }}>
+                  Version history
+                </div>
+                <div
+                  style={{
+                    fontSize: "var(--df-text-xs)",
+                    color: "var(--df-text-muted)",
+                    marginTop: 2,
+                  }}
+                >
+                  {versions.length} version{versions.length === 1 ? "" : "s"} ·{" "}
+                  {versions.filter((v) => !v.auto).length} named ·{" "}
+                  {versions.filter((v) => v.auto).length} auto
                 </div>
               </div>
               <button
                 className="df-btn df-btn--secondary"
-                onClick={() => { setShowVersions(false); setShowSaveVersion(true); }}
+                onClick={() => {
+                  setShowVersions(false);
+                  setShowSaveVersion(true);
+                }}
                 style={{ fontSize: "var(--df-text-xs)" }}
               >
                 Save current as...
@@ -8014,7 +9707,14 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             </div>
             <div style={{ overflowY: "auto", padding: "var(--df-sp-3) var(--df-sp-4)" }}>
               {versions.length === 0 ? (
-                <div style={{ padding: "var(--df-sp-6) 0", textAlign: "center", color: "var(--df-text-faint)", fontSize: "var(--df-text-sm)" }}>
+                <div
+                  style={{
+                    padding: "var(--df-sp-6) 0",
+                    textAlign: "center",
+                    color: "var(--df-text-faint)",
+                    fontSize: "var(--df-text-sm)",
+                  }}
+                >
                   No versions yet. Saves happen automatically on every generation.
                 </div>
               ) : (
@@ -8022,25 +9722,60 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   <div
                     key={v.id}
                     style={{
-                      display: "flex", alignItems: "center", gap: "var(--df-sp-3)",
-                      padding: "10px 12px", borderRadius: "var(--df-r-md)",
-                      background: v.html === iframeHtml ? "var(--df-interactive-hover)" : "transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--df-sp-3)",
+                      padding: "10px 12px",
+                      borderRadius: "var(--df-r-md)",
+                      background:
+                        v.html === iframeHtml ? "var(--df-interactive-hover)" : "transparent",
                       border: "1px solid transparent",
                       marginBottom: 4,
                     }}
                   >
-                    <div style={{
-                      width: 8, height: 8, borderRadius: "50%",
-                      background: v.auto ? "var(--df-text-faint)" : "#5faa54",
-                      flexShrink: 0,
-                    }} title={v.auto ? "auto save" : "named save"} />
+                    <div
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: v.auto ? "var(--df-text-faint)" : "#5faa54",
+                        flexShrink: 0,
+                      }}
+                      title={v.auto ? "auto save" : "named save"}
+                    />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "var(--df-text-sm)", color: "var(--df-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div
+                        style={{
+                          fontSize: "var(--df-text-sm)",
+                          color: "var(--df-text-primary)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {v.name ?? (v.auto ? "auto" : "saved")}
-                        {v.html === iframeHtml && <span style={{ marginLeft: 8, fontSize: "var(--df-text-xs)", color: "var(--df-text-faint)", fontFamily: "var(--df-font-mono)" }}>· current</span>}
+                        {v.html === iframeHtml && (
+                          <span
+                            style={{
+                              marginLeft: 8,
+                              fontSize: "var(--df-text-xs)",
+                              color: "var(--df-text-faint)",
+                              fontFamily: "var(--df-font-mono)",
+                            }}
+                          >
+                            · current
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize: "var(--df-text-xs)", color: "var(--df-text-faint)", fontFamily: "var(--df-font-mono)" }}>
-                        {new Date(v.createdAt).toLocaleString()} · ~{Math.round(v.html.length / 4).toLocaleString()} tokens
+                      <div
+                        style={{
+                          fontSize: "var(--df-text-xs)",
+                          color: "var(--df-text-faint)",
+                          fontFamily: "var(--df-font-mono)",
+                        }}
+                      >
+                        {new Date(v.createdAt).toLocaleString()} · ~
+                        {Math.round(v.html.length / 4).toLocaleString()} tokens
                       </div>
                     </div>
                     <button
@@ -8054,8 +9789,18 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                     <button
                       onClick={() => handleDeleteVersion(v.id)}
                       title="Delete version"
-                      style={{ width: 22, height: 22, background: "transparent", border: "none", color: "var(--df-text-faint)", fontSize: 14, cursor: "pointer" }}
-                    >×</button>
+                      style={{
+                        width: 22,
+                        height: 22,
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--df-text-faint)",
+                        fontSize: 14,
+                        cursor: "pointer",
+                      }}
+                    >
+                      ×
+                    </button>
                   </div>
                 ))
               )}
@@ -8067,22 +9812,42 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
       {/* SAVE VERSION DIALOG */}
       {showSaveVersion && (
         <div
-          style={{ position: "fixed", inset: 0, background: "var(--df-surface-overlay)", backdropFilter: "blur(14px) saturate(1.02)", WebkitBackdropFilter: "blur(14px) saturate(1.02)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 210 }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "var(--df-surface-overlay)",
+            backdropFilter: "blur(14px) saturate(1.02)",
+            WebkitBackdropFilter: "blur(14px) saturate(1.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 210,
+          }}
           onClick={() => setShowSaveVersion(false)}
         >
           <div
             style={{
-              width: 420, background: "var(--df-surface-elevated)",
+              width: 420,
+              background: "var(--df-surface-elevated)",
               borderRadius: "var(--df-r-3xl)",
               boxShadow: "var(--df-shadow-card)",
               padding: "var(--df-sp-5)",
-              display: "flex", flexDirection: "column", gap: "var(--df-sp-3)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--df-sp-3)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ fontSize: "var(--df-text-md)", fontWeight: 600 }}>Save version</div>
-            <div style={{ fontSize: "var(--df-text-xs)", color: "var(--df-text-muted)", lineHeight: 1.5 }}>
-              Name this save so you can restore it later. Named versions are kept indefinitely; auto-saves are capped at 20.
+            <div
+              style={{
+                fontSize: "var(--df-text-xs)",
+                color: "var(--df-text-muted)",
+                lineHeight: 1.5,
+              }}
+            >
+              Name this save so you can restore it later. Named versions are kept indefinitely;
+              auto-saves are capped at 20.
             </div>
             <input
               autoFocus
@@ -8097,8 +9862,15 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
               }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--df-sp-2)" }}>
-              <button className="df-btn df-btn--secondary" onClick={() => setShowSaveVersion(false)}>Cancel</button>
-              <button className="df-btn df-btn--primary" onClick={handleSaveVersion}>Save</button>
+              <button
+                className="df-btn df-btn--secondary"
+                onClick={() => setShowSaveVersion(false)}
+              >
+                Cancel
+              </button>
+              <button className="df-btn df-btn--primary" onClick={handleSaveVersion}>
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -8146,7 +9918,10 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             justifyContent: "center",
             zIndex: 150,
           }}
-          onClick={() => { setShowCommentInput(false); setCommentTarget(null); }}
+          onClick={() => {
+            setShowCommentInput(false);
+            setCommentTarget(null);
+          }}
         >
           <div
             style={{
@@ -8161,22 +9936,22 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ fontSize: "var(--df-text-sm)", fontWeight: 600 }}>
-              Pin a comment
-            </div>
+            <div style={{ fontSize: "var(--df-text-sm)", fontWeight: 600 }}>Pin a comment</div>
             {commentTarget && (
-              <div style={{
-                padding: "6px 10px",
-                background: "var(--df-surface-raised)",
-                border: "1px solid var(--df-border-subtle)",
-                borderRadius: "var(--df-r-sm)",
-                fontFamily: "var(--df-font-mono)",
-                fontSize: "var(--df-text-xs)",
-                color: "var(--df-text-secondary)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}>
+              <div
+                style={{
+                  padding: "6px 10px",
+                  background: "var(--df-surface-raised)",
+                  border: "1px solid var(--df-border-subtle)",
+                  borderRadius: "var(--df-r-sm)",
+                  fontFamily: "var(--df-font-mono)",
+                  fontSize: "var(--df-text-xs)",
+                  color: "var(--df-text-secondary)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {commentTarget.selector}
               </div>
             )}
@@ -8191,19 +9966,39 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
                   e.preventDefault();
                   handleSaveComment();
                 }
-                if (e.key === "Escape") { setShowCommentInput(false); setCommentTarget(null); }
+                if (e.key === "Escape") {
+                  setShowCommentInput(false);
+                  setCommentTarget(null);
+                }
               }}
               style={{ minHeight: 96, resize: "vertical" }}
             />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--df-sp-2)" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "var(--df-sp-2)",
+              }}
+            >
               <span style={{ fontSize: "var(--df-text-xs)", color: "var(--df-text-faint)" }}>
                 ⌘↵ to save · comments batch in the Comments tab
               </span>
               <div style={{ display: "flex", gap: "var(--df-sp-2)" }}>
-                <button className="df-btn df-btn--secondary" onClick={() => { setShowCommentInput(false); setCommentTarget(null); }}>
+                <button
+                  className="df-btn df-btn--secondary"
+                  onClick={() => {
+                    setShowCommentInput(false);
+                    setCommentTarget(null);
+                  }}
+                >
                   Cancel
                 </button>
-                <button className="df-btn df-btn--primary" onClick={handleSaveComment} disabled={!commentDraft.trim()}>
+                <button
+                  className="df-btn df-btn--primary"
+                  onClick={handleSaveComment}
+                  disabled={!commentDraft.trim()}
+                >
                   Pin
                 </button>
               </div>
@@ -8214,33 +10009,46 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
 
       {/* TOAST */}
       {toast && (
-        <div style={{
-          position: "fixed",
-          bottom: 28,
-          left: "50%",
-          transform: "translateX(-50%)",
-          background: "var(--df-surface-elevated)",
-          boxShadow: "var(--df-shadow-card)",
-          padding: "10px 18px",
-          borderRadius: "var(--df-r-lg)",
-          fontSize: "var(--df-text-sm)",
-          color: "var(--df-text-primary)",
-          zIndex: 200,
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            bottom: 28,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "var(--df-surface-elevated)",
+            boxShadow: "var(--df-shadow-card)",
+            padding: "10px 18px",
+            borderRadius: "var(--df-r-lg)",
+            fontSize: "var(--df-text-sm)",
+            color: "var(--df-text-primary)",
+            zIndex: 200,
+          }}
+        >
           {toast}
         </div>
       )}
 
       {/* Direction inspector lives on the toolbar's existing "Prompt"
-        * pill (FullPromptModal). PromptConsole on this surface was
-        * removed 2026-05-15 to avoid the duplicate-button noise —
-        * PromptConsole stays in the NewProject modal for the pre-start
-        * preview flow. */}
+       * pill (FullPromptModal). PromptConsole on this surface was
+       * removed 2026-05-15 to avoid the duplicate-button noise —
+       * PromptConsole stays in the NewProject modal for the pre-start
+       * preview flow. */}
     </div>
   );
 }
 
-function ToolbarPill({ label, active, onClick, children }: { id?: string; label: string; active: boolean; onClick: () => void; children: React.ReactNode }) {
+function ToolbarPill({
+  label,
+  active,
+  onClick,
+  children,
+}: {
+  id?: string;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       className="df-btn df-btn--ghost df-btn--sm"
@@ -8257,25 +10065,63 @@ function ToolbarPill({ label, active, onClick, children }: { id?: string; label:
 // Removable canonical+ chip (Format / Rules / Taste) in the chat composer.
 // Mirrors the DS pill but in a neutral tint; the × deactivates the element
 // so it stops being injected into the turn.
-function PromptChip({ tag, label, title, onRemove }: { tag: string; label: string; title?: string; onRemove: () => void }) {
+function PromptChip({
+  tag,
+  label,
+  title,
+  onRemove,
+}: {
+  tag: string;
+  label: string;
+  title?: string;
+  onRemove: () => void;
+}) {
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 6,
-      padding: "2px 8px",
-      background: "var(--df-surface-raised)",
-      border: "1px solid var(--df-border-subtle)",
-      borderRadius: "var(--df-r-sm)",
-      fontFamily: "var(--df-font-mono)",
-      fontSize: 10, color: "var(--df-text-secondary)",
-      maxWidth: 220,
-    }}>
-      <span style={{ color: "var(--df-text-faint)", textTransform: "uppercase", letterSpacing: "0.08em", flexShrink: 0 }}>{tag}</span>
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={label}>{label}</span>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "2px 8px",
+        background: "var(--df-surface-raised)",
+        border: "1px solid var(--df-border-subtle)",
+        borderRadius: "var(--df-r-sm)",
+        fontFamily: "var(--df-font-mono)",
+        fontSize: 10,
+        color: "var(--df-text-secondary)",
+        maxWidth: 220,
+      }}
+    >
+      <span
+        style={{
+          color: "var(--df-text-faint)",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          flexShrink: 0,
+        }}
+      >
+        {tag}
+      </span>
+      <span
+        style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+        title={label}
+      >
+        {label}
+      </span>
       <button
         onClick={onRemove}
         title={title}
-        style={{ color: "var(--df-text-faint)", fontSize: 11, cursor: "pointer", padding: "0 2px", background: "none", border: "none" }}
-      >×</button>
+        style={{
+          color: "var(--df-text-faint)",
+          fontSize: 11,
+          cursor: "pointer",
+          padding: "0 2px",
+          background: "none",
+          border: "none",
+        }}
+      >
+        ×
+      </button>
     </span>
   );
 }

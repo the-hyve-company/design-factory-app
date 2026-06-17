@@ -10,6 +10,16 @@ export default defineConfig(async () => ({
     },
   },
   clearScreen: false,
+  // `vite preview` serves the optimized dist/ build — the default end-user
+  // path (npm start → scripts/dev-web.mjs --prod). Keep it aligned with the
+  // dev server: same host + port, strictPort so a busy port fails loudly
+  // instead of silently moving. The launcher pre-resolves a free port and
+  // passes --port, so this only guards against a surprise collision.
+  preview: {
+    host: "0.0.0.0",
+    port: 1420,
+    strictPort: true,
+  },
   server: {
     host: "0.0.0.0",
     port: 1420,
@@ -26,12 +36,7 @@ export default defineConfig(async () => ({
     // also writes to `.df/` (snapshots, sessions, manifests) and
     // `.df-attachments/` (uploaded images) on every turn — same story.
     watch: {
-      ignored: [
-        "**/projects/**",
-        "**/design-systems/**",
-        "**/.df/**",
-        "**/.df-attachments/**",
-      ],
+      ignored: ["**/projects/**", "**/design-systems/**", "**/.df/**", "**/.df-attachments/**"],
     },
   },
 }));

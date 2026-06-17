@@ -22,7 +22,7 @@ export const ollamaProvider: LLMProvider = {
     // local Ollama is plain chat completion. Runtime parses
     // `<artifact>` and writes via the daemon.
     fileWrite: "artifact",
-    // Ollama is plain chat completion — no native session resume. 
+    // Ollama is plain chat completion — no native session resume.
     // 3B always sends the canonical handoff preamble for this provider.
     supportsResume: false,
   },
@@ -40,7 +40,7 @@ export const ollamaProvider: LLMProvider = {
     //     Rode `ollama pull llama3.2` (ou outro modelo)."
     //   - server up, with models → connected.
     //
-    // Pre-fix: founder reported "ollama aberto no pc e nao funciona" —
+    // Pre-fix: a user reported Ollama open on the PC but not working —
     // hit the IPv6 vs IPv4 silent failure on Windows; daemon now tries
     // IPv4 first so this surface should rarely show the unreachable
     // branch, but when it does the message is actionable.
@@ -53,9 +53,7 @@ export const ollamaProvider: LLMProvider = {
       };
     }
     if (s.error) {
-      const triedNote = s.triedHosts.length
-        ? `Tentei: ${s.triedHosts.join(", ")}. `
-        : "";
+      const triedNote = s.triedHosts.length ? `Tentei: ${s.triedHosts.join(", ")}. ` : "";
       return {
         status: "not-installed",
         version: null,
@@ -65,7 +63,8 @@ export const ollamaProvider: LLMProvider = {
     return {
       status: "not-installed",
       version: null,
-      detail: "Ollama respondeu mas sem modelos. Rode `ollama pull llama3.2` (ou outro modelo) primeiro.",
+      detail:
+        "Ollama respondeu mas sem modelos. Rode `ollama pull llama3.2` (ou outro modelo) primeiro.",
     };
   },
 };

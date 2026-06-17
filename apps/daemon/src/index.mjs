@@ -12,7 +12,18 @@
 
 import http from "node:http";
 import { spawn, spawnSync, execFile, execFileSync } from "node:child_process";
-import { readdir, stat, readFile, mkdir, writeFile, rm, cp, rename, chmod, mkdtemp } from "node:fs/promises";
+import {
+  readdir,
+  stat,
+  readFile,
+  mkdir,
+  writeFile,
+  rm,
+  cp,
+  rename,
+  chmod,
+  mkdtemp,
+} from "node:fs/promises";
 import { tmpdir, homedir } from "node:os";
 import { existsSync, realpathSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, join, dirname, basename, relative, isAbsolute } from "node:path";
@@ -23,7 +34,11 @@ import { WebSocketServer } from "ws";
 import { assertPathInScope, PathScopeError } from "./path-scope.mjs";
 import { normalizeProjectSlug, sanitizeVersionId } from "./slug.mjs";
 import { isBlockedEnvKey, filterEnv } from "./env-blocklist.mjs";
-import { writeArtifactSafely, deleteArtifactSafely, MAX_ARTIFACT_BYTES } from "./artifact-writer.mjs";
+import {
+  writeArtifactSafely,
+  deleteArtifactSafely,
+  MAX_ARTIFACT_BYTES,
+} from "./artifact-writer.mjs";
 import { resolveArtifactTarget } from "./resolve-artifact-target.mjs";
 import {
   validateOrRebuild as readOrRebuildRegistry,
@@ -63,27 +78,50 @@ function augmentPath() {
     try {
       const shell = process.env.SHELL || "/bin/sh";
       const out = execFileSync(shell, ["-lic", "echo __DFPATH__$PATH"], {
-        timeout: 3000, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"],
+        timeout: 3000,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
       });
       const m = out.match(/__DFPATH__(.+)/);
       if (m) extra.push(...m[1].trim().split(sep).filter(Boolean));
-    } catch { /* no login shell / timeout — fall back to the known dirs below */ }
+    } catch {
+      /* no login shell / timeout — fall back to the known dirs below */
+    }
   }
   // Well-known per-user CLI install dirs a GUI PATH commonly misses.
   extra.push(join(home, ".local", "bin"));
   if (isWin) {
     extra.push(join(process.env.APPDATA || join(home, "AppData", "Roaming"), "npm"));
-    extra.push(join(process.env.LOCALAPPDATA || join(home, "AppData", "Local"), "Microsoft", "WinGet", "Links"));
+    extra.push(
+      join(
+        process.env.LOCALAPPDATA || join(home, "AppData", "Local"),
+        "Microsoft",
+        "WinGet",
+        "Links",
+      ),
+    );
   } else {
-    extra.push("/usr/local/bin", "/opt/homebrew/bin",
-      join(home, ".npm-global", "bin"), join(home, ".bun", "bin"), join(home, ".deno", "bin"));
+    extra.push(
+      "/usr/local/bin",
+      "/opt/homebrew/bin",
+      join(home, ".npm-global", "bin"),
+      join(home, ".bun", "bin"),
+      join(home, ".deno", "bin"),
+    );
   }
   const seen = new Set(current);
   const added = [];
-  for (const d of extra) { if (d && !seen.has(d)) { seen.add(d); added.push(d); } }
+  for (const d of extra) {
+    if (d && !seen.has(d)) {
+      seen.add(d);
+      added.push(d);
+    }
+  }
   if (added.length) {
     process.env.PATH = [...current, ...added].join(sep);
-    console.log(`[dev-bridge] PATH augmented with ${added.length} extra bin dir(s) for GUI/sidecar launch`);
+    console.log(
+      `[dev-bridge] PATH augmented with ${added.length} extra bin dir(s) for GUI/sidecar launch`,
+    );
   }
 }
 augmentPath();
@@ -95,7 +133,11 @@ augmentPath();
 const AGENT_IDS = ["claude", "codex", "gemini", "opencode", "kimi"];
 const binOverridePath = () => configPath("agent-bins.json");
 function readBinOverrides() {
-  try { return JSON.parse(readFileSync(binOverridePath(), "utf8")) || {}; } catch { return {}; }
+  try {
+    return JSON.parse(readFileSync(binOverridePath(), "utf8")) || {};
+  } catch {
+    return {};
+  }
 }
 function applyBinOverrides() {
   const o = readBinOverrides();
@@ -117,7 +159,10 @@ const DEFAULT_ALLOWED_ORIGINS = [
   // port when 1420 is busy; it passes the resolved port as DF_VITE_PORT so
   // the served origin is trusted instead of rejected as a bad origin.
   ...(process.env.DF_VITE_PORT
-    ? [`http://localhost:${process.env.DF_VITE_PORT}`, `http://127.0.0.1:${process.env.DF_VITE_PORT}`]
+    ? [
+        `http://localhost:${process.env.DF_VITE_PORT}`,
+        `http://127.0.0.1:${process.env.DF_VITE_PORT}`,
+      ]
     : []),
   // Common alt dev ports — when the user runs Vite/Next under
   // DF_VITE_PORT override or via an external reverse proxy. User
@@ -129,11 +174,17 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://127.0.0.1:5173",
 ];
 const ORIGIN_RAW = process.env.DF_BRIDGE_ORIGIN ?? DEFAULT_ALLOWED_ORIGINS.join(",");
-const ALLOWED_ORIGINS = ORIGIN_RAW === "*"
-  ? "*"
-  : new Set(ORIGIN_RAW.split(",").map((s) => s.trim()).filter(Boolean));
+const ALLOWED_ORIGINS =
+  ORIGIN_RAW === "*"
+    ? "*"
+    : new Set(
+        ORIGIN_RAW.split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      );
 const CLAUDE_BIN = process.env.DF_CLAUDE_BIN || "claude";
-const ALLOW_ARBITRARY_FS = process.env.DF_ALLOW_ARBITRARY_FS === "1" || process.env.DF_ALLOW_ARBITRARY_FS === "true";
+const ALLOW_ARBITRARY_FS =
+  process.env.DF_ALLOW_ARBITRARY_FS === "1" || process.env.DF_ALLOW_ARBITRARY_FS === "true";
 const MAX_JSON_BODY_BYTES = Number(process.env.DF_MAX_JSON_BODY_BYTES || 12 * 1024 * 1024);
 
 // ─── Agent registry — multi-CLI detection ──────────────────────────────
@@ -148,11 +199,36 @@ const MAX_JSON_BODY_BYTES = Number(process.env.DF_MAX_JSON_BODY_BYTES || 12 * 10
 // cursor-agent, copilot, crush, aider from detection — they are no
 // longer wired adapters.
 const AGENT_DEFS = [
-  { id: "claude",   label: "Claude Code",    bin: process.env.DF_CLAUDE_BIN   || "claude",   versionArgs: ["--version"] },
-  { id: "codex",    label: "Codex CLI",      bin: process.env.DF_CODEX_BIN    || "codex",    versionArgs: ["--version"] },
-  { id: "gemini",   label: "Gemini CLI",     bin: process.env.DF_GEMINI_BIN   || "gemini",   versionArgs: ["--version"] },
-  { id: "opencode", label: "Opencode CLI",   bin: process.env.DF_OPENCODE_BIN || "opencode", versionArgs: ["--version"] },
-  { id: "kimi",     label: "Kimi Code CLI",  bin: process.env.DF_KIMI_BIN     || "kimi",     versionArgs: ["--version"] },
+  {
+    id: "claude",
+    label: "Claude Code",
+    bin: process.env.DF_CLAUDE_BIN || "claude",
+    versionArgs: ["--version"],
+  },
+  {
+    id: "codex",
+    label: "Codex CLI",
+    bin: process.env.DF_CODEX_BIN || "codex",
+    versionArgs: ["--version"],
+  },
+  {
+    id: "gemini",
+    label: "Gemini CLI",
+    bin: process.env.DF_GEMINI_BIN || "gemini",
+    versionArgs: ["--version"],
+  },
+  {
+    id: "opencode",
+    label: "Opencode CLI",
+    bin: process.env.DF_OPENCODE_BIN || "opencode",
+    versionArgs: ["--version"],
+  },
+  {
+    id: "kimi",
+    label: "Kimi Code CLI",
+    bin: process.env.DF_KIMI_BIN || "kimi",
+    versionArgs: ["--version"],
+  },
 ];
 
 // Walk PATH looking for `name`. Returns absolute path or null. Honors PATHEXT
@@ -189,7 +265,12 @@ async function probeAgent(def) {
   // An explicit path (the user pointed at a file) → use it directly; whichBin
   // only walks PATH and wouldn't find an absolute/relative path.
   if (bin && /[\\/]/.test(bin)) {
-    try { if ((await stat(bin)).isFile()) { resolved = bin; source = "override"; } } catch {}
+    try {
+      if ((await stat(bin)).isFile()) {
+        resolved = bin;
+        source = "override";
+      }
+    } catch {}
   }
   if (!resolved) {
     resolved = await whichBin(bin);
@@ -201,7 +282,10 @@ async function probeAgent(def) {
   let version = null;
   try {
     const { stdout } = await execFileP(resolved, def.versionArgs, { timeout: 3000 });
-    const line = String(stdout || "").split(/\r?\n/).find((l) => l.trim().length > 0) ?? "";
+    const line =
+      String(stdout || "")
+        .split(/\r?\n/)
+        .find((l) => l.trim().length > 0) ?? "";
     const match = line.match(/\d+\.\d+(?:\.\d+)?(?:[-+][\w.]+)?/);
     version = match ? match[0] : line.trim() || null;
   } catch {}
@@ -217,9 +301,16 @@ async function listAgents({ force = false } = {}) {
   if (!force && agentsCache && now - agentsCacheAt < AGENTS_CACHE_MS) {
     return agentsCache;
   }
-  agentsCache = await Promise.all(AGENT_DEFS.map((def) => probeAgent(def).catch(() => ({
-    id: def.id, label: def.label, bin: def.bin, available: false,
-  }))));
+  agentsCache = await Promise.all(
+    AGENT_DEFS.map((def) =>
+      probeAgent(def).catch(() => ({
+        id: def.id,
+        label: def.label,
+        bin: def.bin,
+        available: false,
+      })),
+    ),
+  );
   agentsCacheAt = now;
   return agentsCache;
 }
@@ -264,8 +355,9 @@ const HOME = process.env.HOME || "/";
 // Cache the resolved repo root for the process lifetime. The daemon's
 // cwd doesn't change at runtime, so re-spawning git on every request
 // (32+ call sites previously) burned ~3-5ms × dozens of polls/min for
-// nothing. When the folder isn't a git repo (founder case: D:\design-
-// factory bootstrapped via the v0.1.0 tarball scaffolder), the cache
+// nothing. When the folder isn't a git repo (e.g. a project at
+// C:\path\to\design-factory-app bootstrapped via the v0.1.0 tarball
+// scaffolder), the cache
 // also stops `fatal: not a git repository` from spamming stderr —
 // previously execFileSync's default stderr inheritance leaked git's
 // failure message into the user's terminal on every request.
@@ -278,11 +370,13 @@ function getRepoRoot() {
     // stdio: capture stdout, SUPPRESS stderr so the "fatal: not a git
     // repository" message git writes on failure doesn't bubble up to
     // the user's dev:web log on non-git folders.
-    const out = execFileSync(
-      "git",
-      ["rev-parse", "--path-format=absolute", "--git-common-dir"],
-      { cwd: process.cwd(), timeout: 3000, stdio: ["ignore", "pipe", "ignore"] },
-    ).toString().trim();
+    const out = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
+      cwd: process.cwd(),
+      timeout: 3000,
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
     if (out) repoRoot = dirname(out);
   } catch {}
   cachedRepoRoot = repoRoot;
@@ -298,8 +392,14 @@ function getRepoRoot() {
 // back to the unresolved path if realpath still fails (e.g. permissions).
 function resolveProjectsRoot(repoRoot) {
   const target = join(repoRoot, "projects");
-  try { mkdirSync(target, { recursive: true }); } catch {}
-  try { return realpathSync(target); } catch { return target; }
+  try {
+    mkdirSync(target, { recursive: true });
+  } catch {}
+  try {
+    return realpathSync(target);
+  } catch {
+    return target;
+  }
 }
 
 // Canonical write target — installSkill / updateDfSkill / deleteDfSkill
@@ -315,22 +415,64 @@ function getLegacySkillsDir() {
 }
 
 const SKIP_DIRS = new Set([
-  "node_modules", ".git", "dist", "build", ".next", ".turbo",
-  "coverage", "target", ".vercel", "pnpm-store",
+  "node_modules",
+  ".git",
+  "dist",
+  "build",
+  ".next",
+  ".turbo",
+  "coverage",
+  "target",
+  ".vercel",
+  "pnpm-store",
 ]);
 
 // Hardcoded DF built-ins — these are UI actions, not LLM prompts.
 // Dispatched by the editor, not forwarded to claude.
 const DF_BUILTINS = [
-  { id: "builtin:/tweaks",   trigger: "/tweaks",   name: "Tweaks",         description: "Build live controls panel for current design" },
-  { id: "builtin:/edit",     trigger: "/edit",     name: "Edit",           description: "Edit mode — global page params drawer" },
-  { id: "builtin:/export",   trigger: "/export",   name: "Export",         description: "Convert design to HTML / React / Vue / Tailwind" },
-  { id: "builtin:/present",  trigger: "/present",  name: "Present",        description: "Enter fullscreen present mode" },
-  { id: "builtin:/terminal", trigger: "/terminal", name: "Terminal",       description: "Open terminal tab" },
-  { id: "builtin:/init",     trigger: "/init",     name: "Init CLAUDE.md", description: "Scaffold workspace CLAUDE.md (claude built-in)" },
-  { id: "builtin:/review",   trigger: "/review",   name: "Review PR",      description: "Automated PR review (claude built-in)" },
+  {
+    id: "builtin:/tweaks",
+    trigger: "/tweaks",
+    name: "Tweaks",
+    description: "Build live controls panel for current design",
+  },
+  {
+    id: "builtin:/edit",
+    trigger: "/edit",
+    name: "Edit",
+    description: "Edit mode — global page params drawer",
+  },
+  {
+    id: "builtin:/export",
+    trigger: "/export",
+    name: "Export",
+    description: "Convert design to HTML / React / Vue / Tailwind",
+  },
+  {
+    id: "builtin:/present",
+    trigger: "/present",
+    name: "Present",
+    description: "Enter fullscreen present mode",
+  },
+  {
+    id: "builtin:/terminal",
+    trigger: "/terminal",
+    name: "Terminal",
+    description: "Open terminal tab",
+  },
+  {
+    id: "builtin:/init",
+    trigger: "/init",
+    name: "Init CLAUDE.md",
+    description: "Scaffold workspace CLAUDE.md (claude built-in)",
+  },
+  {
+    id: "builtin:/review",
+    trigger: "/review",
+    name: "Review PR",
+    description: "Automated PR review (claude built-in)",
+  },
 ];
-
 
 function sha16(str) {
   return createHash("sha256").update(str).digest("hex").slice(0, 16);
@@ -359,7 +501,10 @@ function parseSkillFile(raw) {
   const pickList = (key) => {
     const m = fm.match(new RegExp(`^${key}\\s*:\\s*\\[([^\\]]*)\\]`, "m"));
     if (!m) return [];
-    return m[1].split(",").map((s) => s.trim().replace(/^["'](.*)["']$/, "$1")).filter(Boolean);
+    return m[1]
+      .split(",")
+      .map((s) => s.trim().replace(/^["'](.*)["']$/, "$1"))
+      .filter(Boolean);
   };
   return {
     name: pick("name"),
@@ -384,7 +529,10 @@ function detectRequires(body) {
 
 /** Build a Skill record from a .md file path and raw content. */
 function toPortablePath(value) {
-  return String(value || "").split(/[\\/]+/).filter(Boolean).join("/");
+  return String(value || "")
+    .split(/[\\/]+/)
+    .filter(Boolean)
+    .join("/");
 }
 
 function repoRelativePath(absPath, cwd) {
@@ -413,15 +561,17 @@ function buildSkill({ raw, absPath, source, cwd }) {
     if (source === "project" || source === "global") {
       const segments = rel.split("/");
       const leaf = segments.pop().replace(/\.md$/i, "");
-      const keep = segments
-        .filter((s) => !/^(\.|commands|skills|agents|claude)$/.test(s) && !s.startsWith("."));
+      const keep = segments.filter(
+        (s) => !/^(\.|commands|skills|agents|claude)$/.test(s) && !s.startsWith("."),
+      );
       const parts = [...keep.slice(-2), leaf].filter(Boolean).map((s) => s.toLowerCase());
       trigger = "/" + parts.join(":");
     } else {
       trigger = "/" + slugifyName(parsed.name || fileBase);
     }
   }
-  const requires = parsed.requires && parsed.requires.length ? parsed.requires : detectRequires(parsed.body);
+  const requires =
+    parsed.requires && parsed.requires.length ? parsed.requires : detectRequires(parsed.body);
   const id = source + ":" + (rel || fileBase);
   return {
     id,
@@ -448,15 +598,23 @@ async function walkForSkills(root, { maxDepth, source, cwd, out, capTotal }) {
   // skills tree (e.g. /skills/README.md describing the registry) but must
   // never be ingested as skill records.
   const NOISE_FILES = new Set([
-    "readme.md", "license.md", "changelog.md", "contributing.md",
-    "code_of_conduct.md", "security.md", "notes.md",
+    "readme.md",
+    "license.md",
+    "changelog.md",
+    "contributing.md",
+    "code_of_conduct.md",
+    "security.md",
+    "notes.md",
   ]);
   async function recurse(dir, depth) {
     if (out.length >= capTotal) return;
     if (depth > maxDepth) return;
     let entries;
-    try { entries = await readdir(dir, { withFileTypes: true }); }
-    catch { return; }
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
     for (const e of entries) {
       if (out.length >= capTotal) return;
       if (e.name.startsWith(".") && e.name !== ".claude") continue;
@@ -493,8 +651,12 @@ function dedupe(skills) {
 async function listDirs(p) {
   try {
     const entries = await readdir(p, { withFileTypes: true });
-    return entries.filter((e) => e.isDirectory() && !e.name.startsWith(".") && !SKIP_DIRS.has(e.name)).map((e) => e.name);
-  } catch { return []; }
+    return entries
+      .filter((e) => e.isDirectory() && !e.name.startsWith(".") && !SKIP_DIRS.has(e.name))
+      .map((e) => e.name);
+  } catch {
+    return [];
+  }
 }
 
 // ─── Install / update / delete df-source skills ───────────────────────────
@@ -504,8 +666,19 @@ async function listDirs(p) {
 // persistence — registry re-scans pick it up on next /skills/registry call.
 
 const RESERVED_TRIGGERS = new Set([
-  "/tweaks", "/edit", "/export", "/present", "/terminal",
-  "/init", "/review", "/clear", "/cost", "/model", "/compact", "/undo", "/resume",
+  "/tweaks",
+  "/edit",
+  "/export",
+  "/present",
+  "/terminal",
+  "/init",
+  "/review",
+  "/clear",
+  "/cost",
+  "/model",
+  "/compact",
+  "/undo",
+  "/resume",
 ]);
 
 function validateSkillInput(input, { forUpdate = false } = {}) {
@@ -515,13 +688,16 @@ function validateSkillInput(input, { forUpdate = false } = {}) {
   if (name && name.length > 80) errors.push("name must be 80 chars or fewer");
 
   const body = typeof input.body === "string" ? input.body : "";
-  if (!forUpdate && body.trim().length < 20) errors.push("instructions must be at least 20 characters");
+  if (!forUpdate && body.trim().length < 20)
+    errors.push("instructions must be at least 20 characters");
   if (body.length > 100_000) errors.push("skill body too large (100kb max)");
 
   let trigger = typeof input.trigger === "string" ? input.trigger.trim() : "";
   if (trigger) {
     if (!/^\/[a-z0-9:_-]{1,40}$/i.test(trigger)) {
-      errors.push("command must start with / and use alphanumerics, hyphens or underscores (max 40 chars)");
+      errors.push(
+        "command must start with / and use alphanumerics, hyphens or underscores (max 40 chars)",
+      );
     }
   } else if (!forUpdate) {
     trigger = "/" + slugifyName(name);
@@ -529,7 +705,10 @@ function validateSkillInput(input, { forUpdate = false } = {}) {
 
   // Security: reject common secret patterns in body. User should keep tokens
   // elsewhere, not in skill prompts.
-  if (body && /\b(ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|Bearer\s+[A-Za-z0-9\-_.]{20,})/i.test(body)) {
+  if (
+    body &&
+    /\b(ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|Bearer\s+[A-Za-z0-9\-_.]{20,})/i.test(body)
+  ) {
     errors.push("remove tokens / secrets from instructions before saving");
   }
 
@@ -544,7 +723,9 @@ function validateSkillInput(input, { forUpdate = false } = {}) {
     trigger,
     description: typeof input.description === "string" ? input.description.trim() : null,
     body,
-    requires: Array.isArray(input.requires) ? input.requires.filter((r) => typeof r === "string") : null,
+    requires: Array.isArray(input.requires)
+      ? input.requires.filter((r) => typeof r === "string")
+      : null,
     override: input.override === true || input.override === "true" ? true : null,
     version: typeof input.version === "string" ? input.version.trim() : null,
   };
@@ -555,7 +736,8 @@ function serializeSkillMarkdown({ name, trigger, description, body, requires, ov
   lines.push(`name: ${JSON.stringify(name)}`);
   if (description) lines.push(`description: ${JSON.stringify(description)}`);
   if (trigger) lines.push(`trigger: "${trigger}"`);
-  if (requires && requires.length) lines.push(`requires: [${requires.map((r) => JSON.stringify(r)).join(", ")}]`);
+  if (requires && requires.length)
+    lines.push(`requires: [${requires.map((r) => JSON.stringify(r)).join(", ")}]`);
   if (override) lines.push(`override: true`);
   if (version) lines.push(`version: ${JSON.stringify(version)}`);
   lines.push("---");
@@ -575,9 +757,9 @@ function resolveSkillPath(rel) {
   const legacyDir = getLegacySkillsDir();
   // Order of preference: canonical → legacy.
   const candidates = [
-    join(repoRoot, rel),                 // registry shape (repo-root relative)
-    join(canonicalDir, rel),             // legacy install shape under canonical dir
-    join(legacyDir, rel),                // legacy install shape under legacy dir
+    join(repoRoot, rel), // registry shape (repo-root relative)
+    join(canonicalDir, rel), // legacy install shape under canonical dir
+    join(legacyDir, rel), // legacy install shape under legacy dir
   ];
   for (const p of candidates) {
     if (existsSync(p)) return p;
@@ -601,15 +783,18 @@ async function updateDfSkill(id, patch) {
   const currentRaw = await readFile(filePath, "utf8");
   const current = parseSkillFile(currentRaw);
 
-  const merged = validateSkillInput({
-    name: patch.name ?? current.name,
-    trigger: patch.trigger ?? current.trigger,
-    description: patch.description ?? current.description,
-    body: patch.body ?? current.body,
-    requires: patch.requires ?? current.requires,
-    override: patch.override ?? current.override,
-    version: patch.version ?? current.version,
-  }, { forUpdate: true });
+  const merged = validateSkillInput(
+    {
+      name: patch.name ?? current.name,
+      trigger: patch.trigger ?? current.trigger,
+      description: patch.description ?? current.description,
+      body: patch.body ?? current.body,
+      requires: patch.requires ?? current.requires,
+      override: patch.override ?? current.override,
+      version: patch.version ?? current.version,
+    },
+    { forUpdate: true },
+  );
 
   const markdown = serializeSkillMarkdown(merged);
   await writeFile(filePath, markdown, "utf8");
@@ -651,10 +836,18 @@ async function buildRegistry(cwdAbs, _customSkillsPath = null) {
   const legacyDir = join(cwdAbs, ".claude", "skills");
   // Canonical first — dedupe() keeps the first occurrence per (source,trigger).
   await walkForSkills(canonicalDir, {
-    maxDepth: 2, source: "df", cwd: cwdAbs, out: collected, capTotal: cap,
+    maxDepth: 2,
+    source: "df",
+    cwd: cwdAbs,
+    out: collected,
+    capTotal: cap,
   });
   await walkForSkills(legacyDir, {
-    maxDepth: 2, source: "df", cwd: cwdAbs, out: collected, capTotal: cap,
+    maxDepth: 2,
+    source: "df",
+    cwd: cwdAbs,
+    out: collected,
+    capTotal: cap,
   });
   const all = dedupe(collected);
   // Normalize source to "df" so the single bucket is populated cleanly.
@@ -664,9 +857,9 @@ async function buildRegistry(cwdAbs, _customSkillsPath = null) {
     cwd: cwdAbs,
     scanned_at: Date.now(),
     sources: {
-      df:      { path: canonicalDir, legacy_path: legacyDir, count: all.length, items: all },
+      df: { path: canonicalDir, legacy_path: legacyDir, count: all.length, items: all },
       project: { path: null, count: 0, items: [] },
-      global:  { path: null, count: 0, items: [] },
+      global: { path: null, count: 0, items: [] },
       builtin: { count: 0, items: [] },
     },
     truncated,
@@ -702,7 +895,9 @@ const cors = (req, res) => {
   }
   // Origin not on whitelist — no Allow-Origin header sent. Browser
   // blocks; we still log so dev mode can see what was rejected.
-  console.warn(`[daemon] CORS rejected: ${reqOrigin} (allowed: ${[...ALLOWED_ORIGINS].join(", ")})`);
+  console.warn(
+    `[daemon] CORS rejected: ${reqOrigin} (allowed: ${[...ALLOWED_ORIGINS].join(", ")})`,
+  );
   return false;
 };
 
@@ -721,8 +916,11 @@ const readJson = (req) =>
       data += c;
     });
     req.on("end", () => {
-      try { resolve(data ? JSON.parse(data) : {}); }
-      catch (e) { reject(e); }
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
     });
     req.on("error", reject);
   });
@@ -749,11 +947,7 @@ function getGitCacheDir() {
 
 function scopedRootPaths({ write = false } = {}) {
   const repoRoot = getRepoRoot();
-  const roots = [
-    join(repoRoot, "projects"),
-    join(repoRoot, "design-systems"),
-    getSkillsDir(),
-  ];
+  const roots = [join(repoRoot, "projects"), join(repoRoot, "design-systems"), getSkillsDir()];
   if (!write) {
     roots.push(join(repoRoot, "landing"));
     // Read-only: daemon-managed git clone cache. Adding it under write
@@ -765,8 +959,14 @@ function scopedRootPaths({ write = false } = {}) {
 }
 
 function ensureSafeRoot(path) {
-  try { mkdirSync(path, { recursive: true }); } catch {}
-  try { return realpathSync(path); } catch { return null; }
+  try {
+    mkdirSync(path, { recursive: true });
+  } catch {}
+  try {
+    return realpathSync(path);
+  } catch {
+    return null;
+  }
 }
 
 function resolveLocalFsPath(input, { write = false } = {}) {
@@ -791,24 +991,24 @@ function resolveLocalFsPath(input, { write = false } = {}) {
 
   const err = new PathScopeError(
     `path outside Design Factory workspace roots: ${expanded}. Set DF_ALLOW_ARBITRARY_FS=1 to opt into unrestricted local file access.`,
-    "PATH_OUT_OF_SCOPE"
+    "PATH_OUT_OF_SCOPE",
   );
   err.failures = failures;
   throw err;
 }
 
 function defaultFsListPath() {
-  return ALLOW_ARBITRARY_FS
-    ? (process.env.HOME || "/")
-    : join(getRepoRoot(), "projects");
+  return ALLOW_ARBITRARY_FS ? process.env.HOME || "/" : join(getRepoRoot(), "projects");
 }
 
 function sendPathScopeError(res, err) {
   res.writeHead(403, { "Content-Type": "application/json" });
-  res.end(JSON.stringify({
-    error: err?.message || String(err),
-    code: err?.code || "PATH_OUT_OF_SCOPE",
-  }));
+  res.end(
+    JSON.stringify({
+      error: err?.message || String(err),
+      code: err?.code || "PATH_OUT_OF_SCOPE",
+    }),
+  );
 }
 
 // Parse claude stream-json → emit SSE session / text / meta / usage / tool_call / tool_result / result / done / error / auth_required.
@@ -853,8 +1053,11 @@ function wireStreamJson(child, res, onDone) {
       buffer = buffer.slice(idx + 1);
       if (!line) continue;
       let val;
-      try { val = JSON.parse(line); }
-      catch { continue; }
+      try {
+        val = JSON.parse(line);
+      } catch {
+        continue;
+      }
       const t = val.type;
       // The very first line of a claude stream-json run carries session_id.
       // Pipe it to the UI so it can persist against the current project for
@@ -862,7 +1065,9 @@ function wireStreamJson(child, res, onDone) {
       // handshake surface small.
       if (t === "system" && val.subtype === "init" && typeof val.session_id === "string") {
         res.write(`event: session\ndata: ${JSON.stringify({ sessionId: val.session_id })}\n\n`);
-        res.write(`event: log\ndata: ${JSON.stringify({ level: "info", message: `session_id=${val.session_id}` })}\n\n`);
+        res.write(
+          `event: log\ndata: ${JSON.stringify({ level: "info", message: `session_id=${val.session_id}` })}\n\n`,
+        );
       }
       if (t === "stream_event") {
         const ev = val.event;
@@ -872,13 +1077,15 @@ function wireStreamJson(child, res, onDone) {
           // assistant message can mark it in textStreamedMessages with
           // the SAME id that the final assistant wrapper will use.
           if (typeof msg.id === "string") currentStreamMessageId = msg.id;
-          res.write(`event: meta\ndata: ${JSON.stringify({
-            model: msg.model,
-            ttftMs: typeof val.ttft_ms === "number" ? val.ttft_ms : undefined,
-            inputTokens: msg.usage?.input_tokens,
-            cacheReadTokens: msg.usage?.cache_read_input_tokens,
-            cacheCreationTokens: msg.usage?.cache_creation_input_tokens,
-          })}\n\n`);
+          res.write(
+            `event: meta\ndata: ${JSON.stringify({
+              model: msg.model,
+              ttftMs: typeof val.ttft_ms === "number" ? val.ttft_ms : undefined,
+              inputTokens: msg.usage?.input_tokens,
+              cacheReadTokens: msg.usage?.cache_read_input_tokens,
+              cacheCreationTokens: msg.usage?.cache_creation_input_tokens,
+            })}\n\n`,
+          );
         } else if (ev?.type === "message_stop") {
           currentStreamMessageId = null;
         } else if (ev?.type === "content_block_start") {
@@ -917,19 +1124,27 @@ function wireStreamJson(child, res, onDone) {
           const blk = blocks.get(i);
           if (blk && blk.type === "tool_use") {
             let input = {};
-            try { input = blk.inputBuf ? JSON.parse(blk.inputBuf) : {}; } catch { input = { _raw: blk.inputBuf }; }
-            res.write(`event: tool_call\ndata: ${JSON.stringify({ id: blk.id, name: blk.name, input })}\n\n`);
+            try {
+              input = blk.inputBuf ? JSON.parse(blk.inputBuf) : {};
+            } catch {
+              input = { _raw: blk.inputBuf };
+            }
+            res.write(
+              `event: tool_call\ndata: ${JSON.stringify({ id: blk.id, name: blk.name, input })}\n\n`,
+            );
             if (blk.id) toolCallEmittedIds.add(blk.id);
           }
         } else if (ev?.type === "message_delta") {
           const usage = ev.usage ?? {};
-          res.write(`event: usage\ndata: ${JSON.stringify({
-            inputTokens: usage.input_tokens,
-            outputTokens: usage.output_tokens,
-            cacheReadTokens: usage.cache_read_input_tokens,
-            cacheCreationTokens: usage.cache_creation_input_tokens,
-            stopReason: ev.delta?.stop_reason,
-          })}\n\n`);
+          res.write(
+            `event: usage\ndata: ${JSON.stringify({
+              inputTokens: usage.input_tokens,
+              outputTokens: usage.output_tokens,
+              cacheReadTokens: usage.cache_read_input_tokens,
+              cacheCreationTokens: usage.cache_creation_input_tokens,
+              stopReason: ev.delta?.stop_reason,
+            })}\n\n`,
+          );
         }
       } else if (t === "assistant" && val.message && Array.isArray(val.message.content)) {
         // Final assistant wrapper. When --include-partial-messages is ON
@@ -940,15 +1155,26 @@ function wireStreamJson(child, res, onDone) {
         const msgId = val.message.id;
         const alreadyStreamedText = msgId && textStreamedMessages.has(msgId);
         for (const block of val.message.content) {
-          if (block?.type === "text" && typeof block.text === "string" && block.text && !alreadyStreamedText) {
+          if (
+            block?.type === "text" &&
+            typeof block.text === "string" &&
+            block.text &&
+            !alreadyStreamedText
+          ) {
             full += block.text;
             res.write(`event: text\ndata: ${JSON.stringify({ content: block.text })}\n\n`);
-          } else if (block?.type === "tool_use" && typeof block.id === "string" && !toolCallEmittedIds.has(block.id)) {
-            res.write(`event: tool_call\ndata: ${JSON.stringify({
-              id: block.id,
-              name: typeof block.name === "string" ? block.name : "",
-              input: block.input ?? {},
-            })}\n\n`);
+          } else if (
+            block?.type === "tool_use" &&
+            typeof block.id === "string" &&
+            !toolCallEmittedIds.has(block.id)
+          ) {
+            res.write(
+              `event: tool_call\ndata: ${JSON.stringify({
+                id: block.id,
+                name: typeof block.name === "string" ? block.name : "",
+                input: block.input ?? {},
+              })}\n\n`,
+            );
             toolCallEmittedIds.add(block.id);
           }
         }
@@ -959,13 +1185,18 @@ function wireStreamJson(child, res, onDone) {
             let snippet = "";
             if (typeof part.content === "string") snippet = part.content;
             else if (Array.isArray(part.content)) {
-              snippet = part.content.map((p) => typeof p === "string" ? p : (p?.text ?? "")).filter(Boolean).join("\n");
+              snippet = part.content
+                .map((p) => (typeof p === "string" ? p : (p?.text ?? "")))
+                .filter(Boolean)
+                .join("\n");
             }
-            res.write(`event: tool_result\ndata: ${JSON.stringify({
-              id: part.tool_use_id,
-              isError: !!part.is_error,
-              content: snippet.slice(0, 2000),
-            })}\n\n`);
+            res.write(
+              `event: tool_result\ndata: ${JSON.stringify({
+                id: part.tool_use_id,
+                isError: !!part.is_error,
+                content: snippet.slice(0, 2000),
+              })}\n\n`,
+            );
           }
         }
       } else if (t === "result") {
@@ -973,17 +1204,19 @@ function wireStreamJson(child, res, onDone) {
           got_error = val.result || val.api_error_status || "claude CLI reported error";
         } else {
           if (!full && typeof val.result === "string") full = val.result;
-          res.write(`event: result\ndata: ${JSON.stringify({
-            durationMs: val.duration_ms,
-            durationApiMs: val.duration_api_ms,
-            costUsd: val.total_cost_usd,
-            inputTokens: val.usage?.input_tokens,
-            outputTokens: val.usage?.output_tokens,
-            cacheReadTokens: val.usage?.cache_read_input_tokens,
-            cacheCreationTokens: val.usage?.cache_creation_input_tokens,
-            stopReason: val.stop_reason,
-            numTurns: val.num_turns,
-          })}\n\n`);
+          res.write(
+            `event: result\ndata: ${JSON.stringify({
+              durationMs: val.duration_ms,
+              durationApiMs: val.duration_api_ms,
+              costUsd: val.total_cost_usd,
+              inputTokens: val.usage?.input_tokens,
+              outputTokens: val.usage?.output_tokens,
+              cacheReadTokens: val.usage?.cache_read_input_tokens,
+              cacheCreationTokens: val.usage?.cache_creation_input_tokens,
+              stopReason: val.stop_reason,
+              numTurns: val.num_turns,
+            })}\n\n`,
+          );
         }
       }
     }
@@ -999,18 +1232,23 @@ function wireStreamJson(child, res, onDone) {
     if (stderrBuffer.length < 16_384) {
       stderrBuffer += cleaned + "\n";
     }
-    res.write(`event: log\ndata: ${JSON.stringify({ level: "warn", message: `claude stderr: ${cleaned.slice(0, 400)}` })}\n\n`);
+    res.write(
+      `event: log\ndata: ${JSON.stringify({ level: "warn", message: `claude stderr: ${cleaned.slice(0, 400)}` })}\n\n`,
+    );
     // Auth-failure fingerprint. Fire once per stream so the UI doesn't flash
     // the banner repeatedly if the CLI retries internally.
     if (!authFlagged) {
       const lower = cleaned.toLowerCase();
-      if (lower.includes("not authenticated")
-        || lower.includes("login required")
-        || lower.includes("authentication failed")
-        || / 401(\b|$)/.test(lower))
-      {
+      if (
+        lower.includes("not authenticated") ||
+        lower.includes("login required") ||
+        lower.includes("authentication failed") ||
+        / 401(\b|$)/.test(lower)
+      ) {
         authFlagged = true;
-        res.write(`event: auth_required\ndata: ${JSON.stringify({ detail: "Run `claude login` in your terminal." })}\n\n`);
+        res.write(
+          `event: auth_required\ndata: ${JSON.stringify({ detail: "Run `claude login` in your terminal." })}\n\n`,
+        );
       }
     }
   });
@@ -1027,23 +1265,29 @@ function wireStreamJson(child, res, onDone) {
     // in the chat, not just a terse exit-code line.
     if (code !== 0 && stderrBuffer) {
       const tail = stderrBuffer.slice(-1000);
-      res.write(`event: tool_result\ndata: ${JSON.stringify({
-        id: "cli-crash",
-        isError: true,
-        content: tail,
-      })}\n\n`);
+      res.write(
+        `event: tool_result\ndata: ${JSON.stringify({
+          id: "cli-crash",
+          isError: true,
+          content: tail,
+        })}\n\n`,
+      );
     }
     if (got_error) {
       res.write(`event: error\ndata: ${JSON.stringify({ error: got_error })}\n\n`);
     } else if (code !== 0 && !full) {
       const tail = stderrBuffer.slice(-500).trim();
       const suffix = tail ? ` — stderr: ${tail}` : "";
-      res.write(`event: error\ndata: ${JSON.stringify({ error: `claude exited with code ${code}${suffix}` })}\n\n`);
+      res.write(
+        `event: error\ndata: ${JSON.stringify({ error: `claude exited with code ${code}${suffix}` })}\n\n`,
+      );
     } else if (!full) {
       // 1 stabilize: success exit but no text/Write → silent fail.
       // Surface as error so frontend renders red bubble; don't emit a
       // bogus done({content: ""}) that the chat persists as empty assistant.
-      res.write(`event: error\ndata: ${JSON.stringify({ error: "claude completed without text or artifact" })}\n\n`);
+      res.write(
+        `event: error\ndata: ${JSON.stringify({ error: "claude completed without text or artifact" })}\n\n`,
+      );
     } else {
       res.write(`event: done\ndata: ${JSON.stringify({ content: full })}\n\n`);
     }
@@ -1081,45 +1325,71 @@ function wireCodexJson(child, res, onDone) {
       buffer = buffer.slice(idx + 1);
       if (!line) continue;
       let val;
-      try { val = JSON.parse(line); } catch { continue; }
+      try {
+        val = JSON.parse(line);
+      } catch {
+        continue;
+      }
       const t = val.type;
 
       if (t === "thread.started") {
-        res.write(`event: log\ndata: ${JSON.stringify({ level: "info", message: `codex thread ${val.thread_id ?? ""}` })}\n\n`);
+        res.write(
+          `event: log\ndata: ${JSON.stringify({ level: "info", message: `codex thread ${val.thread_id ?? ""}` })}\n\n`,
+        );
         if (val.model) {
           res.write(`event: meta\ndata: ${JSON.stringify({ model: val.model })}\n\n`);
         }
       } else if (t === "turn.started") {
-        res.write(`event: log\ndata: ${JSON.stringify({ level: "info", message: "turn running" })}\n\n`);
-      } else if (t === "item.started" && val.item?.type === "command_execution" && typeof val.item.id === "string") {
+        res.write(
+          `event: log\ndata: ${JSON.stringify({ level: "info", message: "turn running" })}\n\n`,
+        );
+      } else if (
+        t === "item.started" &&
+        val.item?.type === "command_execution" &&
+        typeof val.item.id === "string"
+      ) {
         const item = val.item;
         if (!seenToolUses.has(item.id)) {
           seenToolUses.add(item.id);
-          res.write(`event: tool_call\ndata: ${JSON.stringify({
-            id: item.id,
-            name: "Bash",
-            input: { command: typeof item.command === "string" ? item.command : "" },
-          })}\n\n`);
+          res.write(
+            `event: tool_call\ndata: ${JSON.stringify({
+              id: item.id,
+              name: "Bash",
+              input: { command: typeof item.command === "string" ? item.command : "" },
+            })}\n\n`,
+          );
         }
-      } else if (t === "item.completed" && val.item?.type === "command_execution" && typeof val.item.id === "string") {
+      } else if (
+        t === "item.completed" &&
+        val.item?.type === "command_execution" &&
+        typeof val.item.id === "string"
+      ) {
         const item = val.item;
         if (!seenToolUses.has(item.id)) {
           seenToolUses.add(item.id);
-          res.write(`event: tool_call\ndata: ${JSON.stringify({
-            id: item.id,
-            name: "Bash",
-            input: { command: typeof item.command === "string" ? item.command : "" },
-          })}\n\n`);
+          res.write(
+            `event: tool_call\ndata: ${JSON.stringify({
+              id: item.id,
+              name: "Bash",
+              input: { command: typeof item.command === "string" ? item.command : "" },
+            })}\n\n`,
+          );
         }
-        const isError = typeof item.exit_code === "number"
-          ? item.exit_code !== 0
-          : item.status === "failed";
-        res.write(`event: tool_result\ndata: ${JSON.stringify({
-          id: item.id,
-          isError,
-          content: typeof item.aggregated_output === "string" ? item.aggregated_output : "",
-        })}\n\n`);
-      } else if ((t === "item.started" || t === "item.completed") && val.item?.type === "file_change" && Array.isArray(val.item?.changes) && typeof val.item.id === "string") {
+        const isError =
+          typeof item.exit_code === "number" ? item.exit_code !== 0 : item.status === "failed";
+        res.write(
+          `event: tool_result\ndata: ${JSON.stringify({
+            id: item.id,
+            isError,
+            content: typeof item.aggregated_output === "string" ? item.aggregated_output : "",
+          })}\n\n`,
+        );
+      } else if (
+        (t === "item.started" || t === "item.completed") &&
+        val.item?.type === "file_change" &&
+        Array.isArray(val.item?.changes) &&
+        typeof val.item.id === "string"
+      ) {
         // Codex `file_change` items: the CLI writes the file synchronously
         // via its sandboxed FS layer (no Bash, no command_execution event).
         // Without this branch the daemon was dropping every Write/Edit
@@ -1136,30 +1406,41 @@ function wireCodexJson(child, res, onDone) {
         if (t === "item.started") {
           if (!seenToolUses.has(item.id)) {
             seenToolUses.add(item.id);
-            res.write(`event: tool_call\ndata: ${JSON.stringify({
-              id: item.id,
-              name: toolName,
-              input: { file_path: path },
-            })}\n\n`);
+            res.write(
+              `event: tool_call\ndata: ${JSON.stringify({
+                id: item.id,
+                name: toolName,
+                input: { file_path: path },
+              })}\n\n`,
+            );
           }
         } else {
           // item.completed — emit tool_call for late-arriving items + result
           if (!seenToolUses.has(item.id)) {
             seenToolUses.add(item.id);
-            res.write(`event: tool_call\ndata: ${JSON.stringify({
-              id: item.id,
-              name: toolName,
-              input: { file_path: path },
-            })}\n\n`);
+            res.write(
+              `event: tool_call\ndata: ${JSON.stringify({
+                id: item.id,
+                name: toolName,
+                input: { file_path: path },
+              })}\n\n`,
+            );
           }
           const isError = item.status && item.status !== "completed";
-          res.write(`event: tool_result\ndata: ${JSON.stringify({
-            id: item.id,
-            isError: !!isError,
-            content: isError ? `status: ${item.status}` : `${kind} ${path}`,
-          })}\n\n`);
+          res.write(
+            `event: tool_result\ndata: ${JSON.stringify({
+              id: item.id,
+              isError: !!isError,
+              content: isError ? `status: ${item.status}` : `${kind} ${path}`,
+            })}\n\n`,
+          );
         }
-      } else if (t === "item.completed" && val.item?.type === "agent_message" && typeof val.item.text === "string" && val.item.text.length > 0) {
+      } else if (
+        t === "item.completed" &&
+        val.item?.type === "agent_message" &&
+        typeof val.item.text === "string" &&
+        val.item.text.length > 0
+      ) {
         // Codex emits each paragraph of the assistant's prose as a separate
         // `agent_message` item. Concatenated without a separator they read as
         // one wall of text ("seções.O projeto ainda...A direção..."). Insert
@@ -1170,11 +1451,13 @@ function wireCodexJson(child, res, onDone) {
         full += text;
         res.write(`event: text\ndata: ${JSON.stringify({ content: text })}\n\n`);
       } else if (t === "turn.completed" && val.usage) {
-        res.write(`event: usage\ndata: ${JSON.stringify({
-          inputTokens: val.usage.input_tokens,
-          outputTokens: val.usage.output_tokens,
-          cacheReadTokens: val.usage.cached_input_tokens,
-        })}\n\n`);
+        res.write(
+          `event: usage\ndata: ${JSON.stringify({
+            inputTokens: val.usage.input_tokens,
+            outputTokens: val.usage.output_tokens,
+            cacheReadTokens: val.usage.cached_input_tokens,
+          })}\n\n`,
+        );
       }
     }
   });
@@ -1194,19 +1477,25 @@ function wireCodexJson(child, res, onDone) {
   child.on("close", (code) => {
     if (code !== 0 && stderrBuffer) {
       const tail = stderrBuffer.slice(-1000);
-      res.write(`event: tool_result\ndata: ${JSON.stringify({
-        id: "cli-crash",
-        isError: true,
-        content: tail,
-      })}\n\n`);
+      res.write(
+        `event: tool_result\ndata: ${JSON.stringify({
+          id: "cli-crash",
+          isError: true,
+          content: tail,
+        })}\n\n`,
+      );
     }
     if (code !== 0 && !full) {
       const tail = stderrBuffer.slice(-500).trim();
-      res.write(`event: error\ndata: ${JSON.stringify({ error: `codex exit ${code}${tail ? ": " + tail : ""}` })}\n\n`);
+      res.write(
+        `event: error\ndata: ${JSON.stringify({ error: `codex exit ${code}${tail ? ": " + tail : ""}` })}\n\n`,
+      );
     } else if (!full) {
       // 1 stabilize: success exit but empty agent_message stream →
       // silent fail. Surface as error.
-      res.write(`event: error\ndata: ${JSON.stringify({ error: "codex completed without text or artifact" })}\n\n`);
+      res.write(
+        `event: error\ndata: ${JSON.stringify({ error: "codex completed without text or artifact" })}\n\n`,
+      );
     } else {
       res.write(`event: done\ndata: ${JSON.stringify({ content: full })}\n\n`);
     }
@@ -1237,12 +1526,21 @@ function wireGeminiJson(child, res, onDone) {
       buffer = buffer.slice(idx + 1);
       if (!line) continue;
       let val;
-      try { val = JSON.parse(line); } catch { continue; }
+      try {
+        val = JSON.parse(line);
+      } catch {
+        continue;
+      }
       const t = val.type;
 
       if (t === "init") {
         res.write(`event: meta\ndata: ${JSON.stringify({ model: val.model })}\n\n`);
-      } else if (t === "message" && val.role === "assistant" && typeof val.content === "string" && val.content.length > 0) {
+      } else if (
+        t === "message" &&
+        val.role === "assistant" &&
+        typeof val.content === "string" &&
+        val.content.length > 0
+      ) {
         full += val.content;
         res.write(`event: text\ndata: ${JSON.stringify({ content: val.content })}\n\n`);
       } else if (t === "tool_use" && typeof val.tool_id === "string") {
@@ -1250,35 +1548,47 @@ function wireGeminiJson(child, res, onDone) {
         // write_file → Write so the UI's onToolResult iframe-reload path
         // fires. Without this branch the daemon was dropping every Gemini
         // file write silently — file landed on disk but iframe stayed empty.
-        const toolName = val.tool_name === "write_file" ? "Write"
-          : val.tool_name === "edit_file" || val.tool_name === "replace" ? "Edit"
-          : val.tool_name === "read_file" ? "Read"
-          : val.tool_name === "run_shell_command" || val.tool_name === "shell" ? "Bash"
-          : val.tool_name === "delete_file" ? "Delete"
-          : (val.tool_name ?? "Unknown");
+        const toolName =
+          val.tool_name === "write_file"
+            ? "Write"
+            : val.tool_name === "edit_file" || val.tool_name === "replace"
+              ? "Edit"
+              : val.tool_name === "read_file"
+                ? "Read"
+                : val.tool_name === "run_shell_command" || val.tool_name === "shell"
+                  ? "Bash"
+                  : val.tool_name === "delete_file"
+                    ? "Delete"
+                    : (val.tool_name ?? "Unknown");
         const params = val.parameters && typeof val.parameters === "object" ? val.parameters : {};
         // Normalise to UI's expected shape — file_path is the canonical key.
         const input = { ...params };
         if (typeof params.file_path === "string") input.file_path = params.file_path;
         else if (typeof params.path === "string") input.file_path = params.path;
-        res.write(`event: tool_call\ndata: ${JSON.stringify({
-          id: val.tool_id,
-          name: toolName,
-          input,
-        })}\n\n`);
+        res.write(
+          `event: tool_call\ndata: ${JSON.stringify({
+            id: val.tool_id,
+            name: toolName,
+            input,
+          })}\n\n`,
+        );
       } else if (t === "tool_result" && typeof val.tool_id === "string") {
         const isError = val.status && val.status !== "success";
-        res.write(`event: tool_result\ndata: ${JSON.stringify({
-          id: val.tool_id,
-          isError: !!isError,
-          content: typeof val.output === "string" ? val.output : (val.status ?? ""),
-        })}\n\n`);
+        res.write(
+          `event: tool_result\ndata: ${JSON.stringify({
+            id: val.tool_id,
+            isError: !!isError,
+            content: typeof val.output === "string" ? val.output : (val.status ?? ""),
+          })}\n\n`,
+        );
       } else if (t === "result" && val.stats) {
-        res.write(`event: usage\ndata: ${JSON.stringify({
-          inputTokens: val.stats.input_tokens,
-          outputTokens: val.stats.output_tokens,
-          cacheReadTokens: val.stats.cached,
-        })}\n\n`);
+        res.write(
+          `event: usage\ndata: ${JSON.stringify({
+            inputTokens: val.stats.input_tokens,
+            outputTokens: val.stats.output_tokens,
+            cacheReadTokens: val.stats.cached,
+          })}\n\n`,
+        );
       }
     }
   });
@@ -1298,19 +1608,25 @@ function wireGeminiJson(child, res, onDone) {
   child.on("close", (code) => {
     if (code !== 0 && stderrBuffer) {
       const tail = stderrBuffer.slice(-1000);
-      res.write(`event: tool_result\ndata: ${JSON.stringify({
-        id: "cli-crash",
-        isError: true,
-        content: tail,
-      })}\n\n`);
+      res.write(
+        `event: tool_result\ndata: ${JSON.stringify({
+          id: "cli-crash",
+          isError: true,
+          content: tail,
+        })}\n\n`,
+      );
     }
     if (code !== 0 && !full) {
       const tail = stderrBuffer.slice(-500).trim();
-      res.write(`event: error\ndata: ${JSON.stringify({ error: `gemini exit ${code}${tail ? ": " + tail : ""}` })}\n\n`);
+      res.write(
+        `event: error\ndata: ${JSON.stringify({ error: `gemini exit ${code}${tail ? ": " + tail : ""}` })}\n\n`,
+      );
     } else if (!full) {
       // 1 stabilize: success exit but empty assistant message →
       // silent fail.
-      res.write(`event: error\ndata: ${JSON.stringify({ error: "gemini completed without text or artifact" })}\n\n`);
+      res.write(
+        `event: error\ndata: ${JSON.stringify({ error: "gemini completed without text or artifact" })}\n\n`,
+      );
     } else {
       res.write(`event: done\ndata: ${JSON.stringify({ content: full })}\n\n`);
     }
@@ -1360,17 +1676,13 @@ async function readVercelConfig() {
 //   3. Disconnected (UI prompts to either run `vercel login` or paste token)
 const VERCEL_CLI_AUTH_PATHS = [
   // XDG_DATA_HOME (Linux/macOS, also used on WSL/Windows under XDG)
-  process.env.XDG_DATA_HOME
-    ? `${process.env.XDG_DATA_HOME}/com.vercel.cli/auth.json`
-    : null,
+  process.env.XDG_DATA_HOME ? `${process.env.XDG_DATA_HOME}/com.vercel.cli/auth.json` : null,
   `${process.env.HOME || "/tmp"}/.local/share/com.vercel.cli/auth.json`,
   // macOS canonical path
   `${process.env.HOME || "/tmp"}/Library/Application Support/com.vercel.cli/auth.json`,
   // Windows canonical path (when daemon runs under WSL2 it won't match,
   // but native Node on Windows uses APPDATA)
-  process.env.APPDATA
-    ? `${process.env.APPDATA}/com.vercel.cli/auth.json`
-    : null,
+  process.env.APPDATA ? `${process.env.APPDATA}/com.vercel.cli/auth.json` : null,
   // Legacy ~/.vercel/auth.json (CLI < )
   `${process.env.HOME || "/tmp"}/.vercel/auth.json`,
 ].filter(Boolean);
@@ -1413,17 +1725,21 @@ async function writeVercelConfig({ token, teamId, teamSlug }) {
     teamSlug: typeof teamSlug === "string" ? teamSlug.trim() : cur.teamSlug,
   };
   await writeFile(VERCEL_CONFIG_PATH, JSON.stringify(next, null, 2) + "\n", { mode: 0o600 });
-  try { await chmod(VERCEL_CONFIG_PATH, 0o600); } catch {}
+  try {
+    await chmod(VERCEL_CONFIG_PATH, 0o600);
+  } catch {}
   return next;
 }
 
 function slugifyVercel(input) {
-  return String(input || "design")
-    .toLowerCase()
-    .replace(/\.[a-z0-9]+$/, "")
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "design";
+  return (
+    String(input || "design")
+      .toLowerCase()
+      .replace(/\.[a-z0-9]+$/, "")
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "design"
+  );
 }
 
 // ─── Anthropic API BYOK ────────────────────────────────────────────
@@ -1446,12 +1762,12 @@ async function readAnthropicConfig() {
 
 async function writeAnthropicConfig({ token }) {
   await mkdir(dirname(ANTHROPIC_CONFIG_PATH), { recursive: true });
-  await writeFile(
-    ANTHROPIC_CONFIG_PATH,
-    JSON.stringify({ token: token || "" }, null, 2) + "\n",
-    { mode: 0o600 }
-  );
-  try { await chmod(ANTHROPIC_CONFIG_PATH, 0o600); } catch {}
+  await writeFile(ANTHROPIC_CONFIG_PATH, JSON.stringify({ token: token || "" }, null, 2) + "\n", {
+    mode: 0o600,
+  });
+  try {
+    await chmod(ANTHROPIC_CONFIG_PATH, 0o600);
+  } catch {}
 }
 
 async function getAnthropicToken() {
@@ -1466,7 +1782,8 @@ async function getAnthropicToken() {
 // GEMINI_API_KEY / GOOGLE_API_KEY) take precedence. Daemon never echoes.
 const OPENAI_CONFIG_PATH = process.env.DF_OPENAI_CONFIG_PATH || configPath("openai.json");
 const GEMINI_CONFIG_PATH = process.env.DF_GEMINI_CONFIG_PATH || configPath("gemini.json");
-const OPENROUTER_CONFIG_PATH = process.env.DF_OPENROUTER_CONFIG_PATH || configPath("openrouter.json");
+const OPENROUTER_CONFIG_PATH =
+  process.env.DF_OPENROUTER_CONFIG_PATH || configPath("openrouter.json");
 const KIMI_CONFIG_PATH = process.env.DF_KIMI_CONFIG_PATH || configPath("kimi.json");
 
 async function getOpenrouterToken() {
@@ -1526,23 +1843,31 @@ async function readThemeConfig() {
         active: DEFAULT_PRESET_NAME,
         presets: {
           [DEFAULT_PRESET_NAME]: {
-            dark: (typeof parsed.dark === "object") ? parsed.dark : {},
-            light: (typeof parsed.light === "object") ? parsed.light : {},
+            dark: typeof parsed.dark === "object" ? parsed.dark : {},
+            light: typeof parsed.light === "object" ? parsed.light : {},
           },
         },
       };
     }
-    if (parsed && typeof parsed === "object" && parsed.presets && typeof parsed.presets === "object") {
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      parsed.presets &&
+      typeof parsed.presets === "object"
+    ) {
       const presets = {};
       for (const [name, preset] of Object.entries(parsed.presets)) {
         if (!preset || typeof preset !== "object") continue;
         presets[name] = {
-          dark: (typeof preset.dark === "object") ? preset.dark : {},
-          light: (typeof preset.light === "object") ? preset.light : {},
+          dark: typeof preset.dark === "object" ? preset.dark : {},
+          light: typeof preset.light === "object" ? preset.light : {},
         };
       }
       if (Object.keys(presets).length === 0) presets[DEFAULT_PRESET_NAME] = emptyPreset();
-      const active = (typeof parsed.active === "string" && presets[parsed.active]) ? parsed.active : Object.keys(presets)[0];
+      const active =
+        typeof parsed.active === "string" && presets[parsed.active]
+          ? parsed.active
+          : Object.keys(presets)[0];
       return { active, presets };
     }
     return emptyThemeConfig();
@@ -1555,9 +1880,10 @@ async function readThemeConfig() {
 async function writeThemeConfig({ active, presets }) {
   await mkdir(dirname(THEME_CONFIG_PATH), { recursive: true });
   // Drop empty-string overrides so reset = "remove key"
-  const cleanScope = (obj) => Object.fromEntries(
-    Object.entries(obj || {}).filter(([, v]) => typeof v === "string" && v.trim().length > 0)
-  );
+  const cleanScope = (obj) =>
+    Object.fromEntries(
+      Object.entries(obj || {}).filter(([, v]) => typeof v === "string" && v.trim().length > 0),
+    );
   const clean = {};
   for (const [name, preset] of Object.entries(presets || {})) {
     if (!name || typeof name !== "string") continue;
@@ -1567,13 +1893,15 @@ async function writeThemeConfig({ active, presets }) {
     };
   }
   if (Object.keys(clean).length === 0) clean[DEFAULT_PRESET_NAME] = emptyPreset();
-  const safeActive = (typeof active === "string" && clean[active]) ? active : Object.keys(clean)[0];
+  const safeActive = typeof active === "string" && clean[active] ? active : Object.keys(clean)[0];
   await writeFile(
     THEME_CONFIG_PATH,
     JSON.stringify({ active: safeActive, presets: clean }, null, 2) + "\n",
-    { mode: 0o600 }
+    { mode: 0o600 },
   );
-  try { await chmod(THEME_CONFIG_PATH, 0o600); } catch {}
+  try {
+    await chmod(THEME_CONFIG_PATH, 0o600);
+  } catch {}
 }
 
 async function readSimpleTokenConfig(path) {
@@ -1589,12 +1917,10 @@ async function readSimpleTokenConfig(path) {
 
 async function writeSimpleTokenConfig(path, { token }) {
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(
-    path,
-    JSON.stringify({ token: token || "" }, null, 2) + "\n",
-    { mode: 0o600 }
-  );
-  try { await chmod(path, 0o600); } catch {}
+  await writeFile(path, JSON.stringify({ token: token || "" }, null, 2) + "\n", { mode: 0o600 });
+  try {
+    await chmod(path, 0o600);
+  } catch {}
 }
 
 async function getOpenAIToken() {
@@ -1635,15 +1961,21 @@ async function pipeAnthropicStream(upstream, res) {
       }
       if (!dataStr) continue;
       let val;
-      try { val = JSON.parse(dataStr); } catch { continue; }
+      try {
+        val = JSON.parse(dataStr);
+      } catch {
+        continue;
+      }
 
       if (event === "message_start" && val.message) {
-        res.write(`event: meta\ndata: ${JSON.stringify({
-          model: val.message.model,
-          inputTokens: val.message.usage?.input_tokens,
-          cacheReadTokens: val.message.usage?.cache_read_input_tokens,
-          cacheCreationTokens: val.message.usage?.cache_creation_input_tokens,
-        })}\n\n`);
+        res.write(
+          `event: meta\ndata: ${JSON.stringify({
+            model: val.message.model,
+            inputTokens: val.message.usage?.input_tokens,
+            cacheReadTokens: val.message.usage?.cache_read_input_tokens,
+            cacheCreationTokens: val.message.usage?.cache_creation_input_tokens,
+          })}\n\n`,
+        );
       } else if (event === "content_block_delta" && val.delta?.type === "text_delta") {
         const text = val.delta.text ?? "";
         if (text) {
@@ -1651,15 +1983,19 @@ async function pipeAnthropicStream(upstream, res) {
           res.write(`event: text\ndata: ${JSON.stringify({ content: text })}\n\n`);
         }
       } else if (event === "message_delta") {
-        res.write(`event: usage\ndata: ${JSON.stringify({
-          inputTokens: val.usage?.input_tokens,
-          outputTokens: val.usage?.output_tokens,
-          stopReason: val.delta?.stop_reason,
-        })}\n\n`);
+        res.write(
+          `event: usage\ndata: ${JSON.stringify({
+            inputTokens: val.usage?.input_tokens,
+            outputTokens: val.usage?.output_tokens,
+            stopReason: val.delta?.stop_reason,
+          })}\n\n`,
+        );
       } else if (event === "error") {
-        res.write(`event: error\ndata: ${JSON.stringify({
-          error: val.error?.message ?? "anthropic api error",
-        })}\n\n`);
+        res.write(
+          `event: error\ndata: ${JSON.stringify({
+            error: val.error?.message ?? "anthropic api error",
+          })}\n\n`,
+        );
       }
     }
   }
@@ -1669,7 +2005,9 @@ async function pipeAnthropicStream(upstream, res) {
   if (full) {
     res.write(`event: done\ndata: ${JSON.stringify({ content: full })}\n\n`);
   } else {
-    res.write(`event: error\ndata: ${JSON.stringify({ error: "anthropic completed without text or artifact" })}\n\n`);
+    res.write(
+      `event: error\ndata: ${JSON.stringify({ error: "anthropic completed without text or artifact" })}\n\n`,
+    );
   }
   res.end();
 }
@@ -1684,7 +2022,9 @@ function ensureGitRepo(dir) {
     if (!dir || typeof dir !== "string" || !existsSync(dir)) return;
     if (existsSync(join(dir, ".git"))) return; // already a repo — no-op
     execFileSync("git", ["init"], { cwd: dir, timeout: 5000, stdio: "ignore" });
-  } catch { /* git missing or failed — non-fatal; the CLI still runs */ }
+  } catch {
+    /* git missing or failed — non-fatal; the CLI still runs */
+  }
 }
 
 // Frozen dependency bag passed to every provider adapter. Adapters take
@@ -1705,7 +2045,6 @@ const PROVIDER_DEPS = Object.freeze({
   CLAUDE_BIN,
   ensureGitRepo,
 });
-
 
 const server = http.createServer(async (req, res) => {
   const originOk = cors(req, res);
@@ -1734,7 +2073,9 @@ const server = http.createServer(async (req, res) => {
       // pay the readdir+stat loop when the folder actually changed.
       // See /fs/read above for the same conservative caching pattern.
       let dirStat;
-      try { dirStat = await stat(abs); } catch {}
+      try {
+        dirStat = await stat(abs);
+      } catch {}
       const etag = dirStat ? `W/"dir-${dirStat.mtimeMs.toFixed(0)}"` : null;
       const ifNoneMatch = req.headers["if-none-match"];
       if (etag && ifNoneMatch && ifNoneMatch === etag) {
@@ -1786,7 +2127,11 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       let { from, to } = body;
-      if (!from || !to) { res.writeHead(400); res.end(JSON.stringify({ error: "from + to required" })); return; }
+      if (!from || !to) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "from + to required" }));
+        return;
+      }
       const safeFrom = resolveLocalFsPath(from, { write: false });
       const safeTo = resolveLocalFsPath(to, { write: true });
       await cp(safeFrom, safeTo, { recursive: true, errorOnExist: false });
@@ -1809,7 +2154,11 @@ const server = http.createServer(async (req, res) => {
     try {
       body = await readJson(req);
       let { from, to } = body;
-      if (!from || !to) { res.writeHead(400); res.end(JSON.stringify({ error: "from + to required" })); return; }
+      if (!from || !to) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "from + to required" }));
+        return;
+      }
       const safeFrom = resolveLocalFsPath(from, { write: true });
       const safeTo = resolveLocalFsPath(to, { write: true });
       await rename(safeFrom, safeTo);
@@ -1843,7 +2192,11 @@ const server = http.createServer(async (req, res) => {
     try {
       const u = new URL(req.url, "http://localhost");
       let path = u.searchParams.get("path");
-      if (!path) { res.writeHead(400); res.end(); return; }
+      if (!path) {
+        res.writeHead(400);
+        res.end();
+        return;
+      }
       path = resolveLocalFsPath(path, { write: true });
       await mkdir(path, { recursive: true });
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -1924,18 +2277,21 @@ const server = http.createServer(async (req, res) => {
       // Trust file extension first — UTF-8 multi-byte chars (box-drawing,
       // accented letters, emoji) trip the ASCII-printable heuristic below
       // and got HTML files served back as `data:application/octet-stream;
-      // base64,...`. User repro 2026-05-18: Claude generated an HTML
+      // base64,...`. Observed: Claude generated an HTML
       // with `┄┄┄` separator comments, daemon returned base64, iframe
       // rendered the data URI as plain text. Anchor on extension for
       // known text formats; fall back to byte sampling only for unknown.
-      const TEXT_EXT_RX = /\.(html?|svg|xml|css|scss|sass|less|js|jsx|mjs|cjs|ts|tsx|json|jsonc|md|markdown|mdx|txt|csv|tsv|yaml|yml|toml|ini|conf|sh|bash|zsh|py|rb|go|rs|java|kt|c|cc|cpp|h|hpp|sql|graphql|gql)$/i;
+      const TEXT_EXT_RX =
+        /\.(html?|svg|xml|css|scss|sass|less|js|jsx|mjs|cjs|ts|tsx|json|jsonc|md|markdown|mdx|txt|csv|tsv|yaml|yml|toml|ini|conf|sh|bash|zsh|py|rb|go|rs|java|kt|c|cc|cpp|h|hpp|sql|graphql|gql)$/i;
       let isText;
       if (TEXT_EXT_RX.test(abs)) {
         isText = true;
       } else {
         const sample = buf.subarray(0, Math.min(buf.length, 256));
         let textProb = 0;
-        for (const b of sample) { if ((b >= 0x20 && b < 0x7f) || b === 0x09 || b === 0x0a || b === 0x0d) textProb++; }
+        for (const b of sample) {
+          if ((b >= 0x20 && b < 0x7f) || b === 0x09 || b === 0x0a || b === 0x0d) textProb++;
+        }
         isText = sample.length === 0 || textProb / sample.length > 0.9;
       }
       res.writeHead(200, {
@@ -1946,22 +2302,32 @@ const server = http.createServer(async (req, res) => {
       // For binary files, encode as a typed data URI so images render
       // correctly when consumed by an <img src>. Falls back to
       // application/octet-stream for unknown extensions.
-      const lowerExt = (abs.toLowerCase().split(".").pop() || "");
+      const lowerExt = abs.toLowerCase().split(".").pop() || "";
       const binaryMime =
-        lowerExt === "png" ? "image/png" :
-        lowerExt === "jpg" || lowerExt === "jpeg" ? "image/jpeg" :
-        lowerExt === "gif" ? "image/gif" :
-        lowerExt === "webp" ? "image/webp" :
-        lowerExt === "avif" ? "image/avif" :
-        lowerExt === "ico" ? "image/x-icon" :
-        "application/octet-stream";
-      res.end(JSON.stringify({
-        path: abs,
-        size: s.size,
-        mtime: s.mtimeMs,
-        isText,
-        content: isText ? buf.toString("utf8") : `data:${binaryMime};base64,${buf.toString("base64")}`,
-      }));
+        lowerExt === "png"
+          ? "image/png"
+          : lowerExt === "jpg" || lowerExt === "jpeg"
+            ? "image/jpeg"
+            : lowerExt === "gif"
+              ? "image/gif"
+              : lowerExt === "webp"
+                ? "image/webp"
+                : lowerExt === "avif"
+                  ? "image/avif"
+                  : lowerExt === "ico"
+                    ? "image/x-icon"
+                    : "application/octet-stream";
+      res.end(
+        JSON.stringify({
+          path: abs,
+          size: s.size,
+          mtime: s.mtimeMs,
+          isText,
+          content: isText
+            ? buf.toString("utf8")
+            : `data:${binaryMime};base64,${buf.toString("base64")}`,
+        }),
+      );
     } catch (e) {
       if (!res.headersSent) {
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -1977,7 +2343,9 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       let { path, base64 } = body;
       if (!path || typeof base64 !== "string") {
-        res.writeHead(400); res.end(JSON.stringify({ error: "path + base64 required" })); return;
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "path + base64 required" }));
+        return;
       }
       const abs = resolveLocalFsPath(path, { write: true });
       // BUG-26: dirname, not a forward-slash-only regex — Windows `abs`
@@ -2012,7 +2380,9 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const inputPath = body?.path;
       if (typeof inputPath !== "string" || !inputPath) {
-        res.writeHead(400); res.end(JSON.stringify({ error: "path required" })); return;
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "path required" }));
+        return;
       }
       // Resolve through the same scope rules as writes — refuse to open
       // anything outside the workspace roots unless DF_ALLOW_ARBITRARY_FS
@@ -2020,7 +2390,9 @@ const server = http.createServer(async (req, res) => {
       // and skills/ (not landing/ which is read-only here).
       const abs = resolveLocalFsPath(inputPath, { write: true });
       let st;
-      try { st = await stat(abs); } catch (e) {
+      try {
+        st = await stat(abs);
+      } catch (e) {
         res.writeHead(404, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: `path not found: ${abs}` }));
         return;
@@ -2030,9 +2402,7 @@ const server = http.createServer(async (req, res) => {
       // Pick the OS opener. Windows can't take "explorer <path>" with
       // backslashes through Node's spawn without shell:true (the .exe
       // resolution kicks in); macOS and Linux take argv cleanly.
-      const cmd = platform === "darwin" ? "open"
-                : platform === "win32" ? "explorer"
-                : "xdg-open";
+      const cmd = platform === "darwin" ? "open" : platform === "win32" ? "explorer" : "xdg-open";
       const child = spawn(cmd, [target], {
         detached: true,
         stdio: "ignore",
@@ -2081,13 +2451,21 @@ const server = http.createServer(async (req, res) => {
   // (system prompt + parser + this endpoint). Default OFF in v0.3 first
   // release so we can activate provider-by-provider (D20). Even with the
   // flag off the endpoint stays reachable for direct integration tests.
-  if (req.method === "POST" && (req.url === "/fs/write/artifact" || req.url.startsWith("/fs/write/artifact?"))) {
+  if (
+    req.method === "POST" &&
+    (req.url === "/fs/write/artifact" || req.url.startsWith("/fs/write/artifact?"))
+  ) {
     try {
       const body = await readJson(req);
       const { identifier, type, content, contentHash, minBytes, intent } = body || {};
       if (!identifier || typeof identifier !== "string") {
         res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "identifier required (path inside projects/)", code: "BAD_REQUEST" }));
+        res.end(
+          JSON.stringify({
+            error: "identifier required (path inside projects/)",
+            code: "BAD_REQUEST",
+          }),
+        );
         return;
       }
       if (!type || typeof type !== "string") {
@@ -2131,16 +2509,23 @@ const server = http.createServer(async (req, res) => {
         const candidateRoot = join(repoRoot, "projects");
         try {
           await mkdir(candidateRoot, { recursive: true });
-        } catch { /* */ }
+        } catch {
+          /* */
+        }
         projectsRoot = realpathSync(candidateRoot);
 
         // Extract slug from the identifier so we can read the registry.
         // Identifier may or may not be `projects/`-prefixed.
-        const tidied = identifier.replace(/\\/g, "/").replace(/^\.?\/+/, "").replace(/^projects\//, "");
+        const tidied = identifier
+          .replace(/\\/g, "/")
+          .replace(/^\.?\/+/, "")
+          .replace(/^projects\//, "");
         projectSlug = tidied.split("/")[0] || null;
         if (!projectSlug) {
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "identifier missing project slug", code: "BAD_REQUEST" }));
+          res.end(
+            JSON.stringify({ error: "identifier missing project slug", code: "BAD_REQUEST" }),
+          );
           return;
         }
 
@@ -2159,17 +2544,24 @@ const server = http.createServer(async (req, res) => {
         );
         if (resolveResult && resolveResult.error) {
           const code = resolveResult.error.code;
-          const status = code === "PATH_OUT_OF_SCOPE" ? 400
-            : code === "AMBIGUOUS_IDENTIFIER" ? 400
-            : code === "INTENT_PATH_CONFLICT" ? 422
-            : code === "INVALID_ROLE" ? 422
-            : 400;
+          const status =
+            code === "PATH_OUT_OF_SCOPE"
+              ? 400
+              : code === "AMBIGUOUS_IDENTIFIER"
+                ? 400
+                : code === "INTENT_PATH_CONFLICT"
+                  ? 422
+                  : code === "INVALID_ROLE"
+                    ? 422
+                    : 400;
           res.writeHead(status, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({
-            error: resolveResult.error.message,
-            code,
-            details: resolveResult.error.details || null,
-          }));
+          res.end(
+            JSON.stringify({
+              error: resolveResult.error.message,
+              code,
+              details: resolveResult.error.details || null,
+            }),
+          );
           return;
         }
         resolved = resolveResult;
@@ -2213,7 +2605,9 @@ const server = http.createServer(async (req, res) => {
           // Registry update failure is non-fatal — the artifact is on
           // disk. Log and surface a soft warning so the UI can hint at
           // potential drift.
-          console.warn(`[daemon] /fs/write/artifact: registry upsert failed for ${projectSlug}: ${regErr.message}`);
+          console.warn(
+            `[daemon] /fs/write/artifact: registry upsert failed for ${projectSlug}: ${regErr.message}`,
+          );
           result.registryWarning = regErr.message;
         }
       }
@@ -2243,21 +2637,25 @@ const server = http.createServer(async (req, res) => {
       const code = e && e.code;
       if (code === "STATIC_FAIL") {
         res.writeHead(422, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          error: e.message,
-          code: "static-fail",
-          reason: e.reason,
-          details: e.details || null,
-        }));
+        res.end(
+          JSON.stringify({
+            error: e.message,
+            code: "static-fail",
+            reason: e.reason,
+            details: e.details || null,
+          }),
+        );
         return;
       }
       if (code === "OVERSIZE") {
         res.writeHead(413, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          error: e.message,
-          code: "oversize",
-          maxBytes: e.maxBytes ?? MAX_ARTIFACT_BYTES,
-        }));
+        res.end(
+          JSON.stringify({
+            error: e.message,
+            code: "oversize",
+            maxBytes: e.maxBytes ?? MAX_ARTIFACT_BYTES,
+          }),
+        );
         return;
       }
       if (code === "LOCK_TIMEOUT") {
@@ -2299,19 +2697,23 @@ const server = http.createServer(async (req, res) => {
 
       const result = await deleteArtifactSafely({ requestedPath, repoRoot });
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        ok: true,
-        deleted: result.deleted,
-        path: result.finalPath,
-      }));
+      res.end(
+        JSON.stringify({
+          ok: true,
+          deleted: result.deleted,
+          path: result.finalPath,
+        }),
+      );
     } catch (e) {
       if (res.headersSent) return;
       if (e instanceof PathScopeError) {
         res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          error: e.message,
-          code: e.code || "PATH_OUT_OF_SCOPE",
-        }));
+        res.end(
+          JSON.stringify({
+            error: e.message,
+            code: e.code || "PATH_OUT_OF_SCOPE",
+          }),
+        );
         return;
       }
       const code = e && e.code;
@@ -2327,10 +2729,12 @@ const server = http.createServer(async (req, res) => {
       }
       console.error("[daemon] DELETE /fs/artifact failed:", e);
       res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        error: String(e && e.message ? e.message : e),
-        code: "INTERNAL",
-      }));
+      res.end(
+        JSON.stringify({
+          error: String(e && e.message ? e.message : e),
+          code: "INTERNAL",
+        }),
+      );
     }
     return;
   }
@@ -2351,8 +2755,12 @@ const server = http.createServer(async (req, res) => {
       let path = body.path;
       const content = body.content;
       if (!path || typeof content !== "string") {
-        console.warn(`[daemon] /fs/write 400 path+content: path=${JSON.stringify(path)} contentType=${typeof content} len=${typeof content === "string" ? content.length : "n/a"}`);
-        res.writeHead(400); res.end(JSON.stringify({ error: "path + content required" })); return;
+        console.warn(
+          `[daemon] /fs/write 400 path+content: path=${JSON.stringify(path)} contentType=${typeof content} len=${typeof content === "string" ? content.length : "n/a"}`,
+        );
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "path + content required" }));
+        return;
       }
       const abs = resolveLocalFsPath(path, { write: true });
 
@@ -2366,12 +2774,14 @@ const server = http.createServer(async (req, res) => {
           const preview = trimmed.slice(0, 120).replace(/\s+/g, " ");
           console.warn(`[daemon] /fs/write 400 prose-reject: ${abs} (.${ext}) got="${preview}"`);
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({
-            error: `Refused to write .${ext} file — content starts with prose, not markup.`,
-            got: preview,
-            expected: "Must start with <!DOCTYPE html>, <html>, <svg>, <?xml, or any HTML tag.",
-            hint: "Put the HTML document in the file. Put commentary in your chat reply (1-3 lines), not in the file. See .claude/CLAUDE.md Project Agent Pipeline.",
-          }));
+          res.end(
+            JSON.stringify({
+              error: `Refused to write .${ext} file — content starts with prose, not markup.`,
+              got: preview,
+              expected: "Must start with <!DOCTYPE html>, <html>, <svg>, <?xml, or any HTML tag.",
+              hint: "Put the HTML document in the file. Put commentary in your chat reply (1-3 lines), not in the file. See .claude/CLAUDE.md Project Agent Pipeline.",
+            }),
+          );
           return;
         }
       }
@@ -2405,7 +2815,11 @@ const server = http.createServer(async (req, res) => {
     try {
       const u = new URL(req.url, "http://localhost");
       const target = u.searchParams.get("url");
-      if (!target) { res.writeHead(400); res.end(JSON.stringify({ error: "url required" })); return; }
+      if (!target) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "url required" }));
+        return;
+      }
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 15000);
       const r = await fetch(target, {
@@ -2416,9 +2830,18 @@ const server = http.createServer(async (req, res) => {
       clearTimeout(timer);
       const text = await r.text();
       // Cap payload at ~500kb to avoid blowing the Claude prompt
-      const capped = text.length > 500_000 ? text.slice(0, 500_000) + "\n<!-- truncated at 500kb -->" : text;
+      const capped =
+        text.length > 500_000 ? text.slice(0, 500_000) + "\n<!-- truncated at 500kb -->" : text;
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ url: target, status: r.status, contentType: r.headers.get("content-type"), html: capped, size: text.length }));
+      res.end(
+        JSON.stringify({
+          url: target,
+          status: r.status,
+          contentType: r.headers.get("content-type"),
+          html: capped,
+          size: text.length,
+        }),
+      );
     } catch (e) {
       if (!res.headersSent) {
         res.writeHead(400, { "Content-Type": "application/json" });
@@ -2441,12 +2864,18 @@ const server = http.createServer(async (req, res) => {
     let hasToken = false;
     try {
       const { stdout } = await execFileP("gh", ["auth", "token"], { timeout: 3000 });
-      if (stdout.trim()) { source = "gh-cli"; hasToken = true; }
+      if (stdout.trim()) {
+        source = "gh-cli";
+        hasToken = true;
+      }
     } catch {}
     if (!hasToken) {
       try {
         const raw = await readFile(DF_TOKEN_PATH, "utf8");
-        if (raw.trim()) { source = "device-flow"; hasToken = true; }
+        if (raw.trim()) {
+          source = "device-flow";
+          hasToken = true;
+        }
       } catch {}
     }
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -2468,18 +2897,24 @@ const server = http.createServer(async (req, res) => {
       const data = await r.json();
       if (!r.ok || !data?.device_code) {
         res.writeHead(r.status || 500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: data?.error_description || data?.error || "device code request failed" }));
+        res.end(
+          JSON.stringify({
+            error: data?.error_description || data?.error || "device code request failed",
+          }),
+        );
         return;
       }
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        deviceCode: data.device_code,
-        userCode: data.user_code,
-        verificationUri: data.verification_uri,
-        verificationUriComplete: data.verification_uri_complete,
-        interval: data.interval ?? 5,
-        expiresIn: data.expires_in ?? 900,
-      }));
+      res.end(
+        JSON.stringify({
+          deviceCode: data.device_code,
+          userCode: data.user_code,
+          verificationUri: data.verification_uri,
+          verificationUriComplete: data.verification_uri_complete,
+          interval: data.interval ?? 5,
+          expiresIn: data.expires_in ?? 900,
+        }),
+      );
     } catch (e) {
       if (!res.headersSent) {
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -2499,7 +2934,11 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const { deviceCode } = body;
-      if (!deviceCode) { res.writeHead(400); res.end(JSON.stringify({ error: "deviceCode required" })); return; }
+      if (!deviceCode) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "deviceCode required" }));
+        return;
+      }
       const r = await fetch("https://github.com/login/oauth/access_token", {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
@@ -2516,7 +2955,9 @@ const server = http.createServer(async (req, res) => {
           const parent = dirname(DF_TOKEN_PATH); // BUG-26: separator-agnostic
           await mkdir(parent, { recursive: true });
           await writeFile(DF_TOKEN_PATH, data.access_token, "utf8");
-          try { await chmod(DF_TOKEN_PATH, 0o600); } catch {}
+          try {
+            await chmod(DF_TOKEN_PATH, 0o600);
+          } catch {}
         } catch {}
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ status: "ok", tokenType: data.token_type, scope: data.scope }));
@@ -2533,7 +2974,12 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "error", error: data.error_description || data.error || "unknown" }));
+      res.end(
+        JSON.stringify({
+          status: "error",
+          error: data.error_description || data.error || "unknown",
+        }),
+      );
     } catch (e) {
       if (!res.headersSent) {
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -2545,7 +2991,9 @@ const server = http.createServer(async (req, res) => {
 
   // ─── GitHub device flow: sign out (drop cached token) ────────
   if (req.method === "POST" && req.url === "/gh/device/logout") {
-    try { await rm(DF_TOKEN_PATH, { force: true }); } catch {}
+    try {
+      await rm(DF_TOKEN_PATH, { force: true });
+    } catch {}
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true }));
     return;
@@ -2560,17 +3008,24 @@ const server = http.createServer(async (req, res) => {
       const pat = u.searchParams.get("pat");
       let token = pat;
       if (!token) {
-        try { const { stdout } = await execFileP("gh", ["auth", "token"], { timeout: 3000 }); token = stdout.trim(); }
-        catch {}
+        try {
+          const { stdout } = await execFileP("gh", ["auth", "token"], { timeout: 3000 });
+          token = stdout.trim();
+        } catch {}
       }
       if (!token) {
         // Device-flow cache fallback
-        try { token = (await readFile(DF_TOKEN_PATH, "utf8")).trim(); }
-        catch {}
+        try {
+          token = (await readFile(DF_TOKEN_PATH, "utf8")).trim();
+        } catch {}
       }
       if (!token) {
         res.writeHead(401, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "no GitHub token (run `gh auth login`, pass ?pat=, or use device flow)" }));
+        res.end(
+          JSON.stringify({
+            error: "no GitHub token (run `gh auth login`, pass ?pat=, or use device flow)",
+          }),
+        );
         return;
       }
       // Hit /user/repos with sort=updated
@@ -2589,23 +3044,29 @@ const server = http.createServer(async (req, res) => {
       let list = await r.json();
       if (search) {
         const q = search.toLowerCase();
-        list = list.filter((x) => x.full_name.toLowerCase().includes(q) || (x.description || "").toLowerCase().includes(q));
+        list = list.filter(
+          (x) =>
+            x.full_name.toLowerCase().includes(q) ||
+            (x.description || "").toLowerCase().includes(q),
+        );
       }
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        repos: list.map((x) => ({
-          id: x.id,
-          fullName: x.full_name,
-          name: x.name,
-          description: x.description,
-          cloneUrl: x.clone_url,
-          htmlUrl: x.html_url,
-          defaultBranch: x.default_branch,
-          private: x.private,
-          updatedAt: x.updated_at,
-          stargazersCount: x.stargazers_count,
-        })),
-      }));
+      res.end(
+        JSON.stringify({
+          repos: list.map((x) => ({
+            id: x.id,
+            fullName: x.full_name,
+            name: x.name,
+            description: x.description,
+            cloneUrl: x.clone_url,
+            htmlUrl: x.html_url,
+            defaultBranch: x.default_branch,
+            private: x.private,
+            updatedAt: x.updated_at,
+            stargazersCount: x.stargazers_count,
+          })),
+        }),
+      );
     } catch (e) {
       if (!res.headersSent) {
         res.writeHead(400, { "Content-Type": "application/json" });
@@ -2627,10 +3088,22 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const { url: repoUrl, pat } = body;
-      if (!repoUrl) { res.writeHead(400); res.end(JSON.stringify({ error: "url required" })); return; }
-      const slug = repoUrl.replace(/\.git$/, "").replace(/^.*[\/:]/, "").toLowerCase();
+      if (!repoUrl) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "url required" }));
+        return;
+      }
+      const slug = repoUrl
+        .replace(/\.git$/, "")
+        .replace(/^.*[\/:]/, "")
+        .toLowerCase();
       const urlHash = createHash("sha256").update(repoUrl).digest("hex").slice(0, 12);
-      const dest = join(process.env.HOME || "/tmp", ".design-factory-cache", "git", `${slug}-${urlHash}`);
+      const dest = join(
+        process.env.HOME || "/tmp",
+        ".design-factory-cache",
+        "git",
+        `${slug}-${urlHash}`,
+      );
 
       // Fast path: existing valid clone — reuse.
       if (existsSync(join(dest, ".git"))) {
@@ -2652,7 +3125,9 @@ const server = http.createServer(async (req, res) => {
         } catch {}
       }
       if (!tokenForClone) {
-        try { tokenForClone = (await readFile(DF_TOKEN_PATH, "utf8")).trim(); } catch {}
+        try {
+          tokenForClone = (await readFile(DF_TOKEN_PATH, "utf8")).trim();
+        } catch {}
       }
       if (tokenForClone && /^https:\/\/github\.com/.test(repoUrl)) {
         cloneUrl = repoUrl.replace(/^https:\/\//, `https://${tokenForClone}@`);
@@ -2706,7 +3181,9 @@ const server = http.createServer(async (req, res) => {
           } catch {}
         }
         let mtime = 0;
-        try { mtime = (await stat(projectPath)).mtimeMs; } catch {}
+        try {
+          mtime = (await stat(projectPath)).mtimeMs;
+        } catch {}
         out.push({ slug: e.name, path: projectPath, htmlFile: html, mtime });
       }
       // Most recently touched first — matches the "most recent" default order
@@ -2752,7 +3229,9 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const patch = body?.patch;
       if (!patch || typeof patch !== "object") {
-        res.writeHead(400); res.end(JSON.stringify({ error: "patch required" })); return;
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "patch required" }));
+        return;
       }
       const dir = getConfigDir();
       const path = join(dir, "config.json");
@@ -2822,10 +3301,16 @@ const server = http.createServer(async (req, res) => {
       const id = String(body?.id ?? "").trim();
       const content = String(body?.body ?? "");
       if (!/^[a-z0-9][a-z0-9-]{0,40}$/.test(id)) {
-        res.writeHead(400); res.end(JSON.stringify({ error: "invalid id (must match [a-z0-9][a-z0-9-]*, max 41 chars)" })); return;
+        res.writeHead(400);
+        res.end(
+          JSON.stringify({ error: "invalid id (must match [a-z0-9][a-z0-9-]*, max 41 chars)" }),
+        );
+        return;
       }
       if (!content || content.length < 20) {
-        res.writeHead(400); res.end(JSON.stringify({ error: "body required (min 20 chars)" })); return;
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "body required (min 20 chars)" }));
+        return;
       }
       const dir = configPath("commands");
       await mkdir(dir, { recursive: true });
@@ -2845,7 +3330,9 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const id = String(body?.id ?? "").trim();
       if (!/^[a-z0-9][a-z0-9-]{0,40}$/.test(id)) {
-        res.writeHead(400); res.end(JSON.stringify({ error: "invalid id" })); return;
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "invalid id" }));
+        return;
       }
       const path = configPath("commands", `${id}.md`);
       try {
@@ -2904,7 +3391,10 @@ const server = http.createServer(async (req, res) => {
           if (frontmatter) {
             const nameLine = frontmatter[1].split(/\r?\n/).find((l) => /^\s*name\s*:/.test(l));
             if (nameLine) {
-              const value = nameLine.replace(/^\s*name\s*:\s*/, "").replace(/^["']|["']$/g, "").trim();
+              const value = nameLine
+                .replace(/^\s*name\s*:\s*/, "")
+                .replace(/^["']|["']$/g, "")
+                .trim();
               if (value) name = value;
             }
           }
@@ -2916,7 +3406,10 @@ const server = http.createServer(async (req, res) => {
         let coverPath = null;
         for (const ext of ["png", "jpg", "jpeg", "webp"]) {
           const candidate = join(dsPath, `cover.${ext}`);
-          if (existsSync(candidate)) { coverPath = candidate; break; }
+          if (existsSync(candidate)) {
+            coverPath = candidate;
+            break;
+          }
         }
         // Optional preview.html — generated on-demand via /ds/generate-preview.
         const previewCandidate = join(dsPath, "preview.html");
@@ -2946,10 +3439,10 @@ const server = http.createServer(async (req, res) => {
   // ─── /ds/generate-design-md — extract a DS's design.md from sources ──
   //
   // Async fire-and-forget: returns 202 immediately, runs the LLM in the
-  // background. Founder ask 2026-05-28: "experiencia q eu queria era
-  // colocar link escolher modelo clicar gerar, ja criar o ds eu entrar
-  // ver o design.md ir em preview e ver o preview em processamento,
-  // podendo fazer outras coisas enquanto roda". Mirrors the existing
+  // background. The desired UX: paste a link, pick a model, click
+  // generate, have the DS created immediately, then open it to view
+  // the design.md and watch the preview render in the background while
+  // doing other things. Mirrors the existing
   // /ds/generate-preview pattern so closing the DS modal mid-extraction
   // (or navigating away) doesn't kill the run.
   //
@@ -2974,7 +3467,8 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && req.url === "/ds/generate-design-md") {
     try {
       const body = await readJson(req);
-      const { dsPath, designMdPath, prompt, provider, model, generatePreviewAfter, name } = body || {};
+      const { dsPath, designMdPath, prompt, provider, model, generatePreviewAfter, name } =
+        body || {};
       if (typeof dsPath !== "string" || !dsPath) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "dsPath required" }));
@@ -3020,20 +3514,32 @@ const server = http.createServer(async (req, res) => {
       ].join("\n");
       const errorPath = join(dsPath, ".design-md-error.json");
       const generatingPath = join(dsPath, ".design-md-generating.json");
-      try { await rm(errorPath, { force: true }); } catch {}
+      try {
+        await rm(errorPath, { force: true });
+      } catch {}
       // Only write the placeholder if there's no design.md already on
       // disk (re-run / retry). Don't blow away a real design.md if the
       // user is re-extracting.
       if (!existsSync(designMdPath)) {
-        try { await writeFile(designMdPath, placeholder, "utf8"); } catch {}
+        try {
+          await writeFile(designMdPath, placeholder, "utf8");
+        } catch {}
       }
       try {
-        await writeFile(generatingPath, JSON.stringify({
-          provider,
-          model,
-          startedAt: new Date().toISOString(),
-          generatePreviewAfter: !!generatePreviewAfter,
-        }, null, 2), "utf8");
+        await writeFile(
+          generatingPath,
+          JSON.stringify(
+            {
+              provider,
+              model,
+              startedAt: new Date().toISOString(),
+              generatePreviewAfter: !!generatePreviewAfter,
+            },
+            null,
+            2,
+          ),
+          "utf8",
+        );
       } catch {}
 
       // Acknowledge IMMEDIATELY — caller is fire-and-forget.
@@ -3047,47 +3553,62 @@ const server = http.createServer(async (req, res) => {
       const extractionSandbox = await mkdtemp(join(tmpdir(), "df-ds-extract-"));
 
       (async () => {
-        const upstreamBody = JSON.stringify({ prompt, model, cwd: extractionSandbox, noWorkspace: true });
+        const upstreamBody = JSON.stringify({
+          prompt,
+          model,
+          cwd: extractionSandbox,
+          noWorkspace: true,
+        });
         try {
           const upstreamData = await new Promise((resolve, reject) => {
-            const lreq = http.request({
-              host: "127.0.0.1",
-              port: PORT,
-              method: "POST",
-              path: `/${provider}/once`,
-              headers: {
-                "Content-Type": "application/json",
-                "Content-Length": Buffer.byteLength(upstreamBody),
+            const lreq = http.request(
+              {
+                host: "127.0.0.1",
+                port: PORT,
+                method: "POST",
+                path: `/${provider}/once`,
+                headers: {
+                  "Content-Type": "application/json",
+                  "Content-Length": Buffer.byteLength(upstreamBody),
+                },
+                timeout: 3_600_000,
               },
-              timeout: 3_600_000,
-            }, (lres) => {
-              let chunks = "";
-              lres.setEncoding("utf8");
-              lres.on("data", (c) => { chunks += c; });
-              lres.on("end", () => {
-                try {
-                  const parsed = chunks ? JSON.parse(chunks) : {};
-                  resolve({ status: lres.statusCode, body: parsed });
-                } catch {
-                  resolve({ status: lres.statusCode, body: { error: `non-JSON response: ${chunks.slice(0, 200)}` } });
-                }
-              });
-            });
+              (lres) => {
+                let chunks = "";
+                lres.setEncoding("utf8");
+                lres.on("data", (c) => {
+                  chunks += c;
+                });
+                lres.on("end", () => {
+                  try {
+                    const parsed = chunks ? JSON.parse(chunks) : {};
+                    resolve({ status: lres.statusCode, body: parsed });
+                  } catch {
+                    resolve({
+                      status: lres.statusCode,
+                      body: { error: `non-JSON response: ${chunks.slice(0, 200)}` },
+                    });
+                  }
+                });
+              },
+            );
             lreq.on("timeout", () => lreq.destroy(new Error(`${provider} took longer than 60min`)));
             lreq.on("error", reject);
             lreq.write(upstreamBody);
             lreq.end();
           });
           if (upstreamData.status >= 400 || upstreamData.body?.error) {
-            throw new Error(upstreamData.body?.error || `provider ${provider} returned ${upstreamData.status}`);
+            throw new Error(
+              upstreamData.body?.error || `provider ${provider} returned ${upstreamData.status}`,
+            );
           }
           const rawText = upstreamData.body?.text || "";
           // Coerce the raw response into a usable design.md — repairs the
           // common Claude/opus quirk of omitting the closing `---`
           // frontmatter fence (+ inline fences, short prose lead-in),
           // then validates. Still rejects tool-use summary prose so a
-          // non-doc never gets written. See ds-coerce.mjs. Founder repro
-          // 2026-05-29 (10663B doc rejected for a missing closing fence).
+          // non-doc never gets written. See ds-coerce.mjs. Observed:
+          // a 10663B doc rejected for a missing closing fence.
           const { md, ok: looksLikeMd } = coerceDesignMd(rawText);
           if (!looksLikeMd) {
             // Dump the raw response so the user can inspect WHAT the
@@ -3098,24 +3619,26 @@ const server = http.createServer(async (req, res) => {
               await writeFile(
                 join(dsPath, ".design-md-rawtext.txt"),
                 `# Raw provider response (validation failed)\n` +
-                `# provider: ${provider}\n# model: ${model}\n` +
-                `# bytes: ${rawText.length}\n` +
-                `# looksLikeMd: ${looksLikeMd}\n` +
-                `# at: ${new Date().toISOString()}\n\n${rawText}`,
+                  `# provider: ${provider}\n# model: ${model}\n` +
+                  `# bytes: ${rawText.length}\n` +
+                  `# looksLikeMd: ${looksLikeMd}\n` +
+                  `# at: ${new Date().toISOString()}\n\n${rawText}`,
                 "utf8",
               );
             } catch {}
             throw new Error(
               `provider returned no recognizable design.md (got ${rawText.length}B, ` +
-              `looksLikeMd=${looksLikeMd}). Raw dump em .design-md-rawtext.txt na pasta da DS. ` +
-              `Comum: modelo usou Write tool em vez de devolver texto. Tenta outro modelo no picker.`,
+                `looksLikeMd=${looksLikeMd}). Raw dump em .design-md-rawtext.txt na pasta da DS. ` +
+                `Comum: modelo usou Write tool em vez de devolver texto. Tenta outro modelo no picker.`,
             );
           }
           await writeFile(designMdPath, md, "utf8");
           // Clear generating marker BEFORE kicking the preview chain so
           // the detail screen flips from "Extraindo…" to "Gerando preview…"
           // in one tick rather than briefly showing both.
-          try { await rm(generatingPath, { force: true }); } catch {}
+          try {
+            await rm(generatingPath, { force: true });
+          } catch {}
 
           // Step 8: chain into preview generation if requested. Same
           // loopback pattern as the extraction call above. Treat this
@@ -3125,20 +3648,25 @@ const server = http.createServer(async (req, res) => {
             const previewBody = JSON.stringify({ dsPath, designMdPath, provider, model });
             try {
               await new Promise((resolve, reject) => {
-                const preq = http.request({
-                  host: "127.0.0.1",
-                  port: PORT,
-                  method: "POST",
-                  path: "/ds/generate-preview",
-                  headers: {
-                    "Content-Type": "application/json",
-                    "Content-Length": Buffer.byteLength(previewBody),
+                const preq = http.request(
+                  {
+                    host: "127.0.0.1",
+                    port: PORT,
+                    method: "POST",
+                    path: "/ds/generate-preview",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "Content-Length": Buffer.byteLength(previewBody),
+                    },
                   },
-                }, (pres) => {
-                  let chunks = "";
-                  pres.on("data", (c) => { chunks += c; });
-                  pres.on("end", () => resolve({ status: pres.statusCode }));
-                });
+                  (pres) => {
+                    let chunks = "";
+                    pres.on("data", (c) => {
+                      chunks += c;
+                    });
+                    pres.on("end", () => resolve({ status: pres.statusCode }));
+                  },
+                );
                 preq.on("error", reject);
                 preq.write(previewBody);
                 preq.end();
@@ -3149,16 +3677,28 @@ const server = http.createServer(async (req, res) => {
           }
         } catch (e) {
           try {
-            await writeFile(errorPath, JSON.stringify({
-              error: String(e?.message || e),
-              provider,
-              model,
-              at: new Date().toISOString(),
-            }, null, 2), "utf8");
+            await writeFile(
+              errorPath,
+              JSON.stringify(
+                {
+                  error: String(e?.message || e),
+                  provider,
+                  model,
+                  at: new Date().toISOString(),
+                },
+                null,
+                2,
+              ),
+              "utf8",
+            );
           } catch {}
         } finally {
-          try { await rm(extractionSandbox, { recursive: true, force: true }); } catch {}
-          try { await rm(generatingPath, { force: true }); } catch {}
+          try {
+            await rm(extractionSandbox, { recursive: true, force: true });
+          } catch {}
+          try {
+            await rm(generatingPath, { force: true });
+          } catch {}
         }
       })();
     } catch (e) {
@@ -3229,7 +3769,10 @@ const server = http.createServer(async (req, res) => {
       if (frontmatter) {
         const nameLine = frontmatter[1].split(/\r?\n/).find((l) => /^\s*name\s*:/.test(l));
         if (nameLine) {
-          const value = nameLine.replace(/^\s*name\s*:\s*/, "").replace(/^["']|["']$/g, "").trim();
+          const value = nameLine
+            .replace(/^\s*name\s*:\s*/, "")
+            .replace(/^["']|["']$/g, "")
+            .trim();
           if (value) dsName = value;
         }
       }
@@ -3255,16 +3798,26 @@ const server = http.createServer(async (req, res) => {
       const generatingPath = join(dsPath, ".preview-generating.json");
       // Clear any prior error from a previous attempt so the frontend
       // doesn't immediately re-pick up stale state.
-      try { await rm(errorPath, { force: true }); } catch {}
+      try {
+        await rm(errorPath, { force: true });
+      } catch {}
       // Mark generation as in-flight on disk so the frontend can
       // restore "Gerando…" state on remount / page refresh / DS
       // switch without depending on transient React state.
       try {
-        await writeFile(generatingPath, JSON.stringify({
-          provider,
-          model,
-          startedAt: new Date().toISOString(),
-        }, null, 2), "utf8");
+        await writeFile(
+          generatingPath,
+          JSON.stringify(
+            {
+              provider,
+              model,
+              startedAt: new Date().toISOString(),
+            },
+            null,
+            2,
+          ),
+          "utf8",
+        );
       } catch {}
       // cover.html generation was prototyped here (wordmark+dot) but
       // user rejected the visual ("ta carnaval"). Disabled — DS
@@ -3290,39 +3843,54 @@ const server = http.createServer(async (req, res) => {
         // noWorkspace tells kimi to use cwd as spawn dir but NOT pass
         // `-w` (kimi indexes the workspace with -w and hangs on any
         // prompt larger than tiny). Other adapters ignore this field.
-        const upstreamBody = JSON.stringify({ prompt, model, cwd: previewSandbox, noWorkspace: true });
+        const upstreamBody = JSON.stringify({
+          prompt,
+          model,
+          cwd: previewSandbox,
+          noWorkspace: true,
+        });
         try {
           const upstreamData = await new Promise((resolve, reject) => {
-            const lreq = http.request({
-              host: "127.0.0.1",
-              port: PORT,
-              method: "POST",
-              path: `/${provider}/once`,
-              headers: {
-                "Content-Type": "application/json",
-                "Content-Length": Buffer.byteLength(upstreamBody),
+            const lreq = http.request(
+              {
+                host: "127.0.0.1",
+                port: PORT,
+                method: "POST",
+                path: `/${provider}/once`,
+                headers: {
+                  "Content-Type": "application/json",
+                  "Content-Length": Buffer.byteLength(upstreamBody),
+                },
+                timeout: 3_600_000, // 60 min — generous; matches user expectations of "deixar rodando"
               },
-              timeout: 3_600_000, // 60 min — generous; matches user expectations of "deixar rodando"
-            }, (lres) => {
-              let chunks = "";
-              lres.setEncoding("utf8");
-              lres.on("data", (c) => { chunks += c; });
-              lres.on("end", () => {
-                try {
-                  const parsed = chunks ? JSON.parse(chunks) : {};
-                  resolve({ status: lres.statusCode, body: parsed });
-                } catch {
-                  resolve({ status: lres.statusCode, body: { error: `non-JSON response: ${chunks.slice(0, 200)}` } });
-                }
-              });
-            });
+              (lres) => {
+                let chunks = "";
+                lres.setEncoding("utf8");
+                lres.on("data", (c) => {
+                  chunks += c;
+                });
+                lres.on("end", () => {
+                  try {
+                    const parsed = chunks ? JSON.parse(chunks) : {};
+                    resolve({ status: lres.statusCode, body: parsed });
+                  } catch {
+                    resolve({
+                      status: lres.statusCode,
+                      body: { error: `non-JSON response: ${chunks.slice(0, 200)}` },
+                    });
+                  }
+                });
+              },
+            );
             lreq.on("timeout", () => lreq.destroy(new Error(`${provider} took longer than 60min`)));
             lreq.on("error", reject);
             lreq.write(upstreamBody);
             lreq.end();
           });
           if (upstreamData.status >= 400 || upstreamData.body?.error) {
-            throw new Error(upstreamData.body?.error || `provider ${provider} returned ${upstreamData.status}`);
+            throw new Error(
+              upstreamData.body?.error || `provider ${provider} returned ${upstreamData.status}`,
+            );
           }
           const rawText = upstreamData.body?.text || "";
           const html = stripHtmlFence(rawText);
@@ -3337,35 +3905,47 @@ const server = http.createServer(async (req, res) => {
               await writeFile(
                 join(dsPath, ".preview-rawtext.txt"),
                 `# Raw provider response (validation failed)\n` +
-                `# provider: ${provider}\n# model: ${model}\n` +
-                `# bytes: ${rawText.length}\n` +
-                `# at: ${new Date().toISOString()}\n\n${rawText}`,
+                  `# provider: ${provider}\n# model: ${model}\n` +
+                  `# bytes: ${rawText.length}\n` +
+                  `# at: ${new Date().toISOString()}\n\n${rawText}`,
                 "utf8",
               );
             } catch {}
             throw new Error(
               `provider returned no recognizable HTML (got ${rawText.length}B). ` +
-              `Raw dump em .preview-rawtext.txt na pasta da DS. ` +
-              `Tenta outro modelo no picker.`,
+                `Raw dump em .preview-rawtext.txt na pasta da DS. ` +
+                `Tenta outro modelo no picker.`,
             );
           }
           await writeFile(join(dsPath, "preview.html"), html, "utf8");
         } catch (e) {
           try {
-            await writeFile(errorPath, JSON.stringify({
-              error: String(e?.message || e),
-              provider,
-              model,
-              at: new Date().toISOString(),
-            }, null, 2), "utf8");
+            await writeFile(
+              errorPath,
+              JSON.stringify(
+                {
+                  error: String(e?.message || e),
+                  provider,
+                  model,
+                  at: new Date().toISOString(),
+                },
+                null,
+                2,
+              ),
+              "utf8",
+            );
           } catch {}
         } finally {
           // Drop the sandbox no matter what happened. Stray files the
           // provider may have written into /tmp/df-preview-* go with it.
-          try { await rm(previewSandbox, { recursive: true, force: true }); } catch {}
+          try {
+            await rm(previewSandbox, { recursive: true, force: true });
+          } catch {}
           // Clear the in-flight marker so the frontend stops showing
           // the "Gerando…" state once the result file is in place.
-          try { await rm(generatingPath, { force: true }); } catch {}
+          try {
+            await rm(generatingPath, { force: true });
+          } catch {}
         }
       })();
     } catch (e) {
@@ -3393,23 +3973,38 @@ const server = http.createServer(async (req, res) => {
   // chat-append-turn endpoint landed silently failed to persist to JSONL.
   // Fix: require either an exact match OR a `?` query suffix; never
   // match a path that has more chars after `/fs/chat-append`.
-  if (req.method === "POST" && (req.url === "/fs/chat-append" || req.url.startsWith("/fs/chat-append?"))) {
+  if (
+    req.method === "POST" &&
+    (req.url === "/fs/chat-append" || req.url.startsWith("/fs/chat-append?"))
+  ) {
     try {
       const body = await readJson(req);
       const raw = typeof body?.slug === "string" ? body.slug : "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      const threadId = typeof body?.threadId === "string"
-        ? body.threadId.replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80)
-        : "";
-      if (!slug || !threadId) { res.writeHead(400); res.end(JSON.stringify({ error: "slug + threadId required" })); return; }
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      const threadId =
+        typeof body?.threadId === "string"
+          ? body.threadId.replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80)
+          : "";
+      if (!slug || !threadId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug + threadId required" }));
+        return;
+      }
       if (!body?.message || typeof body.message !== "object") {
-        res.writeHead(400); res.end(JSON.stringify({ error: "message required" })); return;
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "message required" }));
+        return;
       }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -3434,18 +4029,28 @@ const server = http.createServer(async (req, res) => {
 
   // Legacy per-message reader. URL match tightened so /fs/chat-read-turns
   // (handler below) doesn't get hijacked by this prefix-match.
-  if (req.method === "GET" && (req.url === "/fs/chat-read" || req.url.startsWith("/fs/chat-read?"))) {
+  if (
+    req.method === "GET" &&
+    (req.url === "/fs/chat-read" || req.url.startsWith("/fs/chat-read?"))
+  ) {
     try {
       const u = new URL(req.url, "http://localhost");
       const rawSlug = u.searchParams.get("slug") || "";
       const slug = normalizeProjectSlug(rawSlug);
-      const threadId = (u.searchParams.get("threadId") || "").replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80);
-      if (!slug || !threadId) { res.writeHead(400); res.end(JSON.stringify({ error: "slug + threadId required" })); return; }
+      const threadId = (u.searchParams.get("threadId") || "")
+        .replace(/[^A-Za-z0-9._-]+/g, "-")
+        .slice(0, 80);
+      if (!slug || !threadId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug + threadId required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const filePath = join(repoRoot, "projects", slug, ".df", "chat", `${threadId}.jsonl`);
       let text = "";
-      try { text = await readFile(filePath, "utf8"); }
-      catch {
+      try {
+        text = await readFile(filePath, "utf8");
+      } catch {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ messages: [] }));
         return;
@@ -3453,7 +4058,13 @@ const server = http.createServer(async (req, res) => {
       const messages = text
         .split(/\r?\n/)
         .filter((l) => l.trim().length > 0)
-        .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+        .map((l) => {
+          try {
+            return JSON.parse(l);
+          } catch {
+            return null;
+          }
+        })
         .filter(Boolean);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ messages }));
@@ -3479,13 +4090,20 @@ const server = http.createServer(async (req, res) => {
       const u = new URL(req.url, "http://localhost");
       const rawSlug = u.searchParams.get("slug") || "";
       const slug = normalizeProjectSlug(rawSlug);
-      const threadId = (u.searchParams.get("threadId") || "").replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80);
-      if (!slug || !threadId) { res.writeHead(400); res.end(JSON.stringify({ error: "slug + threadId required" })); return; }
+      const threadId = (u.searchParams.get("threadId") || "")
+        .replace(/[^A-Za-z0-9._-]+/g, "-")
+        .slice(0, 80);
+      if (!slug || !threadId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug + threadId required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const filePath = join(repoRoot, "projects", slug, ".df", "chat", `${threadId}.jsonl`);
       let text = "";
-      try { text = await readFile(filePath, "utf8"); }
-      catch {
+      try {
+        text = await readFile(filePath, "utf8");
+      } catch {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ turns: [] }));
         return;
@@ -3493,10 +4111,21 @@ const server = http.createServer(async (req, res) => {
       const lines = text
         .split(/\r?\n/)
         .filter((l) => l.trim().length > 0)
-        .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+        .map((l) => {
+          try {
+            return JSON.parse(l);
+          } catch {
+            return null;
+          }
+        })
         .filter(Boolean);
 
-      const isTurn = (r) => r && typeof r === "object" && typeof r.id === "string" && typeof r.user === "object" && r.user !== null;
+      const isTurn = (r) =>
+        r &&
+        typeof r === "object" &&
+        typeof r.id === "string" &&
+        typeof r.user === "object" &&
+        r.user !== null;
 
       // Two passes: detect if file has any legacy lines. If yes, convert
       // the legacy run(s) into turns AND rewrite the file with the new
@@ -3505,7 +4134,12 @@ const server = http.createServer(async (req, res) => {
       const turns = [];
       let pending = null;
       let counter = 0;
-      const flush = () => { if (pending) { turns.push(pending); pending = null; } };
+      const flush = () => {
+        if (pending) {
+          turns.push(pending);
+          pending = null;
+        }
+      };
       for (const raw of lines) {
         if (isTurn(raw)) {
           flush();
@@ -3589,13 +4223,22 @@ const server = http.createServer(async (req, res) => {
     try {
       const u = new URL(req.url, `http://localhost:${PORT}`);
       const raw = u.searchParams.get("slug") ?? "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      if (!slug) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -3650,16 +4293,26 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const raw = typeof body?.slug === "string" ? body.slug : "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      const threadId = typeof body?.threadId === "string"
-        ? body.threadId.replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80)
-        : "";
-      if (!slug || !threadId) { res.writeHead(400); res.end(JSON.stringify({ error: "slug + threadId required" })); return; }
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      const threadId =
+        typeof body?.threadId === "string"
+          ? body.threadId.replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80)
+          : "";
+      if (!slug || !threadId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug + threadId required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -3686,24 +4339,47 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const raw = typeof body?.slug === "string" ? body.slug : "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      const threadId = typeof body?.threadId === "string"
-        ? body.threadId.replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80)
-        : "";
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      const threadId =
+        typeof body?.threadId === "string"
+          ? body.threadId.replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80)
+          : "";
       if (!slug || !threadId) {
-        console.warn("[chat-append-turn] 400: missing slug/threadId", { rawSlug: raw, threadId: body?.threadId });
-        res.writeHead(400); res.end(JSON.stringify({ error: "slug + threadId required", got: { slug: raw, threadId: body?.threadId } })); return;
+        console.warn("[chat-append-turn] 400: missing slug/threadId", {
+          rawSlug: raw,
+          threadId: body?.threadId,
+        });
+        res.writeHead(400);
+        res.end(
+          JSON.stringify({
+            error: "slug + threadId required",
+            got: { slug: raw, threadId: body?.threadId },
+          }),
+        );
+        return;
       }
       const turn = body?.turn;
       if (!turn || typeof turn !== "object" || typeof turn.id !== "string") {
         console.warn("[chat-append-turn] 400: malformed turn", JSON.stringify(turn).slice(0, 200));
-        res.writeHead(400); res.end(JSON.stringify({ error: "turn with string id required", got: { hasUser: !!turn?.user, hasAi: !!turn?.ai, idType: typeof turn?.id } })); return;
+        res.writeHead(400);
+        res.end(
+          JSON.stringify({
+            error: "turn with string id required",
+            got: { hasUser: !!turn?.user, hasAi: !!turn?.ai, idType: typeof turn?.id },
+          }),
+        );
+        return;
       }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -3740,18 +4416,32 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const raw = typeof body?.slug === "string" ? body.slug : "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      const threadId = typeof body?.threadId === "string"
-        ? body.threadId.replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80)
-        : "";
-      if (!slug || !threadId) { res.writeHead(400); res.end(JSON.stringify({ error: "slug + threadId required" })); return; }
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      const threadId =
+        typeof body?.threadId === "string"
+          ? body.threadId.replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80)
+          : "";
+      if (!slug || !threadId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug + threadId required" }));
+        return;
+      }
       const messages = Array.isArray(body?.messages) ? body.messages : null;
-      if (!messages) { res.writeHead(400); res.end(JSON.stringify({ error: "messages array required" })); return; }
+      if (!messages) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "messages array required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -3764,7 +4454,9 @@ const server = http.createServer(async (req, res) => {
       const { writeFile, rename } = await import("node:fs/promises");
       await writeFile(tmp, payload, "utf8");
       await rename(tmp, filePath);
-      console.log(`[chat-snapshot] wrote ${payload.length}B → ${slug}/${threadId} (${messages.length} msgs)`);
+      console.log(
+        `[chat-snapshot] wrote ${payload.length}B → ${slug}/${threadId} (${messages.length} msgs)`,
+      );
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true, bytes: payload.length }));
     } catch (e) {
@@ -3780,8 +4472,14 @@ const server = http.createServer(async (req, res) => {
       const u = new URL(req.url, "http://localhost");
       const rawSlug = u.searchParams.get("slug") || "";
       const slug = normalizeProjectSlug(rawSlug);
-      const threadId = (u.searchParams.get("threadId") || "").replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 80);
-      if (!slug || !threadId) { res.writeHead(400); res.end(JSON.stringify({ error: "slug + threadId required" })); return; }
+      const threadId = (u.searchParams.get("threadId") || "")
+        .replace(/[^A-Za-z0-9._-]+/g, "-")
+        .slice(0, 80);
+      if (!slug || !threadId) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug + threadId required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const filePath = join(repoRoot, "projects", slug, ".df", "chat", `${threadId}.snapshot.json`);
       try {
@@ -3811,8 +4509,16 @@ const server = http.createServer(async (req, res) => {
     try {
       const u = new URL(req.url, "http://localhost");
       const raw = u.searchParams.get("slug") || "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      if (!slug) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const metaPath = join(repoRoot, "projects", slug, ".df", "meta.json");
       // Read + parse separately so we never call writeHead BEFORE a possible
@@ -3834,7 +4540,9 @@ const server = http.createServer(async (req, res) => {
       try {
         parsed = JSON.parse(fileContent);
       } catch (parseErr) {
-        console.warn(`[daemon] /fs/project-meta: malformed meta.json at ${metaPath} — ${parseErr.message}`);
+        console.warn(
+          `[daemon] /fs/project-meta: malformed meta.json at ${metaPath} — ${parseErr.message}`,
+        );
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ meta: null }));
         return;
@@ -3857,16 +4565,27 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const raw = typeof body?.slug === "string" ? body.slug : "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      if (!slug) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug required" }));
+        return;
+      }
       if (!body?.meta || typeof body.meta !== "object") {
-        res.writeHead(400); res.end(JSON.stringify({ error: "meta required" })); return;
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "meta required" }));
+        return;
       }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -3893,15 +4612,23 @@ const server = http.createServer(async (req, res) => {
   {
     const dfFiles = [
       { route: "provider-sessions", key: "sessions", file: "provider-sessions.json" },
-      { route: "artifact-state",     key: "state",    file: "artifact-state.json" },
+      { route: "artifact-state", key: "state", file: "artifact-state.json" },
     ];
     for (const { route, key, file } of dfFiles) {
       if (req.method === "GET" && req.url.startsWith(`/fs/${route}`)) {
         try {
           const u = new URL(req.url, "http://localhost");
           const raw = u.searchParams.get("slug") || "";
-          const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-          if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+          const slug = raw
+            .toLowerCase()
+            .replace(/[^a-z0-9._-]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 80);
+          if (!slug) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "slug required" }));
+            return;
+          }
           const repoRoot = getRepoRoot();
           const filePath = join(repoRoot, "projects", slug, ".df", file);
           let fileContent;
@@ -3916,7 +4643,9 @@ const server = http.createServer(async (req, res) => {
           try {
             parsed = JSON.parse(fileContent);
           } catch (parseErr) {
-            console.warn(`[daemon] /fs/${route}: malformed ${file} at ${filePath} — ${parseErr.message}`);
+            console.warn(
+              `[daemon] /fs/${route}: malformed ${file} at ${filePath} — ${parseErr.message}`,
+            );
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ [key]: null }));
             return;
@@ -3935,17 +4664,28 @@ const server = http.createServer(async (req, res) => {
         try {
           const body = await readJson(req);
           const raw = typeof body?.slug === "string" ? body.slug : "";
-          const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-          if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+          const slug = raw
+            .toLowerCase()
+            .replace(/[^a-z0-9._-]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .slice(0, 80);
+          if (!slug) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "slug required" }));
+            return;
+          }
           const payload = body?.[key];
           if (!payload || typeof payload !== "object") {
-            res.writeHead(400); res.end(JSON.stringify({ error: `${key} required` })); return;
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: `${key} required` }));
+            return;
           }
           const repoRoot = getRepoRoot();
           const projectsRoot = resolveProjectsRoot(repoRoot);
           let target;
-          try { target = assertPathInScope(slug, projectsRoot); }
-          catch (e) {
+          try {
+            target = assertPathInScope(slug, projectsRoot);
+          } catch (e) {
             res.writeHead(400);
             res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
             return;
@@ -3970,20 +4710,28 @@ const server = http.createServer(async (req, res) => {
   // Used by the Files-tab gallery to delete individual files/folders.
   // Scoped to <repoRoot>/projects/ via assertPathInScope so the endpoint
   // can't escape the projects root. Accepts absolute or relative paths.
-  if (req.method === "POST" && req.url.startsWith("/fs/remove")
-      && !req.url.startsWith("/fs/remove-project")
-      && !req.url.startsWith("/fs/remove-ds")) {
+  if (
+    req.method === "POST" &&
+    req.url.startsWith("/fs/remove") &&
+    !req.url.startsWith("/fs/remove-project") &&
+    !req.url.startsWith("/fs/remove-ds")
+  ) {
     try {
       const body = await readJson(req);
       const raw = typeof body?.path === "string" ? body.path : "";
-      if (!raw) { res.writeHead(400); res.end(JSON.stringify({ error: "path required" })); return; }
+      if (!raw) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "path required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       // Strip a leading projects/ if relative, then validate.
       const rel = raw.startsWith("/") ? raw : raw.replace(/^projects\//, "");
       let target;
-      try { target = assertPathInScope(rel, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(rel, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -4008,13 +4756,22 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const raw = typeof body?.slug === "string" ? body.slug : "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      if (!slug) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -4047,15 +4804,24 @@ const server = http.createServer(async (req, res) => {
     try {
       const u = new URL(req.url, "http://localhost");
       const match = u.pathname.match(/^\/projects\/([^/]+)\/zip$/);
-      if (!match) { res.writeHead(404); res.end(JSON.stringify({ error: "not found" })); return; }
+      if (!match) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "not found" }));
+        return;
+      }
       const rawSlug = decodeURIComponent(match[1]);
       const slug = normalizeProjectSlug(rawSlug);
-      if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+      if (!slug) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -4140,27 +4906,42 @@ const server = http.createServer(async (req, res) => {
   // first load when the daemon endpoint exists; see persistVersions().
 
   // GET /projects/:slug/versions — list snapshots
-  if (req.method === "GET" && /^\/projects\/[^/]+\/versions\/?$/.test(req.url.split("?")[0] || "")) {
+  if (
+    req.method === "GET" &&
+    /^\/projects\/[^/]+\/versions\/?$/.test(req.url.split("?")[0] || "")
+  ) {
     try {
       const u = new URL(req.url, "http://localhost");
       const m = u.pathname.match(/^\/projects\/([^/]+)\/versions\/?$/);
-      if (!m) { res.writeHead(404); res.end(JSON.stringify({ error: "not found" })); return; }
+      if (!m) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "not found" }));
+        return;
+      }
       const rawSlug = decodeURIComponent(m[1]);
       const slug = normalizeProjectSlug(rawSlug);
-      if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+      if (!slug) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
       }
       const versionsDir = join(target, ".df", "versions");
       let entries = [];
-      try { entries = await readdir(versionsDir, { withFileTypes: true }); }
-      catch { entries = []; }
+      try {
+        entries = await readdir(versionsDir, { withFileTypes: true });
+      } catch {
+        entries = [];
+      }
       const versions = [];
       for (const e of entries) {
         if (!e.isFile() || !e.name.endsWith(".json")) continue;
@@ -4187,35 +4968,60 @@ const server = http.createServer(async (req, res) => {
   }
 
   // POST /projects/:slug/versions — create or overwrite one version
-  if (req.method === "POST" && /^\/projects\/[^/]+\/versions\/?$/.test(req.url.split("?")[0] || "")) {
+  if (
+    req.method === "POST" &&
+    /^\/projects\/[^/]+\/versions\/?$/.test(req.url.split("?")[0] || "")
+  ) {
     try {
       const u = new URL(req.url, "http://localhost");
       const m = u.pathname.match(/^\/projects\/([^/]+)\/versions\/?$/);
-      if (!m) { res.writeHead(404); res.end(JSON.stringify({ error: "not found" })); return; }
+      if (!m) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "not found" }));
+        return;
+      }
       const rawSlug = decodeURIComponent(m[1]);
       const slug = normalizeProjectSlug(rawSlug);
-      if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+      if (!slug) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug required" }));
+        return;
+      }
       const body = await readJson(req);
       const version = body?.version;
-      if (!version || typeof version !== "object" || typeof version.id !== "string" || typeof version.html !== "string") {
-        res.writeHead(400); res.end(JSON.stringify({ error: "version{id,html} required" })); return;
+      if (
+        !version ||
+        typeof version !== "object" ||
+        typeof version.id !== "string" ||
+        typeof version.html !== "string"
+      ) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "version{id,html} required" }));
+        return;
       }
       // Sanitize the version id to a safe filename. Version ids are produced
       // by the frontend (crypto.randomUUID()) — accept v-<hex> and uuid-ish
       // shapes. Reject anything with separators or dotfiles.
       const safeVid = sanitizeVersionId(String(version.id));
-      if (!safeVid) { res.writeHead(400); res.end(JSON.stringify({ error: "invalid version id" })); return; }
+      if (!safeVid) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "invalid version id" }));
+        return;
+      }
       // Sanity cap on HTML body so a malformed payload can't fill the disk.
       // 4 MB matches the artifact-writer ceiling and is well above any real
       // single-file design (the largest documents in projects/ are ~250 KB).
       if (version.html.length > 4 * 1024 * 1024) {
-        res.writeHead(413); res.end(JSON.stringify({ error: "version html too large (>4MB)" })); return;
+        res.writeHead(413);
+        res.end(JSON.stringify({ error: "version html too large (>4MB)" }));
+        return;
       }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -4247,21 +5053,33 @@ const server = http.createServer(async (req, res) => {
   }
 
   // GET /projects/:slug/versions/:vid — read one version
-  if (req.method === "GET" && /^\/projects\/[^/]+\/versions\/[^/]+\/?$/.test(req.url.split("?")[0] || "")) {
+  if (
+    req.method === "GET" &&
+    /^\/projects\/[^/]+\/versions\/[^/]+\/?$/.test(req.url.split("?")[0] || "")
+  ) {
     try {
       const u = new URL(req.url, "http://localhost");
       const m = u.pathname.match(/^\/projects\/([^/]+)\/versions\/([^/]+)\/?$/);
-      if (!m) { res.writeHead(404); res.end(JSON.stringify({ error: "not found" })); return; }
+      if (!m) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "not found" }));
+        return;
+      }
       const rawSlug = decodeURIComponent(m[1]);
       const slug = normalizeProjectSlug(rawSlug);
       const rawVid = decodeURIComponent(m[2]);
       const safeVid = sanitizeVersionId(rawVid);
-      if (!slug || !safeVid) { res.writeHead(400); res.end(JSON.stringify({ error: "slug+vid required" })); return; }
+      if (!slug || !safeVid) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug+vid required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -4286,27 +5104,41 @@ const server = http.createServer(async (req, res) => {
   }
 
   // DELETE /projects/:slug/versions/:vid — remove one version
-  if (req.method === "DELETE" && /^\/projects\/[^/]+\/versions\/[^/]+\/?$/.test(req.url.split("?")[0] || "")) {
+  if (
+    req.method === "DELETE" &&
+    /^\/projects\/[^/]+\/versions\/[^/]+\/?$/.test(req.url.split("?")[0] || "")
+  ) {
     try {
       const u = new URL(req.url, "http://localhost");
       const m = u.pathname.match(/^\/projects\/([^/]+)\/versions\/([^/]+)\/?$/);
-      if (!m) { res.writeHead(404); res.end(JSON.stringify({ error: "not found" })); return; }
+      if (!m) {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "not found" }));
+        return;
+      }
       const rawSlug = decodeURIComponent(m[1]);
       const slug = normalizeProjectSlug(rawSlug);
       const rawVid = decodeURIComponent(m[2]);
       const safeVid = sanitizeVersionId(rawVid);
-      if (!slug || !safeVid) { res.writeHead(400); res.end(JSON.stringify({ error: "slug+vid required" })); return; }
+      if (!slug || !safeVid) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug+vid required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(slug, projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
       }
       const filePath = join(target, ".df", "versions", `${safeVid}.json`);
-      try { await rm(filePath, { force: true }); } catch {}
+      try {
+        await rm(filePath, { force: true });
+      } catch {}
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true }));
     } catch (e) {
@@ -4328,8 +5160,16 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const raw = typeof body?.slug === "string" ? body.slug : "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      if (!slug) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const dsRoot = join(repoRoot, "design-systems");
       const target = resolve(dsRoot, slug);
@@ -4338,7 +5178,8 @@ const server = http.createServer(async (req, res) => {
       // matched paths on Linux but always failed on Windows (separator
       // mismatch), so the daemon returned 400, the UI did an optimistic
       // remove, and the next reconcile brought the DS back from disk.
-      // Founder repro 2026-05-28: "nao consigo deletar ds, some e volta".
+      // Observed: deleting a DS appeared to fail — it vanished and
+      // then reappeared on the next reconcile.
       const rel = relative(dsRoot, target);
       if (rel.startsWith("..") || isAbsolute(rel)) {
         res.writeHead(400);
@@ -4367,7 +5208,12 @@ const server = http.createServer(async (req, res) => {
       const apiKey = process.env.GROQ_API_KEY;
       if (!apiKey) {
         res.writeHead(503, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "GROQ_API_KEY is not set. Export it in the shell that runs the daemon (e.g. `export GROQ_API_KEY=...` then `npm run dev:web`)." }));
+        res.end(
+          JSON.stringify({
+            error:
+              "GROQ_API_KEY is not set. Export it in the shell that runs the daemon (e.g. `export GROQ_API_KEY=...` then `npm run dev:web`).",
+          }),
+        );
         return;
       }
       const chunks = [];
@@ -4415,12 +5261,14 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && req.url.startsWith("/fs/workspace-info")) {
     const repoRoot = getRepoRoot();
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      repoRoot,
-      home: process.env.HOME || "",
-      projectsDir: join(repoRoot, "projects"),
-      designSystemsDir: join(repoRoot, "design-systems"),
-    }));
+    res.end(
+      JSON.stringify({
+        repoRoot,
+        home: process.env.HOME || "",
+        projectsDir: join(repoRoot, "projects"),
+        designSystemsDir: join(repoRoot, "design-systems"),
+      }),
+    );
     return;
   }
 
@@ -4438,8 +5286,16 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const raw = typeof body?.slug === "string" ? body.slug : "";
-      const slug = raw.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
-      if (!slug) { res.writeHead(400); res.end(JSON.stringify({ error: "slug required" })); return; }
+      const slug = raw
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      if (!slug) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "slug required" }));
+        return;
+      }
       const repoRoot = getRepoRoot();
       const root = join(repoRoot, "design-systems");
       await mkdir(root, { recursive: true });
@@ -4463,25 +5319,38 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       let { cwd, label } = body;
-      if (!cwd) { res.writeHead(400); res.end(JSON.stringify({ error: "cwd required" })); return; }
+      if (!cwd) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "cwd required" }));
+        return;
+      }
       const dir = resolveLocalFsPath(cwd, { write: true });
       await mkdir(dir, { recursive: true });
       const run = (args) => execFileP("git", args, { cwd: dir, timeout: 15000 });
       // Ensure repo
-      try { await run(["rev-parse", "--git-dir"]); }
-      catch {
+      try {
+        await run(["rev-parse", "--git-dir"]);
+      } catch {
         await run(["init", "-b", "main"]);
         await run(["config", "user.email", "design-factory@hyve.local"]).catch(() => {});
         await run(["config", "user.name", "Design Factory"]).catch(() => {});
       }
       await run(["add", "-A"]).catch(() => {});
       // Commit. Allow-empty so repeated snapshots on a no-op state still tag.
-      const msg = label && typeof label === "string" && label.trim() ? label.trim() : `snapshot ${new Date().toISOString()}`;
+      const msg =
+        label && typeof label === "string" && label.trim()
+          ? label.trim()
+          : `snapshot ${new Date().toISOString()}`;
       try {
         await run(["commit", "-m", msg, "--allow-empty"]);
       } catch {}
       // Tag with slugified label + timestamp for uniqueness
-      const slug = msg.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 40) || "snapshot";
+      const slug =
+        msg
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-]/g, "")
+          .slice(0, 40) || "snapshot";
       const tag = `v-${slug}-${Date.now().toString(36).slice(-5)}`;
       await run(["tag", tag]).catch(() => {});
       const sha = (await run(["rev-parse", "HEAD"]).catch(() => ({ stdout: "" }))).stdout.trim();
@@ -4505,23 +5374,32 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const path = body.path;
       if (!path) {
-        res.writeHead(400); res.end(JSON.stringify({ error: "path required" })); return;
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "path required" }));
+        return;
       }
       const cacheRootPath = join(process.env.HOME || tmpdir(), ".design-factory-cache", "git");
       await mkdir(cacheRootPath, { recursive: true });
       const cacheRoot = realpathSync(cacheRootPath);
       let target;
-      try { target = assertPathInScope(expandHomePath(path), cacheRoot); }
-      catch (e) {
-        res.writeHead(400); res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) })); return;
+      try {
+        target = assertPathInScope(expandHomePath(path), cacheRoot);
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
+        return;
       }
       if (target === cacheRoot) {
-        res.writeHead(400); res.end(JSON.stringify({ error: "refusing to remove cache root" })); return;
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "refusing to remove cache root" }));
+        return;
       }
       await rm(target, { recursive: true, force: true });
-      res.writeHead(200); res.end(JSON.stringify({ removed: target }));
+      res.writeHead(200);
+      res.end(JSON.stringify({ removed: target }));
     } catch (e) {
-      res.writeHead(400); res.end(JSON.stringify({ error: String(e) }));
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: String(e) }));
     }
     return;
   }
@@ -4609,11 +5487,16 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         const out = [];
-        const TEXT_EXT_RX = /\.(html?|svg|xml|css|scss|sass|less|js|jsx|mjs|cjs|ts|tsx|json|jsonc|md|markdown|mdx|txt|csv|tsv|yaml|yml|toml|ini|conf|sh|bash|zsh|py|rb|go|rs|java|kt|c|cc|cpp|h|hpp|sql|graphql|gql)$/i;
+        const TEXT_EXT_RX =
+          /\.(html?|svg|xml|css|scss|sass|less|js|jsx|mjs|cjs|ts|tsx|json|jsonc|md|markdown|mdx|txt|csv|tsv|yaml|yml|toml|ini|conf|sh|bash|zsh|py|rb|go|rs|java|kt|c|cc|cpp|h|hpp|sql|graphql|gql)$/i;
         const walk = async (p, depth, relPrefix) => {
           if (depth > 3 || out.length >= 200) return;
           let entries;
-          try { entries = await readdir(p, { withFileTypes: true }); } catch { return; }
+          try {
+            entries = await readdir(p, { withFileTypes: true });
+          } catch {
+            return;
+          }
           for (const e of entries) {
             if (out.length >= 200) break;
             if (/^\.(git|DS_Store)/.test(e.name)) continue;
@@ -4625,7 +5508,11 @@ const server = http.createServer(async (req, res) => {
             }
             if (!e.isFile()) continue;
             let st;
-            try { st = await stat(childPath); } catch { continue; }
+            try {
+              st = await stat(childPath);
+            } catch {
+              continue;
+            }
             // Skip the manifest itself — already in skill.body.
             if (childRel === basename(skillFile) && p === skillDir) continue;
             out.push({
@@ -4690,19 +5577,23 @@ const server = http.createServer(async (req, res) => {
   // to distinguish "daemon up" from "daemon up but misconfigured".
   if (req.url === "/healthz") {
     let providersRegistered = 0;
-    try { providersRegistered = listProviders().length; } catch {}
+    try {
+      providersRegistered = listProviders().length;
+    } catch {}
     const repoRoot = getRepoRoot();
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      ok: true,
-      service: "design-factory-daemon",
-      version: "0.1.0",
-      port: PORT,
-      cwd: repoRoot,
-      projectsDir: join(repoRoot, "projects"),
-      providers: { registered: providersRegistered },
-      claude: CLAUDE_BIN,
-    }));
+    res.end(
+      JSON.stringify({
+        ok: true,
+        service: "design-factory-daemon",
+        version: "0.1.0",
+        port: PORT,
+        cwd: repoRoot,
+        projectsDir: join(repoRoot, "projects"),
+        providers: { registered: providersRegistered },
+        claude: CLAUDE_BIN,
+      }),
+    );
     return;
   }
 
@@ -4744,7 +5635,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (p) {
       let ok = false;
-      try { ok = (await stat(p)).isFile(); } catch {}
+      try {
+        ok = (await stat(p)).isFile();
+      } catch {}
       if (!ok) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: `not a file: ${p}` }));
@@ -4752,7 +5645,8 @@ const server = http.createServer(async (req, res) => {
       }
     }
     const overrides = readBinOverrides();
-    if (p) overrides[id] = p; else delete overrides[id];
+    if (p) overrides[id] = p;
+    else delete overrides[id];
     try {
       mkdirSync(dirname(binOverridePath()), { recursive: true });
       writeFileSync(binOverridePath(), JSON.stringify(overrides, null, 2));
@@ -4763,7 +5657,8 @@ const server = http.createServer(async (req, res) => {
     }
     if (p) process.env[`DF_${id.toUpperCase()}_BIN`] = p;
     else delete process.env[`DF_${id.toUpperCase()}_BIN`];
-    agentsCache = null; agentsCacheAt = 0; // force re-detect with the new path
+    agentsCache = null;
+    agentsCacheAt = 0; // force re-detect with the new path
     const agents = await listAgents({ force: true });
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, overrides, agents }));
@@ -4775,12 +5670,14 @@ const server = http.createServer(async (req, res) => {
     const sep = process.platform === "win32" ? ";" : ":";
     const agents = await listAgents({ force: true });
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      platform: process.platform,
-      pathDirs: (process.env.PATH || "").split(sep).filter(Boolean),
-      overrides: readBinOverrides(),
-      agents,
-    }));
+    res.end(
+      JSON.stringify({
+        platform: process.platform,
+        pathDirs: (process.env.PATH || "").split(sep).filter(Boolean),
+        overrides: readBinOverrides(),
+        agents,
+      }),
+    );
     return;
   }
 
@@ -4811,8 +5708,8 @@ const server = http.createServer(async (req, res) => {
   // DETECTION and the CHAT path always agree on the host. Before they shared
   // one resolver, detection probed all three while chat hard-coded 127.0.0.1
   // — Windows IPv6/IPv4 (and WSL/Docker) splits listed models from one host
-  // while generation "fetch failed" on another. Founder report 2026-05-28:
-  // "ollama aberto no pc e nao funciona, nao detecta".
+  // while generation "fetch failed" on another. Observed: Ollama running
+  // on the machine but the app failing to detect it.
   async function probeOllama() {
     return probeOllamaHost();
   }
@@ -4851,7 +5748,7 @@ const server = http.createServer(async (req, res) => {
       } else if (p.id === "openrouter") {
         available = !!(await getOpenrouterToken().catch(() => null));
       } else if (p.id === "openai") {
-        available = !!(process.env.OPENAI_API_KEY);
+        available = !!process.env.OPENAI_API_KEY;
       } else if (p.id === "gemini-api") {
         available = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
       } else if (p.id === "ollama") {
@@ -4927,14 +5824,18 @@ const server = http.createServer(async (req, res) => {
       // "does not support chat") BEFORE the user tries to generate with one.
       // getModelCapabilities is cached + probes via /api/show; the model list
       // is small so a Promise.all is fine.
-      const models = await Promise.all(raw.map(async (m) => {
-        let chat = true;
-        try {
-          const caps = await getModelCapabilities(probe.host, m.name);
-          chat = caps.chat;
-        } catch { /* keep permissive default */ }
-        return { id: m.name, sub: m.details?.parameter_size || "", chat };
-      }));
+      const models = await Promise.all(
+        raw.map(async (m) => {
+          let chat = true;
+          try {
+            const caps = await getModelCapabilities(probe.host, m.name);
+            chat = caps.chat;
+          } catch {
+            /* keep permissive default */
+          }
+          return { id: m.name, sub: m.details?.parameter_size || "", chat };
+        }),
+      );
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ models, host: probe.host }));
     } catch (e) {
@@ -4955,8 +5856,9 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === "PUT" && req.url === "/config/theme") {
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -5001,16 +5903,19 @@ const server = http.createServer(async (req, res) => {
     const cfg = await readAnthropicConfig().catch(() => ({ token: "" }));
     const envSet = !!process.env.ANTHROPIC_API_KEY;
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      tokenSet: !!(cfg.token || envSet),
-      source: envSet ? "env" : (cfg.token ? "disk" : null),
-    }));
+    res.end(
+      JSON.stringify({
+        tokenSet: !!(cfg.token || envSet),
+        source: envSet ? "env" : cfg.token ? "disk" : null,
+      }),
+    );
     return;
   }
   if (req.method === "PUT" && req.url === "/config/anthropic") {
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -5039,16 +5944,19 @@ const server = http.createServer(async (req, res) => {
     const cfg = await readSimpleTokenConfig(OPENAI_CONFIG_PATH).catch(() => ({ token: "" }));
     const envSet = !!process.env.OPENAI_API_KEY;
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      tokenSet: !!(cfg.token || envSet),
-      source: envSet ? "env" : (cfg.token ? "disk" : null),
-    }));
+    res.end(
+      JSON.stringify({
+        tokenSet: !!(cfg.token || envSet),
+        source: envSet ? "env" : cfg.token ? "disk" : null,
+      }),
+    );
     return;
   }
   if (req.method === "PUT" && req.url === "/config/openai") {
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -5077,16 +5985,19 @@ const server = http.createServer(async (req, res) => {
     const cfg = await readSimpleTokenConfig(GEMINI_CONFIG_PATH).catch(() => ({ token: "" }));
     const envSet = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      tokenSet: !!(cfg.token || envSet),
-      source: envSet ? "env" : (cfg.token ? "disk" : null),
-    }));
+    res.end(
+      JSON.stringify({
+        tokenSet: !!(cfg.token || envSet),
+        source: envSet ? "env" : cfg.token ? "disk" : null,
+      }),
+    );
     return;
   }
   if (req.method === "PUT" && req.url === "/config/gemini") {
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -5119,16 +6030,19 @@ const server = http.createServer(async (req, res) => {
     const cfg = await readSimpleTokenConfig(KIMI_CONFIG_PATH).catch(() => ({ token: "" }));
     const envSet = !!(process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY);
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      tokenSet: !!(cfg.token || envSet),
-      source: envSet ? "env" : (cfg.token ? "disk" : null),
-    }));
+    res.end(
+      JSON.stringify({
+        tokenSet: !!(cfg.token || envSet),
+        source: envSet ? "env" : cfg.token ? "disk" : null,
+      }),
+    );
     return;
   }
   if (req.method === "PUT" && req.url === "/config/kimi") {
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -5163,16 +6077,19 @@ const server = http.createServer(async (req, res) => {
     const cfg = await readSimpleTokenConfig(OPENROUTER_CONFIG_PATH).catch(() => ({ token: "" }));
     const envSet = !!process.env.OPENROUTER_API_KEY;
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      tokenSet: !!(cfg.token || envSet),
-      source: envSet ? "env" : (cfg.token ? "disk" : null),
-    }));
+    res.end(
+      JSON.stringify({
+        tokenSet: !!(cfg.token || envSet),
+        source: envSet ? "env" : cfg.token ? "disk" : null,
+      }),
+    );
     return;
   }
   if (req.method === "PUT" && req.url === "/config/openrouter") {
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -5199,13 +6116,22 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/openrouter/models") {
     // Returns the public models list (no auth required for /api/v1/models).
     try {
-      const r = await fetch("https://openrouter.ai/api/v1/models", { signal: AbortSignal.timeout(5000) });
+      const r = await fetch("https://openrouter.ai/api/v1/models", {
+        signal: AbortSignal.timeout(5000),
+      });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      const models = Array.isArray(data.data) ? data.data.slice(0, 200).map((m) => ({
-        id: m.id,
-        sub: m.pricing?.prompt === "0" ? "free" : (m.context_length ? `${Math.round(m.context_length / 1000)}k ctx` : ""),
-      })) : [];
+      const models = Array.isArray(data.data)
+        ? data.data.slice(0, 200).map((m) => ({
+            id: m.id,
+            sub:
+              m.pricing?.prompt === "0"
+                ? "free"
+                : m.context_length
+                  ? `${Math.round(m.context_length / 1000)}k ctx`
+                  : "",
+          }))
+        : [];
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ models }));
     } catch (e) {
@@ -5268,7 +6194,8 @@ const server = http.createServer(async (req, res) => {
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      const EXCLUDE = /embedding|tts|whisper|audio|image|realtime|moderation|dall-e|transcribe|search|computer-use/i;
+      const EXCLUDE =
+        /embedding|tts|whisper|audio|image|realtime|moderation|dall-e|transcribe|search|computer-use/i;
       const KEEP = /^(gpt-|o\d|chatgpt-)/i;
       const models = Array.isArray(data?.data)
         ? data.data
@@ -5304,9 +6231,16 @@ const server = http.createServer(async (req, res) => {
       const data = await r.json();
       const models = Array.isArray(data?.models)
         ? data.models
-            .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes("generateContent"))
+            .filter(
+              (m) =>
+                Array.isArray(m.supportedGenerationMethods) &&
+                m.supportedGenerationMethods.includes("generateContent"),
+            )
             .filter((m) => !/embedding|aqa/i.test(m.name || ""))
-            .map((m) => ({ id: (m.name || "").replace(/^models\//, ""), sub: m.displayName || m.version || "" }))
+            .map((m) => ({
+              id: (m.name || "").replace(/^models\//, ""),
+              sub: m.displayName || m.version || "",
+            }))
             .filter((m) => m.id)
         : [];
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -5333,9 +6267,7 @@ const server = http.createServer(async (req, res) => {
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      const models = Array.isArray(data?.data)
-        ? data.data.map((m) => ({ id: m.id, sub: "" }))
-        : [];
+      const models = Array.isArray(data?.data) ? data.data.map((m) => ({ id: m.id, sub: "" })) : [];
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ models }));
     } catch (e) {
@@ -5354,11 +6286,26 @@ const server = http.createServer(async (req, res) => {
         const child = spawn("opencode", ["models"], { shell: process.platform === "win32" });
         let stdout = "";
         let stderr = "";
-        const timer = setTimeout(() => { try { child.kill(); } catch {} reject(new Error("opencode models timed out")); }, 15000);
-        child.stdout.on("data", (d) => { stdout += d; });
-        child.stderr.on("data", (d) => { stderr += d; });
-        child.on("error", (e) => { clearTimeout(timer); reject(e); });
-        child.on("close", (code) => { clearTimeout(timer); code === 0 ? resolve(stdout) : reject(new Error(stderr.trim() || `exit ${code}`)); });
+        const timer = setTimeout(() => {
+          try {
+            child.kill();
+          } catch {}
+          reject(new Error("opencode models timed out"));
+        }, 15000);
+        child.stdout.on("data", (d) => {
+          stdout += d;
+        });
+        child.stderr.on("data", (d) => {
+          stderr += d;
+        });
+        child.on("error", (e) => {
+          clearTimeout(timer);
+          reject(e);
+        });
+        child.on("close", (code) => {
+          clearTimeout(timer);
+          code === 0 ? resolve(stdout) : reject(new Error(stderr.trim() || `exit ${code}`));
+        });
       });
       const models = String(out)
         .split(/\r?\n/)
@@ -5396,21 +6343,27 @@ const server = http.createServer(async (req, res) => {
       source = "byok";
     } else {
       const cli = await readVercelCliAuth();
-      if (cli.token) { source = "vercel-cli"; cliAvailable = true; }
+      if (cli.token) {
+        source = "vercel-cli";
+        cliAvailable = true;
+      }
     }
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      tokenSet: !!cfg.token || cliAvailable,
-      source,
-      teamId: cfg.teamId || "",
-      teamSlug: cfg.teamSlug || "",
-    }));
+    res.end(
+      JSON.stringify({
+        tokenSet: !!cfg.token || cliAvailable,
+        source,
+        teamId: cfg.teamId || "",
+        teamSlug: cfg.teamSlug || "",
+      }),
+    );
     return;
   }
   if (req.method === "PUT" && req.url === "/config/vercel") {
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -5422,7 +6375,14 @@ const server = http.createServer(async (req, res) => {
         teamSlug: typeof body?.teamSlug === "string" ? body.teamSlug : undefined,
       });
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, tokenSet: !!next.token, teamId: next.teamId, teamSlug: next.teamSlug }));
+      res.end(
+        JSON.stringify({
+          ok: true,
+          tokenSet: !!next.token,
+          teamId: next.teamId,
+          teamSlug: next.teamSlug,
+        }),
+      );
     } catch (err) {
       if (!res.headersSent) {
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -5450,8 +6410,9 @@ const server = http.createServer(async (req, res) => {
   // deploys only — multi-asset bundles are a future wave.
   if (req.method === "POST" && req.url === "/deploy/vercel") {
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -5460,7 +6421,12 @@ const server = http.createServer(async (req, res) => {
     const cfg = await resolveVercelAuth();
     if (!cfg.token) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "no Vercel token configured. Run `vercel login` in your terminal, or PUT /config/vercel { token, teamId? }." }));
+      res.end(
+        JSON.stringify({
+          error:
+            "no Vercel token configured. Run `vercel login` in your terminal, or PUT /config/vercel { token, teamId? }.",
+        }),
+      );
       return;
     }
     const html = typeof body?.html === "string" ? body.html : "";
@@ -5473,15 +6439,16 @@ const server = http.createServer(async (req, res) => {
     // resolve projectName from explicit projectId when caller picked
     // an existing project (UI passes id + name; we trust id and confirm
     // with a quick GET to avoid name-drift).
-    const explicitProjectId = typeof body?.projectId === "string" && body.projectId.trim()
-      ? body.projectId.trim() : null;
-    let projectName = typeof body?.projectName === "string" && body.projectName.trim()
-      ? slugifyVercel(body.projectName)
-      : slug;
+    const explicitProjectId =
+      typeof body?.projectId === "string" && body.projectId.trim() ? body.projectId.trim() : null;
+    let projectName =
+      typeof body?.projectName === "string" && body.projectName.trim()
+        ? slugifyVercel(body.projectName)
+        : slug;
     // Explicit teamId in the payload wins over the saved one. Empty string
     // forces personal scope.
     const teamIdProvided = typeof body?.teamId === "string";
-    const effectiveTeamId = teamIdProvided ? body.teamId.trim() : (cfg.teamId || "");
+    const effectiveTeamId = teamIdProvided ? body.teamId.trim() : cfg.teamId || "";
     // Default to preview — production must be opt-in (user safer flow).
     const target = body?.target === "production" ? "production" : "preview";
     const teamQs = effectiveTeamId ? `?teamId=${encodeURIComponent(effectiveTeamId)}` : "";
@@ -5493,19 +6460,21 @@ const server = http.createServer(async (req, res) => {
       try {
         const r = await fetch(
           `https://api.vercel.com/v9/projects/${encodeURIComponent(explicitProjectId)}${teamQs}`,
-          { headers: { "Authorization": `Bearer ${cfg.token}` } },
+          { headers: { Authorization: `Bearer ${cfg.token}` } },
         );
         if (r.ok) {
           const parsed = await r.json();
           if (parsed?.name) projectName = parsed.name;
         }
-      } catch { /* fall through with caller-supplied name */ }
+      } catch {
+        /* fall through with caller-supplied name */
+      }
     }
     try {
       const upstream = await fetch(`https://api.vercel.com/v13/deployments${teamQs}`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${cfg.token}`,
+          Authorization: `Bearer ${cfg.token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -5522,18 +6491,24 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const parsed = JSON.parse(text);
-      const url = parsed.url ? `https://${parsed.url}` : (parsed.alias?.[0] ? `https://${parsed.alias[0]}` : null);
+      const url = parsed.url
+        ? `https://${parsed.url}`
+        : parsed.alias?.[0]
+          ? `https://${parsed.alias[0]}`
+          : null;
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        ok: true,
-        deploymentId: parsed.id,
-        url,
-        inspectUrl: parsed.inspectorUrl ?? null,
-        target,
-        projectId: parsed.projectId || explicitProjectId || null,
-        projectName,
-        teamId: effectiveTeamId || null,
-      }));
+      res.end(
+        JSON.stringify({
+          ok: true,
+          deploymentId: parsed.id,
+          url,
+          inspectUrl: parsed.inspectorUrl ?? null,
+          target,
+          projectId: parsed.projectId || explicitProjectId || null,
+          projectName,
+          teamId: effectiveTeamId || null,
+        }),
+      );
     } catch (err) {
       if (!res.headersSent) {
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -5568,37 +6543,40 @@ const server = http.createServer(async (req, res) => {
     const teamIdProvided = u.searchParams.has("teamId");
     const effectiveTeamId = teamIdProvided
       ? (u.searchParams.get("teamId") || "").trim()
-      : (cfg.teamId || "");
+      : cfg.teamId || "";
     const teamQs = effectiveTeamId ? `?teamId=${encodeURIComponent(effectiveTeamId)}` : "";
     try {
       const upstream = await fetch(
         `https://api.vercel.com/v13/deployments/${encodeURIComponent(deploymentId)}${teamQs}`,
-        { headers: { "Authorization": `Bearer ${cfg.token}` } },
+        { headers: { Authorization: `Bearer ${cfg.token}` } },
       );
       const text = await upstream.text();
       if (!upstream.ok) {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: false, error: `HTTP ${upstream.status}: ${text.slice(0, 200)}` }));
+        res.end(
+          JSON.stringify({ ok: false, error: `HTTP ${upstream.status}: ${text.slice(0, 200)}` }),
+        );
         return;
       }
       const parsed = JSON.parse(text);
       const state = parsed.readyState || parsed.status || "UNKNOWN";
       // Vercel returns `url` w/o protocol, and `alias[]` once promoted.
       const baseUrl = parsed.url ? `https://${parsed.url}` : null;
-      const aliasUrl = Array.isArray(parsed.alias) && parsed.alias[0]
-        ? `https://${parsed.alias[0]}`
-        : null;
+      const aliasUrl =
+        Array.isArray(parsed.alias) && parsed.alias[0] ? `https://${parsed.alias[0]}` : null;
       // Surface alias when ready (production gets a custom domain), else
       // baseUrl (preview's `*-{hash}.vercel.app`).
       const url = state === "READY" && aliasUrl ? aliasUrl : baseUrl;
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        ok: true,
-        state,
-        url,
-        inspectUrl: parsed.inspectorUrl ?? null,
-        errorMessage: parsed.errorMessage ?? null,
-      }));
+      res.end(
+        JSON.stringify({
+          ok: true,
+          state,
+          url,
+          inspectUrl: parsed.inspectorUrl ?? null,
+          errorMessage: parsed.errorMessage ?? null,
+        }),
+      );
     } catch (err) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: String(err) }));
@@ -5620,13 +6598,14 @@ const server = http.createServer(async (req, res) => {
     }
     const u = new URL(req.url, "http://localhost");
     const limit = Math.max(1, Math.min(20, Number(u.searchParams.get("limit") || 5)));
-    const teamQs = cfg.teamId
-      ? `&teamId=${encodeURIComponent(cfg.teamId)}`
-      : "";
+    const teamQs = cfg.teamId ? `&teamId=${encodeURIComponent(cfg.teamId)}` : "";
     try {
-      const upstream = await fetch(`https://api.vercel.com/v6/deployments?limit=${limit}${teamQs}`, {
-        headers: { "Authorization": `Bearer ${cfg.token}` },
-      });
+      const upstream = await fetch(
+        `https://api.vercel.com/v6/deployments?limit=${limit}${teamQs}`,
+        {
+          headers: { Authorization: `Bearer ${cfg.token}` },
+        },
+      );
       const text = await upstream.text();
       if (!upstream.ok) {
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -5635,14 +6614,16 @@ const server = http.createServer(async (req, res) => {
       }
       const parsed = JSON.parse(text);
       // Vercel v6 returns { deployments: [{ uid, url, name, target, state, created, ... }] }
-      const deployments = Array.isArray(parsed.deployments) ? parsed.deployments.map((d) => ({
-        id: d.uid || d.id,
-        url: d.url ? `https://${d.url}` : null,
-        name: d.name || "",
-        target: d.target || (d.targets && d.targets.production ? "production" : "preview"),
-        state: d.state || d.readyState || "UNKNOWN",
-        createdAt: typeof d.created === "number" ? d.created : (d.createdAt || null),
-      })) : [];
+      const deployments = Array.isArray(parsed.deployments)
+        ? parsed.deployments.map((d) => ({
+            id: d.uid || d.id,
+            url: d.url ? `https://${d.url}` : null,
+            name: d.name || "",
+            target: d.target || (d.targets && d.targets.production ? "production" : "preview"),
+            state: d.state || d.readyState || "UNKNOWN",
+            createdAt: typeof d.created === "number" ? d.created : d.createdAt || null,
+          }))
+        : [];
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true, deployments }));
     } catch (err) {
@@ -5665,12 +6646,14 @@ const server = http.createServer(async (req, res) => {
     }
     try {
       const upstream = await fetch("https://api.vercel.com/v2/user", {
-        headers: { "Authorization": `Bearer ${cfg.token}` },
+        headers: { Authorization: `Bearer ${cfg.token}` },
       });
       const text = await upstream.text();
       if (!upstream.ok) {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: false, error: `HTTP ${upstream.status}: ${text.slice(0, 200)}` }));
+        res.end(
+          JSON.stringify({ ok: false, error: `HTTP ${upstream.status}: ${text.slice(0, 200)}` }),
+        );
         return;
       }
       const parsed = JSON.parse(text);
@@ -5680,9 +6663,12 @@ const server = http.createServer(async (req, res) => {
       let teamLabel = "";
       if (cfg.teamId) {
         try {
-          const teamRes = await fetch(`https://api.vercel.com/v2/teams/${encodeURIComponent(cfg.teamId)}`, {
-            headers: { "Authorization": `Bearer ${cfg.token}` },
-          });
+          const teamRes = await fetch(
+            `https://api.vercel.com/v2/teams/${encodeURIComponent(cfg.teamId)}`,
+            {
+              headers: { Authorization: `Bearer ${cfg.token}` },
+            },
+          );
           if (teamRes.ok) {
             const t = await teamRes.json();
             teamLabel = t?.name || t?.slug || cfg.teamId;
@@ -5718,7 +6704,7 @@ const server = http.createServer(async (req, res) => {
     }
     try {
       const upstream = await fetch(`https://api.vercel.com/v2/teams?limit=100`, {
-        headers: { "Authorization": `Bearer ${cfg.token}` },
+        headers: { Authorization: `Bearer ${cfg.token}` },
       });
       const text = await upstream.text();
       if (!upstream.ok) {
@@ -5727,13 +6713,15 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const parsed = JSON.parse(text);
-      const teams = Array.isArray(parsed.teams) ? parsed.teams.map((t) => ({
-        id: t.id,
-        slug: t.slug,
-        name: t.name || t.slug,
-        avatar: t.avatar ? `https://vercel.com/api/www/avatar/${t.avatar}?s=64` : null,
-        membership: t.membership ? { role: t.membership.role || "" } : undefined,
-      })) : [];
+      const teams = Array.isArray(parsed.teams)
+        ? parsed.teams.map((t) => ({
+            id: t.id,
+            slug: t.slug,
+            name: t.name || t.slug,
+            avatar: t.avatar ? `https://vercel.com/api/www/avatar/${t.avatar}?s=64` : null,
+            membership: t.membership ? { role: t.membership.role || "" } : undefined,
+          }))
+        : [];
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true, teams }));
     } catch (err) {
@@ -5748,7 +6736,7 @@ const server = http.createServer(async (req, res) => {
   // /v9/projects?teamId=X for each team in /v2/teams. Returns a flat
   // list with `teamId`/`teamSlug`/`teamName` fields plus the team
   // catalogue itself. — user fix: previously only personal
-  // projects came back, hiding the 6 projects in the `hyve-lab` team.
+  // projects came back, hiding projects that live under a team.
   if (req.method === "GET" && req.url.startsWith("/vercel/projects/all")) {
     const cfg = await resolveVercelAuth();
     if (!cfg.token) {
@@ -5759,14 +6747,16 @@ const server = http.createServer(async (req, res) => {
     const u = new URL(req.url, "http://localhost");
     const limit = Math.max(1, Math.min(200, Number(u.searchParams.get("limit") || 100)));
     const search = (u.searchParams.get("search") || "").toLowerCase();
-    const headers = { "Authorization": `Bearer ${cfg.token}` };
+    const headers = { Authorization: `Bearer ${cfg.token}` };
     const mapProject = (p, scope) => ({
       id: p.id,
       name: p.name,
       framework: p.framework || null,
       createdAt: typeof p.createdAt === "number" ? p.createdAt : null,
       updatedAt: typeof p.updatedAt === "number" ? p.updatedAt : null,
-      latestDeployment: p.latestDeployments?.[0]?.url ? `https://${p.latestDeployments[0].url}` : null,
+      latestDeployment: p.latestDeployments?.[0]?.url
+        ? `https://${p.latestDeployments[0].url}`
+        : null,
       teamId: scope.teamId || null,
       teamSlug: scope.teamSlug || null,
       teamName: scope.teamName || null,
@@ -5774,10 +6764,14 @@ const server = http.createServer(async (req, res) => {
     const fetchScope = async (scope) => {
       const teamQs = scope.teamId ? `&teamId=${encodeURIComponent(scope.teamId)}` : "";
       try {
-        const r = await fetch(`https://api.vercel.com/v9/projects?limit=${limit}${teamQs}`, { headers });
+        const r = await fetch(`https://api.vercel.com/v9/projects?limit=${limit}${teamQs}`, {
+          headers,
+        });
         if (!r.ok) return [];
         const parsed = await r.json();
-        return Array.isArray(parsed.projects) ? parsed.projects.map((p) => mapProject(p, scope)) : [];
+        return Array.isArray(parsed.projects)
+          ? parsed.projects.map((p) => mapProject(p, scope))
+          : [];
       } catch {
         return [];
       }
@@ -5789,14 +6783,18 @@ const server = http.createServer(async (req, res) => {
         const r = await fetch(`https://api.vercel.com/v2/teams?limit=100`, { headers });
         if (r.ok) {
           const parsed = await r.json();
-          teams = Array.isArray(parsed.teams) ? parsed.teams.map((t) => ({
-            id: t.id,
-            slug: t.slug,
-            name: t.name || t.slug,
-            avatar: t.avatar ? `https://vercel.com/api/www/avatar/${t.avatar}?s=64` : null,
-          })) : [];
+          teams = Array.isArray(parsed.teams)
+            ? parsed.teams.map((t) => ({
+                id: t.id,
+                slug: t.slug,
+                name: t.name || t.slug,
+                avatar: t.avatar ? `https://vercel.com/api/www/avatar/${t.avatar}?s=64` : null,
+              }))
+            : [];
         }
-      } catch { /* teams optional */ }
+      } catch {
+        /* teams optional */
+      }
 
       // 2. Fan out: personal scope + each team in parallel.
       const scopes = [
@@ -5852,9 +6850,12 @@ const server = http.createServer(async (req, res) => {
     }
     const teamQs = teamId ? `?teamId=${encodeURIComponent(teamId)}` : "";
     try {
-      const r = await fetch(`https://api.vercel.com/v9/projects/${encodeURIComponent(slug)}${teamQs}`, {
-        headers: { "Authorization": `Bearer ${cfg.token}` },
-      });
+      const r = await fetch(
+        `https://api.vercel.com/v9/projects/${encodeURIComponent(slug)}${teamQs}`,
+        {
+          headers: { Authorization: `Bearer ${cfg.token}` },
+        },
+      );
       if (r.status === 404) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: true, available: true, name: slug }));
@@ -5895,13 +6896,11 @@ const server = http.createServer(async (req, res) => {
     // explicit teamId query param overrides the saved one. An empty
     // string forces personal scope so callers can dis-ambiguate.
     const teamIdParam = u.searchParams.get("teamId");
-    const effectiveTeamId = teamIdParam !== null ? teamIdParam : (cfg.teamId || "");
-    const teamQs = effectiveTeamId
-      ? `&teamId=${encodeURIComponent(effectiveTeamId)}`
-      : "";
+    const effectiveTeamId = teamIdParam !== null ? teamIdParam : cfg.teamId || "";
+    const teamQs = effectiveTeamId ? `&teamId=${encodeURIComponent(effectiveTeamId)}` : "";
     try {
       const upstream = await fetch(`https://api.vercel.com/v9/projects?limit=${limit}${teamQs}`, {
-        headers: { "Authorization": `Bearer ${cfg.token}` },
+        headers: { Authorization: `Bearer ${cfg.token}` },
       });
       const text = await upstream.text();
       if (!upstream.ok) {
@@ -5910,15 +6909,19 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const parsed = JSON.parse(text);
-      let projects = Array.isArray(parsed.projects) ? parsed.projects.map((p) => ({
-        id: p.id,
-        name: p.name,
-        framework: p.framework || null,
-        createdAt: typeof p.createdAt === "number" ? p.createdAt : null,
-        updatedAt: typeof p.updatedAt === "number" ? p.updatedAt : null,
-        latestDeployment: p.latestDeployments?.[0]?.url ? `https://${p.latestDeployments[0].url}` : null,
-        teamId: effectiveTeamId || null,
-      })) : [];
+      let projects = Array.isArray(parsed.projects)
+        ? parsed.projects.map((p) => ({
+            id: p.id,
+            name: p.name,
+            framework: p.framework || null,
+            createdAt: typeof p.createdAt === "number" ? p.createdAt : null,
+            updatedAt: typeof p.updatedAt === "number" ? p.updatedAt : null,
+            latestDeployment: p.latestDeployments?.[0]?.url
+              ? `https://${p.latestDeployments[0].url}`
+              : null,
+            teamId: effectiveTeamId || null,
+          }))
+        : [];
       if (search) {
         projects = projects.filter((p) => p.name.toLowerCase().includes(search));
       }
@@ -5944,12 +6947,14 @@ const server = http.createServer(async (req, res) => {
     }
     try {
       const upstream = await fetch("https://api.vercel.com/v2/user", {
-        headers: { "Authorization": `Bearer ${cfg.token}` },
+        headers: { Authorization: `Bearer ${cfg.token}` },
       });
       const text = await upstream.text();
       if (!upstream.ok) {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: false, error: `HTTP ${upstream.status}: ${text.slice(0, 200)}` }));
+        res.end(
+          JSON.stringify({ ok: false, error: `HTTP ${upstream.status}: ${text.slice(0, 200)}` }),
+        );
         return;
       }
       const parsed = JSON.parse(text);
@@ -5957,9 +6962,12 @@ const server = http.createServer(async (req, res) => {
       let teamLabel = "";
       if (cfg.teamId) {
         try {
-          const teamRes = await fetch(`https://api.vercel.com/v2/teams/${encodeURIComponent(cfg.teamId)}`, {
-            headers: { "Authorization": `Bearer ${cfg.token}` },
-          });
+          const teamRes = await fetch(
+            `https://api.vercel.com/v2/teams/${encodeURIComponent(cfg.teamId)}`,
+            {
+              headers: { Authorization: `Bearer ${cfg.token}` },
+            },
+          );
           if (teamRes.ok) {
             const tData = await teamRes.json();
             teamLabel = tData?.name || tData?.slug || cfg.teamId;
@@ -5967,15 +6975,17 @@ const server = http.createServer(async (req, res) => {
         } catch {}
       }
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        ok: true,
-        username: user.username || user.name || "(unknown)",
-        name: user.name || null,
-        email: user.email || null,
-        avatar: user.avatar ? `https://vercel.com/api/www/avatar/${user.avatar}?s=64` : null,
-        teamLabel: teamLabel || null,
-        source: cfg.source,  // "byok" | "vercel-cli"
-      }));
+      res.end(
+        JSON.stringify({
+          ok: true,
+          username: user.username || user.name || "(unknown)",
+          name: user.name || null,
+          email: user.email || null,
+          avatar: user.avatar ? `https://vercel.com/api/www/avatar/${user.avatar}?s=64` : null,
+          teamLabel: teamLabel || null,
+          source: cfg.source, // "byok" | "vercel-cli"
+        }),
+      );
     } catch (err) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: String(err) }));
@@ -5991,34 +7001,48 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && req.url === "/vercel/device/start") {
     if (!VERCEL_CLIENT_ID) {
       res.writeHead(503, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        error: "Vercel OAuth not configured",
-        hint: "Set DF_VERCEL_CLIENT_ID to enable device flow. Until then use BYOK token paste.",
-        fallback: "byok",
-      }));
+      res.end(
+        JSON.stringify({
+          error: "Vercel OAuth not configured",
+          hint: "Set DF_VERCEL_CLIENT_ID to enable device flow. Until then use BYOK token paste.",
+          fallback: "byok",
+        }),
+      );
       return;
     }
     try {
       const r = await fetch(VERCEL_DEVICE_AUTH_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" },
-        body: new URLSearchParams({ client_id: VERCEL_CLIENT_ID, scope: "openid profile email" }).toString(),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
+        body: new URLSearchParams({
+          client_id: VERCEL_CLIENT_ID,
+          scope: "openid profile email",
+        }).toString(),
       });
       const data = await r.json();
       if (!r.ok || !data?.device_code) {
         res.writeHead(r.status || 500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: data?.error_description || data?.error || "device code request failed" }));
+        res.end(
+          JSON.stringify({
+            error: data?.error_description || data?.error || "device code request failed",
+          }),
+        );
         return;
       }
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        deviceCode: data.device_code,
-        userCode: data.user_code,
-        verificationUri: data.verification_uri,
-        verificationUriComplete: data.verification_uri_complete,
-        interval: data.interval ?? 5,
-        expiresIn: data.expires_in ?? 900,
-      }));
+      res.end(
+        JSON.stringify({
+          deviceCode: data.device_code,
+          userCode: data.user_code,
+          verificationUri: data.verification_uri,
+          verificationUriComplete: data.verification_uri_complete,
+          interval: data.interval ?? 5,
+          expiresIn: data.expires_in ?? 900,
+        }),
+      );
     } catch (e) {
       if (!res.headersSent) {
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -6041,10 +7065,17 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await readJson(req);
       const { deviceCode } = body;
-      if (!deviceCode) { res.writeHead(400); res.end(JSON.stringify({ error: "deviceCode required" })); return; }
+      if (!deviceCode) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: "deviceCode required" }));
+        return;
+      }
       const r = await fetch(VERCEL_TOKEN_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
         body: new URLSearchParams({
           client_id: VERCEL_CLIENT_ID,
           device_code: deviceCode,
@@ -6053,7 +7084,9 @@ const server = http.createServer(async (req, res) => {
       });
       const data = await r.json();
       if (data.access_token) {
-        try { await writeVercelConfig({ token: data.access_token }); } catch {}
+        try {
+          await writeVercelConfig({ token: data.access_token });
+        } catch {}
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ status: "ok", tokenType: data.token_type, scope: data.scope }));
         return;
@@ -6069,7 +7102,12 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ status: "error", error: data.error_description || data.error || "unknown" }));
+      res.end(
+        JSON.stringify({
+          status: "error",
+          error: data.error_description || data.error || "unknown",
+        }),
+      );
     } catch (e) {
       if (!res.headersSent) {
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -6086,9 +7124,14 @@ const server = http.createServer(async (req, res) => {
   // show who's connected.
   if (req.method === "GET" && req.url === "/gh/user") {
     let token = null;
-    try { const { stdout } = await execFileP("gh", ["auth", "token"], { timeout: 3000 }); token = stdout.trim(); } catch {}
+    try {
+      const { stdout } = await execFileP("gh", ["auth", "token"], { timeout: 3000 });
+      token = stdout.trim();
+    } catch {}
     if (!token) {
-      try { token = (await readFile(DF_TOKEN_PATH, "utf8")).trim(); } catch {}
+      try {
+        token = (await readFile(DF_TOKEN_PATH, "utf8")).trim();
+      } catch {}
     }
     if (!token) {
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -6111,14 +7154,16 @@ const server = http.createServer(async (req, res) => {
       }
       const u = await r.json();
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        ok: true,
-        login: u.login,
-        name: u.name || null,
-        email: u.email || null,
-        avatar: u.avatar_url || null,
-        publicRepos: u.public_repos ?? 0,
-      }));
+      res.end(
+        JSON.stringify({
+          ok: true,
+          login: u.login,
+          name: u.name || null,
+          email: u.email || null,
+          avatar: u.avatar_url || null,
+          publicRepos: u.public_repos ?? 0,
+        }),
+      );
     } catch (err) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: String(err) }));
@@ -6143,8 +7188,9 @@ const server = http.createServer(async (req, res) => {
   // so swapping the body to the real spawn won't ripple to the client.
   if (req.method === "POST" && req.url === "/hyperframes/render") {
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -6160,7 +7206,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     });
     res.flushHeaders?.();
@@ -6170,8 +7216,12 @@ const server = http.createServer(async (req, res) => {
     let ffmpegProc = null;
     req.on("close", async () => {
       cancelled = true;
-      try { if (browser) await browser.close(); } catch {}
-      try { if (ffmpegProc && !ffmpegProc.killed) ffmpegProc.kill("SIGTERM"); } catch {}
+      try {
+        if (browser) await browser.close();
+      } catch {}
+      try {
+        if (ffmpegProc && !ffmpegProc.killed) ffmpegProc.kill("SIGTERM");
+      } catch {}
     });
 
     const emit = (event, data) => {
@@ -6195,8 +7245,8 @@ const server = http.createServer(async (req, res) => {
       const RATIO_DIMS = {
         "16:9": { w: 1920, h: 1080 },
         "9:16": { w: 1080, h: 1920 },
-        "1:1":  { w: 1080, h: 1080 },
-        "4k":   { w: 3840, h: 2160 },
+        "1:1": { w: 1080, h: 1080 },
+        "4k": { w: 3840, h: 2160 },
       };
       const dim = RATIO_DIMS[config.ratio] || RATIO_DIMS["16:9"];
       const fps = 30;
@@ -6206,8 +7256,10 @@ const server = http.createServer(async (req, res) => {
       // ── Phase 1: lint ────────────────────────────────────────────
       emit("phase", { phase: "linting" });
       const lintIssues = [];
-      if (/setTimeout\s*\(/i.test(html)) lintIssues.push("setTimeout detected — animation may desync");
-      if (/Math\.random\s*\(/i.test(html) && !/seedrandom/i.test(html)) lintIssues.push("Math.random detected — frames may differ");
+      if (/setTimeout\s*\(/i.test(html))
+        lintIssues.push("setTimeout detected — animation may desync");
+      if (/Math\.random\s*\(/i.test(html) && !/seedrandom/i.test(html))
+        lintIssues.push("Math.random detected — frames may differ");
       // Lint is informational only; we proceed regardless. Real Hyperframes
       // (--strict) would gate here.
       for (const w of lintIssues) emit("warning", { text: w });
@@ -6245,7 +7297,9 @@ body { overflow: hidden !important; }
         : /<\/head>/i.test(html)
           ? html.replace(/<\/head>/i, `${VIEWPORT_FIT_STYLE}\n</head>`)
           : `<!doctype html><html><head>${VIEWPORT_FIT_STYLE}</head><body>${html}</body></html>`;
-      await import("node:fs/promises").then(({ writeFile }) => writeFile(htmlPath, htmlWithFit, "utf8"));
+      await import("node:fs/promises").then(({ writeFile }) =>
+        writeFile(htmlPath, htmlWithFit, "utf8"),
+      );
       const mp4OutPath = join(exportDir, `${ts}.mp4`);
 
       // ── Phase 2: rendering (Puppeteer screenshot loop) ──────────
@@ -6254,7 +7308,10 @@ body { overflow: hidden !important; }
       try {
         pup = await import("puppeteer");
       } catch (e) {
-        return fail("spawn", `Puppeteer not installed. Run \`npm install\` in the project root and try again.`);
+        return fail(
+          "spawn",
+          `Puppeteer not installed. Run \`npm install\` in the project root and try again.`,
+        );
       }
       try {
         browser = await pup.default.launch({
@@ -6284,12 +7341,17 @@ body { overflow: hidden !important; }
             rafCallbacks.push(cb);
             return id;
           };
-          w.cancelAnimationFrame = (id) => { rafCallbacks[id] = null; };
+          w.cancelAnimationFrame = (id) => {
+            rafCallbacks[id] = null;
+          };
           w.__df_tick = (vt) => {
             w.__df_virtual_time = vt;
             const callbacks = rafCallbacks.splice(0);
             for (const cb of callbacks) {
-              if (cb) try { cb(startPerf + vt); } catch {}
+              if (cb)
+                try {
+                  cb(startPerf + vt);
+                } catch {}
             }
           };
         });
@@ -6299,12 +7361,17 @@ body { overflow: hidden !important; }
 
         const frameMs = 1000 / fps;
         for (let i = 0; i < totalFrames; i++) {
-          if (cancelled) { try { await browser.close(); } catch {} return; }
+          if (cancelled) {
+            try {
+              await browser.close();
+            } catch {}
+            return;
+          }
           const virtualTime = i * frameMs;
           // Advance the virtual clock + flush pending RAF callbacks. Three
           // ticks per frame so multi-step animations (chained RAFs) settle.
           await page.evaluate((vt) => {
-            for (let n = 0; n < 3; n++) (window).__df_tick(vt);
+            for (let n = 0; n < 3; n++) window.__df_tick(vt);
           }, virtualTime);
           const framePath = join(tmpDir, `frame-${String(i).padStart(6, "0")}.png`);
           await page.screenshot({ path: framePath, type: "png" });
@@ -6321,7 +7388,9 @@ body { overflow: hidden !important; }
         await browser.close();
         browser = null;
       } catch (e) {
-        try { if (browser) await browser.close(); } catch {}
+        try {
+          if (browser) await browser.close();
+        } catch {}
         return fail("render", `Render failed: ${String(e?.message ?? e).slice(0, 200)}`);
       }
       if (cancelled) return;
@@ -6332,21 +7401,32 @@ body { overflow: hidden !important; }
         const inputPattern = join(tmpDir, "frame-%06d.png");
         // libx264 yuv420p baseline — broad compat across players + browsers.
         const args = [
-          "-y", "-loglevel", "warning",
-          "-framerate", String(fps),
-          "-i", inputPattern,
-          "-c:v", "libx264",
-          "-preset", "medium",
-          "-crf", "20",
-          "-pix_fmt", "yuv420p",
+          "-y",
+          "-loglevel",
+          "warning",
+          "-framerate",
+          String(fps),
+          "-i",
+          inputPattern,
+          "-c:v",
+          "libx264",
+          "-preset",
+          "medium",
+          "-crf",
+          "20",
+          "-pix_fmt",
+          "yuv420p",
           // Even dimensions required for yuv420p.
-          "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+          "-vf",
+          "scale=trunc(iw/2)*2:trunc(ih/2)*2",
           mp4OutPath,
         ];
         await new Promise((resolve, reject) => {
           ffmpegProc = spawn("ffmpeg", args);
           let stderrBuf = "";
-          ffmpegProc.stderr.on("data", (c) => { stderrBuf += String(c); });
+          ffmpegProc.stderr.on("data", (c) => {
+            stderrBuf += String(c);
+          });
           ffmpegProc.on("error", (err) => reject(err));
           ffmpegProc.on("close", (code) => {
             ffmpegProc = null;
@@ -6394,8 +7474,9 @@ body { overflow: hidden !important; }
       const repoRoot = getRepoRoot();
       const projectsRoot = resolveProjectsRoot(repoRoot);
       let target;
-      try { target = assertPathInScope(relPath.replace(/^projects\//, ""), projectsRoot); }
-      catch (e) {
+      try {
+        target = assertPathInScope(relPath.replace(/^projects\//, ""), projectsRoot);
+      } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
         return;
@@ -6403,13 +7484,19 @@ body { overflow: hidden !important; }
       const { stat, createReadStream } = await import("node:fs");
       stat(target, (err, st) => {
         if (err || !st.isFile()) {
-          res.writeHead(404); res.end(); return;
+          res.writeHead(404);
+          res.end();
+          return;
         }
         const ext = target.toLowerCase().split(".").pop() || "";
-        const mime = ext === "mp4" ? "video/mp4"
-          : ext === "webm" ? "video/webm"
-          : ext === "mov" ? "video/quicktime"
-          : "application/octet-stream";
+        const mime =
+          ext === "mp4"
+            ? "video/mp4"
+            : ext === "webm"
+              ? "video/webm"
+              : ext === "mov"
+                ? "video/quicktime"
+                : "application/octet-stream";
         res.writeHead(200, {
           "Content-Type": mime,
           "Content-Length": String(st.size),
@@ -6418,11 +7505,11 @@ body { overflow: hidden !important; }
         createReadStream(target).pipe(res);
       });
     } catch (e) {
-      res.writeHead(500); res.end(JSON.stringify({ error: String(e) }));
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: String(e) }));
     }
     return;
   }
-
 
   res.writeHead(404, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ error: "not found" }));
@@ -6438,7 +7525,10 @@ body { overflow: hidden !important; }
 const wss = new WebSocketServer({ noServer: true });
 
 server.on("upgrade", (req, socket, head) => {
-  if (req.url !== "/terminal") { socket.destroy(); return; }
+  if (req.url !== "/terminal") {
+    socket.destroy();
+    return;
+  }
   if (!isOriginAllowed(req)) {
     socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
     socket.destroy();
@@ -6454,22 +7544,34 @@ wss.on("connection", async (ws) => {
     const shell = process.env.SHELL || "/bin/bash";
     pty = nodePty.spawn(shell, [], {
       name: "xterm-color",
-      cols: 80, rows: 24,
+      cols: 80,
+      rows: 24,
       cwd: process.env.HOME || "/",
       env: { ...process.env, TERM: "xterm-256color" },
     });
   } catch (e) {
-    ws.send(JSON.stringify({ type: "data", data: `\r\n\x1b[31m[bridge] terminal unavailable: ${e}\x1b[0m\r\n` }));
+    ws.send(
+      JSON.stringify({
+        type: "data",
+        data: `\r\n\x1b[31m[bridge] terminal unavailable: ${e}\x1b[0m\r\n`,
+      }),
+    );
     ws.close();
     return;
   }
 
   pty.onData((data) => {
-    try { ws.send(JSON.stringify({ type: "data", data })); } catch {}
+    try {
+      ws.send(JSON.stringify({ type: "data", data }));
+    } catch {}
   });
   pty.onExit(({ exitCode }) => {
-    try { ws.send(JSON.stringify({ type: "exit", exitCode })); } catch {}
-    try { ws.close(); } catch {}
+    try {
+      ws.send(JSON.stringify({ type: "exit", exitCode }));
+    } catch {}
+    try {
+      ws.close();
+    } catch {}
   });
 
   ws.on("message", (msg) => {
@@ -6479,7 +7581,11 @@ wss.on("connection", async (ws) => {
       else if (type === "resize" && cols && rows) pty.resize(cols, rows);
     } catch {}
   });
-  ws.on("close", () => { try { pty.kill(); } catch {} });
+  ws.on("close", () => {
+    try {
+      pty.kill();
+    } catch {}
+  });
 });
 
 // ── Start fresh: reclaim our port from a stale DF daemon ────────────────────
@@ -6494,7 +7600,9 @@ async function isOurDaemon(port) {
     const res = await fetch(`http://127.0.0.1:${port}/healthz`, { signal: ctrl.signal });
     clearTimeout(t);
     return res.ok;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 function pidsOnPort(port) {
   try {
@@ -6512,15 +7620,23 @@ function pidsOnPort(port) {
     }
     const out = execFileSync("lsof", ["-ti", `tcp:${port}`], { encoding: "utf8" });
     return out.split(/\s+/).filter((x) => /^\d+$/.test(x));
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 function killPid(pid) {
   try {
     if (process.platform === "win32") {
       spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { stdio: "ignore" });
     } else {
-      try { process.kill(Number(pid), "SIGTERM"); } catch {}
-      setTimeout(() => { try { process.kill(Number(pid), "SIGKILL"); } catch {} }, 400);
+      try {
+        process.kill(Number(pid), "SIGTERM");
+      } catch {}
+      setTimeout(() => {
+        try {
+          process.kill(Number(pid), "SIGKILL");
+        } catch {}
+      }, 400);
     }
   } catch {}
 }
@@ -6528,10 +7644,14 @@ async function reclaimPort(port) {
   if (!(await isOurDaemon(port))) return; // free, or held by a non-DF process — don't touch
   const pids = pidsOnPort(port);
   if (!pids.length) {
-    console.warn(`[dev-bridge] port ${port} is held by our daemon but its PID wasn't found — cannot reclaim`);
+    console.warn(
+      `[dev-bridge] port ${port} is held by our daemon but its PID wasn't found — cannot reclaim`,
+    );
     return;
   }
-  console.log(`[dev-bridge] port ${port} was held by a stale DF daemon (pid ${pids.join(", ")}) — reclaiming`);
+  console.log(
+    `[dev-bridge] port ${port} was held by a stale DF daemon (pid ${pids.join(", ")}) — reclaiming`,
+  );
   for (const pid of pids) killPid(pid);
   for (let i = 0; i < 30 && (await isOurDaemon(port)); i++) {
     await new Promise((r) => setTimeout(r, 100));
@@ -6540,7 +7660,9 @@ async function reclaimPort(port) {
 
 server.on("error", (err) => {
   if (err && err.code === "EADDRINUSE") {
-    console.error(`[dev-bridge] port ${PORT} is still in use by a non-DF process — close it, restart, or set DF_BRIDGE_PORT to another port.`);
+    console.error(
+      `[dev-bridge] port ${PORT} is still in use by a non-DF process — close it, restart, or set DF_BRIDGE_PORT to another port.`,
+    );
   } else {
     console.error(`[dev-bridge] server error: ${err && err.message ? err.message : err}`);
   }
@@ -6559,19 +7681,31 @@ server.listen(PORT, "127.0.0.1", () => {
   // sibling) is silently denied — the agent then "reads but never
   // writes". Surface a clear warning so the operator notices.
   if (process.cwd().includes("/.aios/worktrees/")) {
-    console.warn(`[dev-bridge] ⚠ daemon cwd is inside .aios/worktrees/ (${process.cwd()}). Providers without explicit cwd in the request will sandbox to this worktree — codex/kimi writes to PROJECT_PATH may fail silently. Start daemon from the main repo root.`);
+    console.warn(
+      `[dev-bridge] ⚠ daemon cwd is inside .aios/worktrees/ (${process.cwd()}). Providers without explicit cwd in the request will sandbox to this worktree — codex/kimi writes to PROJECT_PATH may fail silently. Start daemon from the main repo root.`,
+    );
   }
   // Log the security posture so dev sees what's actually enforced.
   if (ALLOWED_ORIGINS === "*") {
-    console.warn(`[dev-bridge] ⚠ CORS origin = "*" (DF_BRIDGE_ORIGIN opt-out). NOT for production.`);
+    console.warn(
+      `[dev-bridge] ⚠ CORS origin = "*" (DF_BRIDGE_ORIGIN opt-out). NOT for production.`,
+    );
   } else {
     console.log(`[dev-bridge] CORS allowed origins: ${[...ALLOWED_ORIGINS].join(", ")}`);
   }
   console.log(`[dev-bridge] path scoping: realpath-based (assertPathInScope)`);
   console.log(`[dev-bridge] claude binary: ${CLAUDE_BIN}`);
-  console.log(`[dev-bridge] endpoints: GET /healthz · GET /ping (alias) · GET /agents/list · POST /claude/stream · POST /claude/once · POST /codex/stream · POST /codex/once · POST /gemini/stream · POST /gemini/once · GET /ollama/models · POST /ollama/stream · POST /ollama/once · GET|PUT /config/openrouter · GET /openrouter/models · POST /openrouter/stream · POST /openrouter/once · POST /opencode/stream · POST /opencode/once · GET /opencode/models · GET|PUT /config/anthropic · GET /anthropic/models · GET /openai/models · GET /gemini-api/models · GET|PUT /config/kimi · GET /kimi/models · POST /anthropic/stream · POST /anthropic/once · GET|PUT /config/vercel · POST /deploy/vercel · GET /deploy/vercel/status · GET /deploy/vercel/list · GET /deploy/vercel/test ·GET /vercel/projects · GET /vercel/projects/all · GET /vercel/projects/check · GET /vercel/teams · GET /vercel/user · POST /vercel/device/start · POST /vercel/device/poll · GET /gh/user · GET /projects/:slug/zip · GET|POST /projects/:slug/versions · GET|DELETE /projects/:slug/versions/:vid · WS /terminal`);
-  console.log(`[dev-bridge] DS: POST /fs/write · GET /fetch-url · GET /gh/token · GET /gh/repos · POST /git/shallow-clone · POST /git/cleanup`);
-  console.log(`[dev-bridge] : POST /fs/write/artifact (atomic write + per-finalPath lock + .df/backups rolling 10)`);
+  console.log(
+    `[dev-bridge] endpoints: GET /healthz · GET /ping (alias) · GET /agents/list · POST /claude/stream · POST /claude/once · POST /codex/stream · POST /codex/once · POST /gemini/stream · POST /gemini/once · GET /ollama/models · POST /ollama/stream · POST /ollama/once · GET|PUT /config/openrouter · GET /openrouter/models · POST /openrouter/stream · POST /openrouter/once · POST /opencode/stream · POST /opencode/once · GET /opencode/models · GET|PUT /config/anthropic · GET /anthropic/models · GET /openai/models · GET /gemini-api/models · GET|PUT /config/kimi · GET /kimi/models · POST /anthropic/stream · POST /anthropic/once · GET|PUT /config/vercel · POST /deploy/vercel · GET /deploy/vercel/status · GET /deploy/vercel/list · GET /deploy/vercel/test ·GET /vercel/projects · GET /vercel/projects/all · GET /vercel/projects/check · GET /vercel/teams · GET /vercel/user · POST /vercel/device/start · POST /vercel/device/poll · GET /gh/user · GET /projects/:slug/zip · GET|POST /projects/:slug/versions · GET|DELETE /projects/:slug/versions/:vid · WS /terminal`,
+  );
+  console.log(
+    `[dev-bridge] DS: POST /fs/write · GET /fetch-url · GET /gh/token · GET /gh/repos · POST /git/shallow-clone · POST /git/cleanup`,
+  );
+  console.log(
+    `[dev-bridge] : POST /fs/write/artifact (atomic write + per-finalPath lock + .df/backups rolling 10)`,
+  );
   console.log(`[dev-bridge] Skills: GET /skills/registry · POST/PATCH/DELETE /skills`);
-  console.log(`[dev-bridge] Commands: GET /commands/list · POST /commands/write · POST /commands/delete`);
+  console.log(
+    `[dev-bridge] Commands: GET /commands/list · POST /commands/write · POST /commands/delete`,
+  );
 });

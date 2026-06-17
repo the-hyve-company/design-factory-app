@@ -3,10 +3,10 @@
 // provider adapter that spawns a CLI subprocess.
 //
 // Before this helper, providers either swallowed spawn errors (the
-// Claude SSE stream would close with no result the founder could
+// Claude SSE stream would close with no result the user could
 // interpret) or duplicated ad-hoc string formatting. Now the message
 // includes the failed binary name and an install hint pointing at the
-// project README, so a Mac/Windows founder who hasn't put `claude` on
+// project README, so a Mac/Windows user who hasn't put `claude` on
 // PATH yet sees a clear next step instead of a hung request.
 
 /**
@@ -29,10 +29,7 @@ export function spawnErrorMessage(err, bin, label) {
     );
   }
   if (err?.code === "EACCES") {
-    return (
-      `${friendly} CLI at "${bin}" is not executable (EACCES). ` +
-      `Run: chmod +x "${bin}"`
-    );
+    return `${friendly} CLI at "${bin}" is not executable (EACCES). ` + `Run: chmod +x "${bin}"`;
   }
   return `${friendly} spawn failed: ${err?.message || String(err)}`;
 }

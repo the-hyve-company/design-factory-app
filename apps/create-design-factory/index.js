@@ -3,7 +3,9 @@
 //
 // Roda via `npm create design-factory` ou `npx create-design-factory`.
 // Baixa o repo público via tarball HTTPS (sem dep de git instalado),
-// extrai no diretório-alvo, roda `npm install` e (por default) `npm run dev:web`.
+// extrai no diretório-alvo, roda `npm install` e (por default) `npm start` —
+// o caminho de PRODUÇÃO (build otimizado servido), igual ao duplo-clique no
+// launcher. Contribuidores que querem hot-reload rodam `npm run dev:web`.
 //
 // Cross-platform: Mac, Linux, Windows. Todo spawn() usa shell:true no Windows
 // (CVE-2024-27980 — npm.cmd lança spawn EINVAL sem shell).
@@ -17,7 +19,7 @@ import { join as pjoin } from "node:path";
 import { createWriteStream } from "node:fs";
 import { x as tarExtract } from "tar";
 
-const REPO = "the-hyve-company/design-factory";
+const REPO = "the-hyve-company/design-factory-app";
 const TARBALL_BASE = `https://codeload.github.com/${REPO}/tar.gz`;
 
 const C = {
@@ -91,7 +93,7 @@ ${C.bold}Opções:${C.reset}
   --dir <nome>       Nome do diretório (default: design-factory)
   --branch <nome>    Branch do repo a baixar (default: main)
   --no-install       Pula \`npm install\` no fim
-  --no-dev           Não roda \`npm run dev:web\` no fim
+  --no-dev           Não inicia o app (\`npm start\`) no fim
   --no-git           Força modo tarball (sem .git/, sem \`git pull\` futuro)
   --force            Sobrescreve diretório existente
   -h, --help         Mostra esta ajuda
@@ -123,17 +125,12 @@ function downloadTarball(url, outPath) {
       if (redirects > 5) return rejectP(new Error("Muitos redirects"));
       httpsGet(currentUrl, (res) => {
         // Handle 301/302/307/308
-        if (
-          [301, 302, 307, 308].includes(res.statusCode) &&
-          res.headers.location
-        ) {
+        if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location) {
           res.resume();
           return fetch(res.headers.location, redirects + 1);
         }
         if (res.statusCode !== 200) {
-          return rejectP(
-            new Error(`Download falhou: HTTP ${res.statusCode} em ${currentUrl}`),
-          );
+          return rejectP(new Error(`Download falhou: HTTP ${res.statusCode} em ${currentUrl}`));
         }
         const file = createWriteStream(outPath);
         res.pipe(file);
@@ -158,7 +155,9 @@ async function detectGit() {
         shell: process.platform === "win32",
       });
       let out = "";
-      child.stdout?.on("data", (b) => { out += b.toString("utf8"); });
+      child.stdout?.on("data", (b) => {
+        out += b.toString("utf8");
+      });
       child.on("error", () => resolveP(null));
       child.on("close", (code) => {
         if (code !== 0) return resolveP(null);
@@ -166,7 +165,12 @@ async function detectGit() {
         resolveP(match ? match[1] : "unknown");
       });
       // Hard timeout so a slow git install doesn't hang the scaffolder.
-      setTimeout(() => { try { child.kill(); } catch {} resolveP(null); }, 3000);
+      setTimeout(() => {
+        try {
+          child.kill();
+        } catch {}
+        resolveP(null);
+      }, 3000);
     } catch {
       resolveP(null);
     }
@@ -228,12 +232,15 @@ async function main() {
   if (gitVersion) {
     // git clone needs to OWN the target dir creation (it errors if the
     // dir exists and isn't empty). We didn't pre-mkdir.
-    log(`${C.cyan}→${C.reset} clonando ${REPO}@${args.branch} via git ${C.dim}(${gitVersion})${C.reset}…`);
+    log(
+      `${C.cyan}→${C.reset} clonando ${REPO}@${args.branch} via git ${C.dim}(${gitVersion})${C.reset}…`,
+    );
     try {
       await spawnAwait("git", [
         "clone",
         "--depth=1",
-        "--branch", args.branch,
+        "--branch",
+        args.branch,
         `https://github.com/${REPO}.git`,
         targetDir,
       ]);
@@ -247,7 +254,9 @@ async function main() {
     }
   } else {
     if (args.git) {
-      log(`${C.yellow}→${C.reset} git não detectado, caindo pro tarball ${C.dim}(\`git pull\` futuro não vai funcionar; reinstale git pra ter um repo updateable)${C.reset}`);
+      log(
+        `${C.yellow}→${C.reset} git não detectado, caindo pro tarball ${C.dim}(\`git pull\` futuro não vai funcionar; reinstale git pra ter um repo updateable)${C.reset}`,
+      );
     }
     mkdirSync(targetDir, { recursive: true });
     const tarPath = pjoin(tmpdir(), `design-factory-${Date.now()}.tar.gz`);
@@ -264,7 +273,7 @@ async function main() {
           `  ${C.cyan}git clone https://github.com/${REPO}.git ${dirName}${C.reset}\n` +
           `  ${C.cyan}cd ${dirName}${C.reset}\n` +
           `  ${C.cyan}npm install${C.reset}\n` +
-          `  ${C.cyan}npm run dev:web${C.reset}`,
+          `  ${C.cyan}npm start${C.reset}`,
       );
     }
     log(`${C.cyan}→${C.reset} extraindo em ${dirName}/`);
@@ -274,7 +283,11 @@ async function main() {
       rmSync(targetDir, { recursive: true, force: true });
       die(`Falha ao extrair tarball: ${err.message}`);
     } finally {
-      try { rmSync(tarPath, { force: true }); } catch { /* ignore */ }
+      try {
+        rmSync(tarPath, { force: true });
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -294,13 +307,17 @@ async function main() {
   }
 
   log(``);
-  log(`${C.green}${C.bold}Pronto.${C.reset} Design Factory instalado em ${C.bold}${dirName}/${C.reset}`);
+  log(
+    `${C.green}${C.bold}Pronto.${C.reset} Design Factory instalado em ${C.bold}${dirName}/${C.reset}`,
+  );
 
-  // npm run dev:web — opcional, default true.
+  // npm start — opcional, default true. Caminho de PRODUÇÃO: o launcher
+  // compila o build otimizado (primeira vez) e serve via `vite preview`.
+  // Contribuidores que querem hot-reload rodam `npm run dev:web` à parte.
   if (args.dev && args.install) {
-    log(`${C.cyan}→${C.reset} iniciando dev server (Ctrl+C para parar)…\n`);
+    log(`${C.cyan}→${C.reset} iniciando o app (build otimizado · Ctrl+C para parar)…\n`);
     try {
-      await spawnAwait("npm", ["run", "dev:web"], { cwd: targetDir });
+      await spawnAwait("npm", ["start"], { cwd: targetDir });
     } catch (err) {
       // dev server interrompido pelo usuário (Ctrl+C) é OK.
       if (!/exited with code/.test(err.message)) {
@@ -312,7 +329,7 @@ async function main() {
     log(`${C.dim}Próximos passos:${C.reset}`);
     log(`  ${C.cyan}cd ${dirName}${C.reset}`);
     if (!args.install) log(`  ${C.cyan}npm install${C.reset}`);
-    log(`  ${C.cyan}npm run dev:web${C.reset}`);
+    log(`  ${C.cyan}npm start${C.reset}`);
     log(``);
   }
 }

@@ -41,29 +41,22 @@ import "@/styles/settings-padroes.css";
 // /settings/defaults (was /settings/insumos) as sub-tabs.
 // Skills live at /skills (home) — they have their own library and are
 // NOT a project default. Don't bring them here.
-export type InsumoTab =
-  | "canvas"
-  | "formats"
-  | "rules"
-  | "taste"
-  | "commands"
-  | "prompts";
+export type InsumoTab = "canvas" | "formats" | "rules" | "taste" | "commands" | "prompts";
 
-// Taste sub-tab added 2026-05-11 (user ask: "tweaks em settings ...
-// quero q seja editavel em settings"). Lets the user rewrite the
-// low/high phrase for each of the 6 canonical+ taste dials.
-// commands/prompts merged in 2026-05-18.
+// Taste sub-tab — lets the user rewrite the
+// low/high phrase for each of the 6 canonical+ taste dials,
+// editable directly in settings. Commands/prompts merged in later.
 const TABS: ReadonlyArray<{ id: InsumoTab; key: string; fallback?: string }> = Object.freeze([
-  { id: "canvas",   key: "settings.insumos.tab.canvas" },
-  { id: "formats",  key: "settings.insumos.tab.formats" },
-  { id: "rules",    key: "settings.insumos.tab.rules" },
-  { id: "taste",    key: "settings.insumos.tab.taste",    fallback: "Taste" },
+  { id: "canvas", key: "settings.insumos.tab.canvas" },
+  { id: "formats", key: "settings.insumos.tab.formats" },
+  { id: "rules", key: "settings.insumos.tab.rules" },
+  { id: "taste", key: "settings.insumos.tab.taste", fallback: "Taste" },
   { id: "commands", key: "settings.insumos.tab.commands", fallback: "Commands" },
-  { id: "prompts",  key: "settings.insumos.tab.prompts",  fallback: "System Prompts" },
+  { id: "prompts", key: "settings.insumos.tab.prompts", fallback: "System Prompts" },
 ]);
 
 // Direções/"Como usar" block removed from each sub-tab
-// (user: "todas paginas settings nao precisam desse como usar"). The
+// (the settings pages don't need that "how to use" block). The
 // PadroesDirections component file is preserved (used as a reference
 // pattern) but no longer mounted. i18n keys settings.padroes.directions.*
 // kept in strings.ts for backward-compat — no live consumer.
@@ -79,18 +72,15 @@ export function InsumosPanel({ tab, onTabChange }: InsumosPanelProps) {
   const { t } = useT();
 
   return (
-    <section className="settings-page insumos-panel padroes-panel" aria-label={t("settings.insumos.title")}>
+    <section
+      className="settings-page insumos-panel padroes-panel"
+      aria-label={t("settings.insumos.title")}
+    >
       <h1 className="settings-title">{t("settings.insumos.title")}</h1>
-      <p className="settings-group-sub">
-        {t("settings.insumos.desc")}
-      </p>
+      <p className="settings-group-sub">{t("settings.insumos.desc")}</p>
 
       {/* ── Aqua sub-tabs (preserved Aqua DNA) ───────────────────── */}
-      <div
-        className="insumos-tabs"
-        role="tablist"
-        aria-label={t("settings.insumos.tabs.aria")}
-      >
+      <div className="insumos-tabs" role="tablist" aria-label={t("settings.insumos.tabs.aria")}>
         {TABS.map((entry) => {
           const active = tab === entry.id;
           const tabLabel = t(entry.key);
@@ -130,12 +120,12 @@ export function InsumosPanel({ tab, onTabChange }: InsumosPanelProps) {
         id={`insumos-panel-${tab}`}
         aria-labelledby={`insumos-tab-${tab}`}
       >
-        {tab === "canvas"   && <CanvasPresetsEditor />}
-        {tab === "formats"  && <FormatTaxonomyEditor />}
-        {tab === "rules"    && <RulesEditor />}
-        {tab === "taste"    && <TasteDialEditor />}
+        {tab === "canvas" && <CanvasPresetsEditor />}
+        {tab === "formats" && <FormatTaxonomyEditor />}
+        {tab === "rules" && <RulesEditor />}
+        {tab === "taste" && <TasteDialEditor />}
         {tab === "commands" && <CommandsSettingsPanel />}
-        {tab === "prompts"  && <BuiltinPromptsPanel />}
+        {tab === "prompts" && <BuiltinPromptsPanel />}
       </div>
     </section>
   );

@@ -1320,7 +1320,7 @@
   );
 }
 
-/* ─── 3. Stage padding — heros sit lower (user: "mais pra baixo") ──── */
+/* ─── 3. Stage padding — heros sit lower ──── */
 /*
  * v9 had 28px top padding. v10 increases to ~64px so the hero starts well
  * below the fade gradient (which is ~96px tall). The fade is still visible

@@ -3,8 +3,8 @@
 // Each case is a real provider-response shape:
 //
 //   - well-formed doc (perfect compliance) → untouched, ok
-//   - UNCLOSED frontmatter + ## body (founder repro 2026-05-29, claude
-//     opus 10663B) → repaired with a closing fence, ok
+//   - UNCLOSED frontmatter + ## body (observed with claude
+//     opus, 10663B) → repaired with a closing fence, ok
 //   - whole-body ```markdown fence → stripped, ok
 //   - heading-first doc, no frontmatter → ok
 //   - tool-use summary prose (no frontmatter, no heading) → rejected
@@ -43,7 +43,7 @@ describe("coerceDesignMd", () => {
     expect(r.md).toBe(doc);
   });
 
-  it("repairs an UNCLOSED frontmatter (founder repro: claude omits closing ---)", () => {
+  it("repairs an UNCLOSED frontmatter (claude omits closing ---)", () => {
     // No closing `---` — straight from YAML into `## Overview`.
     const broken = `${FRONTMATTER}\n\n${BODY}`;
     const r = coerceDesignMd(broken);
@@ -63,7 +63,9 @@ describe("coerceDesignMd", () => {
   });
 
   it("accepts a heading-first doc with no frontmatter", () => {
-    const r = coerceDesignMd(`# My Design System\n\nSome real content here that is well over forty chars.`);
+    const r = coerceDesignMd(
+      `# My Design System\n\nSome real content here that is well over forty chars.`,
+    );
     expect(r.ok).toBe(true);
   });
 
@@ -81,8 +83,11 @@ describe("coerceDesignMd", () => {
   });
 
   it("rejects a long prose summary even if it contains a ## heading", () => {
-    const longPreamble = "I analyzed the source files and wrote the design system specification to disk. ".repeat(4);
-    const r = coerceDesignMd(`${longPreamble}\n\n## What the document covers\n\n- colors\n- typography`);
+    const longPreamble =
+      "I analyzed the source files and wrote the design system specification to disk. ".repeat(4);
+    const r = coerceDesignMd(
+      `${longPreamble}\n\n## What the document covers\n\n- colors\n- typography`,
+    );
     expect(r.ok).toBe(false);
   });
 

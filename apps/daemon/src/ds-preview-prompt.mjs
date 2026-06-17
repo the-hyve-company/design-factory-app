@@ -91,7 +91,7 @@ export function stripHtmlFence(raw) {
   if (fullFenceMatch) text = fullFenceMatch[1].trim();
 
   // Path 2: response has prose around a ```html ... ``` block somewhere
-  // in the middle. Founder repro 2026-05-28: claude returned 65KB of
+  // in the middle. Observed: claude returned 65KB of
   // analysis + a fenced HTML block, the doctype-strip below missed it
   // because the first <!DOCTYPE was deep inside the fence (after lots
   // of preamble). Pull out the first fenced block whose body starts

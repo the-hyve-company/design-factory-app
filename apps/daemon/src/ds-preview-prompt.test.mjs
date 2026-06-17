@@ -6,7 +6,7 @@
 //   - leading ``` or ```html fence wrapping the whole response
 //   - prose preamble ("Here's the HTML:") before <!DOCTYPE
 //   - mid-text fenced ```html block surrounded by analysis (regression
-//     for founder repro 2026-05-28 "provider returned no recognizable
+//     for the observed "provider returned no recognizable
 //     HTML (got 65932B)" — claude returned 65KB of design analysis
 //     with the HTML buried in a single code block in the middle)
 //   - trailing prose after </html> ("Let me know if you'd like…")
@@ -45,7 +45,9 @@ describe("stripHtmlFence", () => {
       "# Design Analysis\n\n" +
       "I'll create a preview for this design system. Let me walk through " +
       "the tokens first:\n\n## Tokens\n- bg: white\n- fg: black\n\n" +
-      "## The HTML\n\n```html\n" + HTML + "\n```\n\n" +
+      "## The HTML\n\n```html\n" +
+      HTML +
+      "\n```\n\n" +
       "## Notes\n\nThe layout uses a 12-column grid…";
     expect(stripHtmlFence(wrapped)).toBe(HTML);
   });

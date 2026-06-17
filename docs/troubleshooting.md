@@ -1,7 +1,7 @@
 # Troubleshooting
 
 Common failures and how to recover. If your case isn't here, file an
-[issue](https://github.com/the-hyve-company/design-factory/issues)
+[issue](https://github.com/the-hyve-company/design-factory-app/issues)
 with the steps you took, the provider you were using, and any error
 text from the app or the daemon log.
 
@@ -236,7 +236,7 @@ http://localhost:1420/?strictSandbox=1
 or
 
 ```js
-localStorage.setItem('DF_STRICT_SANDBOX', '1')
+localStorage.setItem("DF_STRICT_SANDBOX", "1");
 ```
 
 Strict mode disables the four features above. See

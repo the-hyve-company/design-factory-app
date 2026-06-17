@@ -12,8 +12,8 @@ From clone to first generated design in about five minutes.
 ## Install
 
 ```bash
-git clone https://github.com/the-hyve-company/design-factory.git
-cd design-factory
+git clone https://github.com/the-hyve-company/design-factory-app.git
+cd design-factory-app
 npm install
 ```
 
@@ -131,14 +131,14 @@ More cases: [docs/troubleshooting.md](troubleshooting.md).
 
 ## Keyboard shortcuts
 
-| Action | Shortcut |
-|--------|----------|
-| Send prompt | `Enter` |
-| Newline in prompt | `Shift+Enter` |
-| Open skills menu | `/` at start of prompt |
-| Toggle tweaks panel collapse | `Esc` (inside the iframe) |
-| Open settings | Click the gear icon (top-right) |
-| Close modal | `Esc` |
+| Action                       | Shortcut                        |
+| ---------------------------- | ------------------------------- |
+| Send prompt                  | `Enter`                         |
+| Newline in prompt            | `Shift+Enter`                   |
+| Open skills menu             | `/` at start of prompt          |
+| Toggle tweaks panel collapse | `Esc` (inside the iframe)       |
+| Open settings                | Click the gear icon (top-right) |
+| Close modal                  | `Esc`                           |
 
 ## Next
 
@@ -146,4 +146,4 @@ More cases: [docs/troubleshooting.md](troubleshooting.md).
   app itself.
 - Browse `skills/` for examples of skills you can adapt.
 - File issues and feature requests on
-  [GitHub](https://github.com/the-hyve-company/design-factory/issues).
+  [GitHub](https://github.com/the-hyve-company/design-factory-app/issues).

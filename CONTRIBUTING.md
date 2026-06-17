@@ -13,8 +13,8 @@ Requirements:
 - At least one provider CLI (see [README.md](README.md))
 
 ```bash
-git clone https://github.com/the-hyve-company/design-factory.git
-cd design-factory
+git clone https://github.com/the-hyve-company/design-factory-app.git
+cd design-factory-app
 npm install
 ```
 
@@ -178,8 +178,8 @@ reproduce.
 - **Bugs / feature requests:** [GitHub Issues][issues]
 - **Security disclosures:** email the maintainer (see `CODE_OF_CONDUCT.md`).
 
-[discussions]: https://github.com/the-hyve-company/design-factory/discussions
-[issues]: https://github.com/the-hyve-company/design-factory/issues
+[discussions]: https://github.com/the-hyve-company/design-factory-app/discussions
+[issues]: https://github.com/the-hyve-company/design-factory-app/issues
 
 ## Code style
 
@@ -187,7 +187,7 @@ reproduce.
 - No `any` in TypeScript — use `unknown` with type guards, or a proper type.
 - No hardcoded colors/spacing/radii in component CSS — use `var(--df-*)`
   tokens from `src/styles/global.css`.
-- Comments explain *why*, not *what*. Don't add a comment to a line whose
+- Comments explain _why_, not _what_. Don't add a comment to a line whose
   intent is already obvious from the code.
 - No emojis in source files unless the design explicitly calls for them.
 

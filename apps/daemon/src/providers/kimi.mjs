@@ -56,7 +56,12 @@ function resolveKimiSpawn() {
   if (process.platform === "win32" && !process.env[KIMI_BIN_ENV]) {
     const entry = join(
       process.env.APPDATA || "",
-      "npm", "node_modules", "@moonshot-ai", "kimi-code", "dist", "main.mjs",
+      "npm",
+      "node_modules",
+      "@moonshot-ai",
+      "kimi-code",
+      "dist",
+      "main.mjs",
     );
     if (existsSync(entry)) {
       return { cmd: process.execPath, pre: [entry], useShell: false };
@@ -131,8 +136,9 @@ const kimi = {
   async stream(req, res, deps) {
     const { readJson } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -147,7 +153,7 @@ const kimi = {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     });
     res.flushHeaders?.();
@@ -155,33 +161,46 @@ const kimi = {
     const kspawn = resolveKimiSpawn();
     const fullPrompt = composePrompt(systemPrompt, prompt);
     // kimi-code 0.2.0 takes the prompt as a -p ARG (no stdin prompt mode).
-    const args = [...kspawn.pre, ...buildArgs({ model, prompt: fullPrompt, sessionId, streamJson: true })];
+    const args = [
+      ...kspawn.pre,
+      ...buildArgs({ model, prompt: fullPrompt, sessionId, streamJson: true }),
+    ];
 
-    res.write(`event: log\ndata: ${JSON.stringify({ level: "info", message: `kimi → ${model || "default"}` })}\n\n`);
+    res.write(
+      `event: log\ndata: ${JSON.stringify({ level: "info", message: `kimi → ${model || "default"}` })}\n\n`,
+    );
     // F-fix: emit canonical meta event so the chat footer (F1.1) shows
     // the real model name, not the literal "default" the picker passed.
-    res.write(`event: meta\ndata: ${JSON.stringify({ model: model && model !== "default" ? model : "kimi-default" })}\n\n`);
+    res.write(
+      `event: meta\ndata: ${JSON.stringify({ model: model && model !== "default" ? model : "kimi-default" })}\n\n`,
+    );
 
     const turnStartedAt = Date.now();
     let child;
     try {
       child = spawn(kspawn.cmd, args, {
-        cwd: (cwd && typeof cwd === "string") ? cwd : process.cwd(),
+        cwd: cwd && typeof cwd === "string" ? cwd : process.cwd(),
         stdio: ["pipe", "pipe", "pipe"],
         shell: kspawn.useShell,
       });
     } catch (err) {
-      res.write(`event: error\ndata: ${JSON.stringify({ error: `failed to spawn kimi: ${String(err?.message || err)}` })}\n\n`);
+      res.write(
+        `event: error\ndata: ${JSON.stringify({ error: `failed to spawn kimi: ${String(err?.message || err)}` })}\n\n`,
+      );
       res.end();
       return;
     }
 
     // kimi-code 0.2.0 reads the prompt from the -p arg (set in buildArgs),
     // not stdin. Close stdin immediately so the CLI doesn't wait on input.
-    try { child.stdin.end(); } catch {}
+    try {
+      child.stdin.end();
+    } catch {}
 
     req.on("close", () => {
-      try { child.kill("SIGTERM"); } catch {}
+      try {
+        child.kill("SIGTERM");
+      } catch {}
     });
 
     let stdoutBuf = "";
@@ -208,19 +227,25 @@ const kimi = {
       // can render `X.Xs` next to the token counts. Kimi doesn't expose
       // a cost figure (OAuth account, included in subscription), so
       // costUsd is omitted intentionally.
-      res.write(`event: result\ndata: ${JSON.stringify({ durationMs: Date.now() - turnStartedAt })}\n\n`);
+      res.write(
+        `event: result\ndata: ${JSON.stringify({ durationMs: Date.now() - turnStartedAt })}\n\n`,
+      );
       if (full) {
         res.write(`event: done\ndata: ${JSON.stringify({ content: full })}\n\n`);
       } else {
-        // User QA 2026-05-15: kimi sometimes "nao gerou nada".
+        // Observed: kimi sometimes produces no output at all.
         // Surface BOTH the friendly message and a short stdout
         // breadcrumb so the next repro shows what the CLI emitted
         // before going silent. Resume-hint already stripped above.
         const stdoutTail = stdoutBuf.trim().slice(0, 300);
         const stderrTail = cleanStderr(stderrBuf).slice(0, 300);
         const breadcrumb = stdoutTail || stderrTail || "no output captured";
-        res.write(`event: log\ndata: ${JSON.stringify({ level: "warn", message: `kimi closed without text. tail: ${breadcrumb.replace(/\n/g, " ⏎ ")}` })}\n\n`);
-        res.write(`event: error\ndata: ${JSON.stringify({ error: stderrTail || "kimi completed without text or artifact" })}\n\n`);
+        res.write(
+          `event: log\ndata: ${JSON.stringify({ level: "warn", message: `kimi closed without text. tail: ${breadcrumb.replace(/\n/g, " ⏎ ")}` })}\n\n`,
+        );
+        res.write(
+          `event: error\ndata: ${JSON.stringify({ error: stderrTail || "kimi completed without text or artifact" })}\n\n`,
+        );
       }
       res.end();
     }
@@ -237,7 +262,11 @@ const kimi = {
         // on stdout will arrive as non-JSON — drop quietly.
         if (!line.startsWith("{")) continue;
         let evt;
-        try { evt = JSON.parse(line); } catch { continue; }
+        try {
+          evt = JSON.parse(line);
+        } catch {
+          continue;
+        }
         // Real-world shape (verified against kimi-cli 1.41.0 on 2026-05-15):
         //   {"role":"assistant","content":[
         //     {"type":"think","think":"...","encrypted":null},
@@ -264,19 +293,23 @@ const kimi = {
             // Schema variant A (the one this branch was originally
             // written for): tool blocks inline in `content` array.
             if (block.type === "tool_use") {
-              res.write(`event: tool_call\ndata: ${JSON.stringify({
-                provider: "kimi",
-                id: block.id ?? null,
-                name: block.name ?? "tool",
-                input: block.input ?? null,
-              })}\n\n`);
+              res.write(
+                `event: tool_call\ndata: ${JSON.stringify({
+                  provider: "kimi",
+                  id: block.id ?? null,
+                  name: block.name ?? "tool",
+                  input: block.input ?? null,
+                })}\n\n`,
+              );
             }
             if (block.type === "tool_result" && block.tool_use_id) {
-              res.write(`event: tool_result\ndata: ${JSON.stringify({
-                provider: "kimi",
-                id: block.tool_use_id,
-                content: block.content ?? null,
-              })}\n\n`);
+              res.write(
+                `event: tool_result\ndata: ${JSON.stringify({
+                  provider: "kimi",
+                  id: block.tool_use_id,
+                  content: block.content ?? null,
+                })}\n\n`,
+              );
             }
           }
         }
@@ -293,40 +326,59 @@ const kimi = {
             const fnName = typeof fn.name === "string" ? fn.name : "tool";
             // Translate kimi's tool names to the UI's canonical Write/Edit/Bash
             // vocabulary so onToolResult's iframe-reload path fires correctly.
-            const toolName = fnName === "WriteFile" ? "Write"
-              : fnName === "EditFile" || fnName === "ReplaceInFile" ? "Edit"
-              : fnName === "ReadFile" ? "Read"
-              : fnName === "Bash" || fnName === "Shell" ? "Bash"
-              : fnName === "DeleteFile" ? "Delete"
-              : fnName;
+            const toolName =
+              fnName === "WriteFile"
+                ? "Write"
+                : fnName === "EditFile" || fnName === "ReplaceInFile"
+                  ? "Edit"
+                  : fnName === "ReadFile"
+                    ? "Read"
+                    : fnName === "Bash" || fnName === "Shell"
+                      ? "Bash"
+                      : fnName === "DeleteFile"
+                        ? "Delete"
+                        : fnName;
             let input = null;
             if (typeof fn.arguments === "string") {
-              try { input = JSON.parse(fn.arguments); } catch { input = { _raw: fn.arguments }; }
+              try {
+                input = JSON.parse(fn.arguments);
+              } catch {
+                input = { _raw: fn.arguments };
+              }
             } else if (fn.arguments && typeof fn.arguments === "object") {
               input = fn.arguments;
             }
             // Normalise param keys: kimi uses `path`; UI expects `file_path`.
-            if (input && typeof input === "object" && typeof input.path === "string" && !input.file_path) {
+            if (
+              input &&
+              typeof input === "object" &&
+              typeof input.path === "string" &&
+              !input.file_path
+            ) {
               input.file_path = input.path;
             }
-            res.write(`event: tool_call\ndata: ${JSON.stringify({
-              provider: "kimi",
-              id: call.id ?? null,
-              name: toolName,
-              input,
-            })}\n\n`);
+            res.write(
+              `event: tool_call\ndata: ${JSON.stringify({
+                provider: "kimi",
+                id: call.id ?? null,
+                name: toolName,
+                input,
+              })}\n\n`,
+            );
           }
         }
         // Schema variant B continued: tool results come as top-level
         // `{"role":"tool","content":"...","tool_call_id":"..."}` events.
         if (evt.role === "tool" && typeof evt.tool_call_id === "string") {
           const isError = typeof evt.content === "string" && /^Error/i.test(evt.content);
-          res.write(`event: tool_result\ndata: ${JSON.stringify({
-            provider: "kimi",
-            id: evt.tool_call_id,
-            isError,
-            content: typeof evt.content === "string" ? evt.content : "",
-          })}\n\n`);
+          res.write(
+            `event: tool_result\ndata: ${JSON.stringify({
+              provider: "kimi",
+              id: evt.tool_call_id,
+              isError,
+              content: typeof evt.content === "string" ? evt.content : "",
+            })}\n\n`,
+          );
         }
         // Fallback for legacy/string content shape (just in case).
         if (evt.role === "assistant" && typeof evt.content === "string" && evt.content.length > 0) {
@@ -368,7 +420,9 @@ const kimi = {
       const baseError = cleaned || stdoutTail || `kimi exited ${codeLabel}`;
       const prefix = await buildKimiErrorPrefix(kspawn.cmd);
       const errorText = prefix + baseError;
-      res.write(`event: log\ndata: ${JSON.stringify({ level: "warn", message: `kimi exit ${codeLabel}. stderr: ${cleaned.replace(/\n/g, " ⏎ ").slice(0, 240) || "(empty)"}` })}\n\n`);
+      res.write(
+        `event: log\ndata: ${JSON.stringify({ level: "warn", message: `kimi exit ${codeLabel}. stderr: ${cleaned.replace(/\n/g, " ⏎ ").slice(0, 240) || "(empty)"}` })}\n\n`,
+      );
       res.write(`event: error\ndata: ${JSON.stringify({ error: errorText })}\n\n`);
       res.end();
     });
@@ -386,8 +440,9 @@ const kimi = {
   async once(req, res, deps) {
     const { readJson } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -410,7 +465,7 @@ const kimi = {
     let child;
     try {
       child = spawn(kspawn.cmd, args, {
-        cwd: (cwd && typeof cwd === "string") ? cwd : process.cwd(),
+        cwd: cwd && typeof cwd === "string" ? cwd : process.cwd(),
         stdio: ["pipe", "pipe", "pipe"],
         shell: kspawn.useShell,
       });
@@ -419,12 +474,18 @@ const kimi = {
       res.end(JSON.stringify({ error: `failed to spawn kimi: ${String(err?.message || err)}` }));
       return;
     }
-    try { child.stdin.end(); } catch {}
+    try {
+      child.stdin.end();
+    } catch {}
 
     let out = "";
     let err = "";
-    child.stdout.on("data", (c) => { out += c.toString("utf8"); });
-    child.stderr.on("data", (c) => { err += c.toString("utf8"); });
+    child.stdout.on("data", (c) => {
+      out += c.toString("utf8");
+    });
+    child.stderr.on("data", (c) => {
+      err += c.toString("utf8");
+    });
     child.on("close", async (code) => {
       if (code === 0 && out.trim()) {
         res.writeHead(200, { "Content-Type": "application/json" });

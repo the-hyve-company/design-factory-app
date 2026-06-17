@@ -31,8 +31,8 @@ export interface FormatItem {
   /** Long-form instruction text concatenated into the system prompt
    *  when this format is selected. Editable in Settings. When absent,
    *  only the descriptor (if any) is included — keeps the prompt
-   *  surface lean for vestigial formats. User ask 2026-05-11:
-   *  "descriptor esse nao poderia virar mini prompt editavel?". */
+   *  surface lean for vestigial formats. Added so the descriptor
+   *  could become a small editable prompt. */
   prompt?: string;
 }
 
@@ -258,12 +258,24 @@ export function getCustomFormatCategories(): FormatCategory[] {
 export function setCustomFormatCategories(arr: FormatCategory[]): void {
   _customCategories = arr.map((c) => ({ ...c, items: [...c.items] }));
 }
-export function getDisabledFormatItemIds(): string[] { return [..._disabledIds]; }
-export function setDisabledFormatItemIds(ids: string[]): void { _disabledIds = new Set(ids); }
-export function getHiddenBuiltinFormatItemIds(): string[] { return [..._hiddenBuiltinItems]; }
-export function setHiddenBuiltinFormatItemIds(ids: string[]): void { _hiddenBuiltinItems = new Set(ids); }
-export function getHiddenBuiltinFormatCategoryIds(): string[] { return [..._hiddenBuiltinCategories]; }
-export function setHiddenBuiltinFormatCategoryIds(ids: string[]): void { _hiddenBuiltinCategories = new Set(ids); }
+export function getDisabledFormatItemIds(): string[] {
+  return [..._disabledIds];
+}
+export function setDisabledFormatItemIds(ids: string[]): void {
+  _disabledIds = new Set(ids);
+}
+export function getHiddenBuiltinFormatItemIds(): string[] {
+  return [..._hiddenBuiltinItems];
+}
+export function setHiddenBuiltinFormatItemIds(ids: string[]): void {
+  _hiddenBuiltinItems = new Set(ids);
+}
+export function getHiddenBuiltinFormatCategoryIds(): string[] {
+  return [..._hiddenBuiltinCategories];
+}
+export function setHiddenBuiltinFormatCategoryIds(ids: string[]): void {
+  _hiddenBuiltinCategories = new Set(ids);
+}
 
 /**
  * Effective taxonomy = defaults merged with custom categories. Custom
