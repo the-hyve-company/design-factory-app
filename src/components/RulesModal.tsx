@@ -26,9 +26,9 @@ import type { Lang } from "@/i18n";
 import { ruleTitle, ruleDescription } from "@/i18n/builtin-labels";
 
 /** Localized category label/hint with fallback to the meta-provided string.
- *  Builtin categories (anti-slop, tone, motion, color, language, voice,
- *  layout, custom) have keys in strings.ts; user-added categories (no key)
- *  fall back to the rendered label as-is. */
+ *  Builtin categories (anti-slop, layout, typography, color, depth, motion,
+ *  imagery, icons, forms, states, custom) have keys in strings.ts;
+ *  user-added categories (no key) fall back to the rendered label as-is. */
 function localizedCatLabel(meta: RuleCategoryMeta): string {
   const key = `rules.cat.${meta.id}`;
   const v = tFn(key);

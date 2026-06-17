@@ -1,9 +1,9 @@
 // rules-taxonomy.ts — Unified Rules catalog (replaces Direction taxonomy).
 //
 // Schema: a FLAT list of Rule. Categories are computed at runtime
-// from the `category` string. Format mirrors hyve-taste-master rules.
-// DF ships with ~30 high-impact builtin rules; users add more via
-// the Padrões UI (id + title + category + description).
+// from the `category` string. DF ships with ~50 high-impact visual
+// builtin rules; users add more via the Padrões UI
+// (id + title + category + description).
 //
 // Previous schema (direction-taxonomy.ts) used nested
 // categories[].items[]; the flat list collapses that into a single
@@ -17,7 +17,8 @@ import { z } from "zod";
 // ─── Types ────────────────────────────────────────────────────────────
 
 export interface Rule {
-  /** Stable id — kebab-case. Builtins use `as-*`, `tn-*`, `mo-*`, etc. */
+  /** Stable id — kebab-case. Builtins use a 2-letter category prefix
+   *  (`as-`, `ly-`, `ty-`, `co-`, `de-`, `mo-`, `im-`, `ic-`, `fo-`, `st-`). */
   id: string;
   /** Short human-readable title. Shown in row + chips. */
   title: string;
@@ -53,48 +54,29 @@ export const RuleArraySchema = z.array(RuleSchema);
 
 export const RULE_CATEGORIES: ReadonlyArray<RuleCategoryMeta> = Object.freeze([
   { id: "anti-slop", label: "Anti-slop", hint: "explicit don'ts" },
-  { id: "tone", label: "Tone", hint: "overall feel" },
-  { id: "motion", label: "Motion", hint: "how it moves" },
+  { id: "layout", label: "Layout", hint: "structure & spacing" },
+  { id: "typography", label: "Typography", hint: "type & numerals" },
   { id: "color", label: "Color", hint: "palette intent" },
-  { id: "language", label: "Language", hint: "primary language" },
-  { id: "voice", label: "Voice", hint: "writing register" },
-  { id: "layout", label: "Layout", hint: "structural intent" },
+  { id: "depth", label: "Depth", hint: "elevation & edges" },
+  { id: "motion", label: "Motion", hint: "how it moves" },
+  { id: "imagery", label: "Imagery", hint: "photos & media" },
+  { id: "icons", label: "Icons", hint: "iconography" },
+  { id: "forms", label: "Forms", hint: "inputs & controls" },
+  { id: "states", label: "States", hint: "interaction states" },
   { id: "custom", label: "Custom", hint: "your additions" },
 ]);
 
-// ─── Defaults — 5 canonical builtin rules ─────────────────────────────
+// ─── Defaults — 50 visual-taste builtin rules ─────────────────────────
 //
-// User ask 2026-05-11: "quero limpar todas rules atuais e criar
-// apenas 3 [later: 5], as melhores, com conteúdo relevante". The
-// previous 30-rule catalog was scattershot trivia (em-dashes, "as an
-// AI" disclosures, single-hue palettes) — none of which moved the
-// needle on real HYVE output quality.
+// 50 brand-agnostic VISUAL taste defaults across 10 categories.
+// No copy/voice/process rules; nothing tied to any specific brand.
 //
-// The 5 below distill the load-bearing canon feedback that recurs
-// across HYVE memory (no-emojis, no-card-bars, no-invented-decoration,
-// skeu-premium tier-2 minimum, read-DESIGN-canon-before-tokens). Each
-// description is a full mini-prompt that gets concatenated into the
-// system prompt when the rule is selected — no longer a 1-line
-// chip-style hint.
-//
-// Adding a rule: keep id kebab-case + 3-letter category prefix,
-// `description` is the actual instruction text that ships to Claude,
-// `title` is the picker-row label only.
-// 30 default rules — user reset 2026-05-21. The previous 5 rules
-// distilled HYVE-internal memory and didn't carry over to a generic
-// Design Factory install. This pass replaces them with 30 globally
-// useful rules, written in the same shape: a problem to avoid stated
-// first, then what to do instead in concrete terms — never just "the
-// opposite of the don't". Each is independent of every other rule and
-// independent of the 6 taste dials (density / motion / contrast /
-// interactions / surface / originality), which carry their own sliders.
-//
-// Adding rules: keep id kebab-case + 2-3-letter category prefix
-// (as = anti-slop, tn = tone, mo = motion, co = color, ln = language,
-// vo = voice, ly = layout, cu = custom). Title is the picker-row label
-// only; description is the full text that ships to the model when the
-// rule is enabled, so write it as a small mini-prompt with concrete
-// substitutes for the banned pattern.
+// Each `description` is a short 1-2 sentence mini-prompt (problem to
+// avoid, then the concrete move) concatenated into the system prompt
+// when the rule is enabled. Keep ids kebab-case with a 2-letter
+// category prefix (as/ly/ty/co/de/mo/im/ic/fo/st). `title` is the
+// picker-row label only; PT+EN copy lives in i18n/builtin-labels.ts
+// and the EN here must match the EN title there.
 export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
   // ─── Anti-slop ─────────────────────────────────────────────────────
   {
@@ -102,13 +84,7 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     title: "No decorative emojis",
     category: "anti-slop",
     description:
-      "Decorative coloured emojis (🚀⚡🔗📦🟢🔴 etc) drift product UI " +
-      "and copy toward casual chat or marketing pitch, eroding the " +
-      "adult, focused tone real interfaces need. Carry meaning with " +
-      "careful typography (weight, size, kerning) and a consistent " +
-      "monochrome line-icon set instead. Minimal technical glyphs " +
-      "(✓ × → •) stay acceptable inside developer docs and specs, " +
-      "where they read as notation rather than decoration.",
+      "Colored emojis used as icons or bullets (🚀⚡✨🔥) pull an interface toward casual chat and read as a default-template tell. Carry meaning through type weight and a consistent monochrome icon set instead.",
     builtin: true,
   },
   {
@@ -116,391 +92,80 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     title: "No invented decoration",
     category: "anti-slop",
     description:
-      "Adding gradients, glows, blurs, cursor torches, particle " +
-      "fields, or animated backgrounds without grounding in the " +
-      "project's design system creates inconsistency and dates the " +
-      "work the moment a real DS lands. Before reaching for a " +
-      "decorative effect, check the existing tokens and components — " +
-      "reuse what is already canonical, or fall back to functional " +
-      "emphasis (weight change, established palette colour, motion " +
-      "that signals state). When in doubt, omit; restraint reads as " +
-      "confidence.",
+      "Gradients, glows, blurs, particle fields, and animated backgrounds added for their own sake date a design and fight the content. Reach for an effect only when it earns its place — otherwise let type, spacing, and a restrained palette carry it.",
     builtin: true,
   },
   {
-    id: "as-no-placeholder-text",
-    title: "No placeholder text",
+    id: "as-no-generic-ai-gradient",
+    title: "No generic AI gradient",
     category: "anti-slop",
     description:
-      'Lorem ipsum, "Feature 1/2/3", "[TODO]", "Click here", and ' +
-      '"Add your content here" mark a draft as unfinished and waste ' +
-      "the reader's attention. Write the actual labels and copy the " +
-      'surface needs — even rough realistic text ("Inscrições abrem ' +
-      'em março") beats Latin filler because it stress-tests the ' +
-      "layout at real line lengths. When a slot genuinely has no " +
-      "content yet, leave it empty (or marked with a data attribute " +
-      "the pipeline catches) rather than ship visible filler strings.",
+      "The violet-to-blue hero gradient is an instant template tell. If a gradient earns its place, build it from colors already in the palette and keep the hue shift small and intentional.",
     builtin: true,
   },
   {
-    id: "as-no-external-assets",
-    title: "No external assets",
+    id: "as-no-default-glassmorphism",
+    title: "No default glassmorphism",
     category: "anti-slop",
     description:
-      "Linking to external CDNs (`fonts.googleapis.com`, `unpkg`, " +
-      "`cdn.jsdelivr`) or hotlinked images breaks the page offline, " +
-      "when the CDN rotates URLs, and when the network is slow. " +
-      "Inline fonts via `@font-face` with base64 data URIs, embed " +
-      "small images as base64 directly in markup, and keep larger " +
-      "media under the project root referenced by relative paths. " +
-      "The artifact must travel as a single self-contained file (or " +
-      "folder) — that is the contract.",
+      "Frosted, semi-transparent blur on every surface is a dated default that hurts legibility. Use solid, opaque surfaces unless the blur genuinely communicates layering over content behind it.",
     builtin: true,
   },
   {
-    id: "as-no-fake-data",
-    title: "No fake or mock data",
+    id: "as-no-effect-stacking",
+    title: "No stacked effects",
     category: "anti-slop",
     description:
-      '"User 1, User 2, User 3" and "$XX.XX" make outputs read as ' +
-      "low-effort templates. Use plausible realistic data: real-shape " +
-      'names ("Ana Reis", "Marcus Tan"), numbers that pattern like ' +
-      "actual numbers (prices $24 / $89 / $1,240, not 1 / 2 / 3), " +
-      'dates relative to today ("last week", "em março"). When the ' +
-      "domain matters (analytics, billing), follow that domain's " +
-      "conventions so the surface reads as the working product it " +
-      "claims to be.",
+      "Piling shadow plus gradient plus blur plus border plus glow onto one element reads as over-designed and muddy. Pick one treatment per element and let it do the work.",
     builtin: true,
   },
+  // ─── Layout & composition ──────────────────────────────────────────
   {
-    id: "as-no-ai-tells",
-    title: "No AI tells in output",
-    category: "anti-slop",
+    id: "ly-generous-spacing",
+    title: "Generous, consistent spacing",
+    category: "layout",
     description:
-      '"I\'d be happy to help", "Certainly!", "As an AI", "Here\'s ' +
-      'what I can do", "Let me know if you need anything else" leak ' +
-      "the assistant's voice into product surfaces and make the work " +
-      "feel scripted. Strip the helpful-assistant register entirely — " +
-      "speak as the product or document itself. The user already " +
-      "knows they're using a tool; the tool doesn't need to introduce " +
-      "itself on every response.",
+      "Cramped, uneven spacing is the fastest way to look unfinished. Give elements room to breathe and use one consistent spacing rhythm — whitespace is structure, not wasted space.",
     builtin: true,
   },
-  {
-    id: "as-no-silent-fallbacks",
-    title: "No silent fallbacks",
-    category: "anti-slop",
-    description:
-      "Patterns like `catch(() => {})`, `?? defaultValue` without " +
-      'logging, and "if it fails, show nothing" turn bugs into ' +
-      "invisible degradation that costs days to debug. When something " +
-      "fails, log the error with scope + attempted operation + actual " +
-      "cause, then either surface a user-visible message or return a " +
-      "typed error result the caller has to handle. Silent swallow is " +
-      "acceptable only when you're filtering known-benign failures, " +
-      "and the comment above the catch must say so.",
-    builtin: true,
-  },
-  {
-    id: "as-no-hedging",
-    title: "No hedging in shipped output",
-    category: "anti-slop",
-    description:
-      '"Talvez", "poderia ser", "ainda precisa de polish", "em uma ' +
-      'próxima iteração", "para production-ready precisaríamos" — ' +
-      "these belong in design reviews, never in the surface a real " +
-      "user reads. Make the call within the constraints, ship the " +
-      "best version that fits, and move on. If something is genuinely " +
-      "incomplete, name it once in the commit message or changelog — " +
-      "never in the user-facing output itself.",
-    builtin: true,
-  },
-  // ─── Tone ──────────────────────────────────────────────────────────
-  {
-    id: "tn-read-ds-canon",
-    title: "Read design system canon first",
-    category: "tone",
-    description:
-      "Before generating any UI, palette, or component variant, read " +
-      "the project's design system documentation (design.md, tokens " +
-      "file, DESIGN-RULES, or equivalent). Improvising colours, " +
-      "spacing scales, typography ramps, or radius values when the " +
-      "canon already defines them produces output that drifts from " +
-      "the rest of the product. When the project has no DS yet, " +
-      "establish 3-5 canonical tokens up-front (one neutral scale, " +
-      "one accent, two type sizes, two spacing units) and reuse them.",
-    builtin: true,
-  },
-  {
-    id: "tn-one-detail-earns",
-    title: "One detail that earns the work",
-    category: "tone",
-    description:
-      "Every shipped surface needs at least one detail that signals " +
-      "craft rather than assembly — a micro-interaction on a primary " +
-      "action, a typographic move (tabular nums on prices, optical " +
-      "sizing, off-by-default ligatures kept on for headings), a " +
-      "paint quality (a single considered shadow stack, a small " +
-      "gradient on a highlight only), or a custom illustration " +
-      "moment. The anchor should fit the surface — a settings page " +
-      "doesn't need fireworks, a landing page might.",
-    builtin: true,
-  },
-  {
-    id: "tn-surgical-edits",
-    title: "Surgical edits first",
-    category: "tone",
-    description:
-      "When asked to change one thing, change only that thing — don't " +
-      "refactor adjacent code, rename unrelated variables, tighten " +
-      "styling outside the scope, or add features the brief didn't " +
-      "ask for. Surgical edits keep diffs reviewable and respect the " +
-      "implicit contract that the rest of the file works. When you " +
-      "spot something else broken, file a separate follow-up — never " +
-      "land it as a side effect.",
-    builtin: true,
-  },
-  {
-    id: "tn-ship-complete",
-    title: "Ship complete, not chunks",
-    category: "tone",
-    description:
-      "Deliver a working artifact — a file that opens, a demo that " +
-      "runs, copy that reads end-to-end — not a partial draft with a " +
-      "list of remaining items. When the scope is too large to " +
-      "finish in one pass, narrow the scope: a smaller surface shipped " +
-      'whole beats a larger surface half-built. "Working at smaller ' +
-      'scope" is the kind of edit a maintainer can actually merge.',
-    builtin: true,
-  },
-  {
-    id: "tn-show-dont-tell",
-    title: "Show, don't tell",
-    category: "tone",
-    description:
-      "Don't describe what a feature does in copy (\"intelligent " +
-      'suggestions appear as you type"); demonstrate it with the ' +
-      'working interface itself. Don\'t claim a product is "fast" or ' +
-      '"intuitive" — let the affordances speak. In documentation, ' +
-      "lead with a runnable example, then explain why it works. The " +
-      "demo carries weight; the adjective doesn't.",
-    builtin: true,
-  },
-  // ─── Motion ────────────────────────────────────────────────────────
-  {
-    id: "mo-honor-reduced-motion",
-    title: "Honor reduced motion",
-    category: "motion",
-    description:
-      "Wrap all non-essential animation in `@media (prefers-reduced-" +
-      "motion: reduce)` and provide either a static fallback or a " +
-      "much-shorter cross-fade. Vestibular disorders make parallax, " +
-      "slide-in transitions, and autoplay motion physically painful " +
-      "for a meaningful fraction of users. Essential motion (loading " +
-      "progress, focus rings) can stay; everything else needs a still " +
-      "alternative.",
-    builtin: true,
-  },
-  {
-    id: "mo-motion-serves-meaning",
-    title: "Motion serves meaning",
-    category: "motion",
-    description:
-      "Use animation to communicate state change (something appeared, " +
-      "something is loading, something moved from A to B) — not to " +
-      "fill silence or decorate idle surfaces. Every animation should " +
-      "be readable from a still frame: a list item slides in because " +
-      "it was just added, a button shrinks on press because the user " +
-      "touched it. Decorative motion that loops with no semantic " +
-      "anchor turns into nervous noise.",
-    builtin: true,
-  },
-  {
-    id: "mo-no-decorative-spinners",
-    title: "No infinite spinners as decoration",
-    category: "motion",
-    description:
-      "Indefinite spinners belong on real work whose duration you " +
-      "can't measure ahead of time. They don't belong on idle " +
-      "surfaces — a button with a permanent spin reads as broken or " +
-      "stuck, and trains users to ignore real loading states later. " +
-      "When a surface needs visual interest, use a static badge, a " +
-      "subtle pulse on a primary element, or content that breathes " +
-      "via typography — never perpetual rotation.",
-    builtin: true,
-  },
-  // ─── Color ─────────────────────────────────────────────────────────
-  {
-    id: "co-honor-existing-palette",
-    title: "Honor user's existing palette",
-    category: "color",
-    description:
-      "When the project already defines colours (tokens.css, a DS, a " +
-      "brand guide), build new components from the existing scale: " +
-      "derive tints, shades, and accents from the established hues " +
-      'rather than introducing fresh ones. Adding "just one new ' +
-      'colour" per feature fragments visual identity until nothing ' +
-      "reads as a system. When you genuinely need a new hue, expand " +
-      "the palette with a full scale (10 steps, light → dark) and " +
-      "document it alongside the existing ones — never one orphan " +
-      "value.",
-    builtin: true,
-  },
-  {
-    id: "co-wcag-aa-on-text",
-    title: "WCAG AA on text",
-    category: "color",
-    description:
-      "Body text needs at least 4.5:1 contrast against its background; " +
-      "large text (≥18pt or ≥14pt bold) needs 3:1. Check actual pairs " +
-      'in both light and dark themes before shipping — "looks fine ' +
-      'on my screen" is not a green light. When a brand colour fails ' +
-      "contrast for text, keep it as a decorative accent (a LED, a " +
-      "dot, an underline) and use a higher-contrast neutral for the " +
-      "actual letters.",
-    builtin: true,
-  },
-  {
-    id: "co-no-raw-black",
-    title: "No raw black",
-    category: "color",
-    description:
-      "Pure `#000` reads as flat and dated against any modern surface " +
-      "— it crushes shadow detail, breaks anti-aliasing on type, and " +
-      "lacks the warm undertone real ink has. Use a warm charcoal " +
-      "(`#1a1a17`, `oklch(0.18 0.005 80)`, or the equivalent in your " +
-      "colour space) for text and ink-heavy surfaces. Same logic for " +
-      "pure `#fff` — prefer an off-white (`#fafaf7`) for backgrounds " +
-      "that should feel like paper.",
-    builtin: true,
-  },
-  {
-    id: "co-brand-color-sparingly",
-    title: "Brand color sparingly",
-    category: "color",
-    description:
-      "The brand's signature colour carries the most visual weight " +
-      "wherever it appears. Spend that weight where it earns attention: " +
-      "the active LED on a control, a critical CTA, a single dot " +
-      "indicating live status — never on chrome (toolbars, navigation, " +
-      "card backgrounds) where the brand colour competes with content. " +
-      "A surface where the brand colour appears once reads as " +
-      "confident; a surface where it appears six times reads as " +
-      "desperate.",
-    builtin: true,
-  },
-  // ─── Language ──────────────────────────────────────────────────────
-  {
-    id: "ln-match-user-language",
-    title: "Match user's language",
-    category: "language",
-    description:
-      "Detect the language of the user's input and reply in the same " +
-      "language. When the user types Portuguese, write Portuguese; " +
-      "when they switch to English mid-thread, switch with them. " +
-      "Don't translate strings the user authored — preserve casing, " +
-      "accents, and the exact wording they used in their own data. " +
-      "The product should feel like it speaks the user's language " +
-      "natively, not like a translation layer.",
-    builtin: true,
-  },
-  {
-    id: "ln-utf8-strict",
-    title: "UTF-8 strict",
-    category: "language",
-    description:
-      "Always output UTF-8 with full accent preservation. Don't use " +
-      "HTML entities for accented characters (`&aacute;` for á), " +
-      "don't fall back to ASCII transliteration, and don't store text " +
-      "as base64 when it should be UTF-8. The round-trip write → save " +
-      "→ reload → render must leave acute, tilde, cedilla, and emoji " +
-      "intact. Box-drawing characters (`─ ┄ ━`) and arrow symbols are " +
-      "equally first-class — strip them only when the destination " +
-      "format truly can't carry them.",
-    builtin: true,
-  },
-  // ─── Voice ─────────────────────────────────────────────────────────
-  {
-    id: "vo-plain-register",
-    title: "Plain register",
-    category: "voice",
-    description:
-      "Write at the register of a focused colleague explaining " +
-      "something concrete — not the register of a marketing brochure " +
-      'or a corporate memo. No "leverage", no "enable", no ' +
-      '"robust", no "world-class". Short sentences that name the ' +
-      "thing directly. The reader is smart and busy; respect both.",
-    builtin: true,
-  },
-  {
-    id: "vo-no-marketing-speak",
-    title: "No marketing speak",
-    category: "voice",
-    description:
-      'Banned vocabulary: "leverage", "synergy", "revolutionary", ' +
-      '"world-class", "next-generation", "game-changing", "best-' +
-      'in-class", "cutting-edge", "robust", "seamless", ' +
-      '"intuitive", "delightful", "powerful". These words signal ' +
-      "the writer doesn't know how to describe what they're claiming. " +
-      'Replace each with concrete specifics: "powerful editor" → ' +
-      '"edits files locally with autosave at 1s intervals".',
-    builtin: true,
-  },
-  {
-    id: "vo-concrete-over-abstract",
-    title: "Concrete over abstract",
-    category: "voice",
-    description:
-      "Numbers, examples, and named entities beat adjectives every " +
-      'time. "Fast" becomes "loads in under 300ms"; "popular" ' +
-      'becomes "used by 1,200 teams"; "easy" becomes "three ' +
-      "keystrokes from cold start\". When you can't quantify, name a " +
-      'specific instance: "the kind of edit you do in passes one ' +
-      'and two" beats "supports complex edits". Vagueness is the ' +
-      "easy default — specificity is the discipline.",
-    builtin: true,
-  },
-  // ─── Layout ────────────────────────────────────────────────────────
   {
     id: "ly-no-card-bars",
-    title: "No card bars or vertical accents",
+    title: "No card bars or accents",
     category: "layout",
     description:
-      "Decorative bars at the top, base, or side of a card don't add " +
-      "information — they fragment the card visually and date the " +
-      "design fast (the trope reads like 2019 dashboard SaaS). To " +
-      "signal hierarchy or status inside a card, use the card's own " +
-      "content: a larger heading, a coloured dot adjacent to the " +
-      "title, a tinted background state. When you need a divider, " +
-      "use whitespace — not paint.",
+      "A colored bar stuck on the top or side of a card adds no information and dates the design (the 2019-dashboard look). Signal hierarchy or status with the card's own content — a stronger heading, a small status dot, a tinted background.",
     builtin: true,
   },
   {
-    id: "ly-respect-viewport",
-    title: "Respect viewport",
+    id: "ly-dont-center-everything",
+    title: "Don't center everything",
     category: "layout",
     description:
-      "The page must not produce horizontal scroll at common widths " +
-      "(320, 375, 768, 1024, 1440 px). Use `box-sizing: border-box`, " +
-      "fluid widths or grids with `minmax(0, 1fr)`, and test resize " +
-      "behaviour — don't ship a layout you've only seen at 1440 px. " +
-      "Tables that don't fit get an internal horizontal scroll (not " +
-      "page-level); fixed-width elements get a max-width plus inline " +
-      "padding.",
+      "Centering all text and content blocks by default is a tell and makes long copy hard to scan. Left-align body text and content; reserve centering for short, deliberate moments like a hero or an empty state.",
     builtin: true,
   },
   {
-    id: "ly-sticky-has-escape",
-    title: "Sticky elements have escape",
+    id: "ly-consistent-alignment-edges",
+    title: "Consistent alignment edges",
     category: "layout",
     description:
-      "Any sticky banner, drawer, modal, or floating panel needs an " +
-      "explicit close affordance — a × button, an Esc shortcut, an " +
-      "outside-click handler, all three when possible. Sticky " +
-      "elements without escape feel like traps and erode user trust. " +
-      "The escape mechanism must be discoverable inside the same " +
-      "frame as the sticky content; relying solely on a keyboard " +
-      "shortcut excludes users who don't know it exists.",
+      "Elements that don't share alignment lines read as careless. Align to a small set of shared edges or a grid so columns, labels, and content snap to the same verticals.",
+    builtin: true,
+  },
+  {
+    id: "ly-proximity-grouping",
+    title: "Group by proximity",
+    category: "layout",
+    description:
+      "Related items belong close together; unrelated ones need a clear gap. Use spacing to group and separate before reaching for borders or boxes — proximity does most of the structural work.",
+    builtin: true,
+  },
+  {
+    id: "ly-clear-hierarchy",
+    title: "One clear focal point",
+    category: "layout",
+    description:
+      "When everything competes for attention, nothing wins. Establish one primary element per screen and let size, weight, and spacing make the reading order obvious.",
     builtin: true,
   },
   {
@@ -508,29 +173,319 @@ export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
     title: "Optical alignment",
     category: "layout",
     description:
-      "Geometric centering and visual centering are not the same. " +
-      "Triangles, asymmetric icons, glyphs with descenders, and " +
-      "italic type need offset adjustments so they read as aligned. " +
-      "Eye trumps math: when a play icon (▶) looks off-centre inside " +
-      "a circular button despite being mathematically centred, nudge " +
-      "it 1-2 px right until it reads centred. Optical kerning, " +
-      "optical sizing in variable fonts, and trim metrics on type " +
-      "all serve the same principle.",
+      "Mathematically centered isn't always visually centered — icons with descenders, triangles, and play glyphs look off. Trust the eye and nudge until it reads aligned rather than relying on geometric centering alone.",
     builtin: true,
   },
-  // ─── Custom (shipped as defaults but slot is open for user rules) ──
+  // ─── Typography ────────────────────────────────────────────────────
   {
-    id: "cu-tabular-nums",
-    title: "Tabular nums for numerical data",
-    category: "custom",
+    id: "ty-limited-type-scale",
+    title: "Limited type scale",
+    category: "typography",
     description:
-      "Apply `font-variant-numeric: tabular-nums` on any surface " +
-      "where digits need to align: tables, prices, time displays, " +
-      "counters, version numbers. Proportional digits (the default) " +
-      "make 1,234 and 5,678 shift left/right between rows, which " +
-      "destroys scannability. Tabular nums lock each digit to a fixed " +
-      "width — numbers stack into clean columns and reading speed in " +
-      "data-heavy contexts triples.",
+      "Many ad-hoc font sizes make a layout read as assembled rather than designed. Pick a small set of sizes with clear jumps between them and reuse it — hierarchy comes from deliberate contrast, not a new size per element.",
+    builtin: true,
+  },
+  {
+    id: "ty-tabular-figures",
+    title: "Tabular figures for numbers",
+    category: "typography",
+    description:
+      "Proportional digits shift left and right between rows, so numbers in tables, prices, and counters won't line up. Use tabular figures (font-variant-numeric: tabular-nums) anywhere digits need to align in columns.",
+    builtin: true,
+  },
+  {
+    id: "ty-comfortable-measure",
+    title: "Comfortable measure & leading",
+    category: "typography",
+    description:
+      "Lines that run too long are hard to read and tight leading makes paragraphs feel cramped. Cap body line length around 45-75 characters and give body text generous line-height; tighten leading only on large display type.",
+    builtin: true,
+  },
+  {
+    id: "ty-one-or-two-typefaces",
+    title: "One or two typefaces",
+    category: "typography",
+    description:
+      "A font zoo fragments the design. Use one typeface, or at most a display face paired with a text face, and create variety with weight and size instead of more families.",
+    builtin: true,
+  },
+  {
+    id: "ty-weight-for-hierarchy",
+    title: "Weight for hierarchy, not color",
+    category: "typography",
+    description:
+      "Reaching for color or ALL CAPS to mark importance clutters the palette and hurts readability. Drive hierarchy with size and weight first; color is an accent, not a heading system.",
+    builtin: true,
+  },
+  {
+    id: "ty-no-justify-long-text",
+    title: "Don't justify long text",
+    category: "typography",
+    description:
+      "Justified text on the web opens uneven rivers of whitespace because browsers lack fine hyphenation. Left-align body copy (ragged right) for even word spacing and a steadier read.",
+    builtin: true,
+  },
+  {
+    id: "ty-tracking-by-size",
+    title: "Tracking by size",
+    category: "typography",
+    description:
+      "Default letter-spacing rarely fits every size. Tighten tracking slightly on large headings, leave body text at normal, and open it up for small uppercase labels so each reads cleanly.",
+    builtin: true,
+  },
+  // ─── Color ─────────────────────────────────────────────────────────
+  {
+    id: "co-honor-existing-palette",
+    title: "Honor the existing palette",
+    category: "color",
+    description:
+      "Introducing a fresh hue for every new component fragments the design until nothing reads as one system. Build from the palette already in play — derive tints and shades from existing hues rather than adding orphan colors.",
+    builtin: true,
+  },
+  {
+    id: "co-no-raw-black",
+    title: "Soften pure black & white",
+    category: "color",
+    description:
+      "Pure black (#000) and pure white (#fff) feel harsh and flat against real content — they crush shadow detail and read as unconsidered. Soften slightly toward a near-black and a near-white so surfaces feel intentional.",
+    builtin: true,
+  },
+  {
+    id: "co-accent-sparingly",
+    title: "Accent color sparingly",
+    category: "color",
+    description:
+      "An accent color used everywhere stops accenting anything. Spend it on the one element that should draw the eye — a primary action, an active state — and keep chrome and large surfaces neutral.",
+    builtin: true,
+  },
+  {
+    id: "co-few-colors-neutral-base",
+    title: "Few colors, neutral base",
+    category: "color",
+    description:
+      "A rainbow palette reads as chaotic and amateur. Let a neutral scale carry the bulk of the interface and treat color as the exception that marks meaning, not the default for every surface.",
+    builtin: true,
+  },
+  {
+    id: "co-semantic-colors-consistent",
+    title: "Consistent semantic colors",
+    category: "color",
+    description:
+      "Inventing a new success-green or error-red per component breaks the mental model. Define one color each for success, warning, error, and info, and reuse them everywhere those meanings appear.",
+    builtin: true,
+  },
+  {
+    id: "co-desaturate-large-fills",
+    title: "Desaturate large fills",
+    category: "color",
+    description:
+      "Fully saturated color across a big area vibrates and tires the eye. Reserve high saturation for small accents and use muted, desaturated tones for large backgrounds and fills.",
+    builtin: true,
+  },
+  // ─── Depth & elevation ─────────────────────────────────────────────
+  {
+    id: "de-soft-consistent-shadows",
+    title: "Soft, consistent shadows",
+    category: "depth",
+    description:
+      "Harsh, dark drop shadows look cheap and inconsistent shadows break the sense of space. Use one elevation system with soft, diffuse shadows cast as if from a single light direction.",
+    builtin: true,
+  },
+  {
+    id: "de-hairline-borders",
+    title: "Hairline, low-contrast borders",
+    category: "depth",
+    description:
+      "Heavy black 1px borders on everything box the design in and add visual noise. Use thin, low-contrast dividers — or whitespace — and keep border weight consistent across the UI.",
+    builtin: true,
+  },
+  {
+    id: "de-consistent-radius",
+    title: "Consistent corner radius",
+    category: "depth",
+    description:
+      "Mixing sharp corners, small radii, and full pills at random looks accidental. Pick one radius scale and apply it by component role — and keep nested radii visually concentric.",
+    builtin: true,
+  },
+  {
+    id: "de-layering-restraint",
+    title: "Restrained layering",
+    category: "depth",
+    description:
+      "When every element floats on its own shadow, depth loses meaning and the screen feels busy. Keep elevation levels few and intentional — most content sits flat on the surface.",
+    builtin: true,
+  },
+  // ─── Motion ────────────────────────────────────────────────────────
+  {
+    id: "mo-motion-serves-meaning",
+    title: "Motion serves meaning",
+    category: "motion",
+    description:
+      "Animation that loops or fires with no reason reads as nervous noise. Use motion to show a state change — something appeared, loaded, or moved — so every animation is legible from a single still frame.",
+    builtin: true,
+  },
+  {
+    id: "mo-no-decorative-spinners",
+    title: "No decorative spinners",
+    category: "motion",
+    description:
+      "A permanent spinner on an idle surface reads as broken and trains people to ignore real loading states. Reserve indefinite spinners for genuine in-progress work; for visual interest use a subtle static treatment.",
+    builtin: true,
+  },
+  {
+    id: "mo-honor-reduced-motion",
+    title: "Honor reduced motion",
+    category: "motion",
+    description:
+      "Parallax, slide-ins, and autoplay motion are uncomfortable or painful for some people. Honor the reduced-motion preference: keep essential feedback and offer a still or quick cross-fade fallback for the rest.",
+    builtin: true,
+  },
+  {
+    id: "mo-quick-subtle-timing",
+    title: "Quick, subtle timing",
+    category: "motion",
+    description:
+      "Slow, bouncy default transitions make an interface feel sluggish. Keep UI motion short (around 150-250ms) with a consistent ease-out curve so it feels responsive rather than theatrical.",
+    builtin: true,
+  },
+  {
+    id: "mo-restrained-entrances",
+    title: "Restrained entrances",
+    category: "motion",
+    description:
+      "Animating everything on load creates a distracting cascade. Animate the entrance of genuinely new content only, and use a light stagger just where it helps reveal reading order.",
+    builtin: true,
+  },
+  // ─── Imagery ───────────────────────────────────────────────────────
+  {
+    id: "im-preserve-aspect-ratio",
+    title: "Preserve aspect ratio",
+    category: "imagery",
+    description:
+      "Stretched or squashed images look amateur instantly. Preserve the original aspect ratio and use object-fit (cover or contain) to fit a frame — crop deliberately rather than distort.",
+    builtin: true,
+  },
+  {
+    id: "im-consistent-treatment",
+    title: "Consistent image treatment",
+    category: "imagery",
+    description:
+      "A set of images with different ratios, corner radii, and color grades reads as a pile, not a system. Apply the same ratio, radius, and treatment across a group so it feels intentional.",
+    builtin: true,
+  },
+  {
+    id: "im-overlay-for-legibility",
+    title: "Overlay for text on images",
+    category: "imagery",
+    description:
+      "Text laid directly over a photo usually fails contrast somewhere in the image. Add a scrim, gradient, or tint behind the text so it stays readable across the whole image, light areas included.",
+    builtin: true,
+  },
+  {
+    id: "im-avoid-generic-stock",
+    title: "Avoid generic stock",
+    category: "imagery",
+    description:
+      "Generic, low-resolution stock photos cheapen a design. Prefer real, sharp, on-topic imagery — and when you don't have it, a clean illustration, pattern, or solid surface beats filler stock.",
+    builtin: true,
+  },
+  // ─── Icons ─────────────────────────────────────────────────────────
+  {
+    id: "ic-consistent-set-weight",
+    title: "Consistent icon set",
+    category: "icons",
+    description:
+      "Mixing icon families, or filled and outline styles at random, looks careless. Use a single icon set with one consistent stroke weight so icons read as siblings.",
+    builtin: true,
+  },
+  {
+    id: "ic-size-align-to-text",
+    title: "Size & align icons to text",
+    category: "icons",
+    description:
+      "Icons that don't match their label's size or baseline look bolted on. Size icons relative to adjacent text and align them optically to the text baseline or center.",
+    builtin: true,
+  },
+  {
+    id: "ic-icons-clarify-not-decorate",
+    title: "Icons clarify, not decorate",
+    category: "icons",
+    description:
+      "An icon on every line becomes noise and slows scanning. Use icons where they speed recognition, pair them with a label when the meaning is ambiguous, and drop them where text alone is clearer.",
+    builtin: true,
+  },
+  // ─── Forms & controls ──────────────────────────────────────────────
+  {
+    id: "fo-clear-input-affordance",
+    title: "Inputs look editable",
+    category: "forms",
+    description:
+      "Borderless, flat fields leave people unsure what's clickable. Give inputs a clear affordance — a visible border or filled background, enough internal padding, and an obvious focus state.",
+    builtin: true,
+  },
+  {
+    id: "fo-label-above-or-clear",
+    title: "Keep a visible label",
+    category: "forms",
+    description:
+      "Placeholder-only fields lose their label the moment someone types and hurt accessibility. Keep a persistent visible label above or beside each field; use placeholder text only for format hints.",
+    builtin: true,
+  },
+  {
+    id: "fo-generous-touch-targets",
+    title: "Generous touch targets",
+    category: "forms",
+    description:
+      "Tiny, tightly-packed controls are hard to hit, especially on touch. Give interactive targets at least ~44px of hit area and enough space between them to avoid mis-taps.",
+    builtin: true,
+  },
+  {
+    id: "fo-align-fields",
+    title: "Align form fields",
+    category: "forms",
+    description:
+      "Fields of random widths and misaligned labels make a form feel chaotic. Align labels and inputs to a shared column and size each field to the length of content it expects.",
+    builtin: true,
+  },
+  // ─── States & interaction ──────────────────────────────────────────
+  {
+    id: "st-visible-focus",
+    title: "Visible focus state",
+    category: "states",
+    description:
+      "Removing the focus outline strands keyboard users with no idea where they are. Keep a clear, styled focus ring on every interactive element — never remove the outline without a visible replacement.",
+    builtin: true,
+  },
+  {
+    id: "st-interactive-feedback",
+    title: "Interactive feedback",
+    category: "states",
+    description:
+      "Controls that don't react feel dead or broken. Give every clickable element visible hover, active, and pressed feedback so it confirms it can be used and that the tap registered.",
+    builtin: true,
+  },
+  {
+    id: "st-design-empty-error",
+    title: "Design empty & error states",
+    category: "states",
+    description:
+      "Shipping only the happy path leaves empty, loading, and error states looking broken. Design these states deliberately — a helpful empty state, a clear error, a calm loading placeholder.",
+    builtin: true,
+  },
+  {
+    id: "st-disabled-reads-disabled",
+    title: "Disabled reads as disabled",
+    category: "states",
+    description:
+      "A disabled control that looks active invites dead clicks, but one that vanishes confuses. Lower its contrast so it clearly reads as unavailable while staying legible and in place.",
+    builtin: true,
+  },
+  {
+    id: "st-selected-distinct-from-hover",
+    title: "Selected distinct from hover",
+    category: "states",
+    description:
+      "When the selected state looks like hover, people lose track of where they are. Make the current/selected state clearly distinct from transient hover — a different fill or marker, not just a shade.",
     builtin: true,
   },
 ]);

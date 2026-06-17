@@ -88,12 +88,10 @@ const PT: Strings = {
   "home.cta.label": "Novo projeto",
   "home.cta.hint": "Abrir console",
   "home.cta.aria": "Abrir console de novo projeto",
-  // v9 — Hero block (user spec: "hero maior do design factory com o
-  // botao no meio, mais refinado").
+  // Hero block — larger, centered CTA, refined layout.
   "home.hero.kicker": "NOVO PROJETO · {count} ATIVOS",
-  // user rejected "Iniciar novo projeto" — too long
-  // + "iniciar" is muddied by the modal also using it. Switched to
-  // "Novo projeto" (curt, direct, action ABRE o modal).
+  // CTA reads "Novo projeto" (curt, direct) rather than "Iniciar novo
+  // projeto" — shorter, and avoids clashing with the modal's own wording.
   "home.hero.cta": "Novo projeto",
   "home.empty.projects.title": "Nenhum projeto ainda",
   "home.empty.projects.body": "Clique em Novo projeto pra começar.",
@@ -111,7 +109,7 @@ const PT: Strings = {
   "home.template.rename.prompt": "Novo nome do template:",
   "home.project.options.aria": "Opções do projeto",
 
-  // Per-tab heros (user spec 2026-05-05).
+  // Per-tab heros.
   "home.hero.templates.kicker": "TEMPLATES · {count} SALVOS",
   "home.hero.templates.title": "Templates",
   "home.hero.templates.subtitle": "",
@@ -125,7 +123,7 @@ const PT: Strings = {
   "home.hero.skills.cta": "Nova skill",
   "home.hero.skills.cta.import": "Importar",
 
-  // DS setup modal (user spec: refresh aesthetic to match v9 NewProject canon).
+  // DS setup modal — aesthetic matches the NewProject canon.
   "ds.modal.kicker": "ANY INPUT · CANONICAL DESIGN.MD",
   "ds.modal.title": "Novo design system",
   "ds.modal.source.upload": "UPLOAD",
@@ -226,7 +224,7 @@ const PT: Strings = {
   "rules.modal.eyebrow": "design factory · regras",
   "rules.modal.title": "Regras",
   "rules.modal.subtitle":
-    "Selecione as regras que regem este projeto. Anti-slop, tom, movimento, idioma, voz.",
+    "Selecione as regras que regem este projeto. Anti-slop, layout, tipografia, cor, movimento e mais.",
   "rules.search.placeholder": "Buscar em {0} regras…",
   "rules.search.aria": "Buscar regras",
   "rules.search.clear.aria": "Limpar busca",
@@ -243,18 +241,24 @@ const PT: Strings = {
   "rules.empty.clear": "Limpar busca",
   "rules.cat.anti-slop": "Anti-slop",
   "rules.cat.anti-slop.hint": "proibições explícitas",
-  "rules.cat.tone": "Tom",
-  "rules.cat.tone.hint": "feel geral",
-  "rules.cat.motion": "Movimento",
-  "rules.cat.motion.hint": "como se move",
+  "rules.cat.layout": "Layout",
+  "rules.cat.layout.hint": "estrutura e espaçamento",
+  "rules.cat.typography": "Tipografia",
+  "rules.cat.typography.hint": "tipo e números",
   "rules.cat.color": "Cor",
   "rules.cat.color.hint": "intenção da paleta",
-  "rules.cat.language": "Idioma",
-  "rules.cat.language.hint": "idioma principal",
-  "rules.cat.voice": "Voz",
-  "rules.cat.voice.hint": "registro da escrita",
-  "rules.cat.layout": "Layout",
-  "rules.cat.layout.hint": "intenção estrutural",
+  "rules.cat.depth": "Profundidade",
+  "rules.cat.depth.hint": "elevação e bordas",
+  "rules.cat.motion": "Movimento",
+  "rules.cat.motion.hint": "como se move",
+  "rules.cat.imagery": "Imagem",
+  "rules.cat.imagery.hint": "fotos e mídia",
+  "rules.cat.icons": "Ícones",
+  "rules.cat.icons.hint": "iconografia",
+  "rules.cat.forms": "Formulários",
+  "rules.cat.forms.hint": "inputs e controles",
+  "rules.cat.states": "Estados",
+  "rules.cat.states.hint": "estados de interação",
   "rules.cat.custom": "Personalizado",
   "rules.cat.custom.hint": "suas adições",
 
@@ -376,14 +380,14 @@ const PT: Strings = {
   "settings.rules.kicker": "DESIGN FACTORY · REGRAS",
   "settings.rules.title": "Regras",
   "settings.rules.desc":
-    "Catálogo unificado de regras de design + escrita aplicadas no Novo Projeto. Anti-slop está aqui — proibições explícitas. 30 padrões e quantos customs você quiser.",
+    "Catálogo unificado de regras visuais aplicadas no Novo Projeto. Anti-slop está aqui — proibições explícitas. 50 padrões e quantos customs você quiser.",
   "settings.rules.search": "Buscar regra…",
   "settings.rules.create": "Nova regra",
   "settings.rules.empty.search": "Nenhuma regra encontrada",
   "settings.rules.empty.search.body": "Tente outro nome, descrição ou categoria.",
   "settings.rules.empty.all.title": "Sem regras customizadas",
   "settings.rules.empty.all.body":
-    "30 padrões cobrem o básico. Adicione regras específicas do seu workflow.",
+    "50 padrões cobrem o básico. Adicione regras específicas do seu workflow.",
   "settings.rules.detail.eyebrow": "Editando regra",
   "settings.rules.detail.builtin.note":
     "Edições no padrão são salvas como override — pode resetar a qualquer momento.",
@@ -416,7 +420,7 @@ const PT: Strings = {
     "Formatos categorizam o tipo de output (Vídeo, Interface, Social, Print). O agente usa essa categorização pra escolher template e estrutura. Crie um custom format pra cobrir tipos de produto específicos do seu fluxo — landing, deck, poster, ad.",
   "settings.padroes.directions.rules.title": "Como usar regras",
   "settings.padroes.directions.rules.body":
-    "Regras são proibições e convenções aplicadas em todos os projetos novos. **Anti-slop** bane padrões batidos (emojis, jargão); **Tone** afina voz; **Motion** controla animação. Customize ou adicione regras próprias da sua marca.",
+    "Regras são proibições e convenções visuais aplicadas em todos os projetos novos. **Anti-slop** bane padrões batidos (emojis, gradientes genéricos); **Layout** cuida de estrutura e espaço; **Movimento** controla animação. Customize ou adicione regras próprias da sua marca.",
 
   // Category management
   "settings.padroes.cats.manage": "Gerenciar categorias",
@@ -722,7 +726,7 @@ const PT: Strings = {
   "ie.reset.formats.body":
     "Apaga todos os formatos customizados, overrides, categorias customs e itens ocultados. Os padrões voltam ao normal. Esta ação não pode ser desfeita.",
   "ie.reset.rules.body":
-    "Apaga todas as regras customizadas, overrides, categorias customs e regras ocultadas. As 30 regras padrão voltam ao normal. Esta ação não pode ser desfeita.",
+    "Apaga todas as regras customizadas, overrides, categorias customs e regras ocultadas. As 50 regras padrão voltam ao normal. Esta ação não pode ser desfeita.",
   "ie.import.preview.title": "Pré-visualização da importação",
   "ie.import.preview.body":
     "Confira o que será aplicado antes de continuar. Você pode mesclar (preserva o que já existe) ou substituir tudo (apaga primeiro).",
@@ -1595,9 +1599,8 @@ const EN: Strings = {
   "home.cta.label": "New project",
   "home.cta.hint": "Open console",
   "home.cta.aria": "Open new project console",
-  // v9 — Hero block.
-  // user rejected "Start new project" — switched to short
-  // "New project" parallel to PT.
+  // Hero block. CTA reads "New project" (short, parallel to PT)
+  // rather than "Start new project".
   "home.hero.kicker": "NEW PROJECT · {count} ACTIVE",
   "home.hero.cta": "New project",
   "home.empty.projects.title": "No projects yet",
@@ -1729,7 +1732,7 @@ const EN: Strings = {
   "rules.modal.eyebrow": "design factory · rules",
   "rules.modal.title": "Rules",
   "rules.modal.subtitle":
-    "Pick the rules that govern this project. Anti-slop, tone, motion, language, voice.",
+    "Pick the rules that govern this project. Anti-slop, layout, typography, color, motion, and more.",
   "rules.search.placeholder": "Search in {0} rules…",
   "rules.search.aria": "Search rules",
   "rules.search.clear.aria": "Clear search",
@@ -1746,18 +1749,24 @@ const EN: Strings = {
   "rules.empty.clear": "Clear search",
   "rules.cat.anti-slop": "Anti-slop",
   "rules.cat.anti-slop.hint": "explicit don'ts",
-  "rules.cat.tone": "Tone",
-  "rules.cat.tone.hint": "overall feel",
-  "rules.cat.motion": "Motion",
-  "rules.cat.motion.hint": "how it moves",
+  "rules.cat.layout": "Layout",
+  "rules.cat.layout.hint": "structure & spacing",
+  "rules.cat.typography": "Typography",
+  "rules.cat.typography.hint": "type & numerals",
   "rules.cat.color": "Color",
   "rules.cat.color.hint": "palette intent",
-  "rules.cat.language": "Language",
-  "rules.cat.language.hint": "primary language",
-  "rules.cat.voice": "Voice",
-  "rules.cat.voice.hint": "writing register",
-  "rules.cat.layout": "Layout",
-  "rules.cat.layout.hint": "structural intent",
+  "rules.cat.depth": "Depth",
+  "rules.cat.depth.hint": "elevation & edges",
+  "rules.cat.motion": "Motion",
+  "rules.cat.motion.hint": "how it moves",
+  "rules.cat.imagery": "Imagery",
+  "rules.cat.imagery.hint": "photos & media",
+  "rules.cat.icons": "Icons",
+  "rules.cat.icons.hint": "iconography",
+  "rules.cat.forms": "Forms",
+  "rules.cat.forms.hint": "inputs & controls",
+  "rules.cat.states": "States",
+  "rules.cat.states.hint": "interaction states",
   "rules.cat.custom": "Custom",
   "rules.cat.custom.hint": "your additions",
 
@@ -1878,14 +1887,14 @@ const EN: Strings = {
   "settings.rules.kicker": "DESIGN FACTORY · RULES",
   "settings.rules.title": "Rules",
   "settings.rules.desc":
-    "Unified catalog of design + writing rules surfaced in New Project. Anti-slop is here — explicit don'ts. 30 defaults + as many customs as you want.",
+    "Unified catalog of visual rules surfaced in New Project. Anti-slop is here — explicit don'ts. 50 defaults + as many customs as you want.",
   "settings.rules.search": "Search rule…",
   "settings.rules.create": "New rule",
   "settings.rules.empty.search": "No rule found",
   "settings.rules.empty.search.body": "Try another name, description or category.",
   "settings.rules.empty.all.title": "No custom rules",
   "settings.rules.empty.all.body":
-    "30 defaults cover the basics. Add rules specific to your workflow.",
+    "50 defaults cover the basics. Add rules specific to your workflow.",
   "settings.rules.detail.eyebrow": "Editing rule",
   "settings.rules.detail.builtin.note":
     "Default edits are saved as overrides — you can reset anytime.",
@@ -1917,7 +1926,7 @@ const EN: Strings = {
     "Formats categorize the output type (Video, Interface, Social, Print). The agent uses this to pick the template and structure. Add a custom format to cover product types specific to your flow — landing, deck, poster, ad.",
   "settings.padroes.directions.rules.title": "Using rules",
   "settings.padroes.directions.rules.body":
-    "Rules are prohibitions and conventions applied to every new project. **Anti-slop** bans tired patterns (emojis, jargon); **Tone** tunes voice; **Motion** controls animation. Customize, or add brand-specific rules of your own.",
+    "Rules are visual prohibitions and conventions applied to every new project. **Anti-slop** bans tired patterns (emojis, generic gradients); **Layout** handles structure and space; **Motion** controls animation. Customize, or add brand-specific rules of your own.",
 
   // Category management
   "settings.padroes.cats.manage": "Manage categories",
@@ -2210,7 +2219,7 @@ const EN: Strings = {
   "ie.reset.formats.body":
     "Wipes all custom formats, overrides, custom categories and hidden items. Defaults return to normal. This can't be undone.",
   "ie.reset.rules.body":
-    "Wipes all custom rules, overrides, custom categories and hidden rules. The 30 default rules return to normal. This can't be undone.",
+    "Wipes all custom rules, overrides, custom categories and hidden rules. The 50 default rules return to normal. This can't be undone.",
   "ie.import.preview.title": "Import preview",
   "ie.import.preview.body":
     "Review what will be applied before continuing. Merge keeps existing items; Replace wipes them first.",

@@ -25,11 +25,11 @@ beforeEach(() => {
 });
 
 describe("rules-taxonomy defaults", () => {
-  it("ships exactly 30 canonical builtin rules", () => {
-    // User reset 2026-05-21: replaced the 5 HYVE-internal rules
-    // with 30 globally-useful rules in DF v1 OSS prep. Each is
-    // written as "problem to avoid + concrete substitute".
-    expect(DEFAULT_BUILTIN_RULES.length).toBe(30);
+  it("ships exactly 50 canonical builtin rules", () => {
+    // 50 brand-agnostic VISUAL taste defaults across 10 categories
+    // (no copy/voice/process rules). Each is written as
+    // "problem to avoid + concrete move".
+    expect(DEFAULT_BUILTIN_RULES.length).toBe(50);
   });
 
   it("all builtins have builtin: true and well-formed ids", () => {
@@ -41,9 +41,9 @@ describe("rules-taxonomy defaults", () => {
     }
   });
 
-  it("anti-slop category covers the 8 anti-slop rules", () => {
+  it("anti-slop category covers the 5 anti-slop rules", () => {
     const as = DEFAULT_BUILTIN_RULES.filter((r) => r.category === "anti-slop");
-    expect(as.length).toBe(8);
+    expect(as.length).toBe(5);
     expect(as.every((r) => r.id.startsWith("as-"))).toBe(true);
   });
 

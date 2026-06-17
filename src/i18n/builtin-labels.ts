@@ -170,196 +170,334 @@ export function getBuiltinFormatItemDescriptor(
 
 // ─── Rules — builtin titles + descriptions ─────────────────────────────
 
-// Rule titles for the 30 hyve-agnostic defaults (PR #207 OSS prep,
-// user ask 2026-05-21 to bilingualize). The EN value here MUST
-// match the canonical `title` field on the rule in rules-taxonomy.ts
-// — that file is the source of truth for the EN copy, and the
-// `pick()` fallback picks EN from this map when lang === "en" to keep
-// the i18n table self-contained (no cross-file divergence audit).
+// Titles for the 50 brand-agnostic visual-taste defaults. The EN value
+// here MUST match the canonical `title` field on the rule in
+// rules-taxonomy.ts — that file is the source of truth for the EN copy,
+// and the `pick()` fallback picks EN from this map when lang === "en" to
+// keep the i18n table self-contained.
 const RULE_TITLES: Record<string, Pair> = {
   // Anti-slop
   "as-no-decorative-emojis": { pt: "Sem emojis decorativos", en: "No decorative emojis" },
   "as-no-invented-decoration": { pt: "Sem decoração inventada", en: "No invented decoration" },
-  "as-no-placeholder-text": { pt: "Sem texto-placeholder", en: "No placeholder text" },
-  "as-no-external-assets": { pt: "Sem assets externos", en: "No external assets" },
-  "as-no-fake-data": { pt: "Sem dados fake ou mock", en: "No fake or mock data" },
-  "as-no-ai-tells": { pt: "Sem voz de assistente no output", en: "No AI tells in output" },
-  "as-no-silent-fallbacks": { pt: "Sem fallback silencioso", en: "No silent fallbacks" },
-  "as-no-hedging": { pt: "Sem hedge no que foi entregue", en: "No hedging in shipped output" },
-  // Tone
-  "tn-read-ds-canon": { pt: "Ler o canon do design system", en: "Read design system canon first" },
-  "tn-one-detail-earns": {
-    pt: "Um detalhe que justifica a peça",
-    en: "One detail that earns the work",
+  "as-no-generic-ai-gradient": { pt: "Sem gradiente genérico de IA", en: "No generic AI gradient" },
+  "as-no-default-glassmorphism": {
+    pt: "Sem glassmorphism por default",
+    en: "No default glassmorphism",
   },
-  "tn-surgical-edits": { pt: "Edições cirúrgicas primeiro", en: "Surgical edits first" },
-  "tn-ship-complete": { pt: "Entregar inteiro, não em pedaços", en: "Ship complete, not chunks" },
-  "tn-show-dont-tell": { pt: "Mostrar, não descrever", en: "Show, don't tell" },
-  // Motion
-  "mo-honor-reduced-motion": { pt: "Respeitar reduced-motion", en: "Honor reduced motion" },
-  "mo-motion-serves-meaning": { pt: "Animação serve significado", en: "Motion serves meaning" },
-  "mo-no-decorative-spinners": {
-    pt: "Sem spinner infinito decorativo",
-    en: "No infinite spinners as decoration",
+  "as-no-effect-stacking": { pt: "Sem empilhar efeitos", en: "No stacked effects" },
+  // Layout
+  "ly-generous-spacing": { pt: "Espaço pra respirar", en: "Generous, consistent spacing" },
+  "ly-no-card-bars": { pt: "Sem barras decorativas em card", en: "No card bars or accents" },
+  "ly-dont-center-everything": { pt: "Não centralizar tudo", en: "Don't center everything" },
+  "ly-consistent-alignment-edges": {
+    pt: "Bordas de alinhamento consistentes",
+    en: "Consistent alignment edges",
   },
+  "ly-proximity-grouping": { pt: "Agrupar por proximidade", en: "Group by proximity" },
+  "ly-clear-hierarchy": { pt: "Hierarquia clara", en: "One clear focal point" },
+  "ly-optical-alignment": { pt: "Alinhamento óptico", en: "Optical alignment" },
+  // Typography
+  "ty-limited-type-scale": { pt: "Escala tipográfica enxuta", en: "Limited type scale" },
+  "ty-tabular-figures": { pt: "Tabular figures para números", en: "Tabular figures for numbers" },
+  "ty-comfortable-measure": {
+    pt: "Medida e entrelinha confortáveis",
+    en: "Comfortable measure & leading",
+  },
+  "ty-one-or-two-typefaces": { pt: "Uma ou duas fontes", en: "One or two typefaces" },
+  "ty-weight-for-hierarchy": {
+    pt: "Hierarquia por peso, não por cor",
+    en: "Weight for hierarchy, not color",
+  },
+  "ty-no-justify-long-text": { pt: "Não justificar texto longo", en: "Don't justify long text" },
+  "ty-tracking-by-size": { pt: "Tracking por tamanho", en: "Tracking by size" },
   // Color
   "co-honor-existing-palette": {
     pt: "Honrar a paleta existente",
-    en: "Honor user's existing palette",
+    en: "Honor the existing palette",
   },
-  "co-wcag-aa-on-text": { pt: "WCAG AA em texto", en: "WCAG AA on text" },
-  "co-no-raw-black": { pt: "Sem preto puro", en: "No raw black" },
-  "co-brand-color-sparingly": { pt: "Cor da marca com parcimônia", en: "Brand color sparingly" },
-  // Language
-  "ln-match-user-language": { pt: "Falar o idioma do usuário", en: "Match user's language" },
-  "ln-utf8-strict": { pt: "UTF-8 sempre", en: "UTF-8 strict" },
-  // Voice
-  "vo-plain-register": { pt: "Registro simples", en: "Plain register" },
-  "vo-no-marketing-speak": { pt: "Sem marketing-speak", en: "No marketing speak" },
-  "vo-concrete-over-abstract": { pt: "Concreto, não abstrato", en: "Concrete over abstract" },
-  // Layout
-  "ly-no-card-bars": {
-    pt: "Sem barras decorativas em cards",
-    en: "No card bars or vertical accents",
+  "co-no-raw-black": { pt: "Suavizar preto e branco puros", en: "Soften pure black & white" },
+  "co-accent-sparingly": { pt: "Cor de destaque com parcimônia", en: "Accent color sparingly" },
+  "co-few-colors-neutral-base": { pt: "Poucas cores, base neutra", en: "Few colors, neutral base" },
+  "co-semantic-colors-consistent": {
+    pt: "Cores semânticas consistentes",
+    en: "Consistent semantic colors",
   },
-  "ly-respect-viewport": { pt: "Respeitar o viewport", en: "Respect viewport" },
-  "ly-sticky-has-escape": {
-    pt: "Sticky sempre tem como fechar",
-    en: "Sticky elements have escape",
+  "co-desaturate-large-fills": { pt: "Dessaturar áreas grandes", en: "Desaturate large fills" },
+  // Depth
+  "de-soft-consistent-shadows": {
+    pt: "Sombras suaves e consistentes",
+    en: "Soft, consistent shadows",
   },
-  "ly-optical-alignment": { pt: "Alinhamento óptico", en: "Optical alignment" },
-  // Custom
-  "cu-tabular-nums": {
-    pt: "Tabular nums para dados numéricos",
-    en: "Tabular nums for numerical data",
+  "de-hairline-borders": {
+    pt: "Bordas hairline, baixo contraste",
+    en: "Hairline, low-contrast borders",
+  },
+  "de-consistent-radius": { pt: "Radius consistente", en: "Consistent corner radius" },
+  "de-layering-restraint": { pt: "Contenção de camadas", en: "Restrained layering" },
+  // Motion
+  "mo-motion-serves-meaning": { pt: "Movimento serve significado", en: "Motion serves meaning" },
+  "mo-no-decorative-spinners": {
+    pt: "Sem spinner decorativo infinito",
+    en: "No decorative spinners",
+  },
+  "mo-honor-reduced-motion": { pt: "Respeitar reduced-motion", en: "Honor reduced motion" },
+  "mo-quick-subtle-timing": {
+    pt: "Tempos curtos e easing consistente",
+    en: "Quick, subtle timing",
+  },
+  "mo-restrained-entrances": { pt: "Entrada com moderação", en: "Restrained entrances" },
+  // Imagery
+  "im-preserve-aspect-ratio": { pt: "Preservar proporção", en: "Preserve aspect ratio" },
+  "im-consistent-treatment": {
+    pt: "Tratamento de imagem uniforme",
+    en: "Consistent image treatment",
+  },
+  "im-overlay-for-legibility": {
+    pt: "Overlay pra texto sobre imagem",
+    en: "Overlay for text on images",
+  },
+  "im-avoid-generic-stock": { pt: "Evitar stock genérico", en: "Avoid generic stock" },
+  // Icons
+  "ic-consistent-set-weight": { pt: "Conjunto de ícones consistente", en: "Consistent icon set" },
+  "ic-size-align-to-text": { pt: "Ícone dimensionado ao texto", en: "Size & align icons to text" },
+  "ic-icons-clarify-not-decorate": {
+    pt: "Ícone esclarece, não enfeita",
+    en: "Icons clarify, not decorate",
+  },
+  // Forms
+  "fo-clear-input-affordance": { pt: "Input parece editável", en: "Inputs look editable" },
+  "fo-label-above-or-clear": { pt: "Label sempre visível", en: "Keep a visible label" },
+  "fo-generous-touch-targets": { pt: "Alvos de toque generosos", en: "Generous touch targets" },
+  "fo-align-fields": { pt: "Campos alinhados", en: "Align form fields" },
+  // States
+  "st-visible-focus": { pt: "Foco visível", en: "Visible focus state" },
+  "st-interactive-feedback": { pt: "Feedback de interação", en: "Interactive feedback" },
+  "st-design-empty-error": { pt: "Estados vazio e de erro", en: "Design empty & error states" },
+  "st-disabled-reads-disabled": {
+    pt: "Disabled parece disabled",
+    en: "Disabled reads as disabled",
+  },
+  "st-selected-distinct-from-hover": {
+    pt: "Selecionado distinto do hover",
+    en: "Selected distinct from hover",
   },
 };
 
 // Full PT translations of the EN descriptions in rules-taxonomy.ts.
-// Same shape (problem to avoid + concrete substitute). When `lang ===
-// "pt"` is active these get injected into the system prompt instead of
-// the EN version, so the model receives instructions in the same
-// language the user is writing in.
+// Same shape (problem to avoid + concrete move). When `lang === "pt"` is
+// active these get injected into the system prompt instead of the EN
+// version, so the model receives instructions in the same language the
+// user is writing in.
 const RULE_DESCRIPTIONS: Record<string, Pair> = {
+  // ── Anti-slop
   "as-no-decorative-emojis": {
-    pt: "Emojis coloridos decorativos (🚀⚡🔗📦🟢🔴 etc) puxam UI e copy de produto pra tom de chat casual ou pitch de marketing, e quebram o registro adulto e focado que interfaces reais precisam. Carregue significado com tipografia bem-tratada (peso, tamanho, kerning) e iconografia monocromática consistente. Símbolos técnicos minimalistas (✓ × → •) continuam aceitos em docs e specs, onde leem como notação, não como decoração.",
-    en: "Decorative coloured emojis (🚀⚡🔗📦🟢🔴 etc) drift product UI and copy toward casual chat or marketing pitch, eroding the adult, focused tone real interfaces need. Carry meaning with careful typography (weight, size, kerning) and a consistent monochrome line-icon set instead. Minimal technical glyphs (✓ × → •) stay acceptable inside developer docs and specs, where they read as notation rather than decoration.",
+    pt: "Emojis coloridos como ícone ou bullet (🚀⚡✨🔥) puxam a interface pra tom de chat casual e leem como cara de template. Carregue significado com peso de tipografia e um conjunto de ícones monocromático consistente.",
+    en: "Colored emojis used as icons or bullets (🚀⚡✨🔥) pull an interface toward casual chat and read as a default-template tell. Carry meaning through type weight and a consistent monochrome icon set instead.",
   },
   "as-no-invented-decoration": {
-    pt: "Adicionar gradients, glows, blurs, cursor torch, particle fields ou animações de fundo sem base no design system cria inconsistência e envelhece o trabalho no momento em que um DS real for adotado. Antes de qualquer efeito decorativo, verifique os tokens e componentes existentes — reaproveite o que já é canônico, ou caia em ênfase funcional (mudança de peso, cor da paleta estabelecida, animação que sinaliza estado). Em dúvida, omita; restrição lê como confiança.",
-    en: "Adding gradients, glows, blurs, cursor torches, particle fields, or animated backgrounds without grounding in the project's design system creates inconsistency and dates the work the moment a real DS lands. Before reaching for a decorative effect, check the existing tokens and components — reuse what is already canonical, or fall back to functional emphasis (weight change, established palette colour, motion that signals state). When in doubt, omit; restraint reads as confidence.",
+    pt: "Gradients, glows, blurs, partículas e fundos animados por enfeite datam o design e competem com o conteúdo. Só use um efeito quando ele se justifica — fora isso, deixe tipografia, espaçamento e uma paleta contida carregarem.",
+    en: "Gradients, glows, blurs, particle fields, and animated backgrounds added for their own sake date a design and fight the content. Reach for an effect only when it earns its place — otherwise let type, spacing, and a restrained palette carry it.",
   },
-  "as-no-placeholder-text": {
-    pt: 'Lorem ipsum, "Feature 1/2/3", "[TODO]", "Click here" e "Adicione conteúdo aqui" marcam um draft como não-pronto e desperdiçam atenção do leitor. Escreva os labels e a copy real que a superfície precisa — mesmo texto provisório realista ("Inscrições abrem em março") supera filler em latim porque testa o layout em line-lengths reais. Quando um slot ainda não tem conteúdo definido, deixe vazio (ou marcado com data-attribute que o pipeline detecta) em vez de mostrar string de placeholder.',
-    en: 'Lorem ipsum, "Feature 1/2/3", "[TODO]", "Click here", and "Add your content here" mark a draft as unfinished and waste the reader\'s attention. Write the actual labels and copy the surface needs — even rough realistic text ("Inscrições abrem em março") beats Latin filler because it stress-tests the layout at real line lengths. When a slot genuinely has no content yet, leave it empty (or marked with a data attribute the pipeline catches) rather than ship visible filler strings.',
+  "as-no-generic-ai-gradient": {
+    pt: "O gradiente roxo→azul de hero é cara de template na hora. Se um gradiente se justifica, monte com cores que já estão na paleta e mantenha o salto de hue pequeno e intencional.",
+    en: "The violet-to-blue hero gradient is an instant template tell. If a gradient earns its place, build it from colors already in the palette and keep the hue shift small and intentional.",
   },
-  "as-no-external-assets": {
-    pt: "Linkar pra CDNs externos (fonts.googleapis.com, unpkg, cdn.jsdelivr) ou hotlinkar imagens quebra a página offline, quando o CDN muda URLs e quando a rede está lenta. Embuta fontes via @font-face com data URIs base64, inline ícones SVG direto no markup, e mantenha imagens grandes sob a raiz do projeto referenciadas por caminhos relativos. O artefato precisa viajar como arquivo único auto-contido (ou pasta) — esse é o contrato.",
-    en: "Linking to external CDNs (`fonts.googleapis.com`, `unpkg`, `cdn.jsdelivr`) or hotlinked images breaks the page offline, when the CDN rotates URLs, and when the network is slow. Inline fonts via `@font-face` with base64 data URIs, embed small images as base64 directly in markup, and keep larger media under the project root referenced by relative paths. The artifact must travel as a single self-contained file (or folder) — that is the contract.",
+  "as-no-default-glassmorphism": {
+    pt: "Blur fosco semitransparente em toda superfície é default datado e prejudica a legibilidade. Use superfícies sólidas e opacas, a não ser que o blur realmente comunique camada sobre o conteúdo atrás.",
+    en: "Frosted, semi-transparent blur on every surface is a dated default that hurts legibility. Use solid, opaque surfaces unless the blur genuinely communicates layering over content behind it.",
   },
-  "as-no-fake-data": {
-    pt: '"User 1, User 2, User 3" e "$XX,XX" fazem o output parecer template barato. Use dados realistas plausíveis: nomes com cara de nome ("Ana Reis", "Marcus Tan"), números com padrão de número real (preços R$24 / R$89 / R$1.240, não 1 / 2 / 3), datas relativas a hoje ("semana passada", "em março"). Quando o domínio importa (analytics, billing), siga as convenções dele pra superfície ler como o produto real que ela diz ser.',
-    en: '"User 1, User 2, User 3" and "$XX.XX" make outputs read as low-effort templates. Use plausible realistic data: real-shape names ("Ana Reis", "Marcus Tan"), numbers that pattern like actual numbers (prices $24 / $89 / $1,240, not 1 / 2 / 3), dates relative to today ("last week", "em março"). When the domain matters (analytics, billing), follow that domain\'s conventions so the surface reads as the working product it claims to be.',
+  "as-no-effect-stacking": {
+    pt: "Empilhar sombra + gradiente + blur + borda + glow num elemento só lê como over-design e fica turvo. Escolha um tratamento por elemento e deixe ele resolver.",
+    en: "Piling shadow plus gradient plus blur plus border plus glow onto one element reads as over-designed and muddy. Pick one treatment per element and let it do the work.",
   },
-  "as-no-ai-tells": {
-    pt: '"Posso ajudar com isso", "Certo!", "Como um AI", "Aqui está o que posso fazer", "Me avise se precisar de mais" vazam a voz do assistente em superfícies de produto e fazem o trabalho parecer scripted. Tire o registro de assistente-prestativo inteiro — fale como o produto ou documento em si. O usuário já sabe que está usando uma ferramenta; a ferramenta não precisa se apresentar a cada resposta.',
-    en: '"I\'d be happy to help", "Certainly!", "As an AI", "Here\'s what I can do", "Let me know if you need anything else" leak the assistant\'s voice into product surfaces and make the work feel scripted. Strip the helpful-assistant register entirely — speak as the product or document itself. The user already knows they\'re using a tool; the tool doesn\'t need to introduce itself on every response.',
-  },
-  "as-no-silent-fallbacks": {
-    pt: 'Padrões como catch(() => {}), ?? defaultValue sem log, e "se falhar mostra nada" transformam bugs em degradação invisível que custa dias pra debugar. Quando algo falha, logue o erro com escopo + operação tentada + causa real, e ou superfície uma mensagem visível pro usuário ou retorne um Result tipado que o caller é obrigado a tratar. Swallow silencioso só é aceitável quando você está filtrando falhas conhecidas-benignas, e o comentário acima do catch precisa explicar.',
-    en: 'Patterns like `catch(() => {})`, `?? defaultValue` without logging, and "if it fails, show nothing" turn bugs into invisible degradation that costs days to debug. When something fails, log the error with scope + attempted operation + actual cause, then either surface a user-visible message or return a typed error result the caller has to handle. Silent swallow is acceptable only when you\'re filtering known-benign failures, and the comment above the catch must say so.',
-  },
-  "as-no-hedging": {
-    pt: '"Talvez", "poderia ser", "ainda precisa de polish", "em uma próxima iteração", "para production-ready precisaríamos" — isso é coisa de design review, nunca da superfície que um usuário real vai ler. Faça a chamada dentro das constraints, entregue a melhor versão que couber, e siga. Se algo está genuinamente incompleto, diga uma vez no commit message ou changelog — nunca no output que vai pra usuário.',
-    en: '"Talvez", "poderia ser", "ainda precisa de polish", "em uma próxima iteração", "para production-ready precisaríamos" — these belong in design reviews, never in the surface a real user reads. Make the call within the constraints, ship the best version that fits, and move on. If something is genuinely incomplete, name it once in the commit message or changelog — never in the user-facing output itself.',
-  },
-  "tn-read-ds-canon": {
-    pt: "Antes de gerar qualquer UI, paleta ou variante de componente, leia a documentação do design system do projeto (design.md, arquivo de tokens, DESIGN-RULES ou equivalente). Improvisar cores, escala de spacing, ramp tipográfico ou radius quando o canon já define produz output que dá drift do resto do produto. Quando o projeto ainda não tem DS, estabeleça 3-5 tokens canônicos antes (uma escala neutra, um accent, dois tamanhos de texto, dois de spacing) e reuse.",
-    en: "Before generating any UI, palette, or component variant, read the project's design system documentation (design.md, tokens file, DESIGN-RULES, or equivalent). Improvising colours, spacing scales, typography ramps, or radius values when the canon already defines them produces output that drifts from the rest of the product. When the project has no DS yet, establish 3-5 canonical tokens up-front (one neutral scale, one accent, two type sizes, two spacing units) and reuse them.",
-  },
-  "tn-one-detail-earns": {
-    pt: "Toda superfície entregue precisa de pelo menos um detalhe que sinalize craft em vez de montagem — uma micro-interação em uma ação primária, um movimento tipográfico (tabular nums em preço, optical sizing, ligaturas off por default mas on em títulos), uma qualidade de pintura (uma sombra cuidada, um gradiente sutil em um highlight só), ou um momento de ilustração custom. O âncora se ajusta à superfície — uma página de settings não precisa de fogos, uma landing pode.",
-    en: "Every shipped surface needs at least one detail that signals craft rather than assembly — a micro-interaction on a primary action, a typographic move (tabular nums on prices, optical sizing, off-by-default ligatures kept on for headings), a paint quality (a single considered shadow stack, a small gradient on a highlight only), or a custom illustration moment. The anchor should fit the surface — a settings page doesn't need fireworks, a landing page might.",
-  },
-  "tn-surgical-edits": {
-    pt: "Quando pedirem pra mudar uma coisa, mude só aquela coisa — não refatore código adjacente, não renomeie variáveis não relacionadas, não aperte regras de styling fora do escopo, e não adicione features que o brief não pediu. Edits cirúrgicos mantêm diffs revisáveis e respeitam o contrato implícito de que o resto do arquivo funciona. Quando achar algo mais quebrado, abra um follow-up separado — nunca empacote como side effect.",
-    en: "When asked to change one thing, change only that thing — don't refactor adjacent code, rename unrelated variables, tighten styling outside the scope, or add features the brief didn't ask for. Surgical edits keep diffs reviewable and respect the implicit contract that the rest of the file works. When you spot something else broken, file a separate follow-up — never land it as a side effect.",
-  },
-  "tn-ship-complete": {
-    pt: 'Entregue um artefato funcionando — arquivo que abre, demo que roda, copy que se lê do começo ao fim — não um draft parcial com lista do que ainda falta. Quando o escopo é grande demais pra finalizar em uma pass, estreite o escopo: uma superfície menor entregue inteira vence uma maior pela metade. "Funciona em escopo menor" é o tipo de edit que um mantenedor consegue mergear de verdade.',
-    en: 'Deliver a working artifact — a file that opens, a demo that runs, copy that reads end-to-end — not a partial draft with a list of remaining items. When the scope is too large to finish in one pass, narrow the scope: a smaller surface shipped whole beats a larger surface half-built. "Working at smaller scope" is the kind of edit a maintainer can actually merge.',
-  },
-  "tn-show-dont-tell": {
-    pt: 'Não descreva o que uma feature faz em copy ("sugestões inteligentes aparecem enquanto você digita"); demonstre com a interface funcionando. Não afirme que um produto é "rápido" ou "intuitivo" — deixe os affordances falarem. Em documentação, comece com um exemplo executável, depois explique por que funciona. A demo carrega peso; o adjetivo não.',
-    en: 'Don\'t describe what a feature does in copy ("intelligent suggestions appear as you type"); demonstrate it with the working interface itself. Don\'t claim a product is "fast" or "intuitive" — let the affordances speak. In documentation, lead with a runnable example, then explain why it works. The demo carries weight; the adjective doesn\'t.',
-  },
-  "mo-honor-reduced-motion": {
-    pt: "Envolva toda animação não-essencial em @media (prefers-reduced-motion: reduce) e forneça fallback estático ou um cross-fade muito mais curto. Distúrbios vestibulares tornam parallax, slide-in transitions e motion em autoplay fisicamente dolorosos pra uma fração relevante dos usuários. Animação essencial (progress de loading, focus ring) pode ficar; o resto precisa de alternativa parada.",
-    en: "Wrap all non-essential animation in `@media (prefers-reduced-motion: reduce)` and provide either a static fallback or a much-shorter cross-fade. Vestibular disorders make parallax, slide-in transitions, and autoplay motion physically painful for a meaningful fraction of users. Essential motion (loading progress, focus rings) can stay; everything else needs a still alternative.",
-  },
-  "mo-motion-serves-meaning": {
-    pt: "Use animação pra comunicar mudança de estado (algo apareceu, algo está carregando, algo moveu de A pra B) — não pra preencher silêncio ou decorar superfícies idle. Toda animação precisa ser legível a partir de um quadro parado: um item da lista entra deslizando porque acabou de ser adicionado, um botão encolhe no press porque o usuário tocou. Motion decorativo que loopa sem âncora semântica vira ruído nervoso.",
-    en: "Use animation to communicate state change (something appeared, something is loading, something moved from A to B) — not to fill silence or decorate idle surfaces. Every animation should be readable from a still frame: a list item slides in because it was just added, a button shrinks on press because the user touched it. Decorative motion that loops with no semantic anchor turns into nervous noise.",
-  },
-  "mo-no-decorative-spinners": {
-    pt: "Spinners infinitos cabem em trabalho real cuja duração você não consegue medir adiante. Não cabem em superfícies idle — um botão com spin permanente lê como quebrado ou travado, e treina o usuário a ignorar loading states reais depois. Quando a superfície precisa de interesse visual, use um badge estático, um pulse sutil em um elemento primário, ou conteúdo que respira via tipografia — nunca rotação perpétua.",
-    en: "Indefinite spinners belong on real work whose duration you can't measure ahead of time. They don't belong on idle surfaces — a button with a permanent spin reads as broken or stuck, and trains users to ignore real loading states later. When a surface needs visual interest, use a static badge, a subtle pulse on a primary element, or content that breathes via typography — never perpetual rotation.",
-  },
-  "co-honor-existing-palette": {
-    pt: 'Quando o projeto já define cores (tokens.css, um DS, guia de marca), construa componentes novos a partir da escala existente: derive tints, shades e accents dos hues estabelecidos em vez de introduzir novos. Adicionar "só uma cor nova" por feature fragmenta a identidade visual até nada ler como sistema. Quando você genuinamente precisa de um hue novo, expanda a paleta com a escala completa (10 stops do claro ao escuro) e documente junto às existentes — nunca um valor órfão.',
-    en: 'When the project already defines colours (tokens.css, a DS, a brand guide), build new components from the existing scale: derive tints, shades, and accents from the established hues rather than introducing fresh ones. Adding "just one new colour" per feature fragments visual identity until nothing reads as a system. When you genuinely need a new hue, expand the palette with a full scale (10 steps, light → dark) and document it alongside the existing ones — never one orphan value.',
-  },
-  "co-wcag-aa-on-text": {
-    pt: 'Texto corrido precisa de pelo menos 4,5:1 de contraste contra o fundo; texto grande (≥18pt ou ≥14pt bold) precisa de 3:1. Cheque pares reais em ambos os temas (light e dark) antes de entregar — "parece bom na minha tela" não é OK. Quando uma cor da marca falha no contraste pra texto, mantenha como accent decorativo (LED, dot, underline) e use um neutro de contraste maior pra letras de fato.',
-    en: 'Body text needs at least 4.5:1 contrast against its background; large text (≥18pt or ≥14pt bold) needs 3:1. Check actual pairs in both light and dark themes before shipping — "looks fine on my screen" is not a green light. When a brand colour fails contrast for text, keep it as a decorative accent (a LED, a dot, an underline) and use a higher-contrast neutral for the actual letters.',
-  },
-  "co-no-raw-black": {
-    pt: "#000 puro lê como flat e datado contra qualquer superfície moderna — esmaga detalhe de sombra, quebra anti-aliasing de tipografia e não tem o undertone warm que tinta real tem. Use um warm charcoal (#1a1a17, oklch(0.18 0.005 80) ou equivalente no seu color space) pra texto e superfícies pesadas de tinta. Mesma lógica pra #fff puro — prefira um off-white (#fafaf7) pra fundos que devem ter cara de papel.",
-    en: "Pure `#000` reads as flat and dated against any modern surface — it crushes shadow detail, breaks anti-aliasing on type, and lacks the warm undertone real ink has. Use a warm charcoal (`#1a1a17`, `oklch(0.18 0.005 80)`, or the equivalent in your colour space) for text and ink-heavy surfaces. Same logic for pure `#fff` — prefer an off-white (`#fafaf7`) for backgrounds that should feel like paper.",
-  },
-  "co-brand-color-sparingly": {
-    pt: "A cor de assinatura da marca carrega o peso visual mais forte em qualquer superfície que a usa. Gaste esse peso onde ele ganha atenção: o LED ativo de um controle, um CTA crítico, um único dot indicando status live — nunca em chrome (toolbars, navegação, fundos de card) onde a cor da marca compete com o conteúdo. Uma superfície onde a cor da marca aparece uma vez lê como confiante; uma onde aparece seis vezes lê como desesperada.",
-    en: "The brand's signature colour carries the most visual weight wherever it appears. Spend that weight where it earns attention: the active LED on a control, a critical CTA, a single dot indicating live status — never on chrome (toolbars, navigation, card backgrounds) where the brand colour competes with content. A surface where the brand colour appears once reads as confident; a surface where it appears six times reads as desperate.",
-  },
-  "ln-match-user-language": {
-    pt: "Detecte o idioma do input do usuário e responda no mesmo. Se o usuário digita em português, escreva em português; se ele troca pra inglês no meio do thread, troque junto. Não traduza strings que o usuário escreveu — preserve casing, acentos e a wording exata que ele usou nos próprios dados. O produto precisa parecer que fala o idioma do usuário nativamente, não como camada de tradução.",
-    en: "Detect the language of the user's input and reply in the same language. When the user types Portuguese, write Portuguese; when they switch to English mid-thread, switch with them. Don't translate strings the user authored — preserve casing, accents, and the exact wording they used in their own data. The product should feel like it speaks the user's language natively, not like a translation layer.",
-  },
-  "ln-utf8-strict": {
-    pt: "Sempre entregue UTF-8 com preservação completa de acentos. Não use HTML entities pra caracteres acentuados (&aacute; pra á), não caia em transliteração ASCII, e não armazene texto como base64 quando deveria ser UTF-8. O round-trip write → save → reload → render precisa deixar agudo, til, cedilha e emoji intactos. Caracteres de box-drawing (─ ┄ ━) e setas são igualmente first-class — só tire se o formato de destino genuinamente não suporta.",
-    en: "Always output UTF-8 with full accent preservation. Don't use HTML entities for accented characters (`&aacute;` for á), don't fall back to ASCII transliteration, and don't store text as base64 when it should be UTF-8. The round-trip write → save → reload → render must leave acute, tilde, cedilla, and emoji intact. Box-drawing characters (`─ ┄ ━`) and arrow symbols are equally first-class — strip them only when the destination format truly can't carry them.",
-  },
-  "vo-plain-register": {
-    pt: 'Escreva no registro de um colega focado explicando algo concreto — não no registro de folheto de marketing ou memo corporativo. Sem "alavancar", sem "habilitar", sem "robusto", sem "world-class". Frases curtas que nomeiam a coisa diretamente. O leitor é inteligente e ocupado; respeite ambos.',
-    en: 'Write at the register of a focused colleague explaining something concrete — not the register of a marketing brochure or a corporate memo. No "leverage", no "enable", no "robust", no "world-class". Short sentences that name the thing directly. The reader is smart and busy; respect both.',
-  },
-  "vo-no-marketing-speak": {
-    pt: 'Vocabulário banido: "alavancar", "sinergia", "revolucionário", "world-class", "next-generation", "game-changing", "best-in-class", "cutting-edge", "robusto", "seamless", "intuitivo", "delightful", "poderoso". Essas palavras sinalizam que quem escreve não sabe descrever o que está afirmando. Substitua cada uma por específicos concretos: "editor poderoso" → "edita arquivos localmente com autosave a cada 1s".',
-    en: 'Banned vocabulary: "leverage", "synergy", "revolutionary", "world-class", "next-generation", "game-changing", "best-in-class", "cutting-edge", "robust", "seamless", "intuitive", "delightful", "powerful". These words signal the writer doesn\'t know how to describe what they\'re claiming. Replace each with concrete specifics: "powerful editor" → "edits files locally with autosave at 1s intervals".',
-  },
-  "vo-concrete-over-abstract": {
-    pt: 'Números, exemplos e entidades nomeadas vencem adjetivos sempre. "Rápido" vira "carrega em menos de 300ms"; "popular" vira "usado por 1.200 times"; "fácil" vira "três teclas a partir do cold start". Quando não dá pra quantificar, nomeie uma instância específica: "o tipo de edit que você faz nas passes um e dois" vence "suporta edits complexos". Vago é o default fácil — específico é a disciplina.',
-    en: 'Numbers, examples, and named entities beat adjectives every time. "Fast" becomes "loads in under 300ms"; "popular" becomes "used by 1,200 teams"; "easy" becomes "three keystrokes from cold start". When you can\'t quantify, name a specific instance: "the kind of edit you do in passes one and two" beats "supports complex edits". Vagueness is the easy default — specificity is the discipline.',
+  // ── Layout
+  "ly-generous-spacing": {
+    pt: "Espaçamento apertado e irregular é o jeito mais rápido de parecer não-finalizado. Dê respiro aos elementos e use um ritmo de espaçamento consistente — whitespace é estrutura, não espaço desperdiçado.",
+    en: "Cramped, uneven spacing is the fastest way to look unfinished. Give elements room to breathe and use one consistent spacing rhythm — whitespace is structure, not wasted space.",
   },
   "ly-no-card-bars": {
-    pt: "Barras decorativas no topo, base ou lateral de um card não adicionam informação — fragmentam o card visualmente e datam o design rápido (o trope lê como SaaS dashboard de 2019). Pra sinalizar hierarquia ou status dentro de um card, use o conteúdo do próprio card: um heading maior, um dot colorido adjacente ao título, um background tonal. Quando precisar de divisor, use whitespace — não tinta.",
-    en: "Decorative bars at the top, base, or side of a card don't add information — they fragment the card visually and date the design fast (the trope reads like 2019 dashboard SaaS). To signal hierarchy or status inside a card, use the card's own content: a larger heading, a coloured dot adjacent to the title, a tinted background state. When you need a divider, use whitespace — not paint.",
+    pt: "Uma barra colorida no topo ou na lateral do card não adiciona informação e data o design (cara de dashboard 2019). Sinalize hierarquia ou status com o conteúdo do próprio card — um heading mais forte, um dot de status, um fundo tonal.",
+    en: "A colored bar stuck on the top or side of a card adds no information and dates the design (the 2019-dashboard look). Signal hierarchy or status with the card's own content — a stronger heading, a small status dot, a tinted background.",
   },
-  "ly-respect-viewport": {
-    pt: "A página não pode produzir scroll horizontal em larguras comuns (320, 375, 768, 1024, 1440 px). Use box-sizing: border-box, larguras fluidas ou grids com minmax(0, 1fr), e teste resize — não entregue um layout que você só viu em 1440 px. Tabelas que não cabem ganham scroll horizontal interno (não na página); elementos de largura fixa ganham max-width e padding inline.",
-    en: "The page must not produce horizontal scroll at common widths (320, 375, 768, 1024, 1440 px). Use `box-sizing: border-box`, fluid widths or grids with `minmax(0, 1fr)`, and test resize behaviour — don't ship a layout you've only seen at 1440 px. Tables that don't fit get an internal horizontal scroll (not page-level); fixed-width elements get a max-width plus inline padding.",
+  "ly-dont-center-everything": {
+    pt: "Centralizar todo texto e bloco por default é tell e dificulta a leitura de texto longo. Alinhe corpo e conteúdo à esquerda; reserve o centro pra momentos curtos e deliberados, tipo um hero ou um estado vazio.",
+    en: "Centering all text and content blocks by default is a tell and makes long copy hard to scan. Left-align body text and content; reserve centering for short, deliberate moments like a hero or an empty state.",
   },
-  "ly-sticky-has-escape": {
-    pt: "Qualquer banner sticky, drawer, modal ou painel flutuante precisa de affordance explícito pra fechar — botão ×, atalho Esc, handler de outside-click, todos os três quando possível. Elementos sticky sem escape parecem armadilhas e erodem confiança. O mecanismo de escape precisa ser descobrível dentro do mesmo quadro que o conteúdo sticky; depender só de atalho de teclado exclui usuários que não sabem que ele existe.",
-    en: "Any sticky banner, drawer, modal, or floating panel needs an explicit close affordance — a × button, an Esc shortcut, an outside-click handler, all three when possible. Sticky elements without escape feel like traps and erode user trust. The escape mechanism must be discoverable inside the same frame as the sticky content; relying solely on a keyboard shortcut excludes users who don't know it exists.",
+  "ly-consistent-alignment-edges": {
+    pt: "Elementos que não compartilham linhas de alinhamento leem como descuido. Alinhe a um conjunto pequeno de bordas comuns ou a um grid, pra colunas, labels e conteúdo travarem nas mesmas verticais.",
+    en: "Elements that don't share alignment lines read as careless. Align to a small set of shared edges or a grid so columns, labels, and content snap to the same verticals.",
+  },
+  "ly-proximity-grouping": {
+    pt: "Itens relacionados ficam perto; não-relacionados precisam de um respiro claro. Use espaçamento pra agrupar e separar antes de recorrer a bordas ou caixas — proximidade faz a maior parte do trabalho estrutural.",
+    en: "Related items belong close together; unrelated ones need a clear gap. Use spacing to group and separate before reaching for borders or boxes — proximity does most of the structural work.",
+  },
+  "ly-clear-hierarchy": {
+    pt: "Quando tudo compete por atenção, nada vence. Estabeleça um elemento primário por tela e deixe tamanho, peso e espaçamento tornarem a ordem de leitura óbvia.",
+    en: "When everything competes for attention, nothing wins. Establish one primary element per screen and let size, weight, and spacing make the reading order obvious.",
   },
   "ly-optical-alignment": {
-    pt: "Centralização geométrica e visual não são a mesma coisa. Triângulos, ícones assimétricos, glifos com descenders e itálicos precisam de ajuste de offset pra ler como alinhados. Olho vence matemática: quando um ícone de play (▶) parece off-center dentro de um botão circular apesar de estar matematicamente centrado, nudge 1-2 px pra direita até ler centrado. Optical kerning, optical sizing em variable fonts e trim metrics em type servem ao mesmo princípio.",
-    en: "Geometric centering and visual centering are not the same. Triangles, asymmetric icons, glyphs with descenders, and italic type need offset adjustments so they read as aligned. Eye trumps math: when a play icon (▶) looks off-centre inside a circular button despite being mathematically centred, nudge it 1-2 px right until it reads centred. Optical kerning, optical sizing in variable fonts, and trim metrics on type all serve the same principle.",
+    pt: "Centralizado na matemática nem sempre é centralizado no olho — ícones com descenders, triângulos e o glifo de play parecem tortos. Confie no olho e ajuste até ler alinhado, em vez de depender só da centralização geométrica.",
+    en: "Mathematically centered isn't always visually centered — icons with descenders, triangles, and play glyphs look off. Trust the eye and nudge until it reads aligned rather than relying on geometric centering alone.",
   },
-  "cu-tabular-nums": {
-    pt: "Aplique font-variant-numeric: tabular-nums em qualquer superfície onde dígitos precisam alinhar: tabelas, preços, displays de tempo, contadores, números de versão. Dígitos proporcionais (o default) fazem 1.234 e 5.678 mudarem de posição entre linhas, o que destrói scannability. Tabular nums travam cada dígito em largura fixa — os números empilham em colunas limpas e a velocidade de leitura em contextos pesados de dados triplica.",
-    en: "Apply `font-variant-numeric: tabular-nums` on any surface where digits need to align: tables, prices, time displays, counters, version numbers. Proportional digits (the default) make 1,234 and 5,678 shift left/right between rows, which destroys scannability. Tabular nums lock each digit to a fixed width — numbers stack into clean columns and reading speed in data-heavy contexts triples.",
+  // ── Typography
+  "ty-limited-type-scale": {
+    pt: "Muitos tamanhos de fonte ad-hoc fazem o layout parecer montado em vez de desenhado. Escolha um conjunto pequeno de tamanhos com saltos claros e reutilize — hierarquia vem de contraste deliberado, não de um tamanho novo por elemento.",
+    en: "Many ad-hoc font sizes make a layout read as assembled rather than designed. Pick a small set of sizes with clear jumps between them and reuse it — hierarchy comes from deliberate contrast, not a new size per element.",
+  },
+  "ty-tabular-figures": {
+    pt: "Dígitos proporcionais mudam de posição entre linhas, então números em tabela, preço e contador não alinham. Use tabular figures (font-variant-numeric: tabular-nums) onde os dígitos precisam alinhar em coluna.",
+    en: "Proportional digits shift left and right between rows, so numbers in tables, prices, and counters won't line up. Use tabular figures (font-variant-numeric: tabular-nums) anywhere digits need to align in columns.",
+  },
+  "ty-comfortable-measure": {
+    pt: "Linhas longas demais cansam e entrelinha apertada deixa o parágrafo sufocado. Limite a linha de corpo a ~45-75 caracteres e dê line-height generoso ao corpo; aperte a entrelinha só em display grande.",
+    en: "Lines that run too long are hard to read and tight leading makes paragraphs feel cramped. Cap body line length around 45-75 characters and give body text generous line-height; tighten leading only on large display type.",
+  },
+  "ty-one-or-two-typefaces": {
+    pt: "Um zoo de fontes fragmenta o design. Use uma família, ou no máximo uma de display com uma de texto, e crie variedade com peso e tamanho em vez de mais famílias.",
+    en: "A font zoo fragments the design. Use one typeface, or at most a display face paired with a text face, and create variety with weight and size instead of more families.",
+  },
+  "ty-weight-for-hierarchy": {
+    pt: "Recorrer a cor ou CAIXA ALTA pra marcar importância polui a paleta e atrapalha a leitura. Conduza hierarquia com tamanho e peso primeiro; cor é accent, não um sistema de título.",
+    en: "Reaching for color or ALL CAPS to mark importance clutters the palette and hurts readability. Drive hierarchy with size and weight first; color is an accent, not a heading system.",
+  },
+  "ty-no-justify-long-text": {
+    pt: "Texto justificado na web abre rios irregulares de espaço porque o browser não hifeniza bem. Alinhe o corpo à esquerda (ragged right) pra espaçamento de palavra uniforme e leitura mais estável.",
+    en: "Justified text on the web opens uneven rivers of whitespace because browsers lack fine hyphenation. Left-align body copy (ragged right) for even word spacing and a steadier read.",
+  },
+  "ty-tracking-by-size": {
+    pt: "O letter-spacing default raramente serve a todos os tamanhos. Aperte um pouco o tracking em títulos grandes, deixe o corpo no normal e abra em labels pequenos em caixa alta, pra cada um ler limpo.",
+    en: "Default letter-spacing rarely fits every size. Tighten tracking slightly on large headings, leave body text at normal, and open it up for small uppercase labels so each reads cleanly.",
+  },
+  // ── Color
+  "co-honor-existing-palette": {
+    pt: "Introduzir um hue novo a cada componente fragmenta o design até nada ler como um sistema só. Construa a partir da paleta que já existe — derive tints e shades dos hues existentes em vez de adicionar cores órfãs.",
+    en: "Introducing a fresh hue for every new component fragments the design until nothing reads as one system. Build from the palette already in play — derive tints and shades from existing hues rather than adding orphan colors.",
+  },
+  "co-no-raw-black": {
+    pt: "Preto puro (#000) e branco puro (#fff) ficam duros e chapados contra conteúdo real — esmagam detalhe de sombra e leem como sem cuidado. Suavize levemente pra um quase-preto e um quase-branco pra superfície parecer intencional.",
+    en: "Pure black (#000) and pure white (#fff) feel harsh and flat against real content — they crush shadow detail and read as unconsidered. Soften slightly toward a near-black and a near-white so surfaces feel intentional.",
+  },
+  "co-accent-sparingly": {
+    pt: "Uma cor de destaque usada em tudo deixa de destacar qualquer coisa. Gaste no único elemento que deve puxar o olho — uma ação primária, um estado ativo — e mantenha chrome e superfícies grandes neutros.",
+    en: "An accent color used everywhere stops accenting anything. Spend it on the one element that should draw the eye — a primary action, an active state — and keep chrome and large surfaces neutral.",
+  },
+  "co-few-colors-neutral-base": {
+    pt: "Paleta arco-íris lê como caótica e amadora. Deixe uma escala neutra carregar a maior parte da interface e trate cor como a exceção que marca significado, não o default de toda superfície.",
+    en: "A rainbow palette reads as chaotic and amateur. Let a neutral scale carry the bulk of the interface and treat color as the exception that marks meaning, not the default for every surface.",
+  },
+  "co-semantic-colors-consistent": {
+    pt: "Inventar um verde-de-sucesso ou vermelho-de-erro novo por componente quebra o modelo mental. Defina uma cor pra sucesso, aviso, erro e info, e reutilize sempre que esses significados aparecem.",
+    en: "Inventing a new success-green or error-red per component breaks the mental model. Define one color each for success, warning, error, and info, and reuse them everywhere those meanings appear.",
+  },
+  "co-desaturate-large-fills": {
+    pt: "Cor totalmente saturada numa área grande vibra e cansa o olho. Reserve saturação alta pra accents pequenos e use tons dessaturados pra fundos e preenchimentos grandes.",
+    en: "Fully saturated color across a big area vibrates and tires the eye. Reserve high saturation for small accents and use muted, desaturated tones for large backgrounds and fills.",
+  },
+  // ── Depth
+  "de-soft-consistent-shadows": {
+    pt: "Sombra escura e dura parece barata, e sombras inconsistentes quebram a noção de espaço. Use um sistema de elevação só, com sombras suaves e difusas, como se viessem de uma única direção de luz.",
+    en: "Harsh, dark drop shadows look cheap and inconsistent shadows break the sense of space. Use one elevation system with soft, diffuse shadows cast as if from a single light direction.",
+  },
+  "de-hairline-borders": {
+    pt: "Borda preta de 1px pesada em tudo engaiola o design e adiciona ruído. Use divisores finos e de baixo contraste — ou whitespace — e mantenha o peso da borda consistente na UI.",
+    en: "Heavy black 1px borders on everything box the design in and add visual noise. Use thin, low-contrast dividers — or whitespace — and keep border weight consistent across the UI.",
+  },
+  "de-consistent-radius": {
+    pt: "Misturar canto reto, radius pequeno e pill total ao acaso parece acidental. Escolha uma escala de radius e aplique por papel de componente — e mantenha radii aninhados visualmente concêntricos.",
+    en: "Mixing sharp corners, small radii, and full pills at random looks accidental. Pick one radius scale and apply it by component role — and keep nested radii visually concentric.",
+  },
+  "de-layering-restraint": {
+    pt: "Quando todo elemento flutua na própria sombra, profundidade perde sentido e a tela fica agitada. Mantenha poucos níveis de elevação e intencionais — a maior parte do conteúdo fica plana na superfície.",
+    en: "When every element floats on its own shadow, depth loses meaning and the screen feels busy. Keep elevation levels few and intentional — most content sits flat on the surface.",
+  },
+  // ── Motion
+  "mo-motion-serves-meaning": {
+    pt: "Animação que fica em loop ou dispara sem motivo lê como ruído nervoso. Use movimento pra mostrar mudança de estado — algo apareceu, carregou ou moveu — de forma que cada animação seja legível a partir de um quadro parado.",
+    en: "Animation that loops or fires with no reason reads as nervous noise. Use motion to show a state change — something appeared, loaded, or moved — so every animation is legible from a single still frame.",
+  },
+  "mo-no-decorative-spinners": {
+    pt: "Um spinner permanente numa superfície idle lê como quebrado e treina a pessoa a ignorar loading states reais. Reserve spinners infinitos pra trabalho de fato em andamento; pra interesse visual, use um tratamento estático sutil.",
+    en: "A permanent spinner on an idle surface reads as broken and trains people to ignore real loading states. Reserve indefinite spinners for genuine in-progress work; for visual interest use a subtle static treatment.",
+  },
+  "mo-honor-reduced-motion": {
+    pt: "Parallax, slide-ins e motion em autoplay são desconfortáveis ou dolorosos pra algumas pessoas. Respeite a preferência reduced-motion: mantenha o feedback essencial e ofereça um fallback parado ou um cross-fade curto pro resto.",
+    en: "Parallax, slide-ins, and autoplay motion are uncomfortable or painful for some people. Honor the reduced-motion preference: keep essential feedback and offer a still or quick cross-fade fallback for the rest.",
+  },
+  "mo-quick-subtle-timing": {
+    pt: "Transições lentas e bouncy por default deixam a interface arrastada. Mantenha o motion de UI curto (~150-250ms) com uma curva ease-out consistente, pra parecer responsivo e não teatral.",
+    en: "Slow, bouncy default transitions make an interface feel sluggish. Keep UI motion short (around 150-250ms) with a consistent ease-out curve so it feels responsive rather than theatrical.",
+  },
+  "mo-restrained-entrances": {
+    pt: "Animar tudo no load cria uma cascata que distrai. Anime a entrada só de conteúdo genuinamente novo e use um stagger leve apenas onde ajuda a revelar a ordem de leitura.",
+    en: "Animating everything on load creates a distracting cascade. Animate the entrance of genuinely new content only, and use a light stagger just where it helps reveal reading order.",
+  },
+  // ── Imagery
+  "im-preserve-aspect-ratio": {
+    pt: "Imagem esticada ou achatada parece amadora na hora. Preserve a proporção original e use object-fit (cover ou contain) pra encaixar num frame — corte de propósito em vez de distorcer.",
+    en: "Stretched or squashed images look amateur instantly. Preserve the original aspect ratio and use object-fit (cover or contain) to fit a frame — crop deliberately rather than distort.",
+  },
+  "im-consistent-treatment": {
+    pt: "Um conjunto de imagens com proporções, radii e grades de cor diferentes lê como pilha, não sistema. Aplique a mesma proporção, radius e tratamento no grupo pra parecer intencional.",
+    en: "A set of images with different ratios, corner radii, and color grades reads as a pile, not a system. Apply the same ratio, radius, and treatment across a group so it feels intentional.",
+  },
+  "im-overlay-for-legibility": {
+    pt: "Texto direto sobre foto quase sempre falha contraste em algum ponto da imagem. Coloque um scrim, gradiente ou tint atrás do texto pra ele continuar legível na imagem inteira, áreas claras incluídas.",
+    en: "Text laid directly over a photo usually fails contrast somewhere in the image. Add a scrim, gradient, or tint behind the text so it stays readable across the whole image, light areas included.",
+  },
+  "im-avoid-generic-stock": {
+    pt: "Foto de stock genérica e de baixa resolução barateia o design. Prefira imagem real, nítida e no tema — e quando não tiver, uma ilustração limpa, padrão ou superfície sólida vence stock de enchimento.",
+    en: "Generic, low-resolution stock photos cheapen a design. Prefer real, sharp, on-topic imagery — and when you don't have it, a clean illustration, pattern, or solid surface beats filler stock.",
+  },
+  // ── Icons
+  "ic-consistent-set-weight": {
+    pt: "Misturar famílias de ícone, ou estilos filled e outline ao acaso, parece descuidado. Use um único conjunto de ícones com um peso de traço consistente, pra eles lerem como irmãos.",
+    en: "Mixing icon families, or filled and outline styles at random, looks careless. Use a single icon set with one consistent stroke weight so icons read as siblings.",
+  },
+  "ic-size-align-to-text": {
+    pt: "Ícone que não bate com o tamanho ou a baseline do label parece colado por cima. Dimensione o ícone em relação ao texto ao lado e alinhe opticamente à baseline ou ao centro do texto.",
+    en: "Icons that don't match their label's size or baseline look bolted on. Size icons relative to adjacent text and align them optically to the text baseline or center.",
+  },
+  "ic-icons-clarify-not-decorate": {
+    pt: "Um ícone em cada linha vira ruído e atrasa a leitura. Use ícone onde ele acelera o reconhecimento, com label quando o sentido é ambíguo, e tire onde o texto sozinho é mais claro.",
+    en: "An icon on every line becomes noise and slows scanning. Use icons where they speed recognition, pair them with a label when the meaning is ambiguous, and drop them where text alone is clearer.",
+  },
+  // ── Forms
+  "fo-clear-input-affordance": {
+    pt: "Campos sem borda e chapados deixam a pessoa em dúvida do que é clicável. Dê ao input uma affordance clara — borda visível ou fundo preenchido, padding interno suficiente e um focus state óbvio.",
+    en: "Borderless, flat fields leave people unsure what's clickable. Give inputs a clear affordance — a visible border or filled background, enough internal padding, and an obvious focus state.",
+  },
+  "fo-label-above-or-clear": {
+    pt: "Campo só com placeholder perde o label assim que a pessoa digita e prejudica acessibilidade. Mantenha um label visível e persistente acima ou ao lado de cada campo; use placeholder só pra dica de formato.",
+    en: "Placeholder-only fields lose their label the moment someone types and hurt accessibility. Keep a persistent visible label above or beside each field; use placeholder text only for format hints.",
+  },
+  "fo-generous-touch-targets": {
+    pt: "Controles minúsculos e colados são difíceis de acertar, ainda mais no toque. Dê aos alvos interativos pelo menos ~44px de área de clique e espaço suficiente entre eles pra evitar erro de toque.",
+    en: "Tiny, tightly-packed controls are hard to hit, especially on touch. Give interactive targets at least ~44px of hit area and enough space between them to avoid mis-taps.",
+  },
+  "fo-align-fields": {
+    pt: "Campos de larguras aleatórias e labels desalinhados deixam o formulário caótico. Alinhe labels e inputs a uma coluna comum e dimensione cada campo pelo tamanho do conteúdo que ele espera.",
+    en: "Fields of random widths and misaligned labels make a form feel chaotic. Align labels and inputs to a shared column and size each field to the length of content it expects.",
+  },
+  // ── States
+  "st-visible-focus": {
+    pt: "Tirar o outline de foco deixa quem usa teclado sem saber onde está. Mantenha um anel de foco claro e estilizado em todo elemento interativo — nunca remova o outline sem um substituto visível.",
+    en: "Removing the focus outline strands keyboard users with no idea where they are. Keep a clear, styled focus ring on every interactive element — never remove the outline without a visible replacement.",
+  },
+  "st-interactive-feedback": {
+    pt: "Controle que não reage parece morto ou quebrado. Dê a todo elemento clicável feedback visível de hover, active e pressed, pra confirmar que dá pra usar e que o toque registrou.",
+    en: "Controls that don't react feel dead or broken. Give every clickable element visible hover, active, and pressed feedback so it confirms it can be used and that the tap registered.",
+  },
+  "st-design-empty-error": {
+    pt: "Entregar só o happy path deixa os estados vazio, loading e erro com cara de quebrado. Desenhe esses estados de propósito — um vazio que ajuda, um erro claro, um placeholder de loading calmo.",
+    en: "Shipping only the happy path leaves empty, loading, and error states looking broken. Design these states deliberately — a helpful empty state, a clear error, a calm loading placeholder.",
+  },
+  "st-disabled-reads-disabled": {
+    pt: "Um controle desabilitado com cara de ativo convida clique morto, mas um que some confunde. Reduza o contraste pra ele ler claramente como indisponível, mantendo legível e no lugar.",
+    en: "A disabled control that looks active invites dead clicks, but one that vanishes confuses. Lower its contrast so it clearly reads as unavailable while staying legible and in place.",
+  },
+  "st-selected-distinct-from-hover": {
+    pt: "Quando o estado selecionado parece hover, a pessoa perde o rastro de onde está. Faça o estado atual/selecionado claramente distinto do hover transitório — um fill ou marcador diferente, não só um tom.",
+    en: "When the selected state looks like hover, people lose track of where they are. Make the current/selected state clearly distinct from transient hover — a different fill or marker, not just a shade.",
   },
 };
 
