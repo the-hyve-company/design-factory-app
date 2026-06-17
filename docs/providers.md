@@ -161,6 +161,30 @@ field. Agents do not need to detect this themselves — see
   `DF_OLLAMA_HOST`)
 - Pull a model: `ollama pull llama3.3:70b`
 
+**Use an instruct model, not a base/embedding one.** DF talks to Ollama over
+`/api/chat`, so the model needs a chat template. Completion-only GGUF imports
+and embedding models (`bge-*`, `nomic-embed-*`) have none and bounce with
+`"<model>" does not support chat`. DF probes each model via `/api/show` and
+greys non-chat models out in the picker. Known-good: `llama3.2`,
+`qwen2.5-coder`, `qwen3`, `mistral`, `gemma2`.
+
+**Tuning env (optional):**
+
+| Var | Default | Effect |
+|---|---|---|
+| `DF_OLLAMA_HOST` | `127.0.0.1` → `localhost` → `[::1]` | Explicit host:port; skips probing. |
+| `DF_OLLAMA_NUM_CTX` | `16384` | Context window requested per turn, clamped to the model's max. DF's system-prompt stack (preamble + craft + output contract + current file + history) easily exceeds Ollama's bare 4096 default, which silently truncates the prompt — the model never sees your actual ask. Raise on a roomy GPU; lower if you hit VRAM limits. |
+| `DF_OLLAMA_THINK` | `auto` | `auto`/`1` = enable thinking on reasoning models (qwen3, deepseek-r1, gpt-oss); reasoning goes to a separate channel and never leaks into the HTML. `0` = force off (faster, lower quality). No effect on non-reasoning models. |
+
+**VRAM note for big models.** A 32B model at Q4 plus a 16k context fills a 24GB
+GPU (≈22GB weights + KV cache). It still runs, but cold-load + a long thinking
+phase can take minutes on the first turn; subsequent turns reuse the loaded
+model. If first-token latency is painful, drop `DF_OLLAMA_NUM_CTX`, turn off
+thinking (`DF_OLLAMA_THINK=0`), or use a smaller model (e.g. `qwen2.5-coder` 7B/14B).
+The chat UI streams, so it surfaces output as it arrives; the non-streaming
+`/once` path (used by some auxiliary features) can still hit a ~5-minute client
+timeout on very slow turns — prefer streaming generation for large models.
+
 ---
 
 ## Endpoints

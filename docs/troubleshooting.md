@@ -140,6 +140,53 @@ ollama serve
 (macOS users typically have a launchd agent that starts it
 automatically; Linux users may need to start it manually.)
 
+### Ollama: "<model> does not support chat"
+
+The selected model has no chat template — it's a completion-only GGUF
+import or an embedding model (`bge-*`, `nomic-embed-*`). DF talks to
+Ollama over `/api/chat`, which those can't serve. The picker greys
+non-chat models out; pick an instruct model instead:
+
+```bash
+ollama pull llama3.2        # or qwen2.5-coder, qwen3, mistral, gemma2
+```
+
+### Ollama result ignores half the prompt / generic template
+
+Symptom: you asked for something specific, the model returned a bland
+generic page that misses the request and ignores the current file.
+
+Cause: Ollama's default context window is **4096 tokens**, and DF's
+system-prompt stack alone can exceed that — Ollama then silently
+truncates, dropping the current file and part of your message before
+the model reads them. DF requests a larger window by default
+(`DF_OLLAMA_NUM_CTX`, 16384), so make sure you're on a current build.
+On a roomy GPU you can raise it:
+
+```bash
+DF_OLLAMA_NUM_CTX=32768 npm run dev:web
+```
+
+### Ollama reasoning text leaks into the HTML
+
+Reasoning models (qwen3, deepseek-r1, gpt-oss) can spill chain-of-thought
+into the output. DF enables Ollama's native `think` channel so reasoning
+is kept separate from the answer. If you still see it (or want faster,
+non-reasoning generation), disable thinking:
+
+```bash
+DF_OLLAMA_THINK=0 npm run dev:web
+```
+
+### Ollama: "unreachable" mid-turn on a big model
+
+A large model (e.g. 32B with thinking) can take minutes to cold-load
+and emit its first token. The streaming chat path handles this; the
+non-streaming `/once` path (some auxiliary features) can abort after
+~5 minutes with a bogus "unreachable" even though the server is fine.
+Warm the model first (one quick prompt), lower `DF_OLLAMA_NUM_CTX`,
+turn off thinking, or use a smaller model.
+
 ---
 
 ## Artifacts and writes

@@ -5,6 +5,21 @@ All notable changes to Design Factory are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] — 2026-06-01
+
+### Fixed
+
+- **Design system · `design.md` upload** — the upload source now saves the
+  file **verbatim** instead of routing it through an LLM normalization pass
+  that reordered and summarized the markdown (it was silently shrinking
+  uploaded design systems). Extraction from CSS / sites / repos stays in the
+  folder/url/github sources, where it belongs.
+- **Model picker (Claude)** — removed the hard-coded version numbers from the
+  Claude aliases (`opus`/`sonnet`/`haiku`), so the picker no longer shows a
+  stale version (e.g. "opus 4.7") after the CLI updates. The alias always
+  resolves to the latest model; the real resolved version (e.g. "opus 4.8")
+  now annotates the picker once a turn reports it.
+
 ## [0.1.0] — Initial public release
 
 First open-source release under [Apache License 2.0](LICENSE). Local-first,

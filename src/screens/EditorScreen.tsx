@@ -110,10 +110,11 @@ import { getProvider } from "@/providers/registry";
 import type { ProviderId } from "@/providers/types";
 import {
   getModelsForProvider,
-  defaultModelForProvider,
+  nextModelForProvider,
   isModelForeignToProvider,
   readLastModel,
   writeLastModel,
+  writeSeenVersion,
   useLiveModelOptions,
 } from "@/providers/model-lists";
 import { AttachDsModal } from "@/components/AttachDsModal";
@@ -2339,6 +2340,17 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
     db.setSetting("model", m).catch(warn("setSetting:model"));
   }, [selectedProvider]);
 
+  // Record the REAL model the provider reported (modelName, from the `meta`
+  // stream event via useClaude) against the alias the user picked. Closes
+  // the "alias + real version" loop: the claude picker shows "opus" (the
+  // always-latest alias) and, once a turn completes, annotates it with the
+  // resolved "opus 4.8" — instead of a hard-coded label that goes stale.
+  useEffect(() => {
+    if (modelName && selectedProvider && selectedModel) {
+      writeSeenVersion(selectedProvider, selectedModel, modelName);
+    }
+  }, [modelName, selectedProvider, selectedModel]);
+
   // Live model probe for ollama + openrouter (falls back to static catalog
   // for everything else and on probe failure). User hit a bug where the
   // static Codex list contained speculative IDs the provider rejected —
@@ -2355,12 +2367,14 @@ export function EditorScreen({ projectId, projectName, projectPath, mode, startM
   // remembered-for-this-provider model first, falling back to the catalog
   // default.
   useEffect(() => {
-    const list = getModelsForProvider(selectedProvider);
-    if (list.length === 0) return;
-    const remembered = readLastModel(selectedProvider);
-    const next = remembered && list.some((o) => o.id === remembered)
-      ? remembered
-      : defaultModelForProvider(selectedProvider);
+    if (getModelsForProvider(selectedProvider).length === 0) return;
+    // Live-catalog providers (ollama, openrouter, BYOK APIs) expose models the
+    // static fallback list doesn't know about, so resolve the next model via
+    // the shared helper instead of validating against the static list — that
+    // validation silently reset a live pick (e.g. a freshly `ollama pull`ed
+    // gemma) back to the catalog default (ollama → "llama3.2"). Strict
+    // validation stays for static-only providers (the 2026-05-20 repro above).
+    const next = nextModelForProvider(selectedProvider, readLastModel(selectedProvider));
     if (next && next !== selectedModel) setSelectedModel(next);
   }, [selectedProvider]); // eslint-disable-line react-hooks/exhaustive-deps
 

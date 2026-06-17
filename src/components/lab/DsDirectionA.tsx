@@ -16,7 +16,6 @@ import {
 } from "@/lib/claude-bridge";
 import {
   buildFolderPrompt, buildGithubPrompt, buildUploadPrompt,
-  looksLikeDesignMd,
 } from "@/runtime/ds-invoker";
 import type { DsEntry } from "@/types/ds";
 import type { ProviderId } from "@/providers/types";
@@ -262,14 +261,14 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
         const content = await uploadedFile.text();
         const targetFolder = await resolveDsFolder(slug);
         if (!targetFolder) return;
-        if (looksLikeDesignMd(content)) {
-          // Verbatim — skip LLM entirely. Instant write, instant navigate.
-          appendLog("design.md canônico detectado · salvando como está");
-          await persistInstant(content, targetFolder, "upload", uploadedFile.name);
-        } else {
-          appendLog("não parece design.md canônico · normalizando via IA em background");
-          await persistAsync(buildUploadPrompt(uploadedFile.name, content), targetFolder, "upload", uploadedFile.name);
-        }
+        // The "design.md" source is upload-only: the user already has the
+        // file they want, so we save it VERBATIM — never run the LLM
+        // normalization pass. That pass reorders + summarizes the markdown
+        // = silent data loss (the "enxugou meu design.md" bug). Extraction
+        // from CSS / sites / repos lives in the folder/url/github sources,
+        // not here. (founder: "design.md é só upload, não processar")
+        appendLog("upload · salvando como está, sem reprocessar");
+        await persistInstant(content, targetFolder, "upload", uploadedFile.name);
         return;
       }
       if (source === "folder") {

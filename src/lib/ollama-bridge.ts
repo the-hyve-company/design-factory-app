@@ -109,13 +109,24 @@ export async function ollamaOnce(
   return body.text ?? "";
 }
 
+/** A model the local Ollama server reports. `chat` is false for
+ *  completion-only / embedding models that can't serve /api/chat — the picker
+ *  uses it to flag/disable them before the user hits a generation error. */
+export interface OllamaModel {
+  id: string;
+  sub: string;
+  /** Whether the model has a chat template. Absent (older daemon) → treat as
+   *  true so the picker stays permissive. */
+  chat?: boolean;
+}
+
 /** List models installed in the local Ollama server. Empty array if Ollama
  *  is not running or no models pulled. */
-export async function fetchOllamaModels(): Promise<{ id: string; sub: string }[]> {
+export async function fetchOllamaModels(): Promise<OllamaModel[]> {
   try {
     const res = await fetch(`${BRIDGE_URL}/ollama/models`);
     if (!res.ok) return [];
-    const body = (await res.json()) as { models?: { id: string; sub: string }[] };
+    const body = (await res.json()) as { models?: OllamaModel[] };
     return body.models ?? [];
   } catch {
     return [];
@@ -126,7 +137,7 @@ export async function fetchOllamaModels(): Promise<{ id: string; sub: string }[]
  *  The status() panel surfaces the specific failure so the user can act
  *  (start Ollama vs. `ollama pull <model>`). */
 export interface OllamaStatus {
-  models: { id: string; sub: string }[];
+  models: OllamaModel[];
   /** Daemon-side error string when the probe failed (ECONNREFUSED,
    *  timeout, or HTTP non-200). Null when models came back successfully. */
   error: string | null;
@@ -145,7 +156,7 @@ export async function fetchOllamaStatus(): Promise<OllamaStatus> {
       return { models: [], error: `daemon HTTP ${res.status}`, host: null, triedHosts: [] };
     }
     const body = (await res.json()) as {
-      models?: { id: string; sub: string }[];
+      models?: OllamaModel[];
       error?: string;
       host?: string;
       triedHosts?: string[];
