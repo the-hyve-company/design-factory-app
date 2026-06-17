@@ -28,7 +28,7 @@ compounds into something that feels right. In a world where most software is fun
 ### Taste is trained, not innate
 
 Good taste is not personal preference — it is a trained instinct: the ability to notice what
-elevates an interface above the obvious. You build it by studying great work, asking *why* a
+elevates an interface above the obvious. You build it by studying great work, asking _why_ a
 thing feels good, and practicing relentlessly.
 
 When building UI, don't stop at "it works." Look at interfaces you admire, slow their
@@ -52,13 +52,13 @@ software. Treat felt quality as a competitive advantage, not a finishing touch.
 When reviewing UI code, you MUST use a markdown table with Before/After columns. Do NOT use a
 list with "Before:" and "After:" on separate lines. Always output an actual markdown table:
 
-| Before                                | After                                      | Why                                                         |
-| ------------------------------------- | ------------------------------------------ | ----------------------------------------------------------- |
-| `transition: all 300ms`               | `transition: transform 200ms ease-out`     | Name the exact properties; `all` animates unexpected things |
-| `transform: scale(0)`                 | `transform: scale(0.95); opacity: 0`       | Nothing in the real world appears from nothing              |
-| `ease-in` on a dropdown               | `ease-out` (or a stronger custom curve)    | `ease-in` delays the first frame and feels sluggish         |
-| No `:active` state on a button        | `transform: scale(0.97)` on `:active`      | A pressable element should react to the press               |
-| `transform-origin: center` on popover | origin at the trigger anchor               | Anchored UI should scale from where it opened (modals stay centered) |
+| Before                                | After                                   | Why                                                                  |
+| ------------------------------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| `transition: all 300ms`               | `transition: transform 200ms ease-out`  | Name the exact properties; `all` animates unexpected things          |
+| `transform: scale(0)`                 | `transform: scale(0.95); opacity: 0`    | Nothing in the real world appears from nothing                       |
+| `ease-in` on a dropdown               | `ease-out` (or a stronger custom curve) | `ease-in` delays the first frame and feels sluggish                  |
+| No `:active` state on a button        | `transform: scale(0.97)` on `:active`   | A pressable element should react to the press                        |
+| `transform-origin: center` on popover | origin at the trigger anchor            | Anchored UI should scale from where it opened (modals stay centered) |
 
 Wrong format (never do this):
 
@@ -78,12 +78,12 @@ Before writing any animation code, answer these questions in order.
 
 The first question is how often a user will see the motion. Frequency is the deciding factor.
 
-| Frequency                                              | Decision                       |
-| ------------------------------------------------------ | ------------------------------ |
-| Many times per minute (shortcuts, palette toggles)     | No animation                   |
-| Many times per day (hovers, list navigation)           | Remove or drastically reduce   |
-| Occasional (modals, drawers, toasts)                   | Standard, restrained animation |
-| Rare or first-run (onboarding, celebrations)           | Room for a little delight      |
+| Frequency                                          | Decision                       |
+| -------------------------------------------------- | ------------------------------ |
+| Many times per minute (shortcuts, palette toggles) | No animation                   |
+| Many times per day (hovers, list navigation)       | Remove or drastically reduce   |
+| Occasional (modals, drawers, toasts)               | Standard, restrained animation |
+| Rare or first-run (onboarding, celebrations)       | Room for a little delight      |
 
 Avoid animating keyboard-initiated actions. They repeat constantly, and any delay makes the
 interface feel laggy and disconnected from the keystroke. A command palette that opens
@@ -130,13 +130,13 @@ with `ease-out`.
 
 ### 4. How fast should it be?
 
-| Element                   | Duration       |
-| ------------------------- | -------------- |
-| Button press feedback     | ~100–160ms     |
-| Tooltips, small popovers  | ~125–200ms     |
-| Dropdowns, selects        | ~150–250ms     |
-| Modals, drawers           | ~200–400ms     |
-| Marketing / explanatory   | Longer is fine |
+| Element                  | Duration       |
+| ------------------------ | -------------- |
+| Button press feedback    | ~100–160ms     |
+| Tooltips, small popovers | ~125–200ms     |
+| Dropdowns, selects       | ~150–250ms     |
+| Modals, drawers          | ~200–400ms     |
+| Marketing / explanatory  | Longer is fine |
 
 Keep interactive UI motion short — generally under ~300ms. Faster transitions read as more
 responsive, and perceived speed often matters as much as the real number: a quicker-spinning
@@ -208,10 +208,15 @@ opacity:
 
 ```css
 /* Avoid */
-.entering { transform: scale(0); }
+.entering {
+  transform: scale(0);
+}
 
 /* Prefer */
-.entering { transform: scale(0.95); opacity: 0; }
+.entering {
+  transform: scale(0.95);
+  opacity: 0;
+}
 ```
 
 ### Make anchored UI origin-aware
@@ -238,7 +243,9 @@ smoother results.
 
 ```css
 /* Interruptible — good for dynamic UI */
-.toast { transition: transform 320ms ease; }
+.toast {
+  transition: transform 320ms ease;
+}
 ```
 
 ### Mask awkward crossfades with a touch of blur
@@ -256,7 +263,9 @@ Modern CSS can animate an element's first appearance without JavaScript:
 .toast {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 320ms ease, transform 320ms ease;
+  transition:
+    opacity 320ms ease,
+    transform 320ms ease;
 
   @starting-style {
     opacity: 0;
@@ -303,8 +312,12 @@ static shapes.
 in from that side.
 
 ```css
-.hidden  { clip-path: inset(0 100% 0 0); } /* clipped away from the right */
-.visible { clip-path: inset(0 0 0 0); }    /* fully shown */
+.hidden {
+  clip-path: inset(0 100% 0 0);
+} /* clipped away from the right */
+.visible {
+  clip-path: inset(0 0 0 0);
+} /* fully shown */
 ```
 
 Transitioning the inset values animates a reveal or wipe in any direction.
@@ -373,17 +386,18 @@ motion; reserve JS-driven animation for dynamic, interruptible cases.
 
 ```js
 // WAAPI: JS control with composited performance
-el.animate(
-  [{ clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0 0)" }],
-  { duration: 800, fill: "forwards", easing: "cubic-bezier(0.65, 0, 0.35, 1)" }
-);
+el.animate([{ clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0 0)" }], {
+  duration: 800,
+  fill: "forwards",
+  easing: "cubic-bezier(0.65, 0, 0.35, 1)",
+});
 ```
 
 ## Accessibility
 
 ### Respect `prefers-reduced-motion`
 
-Reduced motion means *less* movement, not *no* feedback. Keep opacity and color transitions
+Reduced motion means _less_ movement, not _no_ feedback. Keep opacity and color transitions
 that aid comprehension; drop the position and scale movement that can trigger motion sickness.
 
 ```css
@@ -401,7 +415,9 @@ devices that actually hover:
 
 ```css
 @media (hover: hover) and (pointer: fine) {
-  .element:hover { transform: scale(1.05); }
+  .element:hover {
+    transform: scale(1.05);
+  }
 }
 ```
 
@@ -451,12 +467,21 @@ than appear all at once.
   transform: translateY(8px);
   animation: fadeIn 300ms ease-out forwards;
 }
-.item:nth-child(1) { animation-delay: 0ms; }
-.item:nth-child(2) { animation-delay: 50ms; }
-.item:nth-child(3) { animation-delay: 100ms; }
+.item:nth-child(1) {
+  animation-delay: 0ms;
+}
+.item:nth-child(2) {
+  animation-delay: 50ms;
+}
+.item:nth-child(3) {
+  animation-delay: 100ms;
+}
 
 @keyframes fadeIn {
-  to { opacity: 1; transform: translateY(0); }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 ```
 
@@ -484,16 +509,16 @@ a desktop emulator. Test drag and gesture work on an actual phone.
 
 When reviewing UI code, check for:
 
-| Issue                                   | Fix                                                            |
-| --------------------------------------- | -------------------------------------------------------------- |
-| `transition: all`                       | Name exact properties, e.g. `transition: transform 200ms ease-out` |
-| `scale(0)` entry                        | Start from `scale(0.95)` with `opacity: 0`                     |
-| `ease-in` on interactive UI             | Switch to `ease-out` or a stronger custom curve                |
-| `transform-origin: center` on a popover | Set to the trigger anchor (modals stay centered)               |
-| Animation on a keyboard action          | Remove the animation                                           |
-| Duration > 300ms on interactive UI      | Reduce to ~150–250ms                                           |
-| Hover animation without a media query   | Gate behind `@media (hover: hover) and (pointer: fine)`        |
-| Keyframes on a rapidly-triggered element| Use CSS transitions for interruptibility                       |
-| Per-frame updates to inherited CSS vars | Write `transform` directly on the moving element               |
-| Symmetric enter/exit timing             | Make the response/release snappier than the deliberate action  |
-| Elements all appearing at once          | Add a short stagger (30–80ms between items)                    |
+| Issue                                    | Fix                                                                |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| `transition: all`                        | Name exact properties, e.g. `transition: transform 200ms ease-out` |
+| `scale(0)` entry                         | Start from `scale(0.95)` with `opacity: 0`                         |
+| `ease-in` on interactive UI              | Switch to `ease-out` or a stronger custom curve                    |
+| `transform-origin: center` on a popover  | Set to the trigger anchor (modals stay centered)                   |
+| Animation on a keyboard action           | Remove the animation                                               |
+| Duration > 300ms on interactive UI       | Reduce to ~150–250ms                                               |
+| Hover animation without a media query    | Gate behind `@media (hover: hover) and (pointer: fine)`            |
+| Keyframes on a rapidly-triggered element | Use CSS transitions for interruptibility                           |
+| Per-frame updates to inherited CSS vars  | Write `transform` directly on the moving element                   |
+| Symmetric enter/exit timing              | Make the response/release snappier than the deliberate action      |
+| Elements all appearing at once           | Add a short stagger (30–80ms between items)                        |

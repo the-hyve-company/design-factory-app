@@ -18,7 +18,7 @@ shows a weaker form against a preferred form. Optimize for clarity and maintaina
 ### Use the right element for the job
 
 The element vocabulary describes meaning, not just layout. Reach for the tag that names what the
-content *is* before falling back to a generic container.
+content _is_ before falling back to a generic container.
 
 ```html
 <!-- weak: every box is a div -->
@@ -45,10 +45,10 @@ the content, don't force it.
 
 ```html
 <!-- weak: a logo is not a paragraph of emphasis -->
-<strong><img src="brand.svg" alt="Acme"></strong>
+<strong><img src="brand.svg" alt="Acme" /></strong>
 
 <!-- preferred: just the image, with a real alt -->
-<img src="brand.svg" alt="Acme">
+<img src="brand.svg" alt="Acme" />
 ```
 
 ### Keep the markup lean
@@ -61,7 +61,7 @@ closing tags; quoting and explicit types are optional where they add nothing.
 <input type="text" required="required" autocomplete="off" />
 
 <!-- preferred -->
-<input type="text" required autocomplete="off">
+<input type="text" required autocomplete="off" />
 ```
 
 ### Treat accessibility as table stakes
@@ -89,7 +89,7 @@ when a server header also sends it. Both belong on the page itself.
 ```html
 <!doctype html>
 <html lang="en">
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Status</title>
 </html>
 ```
@@ -105,10 +105,14 @@ scripts after the content (or use `defer`), and inline only the styles needed fo
   <script src="analytics.js"></script>
   <title>Status</title>
 </head>
-<body><p>…</p></body>
+<body>
+  <p>…</p>
+</body>
 
 <!-- preferred: content first, script last -->
-<head><title>Status</title></head>
+<head>
+  <title>Status</title>
+</head>
 <body>
   <p>…</p>
   <script src="analytics.js" defer></script>
@@ -124,10 +128,16 @@ per element. Per-element overrides make sizing unpredictable.
 
 ```css
 /* once, at the top of the sheet */
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 /* then just author padding without re-declaring the model */
-.card { padding: 1rem; }
+.card {
+  padding: 1rem;
+}
 ```
 
 ### Stay in the normal flow
@@ -137,10 +147,15 @@ out with absolute positioning unless the layout genuinely requires it.
 
 ```css
 /* weak: absolute positioning to push right */
-.badge { position: absolute; right: 0; }
+.badge {
+  position: absolute;
+  right: 0;
+}
 
 /* preferred: let auto margins do it in flow */
-.badge { margin-left: auto; }
+.badge {
+  margin-left: auto;
+}
 ```
 
 Prefer Flexbox and Grid for layout over taking elements off the flow.
@@ -175,11 +190,17 @@ into a fight. Reach the weight you need by combining classes, not by escalating.
 
 ```css
 /* weak: now everything below has to shout louder */
-.cta { color: green !important; }
+.cta {
+  color: green !important;
+}
 
 /* preferred: a more specific class composition */
-.btn.cta { color: green; }
-.btn { color: gray; }
+.btn.cta {
+  color: green;
+}
+.btn {
+  color: gray;
+}
 ```
 
 ### Write rules so you rarely override them
@@ -189,11 +210,17 @@ setting a value everywhere and clawing it back.
 
 ```css
 /* weak: set on all, then undo the first */
-li { display: none; }
-li:first-child { display: block; }
+li {
+  display: none;
+}
+li:first-child {
+  display: block;
+}
 
 /* preferred: target only the ones you mean to hide */
-li + li { display: none; }
+li + li {
+  display: none;
+}
 ```
 
 ### Lean on inheritance
@@ -202,10 +229,15 @@ If a property inherits, declare it once on a common ancestor rather than repeati
 
 ```css
 /* weak */
-.card h2, .card p { font-family: Inter, sans-serif; }
+.card h2,
+.card p {
+  font-family: Inter, sans-serif;
+}
 
 /* preferred */
-.card { font-family: Inter, sans-serif; }
+.card {
+  font-family: Inter, sans-serif;
+}
 ```
 
 ### Be terse: shorthands and computed values
@@ -238,10 +270,14 @@ equivalent arithmetic.
 
 ```css
 /* weak */
-:nth-child(2n+1) { transform: rotate(360deg); }
+:nth-child(2n + 1) {
+  transform: rotate(360deg);
+}
 
 /* preferred */
-:nth-child(odd) { transform: rotate(1turn); }
+:nth-child(odd) {
+  transform: rotate(1turn);
+}
 ```
 
 ### Prune dead vendor prefixes
@@ -264,12 +300,22 @@ Prefer transitions to keyframe animations, and restrict what you animate to `opa
 
 ```css
 /* weak: animating margin reflows the page */
-.panel:hover { animation: slide 0.3s forwards; }
-@keyframes slide { to { margin-left: 120px; } }
+.panel:hover {
+  animation: slide 0.3s forwards;
+}
+@keyframes slide {
+  to {
+    margin-left: 120px;
+  }
+}
 
 /* preferred: transform is composited, no reflow */
-.panel { transition: transform 0.3s; }
-.panel:hover { transform: translateX(120px); }
+.panel {
+  transition: transform 0.3s;
+}
+.panel:hover {
+  transform: translateX(120px);
+}
 ```
 
 ### Prefer sensible units
@@ -279,10 +325,20 @@ durations seconds read more naturally than milliseconds.
 
 ```css
 /* weak */
-.t { margin: 0px; font-size: 14px; line-height: 20px; transition: 300ms; }
+.t {
+  margin: 0px;
+  font-size: 14px;
+  line-height: 20px;
+  transition: 300ms;
+}
 
 /* preferred */
-.t { margin: 0; font-size: 0.875rem; line-height: 1.5; transition: 0.3s; }
+.t {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  transition: 0.3s;
+}
 ```
 
 ### Color format
@@ -292,10 +348,14 @@ transparency.
 
 ```css
 /* opaque */
-.ok { color: #4caf50; }
+.ok {
+  color: #4caf50;
+}
 
 /* needs transparency */
-.veil { background: rgb(0 0 0 / 0.5); }
+.veil {
+  background: rgb(0 0 0 / 0.5);
+}
 ```
 
 ### Draw simple shapes in CSS, don't fetch them
@@ -305,13 +365,16 @@ Save the HTTP request.
 
 ```css
 /* weak: a network request for a dot */
-.status::before { content: url(dot.svg); }
+.status::before {
+  content: url(dot.svg);
+}
 
 /* preferred */
 .status::before {
   content: "";
   display: inline-block;
-  width: 0.5rem; height: 0.5rem;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   background: currentColor;
 }
@@ -354,8 +417,7 @@ function evenSquares(nums) {
 }
 
 // preferred: intent is obvious
-const evenSquares = (nums) =>
-  nums.filter((n) => n % 2 === 0).map((n) => n * n);
+const evenSquares = (nums) => nums.filter((n) => n % 2 === 0).map((n) => n * n);
 ```
 
 ### Keep functions pure
@@ -391,10 +453,14 @@ exactly the intent.
 
 ```javascript
 // verbose
-if (value === null || value === undefined) { /* … */ }
+if (value === null || value === undefined) {
+  /* … */
+}
 
 // concise, when the two-value check is the actual goal
-if (value == null) { /* … */ }
+if (value == null) {
+  /* … */
+}
 ```
 
 ### Replace loops with array methods
@@ -464,7 +530,9 @@ method.
 const counter = {
   count: 0,
   start() {
-    const tick = function () { this.count++; }.bind(this);
+    const tick = function () {
+      this.count++;
+    }.bind(this);
     setInterval(tick, 1000);
   },
 };
@@ -473,7 +541,9 @@ const counter = {
 const counter = {
   count: 0,
   start() {
-    setInterval(() => { this.count++; }, 1000);
+    setInterval(() => {
+      this.count++;
+    }, 1000);
   },
 };
 ```
@@ -503,7 +573,10 @@ const double = (n) => n * 2;
 double(inc(5)); // 12
 
 // preferred
-const pipe = (...fns) => (x) => fns.reduce((acc, fn) => fn(acc), x);
+const pipe =
+  (...fns) =>
+  (x) =>
+    fns.reduce((acc, fn) => fn(acc), x);
 const incThenDouble = pipe(inc, double);
 incThenDouble(5); // 12
 ```
