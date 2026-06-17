@@ -10,7 +10,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "tar": "^7.4.3"
+    "tar": "^7.5.16"
   },
   "license": "Apache-2.0",
   "homepage": "https://github.com/the-hyve-company/design-factory#readme",
