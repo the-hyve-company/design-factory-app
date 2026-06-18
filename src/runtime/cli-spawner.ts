@@ -84,6 +84,23 @@ function resolveProvider(id: ProviderId | undefined) {
   return provider;
 }
 
+/**
+ * Credential gate (defense in depth). Returns a clear, actionable message
+ * when the provider isn't ready to stream (no API key, server offline),
+ * or null when it's connected. Centralizing this here means every
+ * generation entry point that routes through spawnStream/spawnOnce is
+ * gated — the daemon never gets a request it can only reject with a
+ * cryptic "bridge HTTP 400".
+ */
+async function checkProviderReady(
+  provider: ReturnType<typeof resolveProvider>,
+): Promise<string | null> {
+  const st = await provider.status();
+  if (st.status === "connected") return null;
+  const detail = st.detail ?? "credencial ausente ou serviço indisponível";
+  return `${provider.meta.label} não está pronto: ${detail}. Configure em Settings → Providers.`;
+}
+
 export async function spawnStream(
   category: PromptCategory,
   prompt: string,
@@ -95,6 +112,11 @@ export async function spawnStream(
   const o: SpawnOverrides =
     typeof overrides === "string" ? { model: overrides } : (overrides ?? {});
   const provider = resolveProvider(o.providerId);
+  const notReady = await checkProviderReady(provider);
+  if (notReady) {
+    callbacks.onError(notReady);
+    return () => {};
+  }
   return provider.stream(
     prompt,
     {
@@ -119,6 +141,8 @@ export async function spawnOnce(
   const o: SpawnOverrides =
     typeof overrides === "string" ? { model: overrides } : (overrides ?? {});
   const provider = resolveProvider(o.providerId);
+  const notReady = await checkProviderReady(provider);
+  if (notReady) throw new Error(notReady);
   return provider.once(prompt, {
     ...config,
     systemPrompt,
