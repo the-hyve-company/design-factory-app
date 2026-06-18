@@ -4923,6 +4923,27 @@ export function EditorScreen({
       let accumulated = "";
       const liveTools: ToolUseRecord[] = [];
       try {
+        // Credential gate (defense in depth): never dispatch to a provider
+        // that isn't ready (no API key, server offline). Without this the
+        // daemon rejects the request and the user sees a cryptic
+        // "bridge HTTP 400" instead of an actionable message.
+        const st = await provider.status();
+        if (st.status !== "connected") {
+          const detail = st.detail ?? "credencial ausente ou serviço indisponível";
+          const msg = `${provider.meta.label} não está pronto: ${detail}. Configure em Settings → Providers.`;
+          recordTurn("client", "provider_not_ready", { provider: provider.meta.id, status: st.status }, { level: "warn" });
+          setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last?.role === "assistant") {
+              next[next.length - 1] = { ...last, text: `[error] ${msg}`, streaming: false };
+            }
+            return next;
+          });
+          showToast(msg);
+          recEndTurn({ reason: "error" });
+          return;
+        }
         await new Promise<void>((resolve) => {
           void provider.stream(
             effectivePrompt,
