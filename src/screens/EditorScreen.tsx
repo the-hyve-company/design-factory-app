@@ -2493,7 +2493,20 @@ export function EditorScreen({
             const foreign = provParse.success
               ? isModelForeignToProvider(cpModel, provParse.data)
               : false;
-            if (!foreign) setSelectedModel(cpModel);
+            if (!foreign) {
+              setSelectedModel(cpModel);
+              // Sync the provider's "last model" to the project's choice. The
+              // [selectedProvider] reset effect fires on the claude→project
+              // provider switch at mount and resets the model to
+              // nextModelForProvider(provider, readLastModel(provider)).
+              // Without this write, readLastModel can hold a stale value from a
+              // previous session (e.g. Qwen), the two effects race, the stale
+              // value wins, and the model silently flips off the project's
+              // choice on open (the GLM→Qwen-on-open bug). Writing here makes
+              // the reset effect converge to the project's model — same
+              // ordering rule as the retry handler (writeLastModel first).
+              if (provParse.success) writeLastModel(provParse.data, cpModel);
+            }
           }
         } catch {
           /* malformed JSON in setting — ignore, treat as no canonical+ */
