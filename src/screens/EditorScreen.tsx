@@ -951,6 +951,30 @@ export function EditorScreen({
   // Abort handle for the currently-running tweaks stream, so the send button
   // can double as a Stop while tweaksLoading is true.
   const tweaksAbortRef = useRef<(() => void) | null>(null);
+  // BUG-CANCEL: the Assistant / @agent flow (`sendSkillCommand`) streams via
+  // `provider.stream()` DIRECTLY inside a `new Promise`, OUTSIDE the useClaude
+  // controller — so its `status` never flips to "streaming" and the STOP
+  // button never appeared. `agentStreaming` mirrors the tweaks `*Loading`
+  // pattern so the STOP button surfaces; `agentAbortRef` holds the
+  // `provider.stream()` unlisten so STOP (and unmount cleanup) can abort the
+  // daemon SSE without leaking the stream.
+  const [agentStreaming, setAgentStreaming] = useState(false);
+  const agentAbortRef = useRef<(() => void) | null>(null);
+  // BUG-CANCEL: raw unlisten kept separately so the unmount cleanup can close
+  // the SSE WITHOUT touching React state (agentAbortRef's handler calls
+  // setState, which would warn on an unmounted component). Cleared by the same
+  // paths that clear agentAbortRef.
+  const agentUnlistenRef = useRef<(() => void) | null>(null);
+  // BUG-CANCEL: on unmount, abort any in-flight Assistant / @agent stream so we
+  // don't leak the daemon SSE. Raw unlisten only — no setState.
+  useEffect(() => {
+    return () => {
+      try {
+        agentUnlistenRef.current?.();
+      } catch {}
+      agentUnlistenRef.current = null;
+    };
+  }, []);
   const tweaksAnchorRef = useRef<HTMLDivElement>(null);
   // Web Speech API for realtime dictation. Browser-native (Chrome/Edge/
   // Safari). Streams transcript into the chat input as the user speaks —
@@ -4944,8 +4968,16 @@ export function EditorScreen({
           recEndTurn({ reason: "error" });
           return;
         }
+        // BUG-CANCEL: mark this flow as streaming so the STOP button surfaces
+        // (status from useClaude never flips for this direct-stream path).
+        setAgentStreaming(true);
         await new Promise<void>((resolve) => {
-          void provider.stream(
+          // BUG-CANCEL: capture the unlisten so STOP / unmount can abort the
+          // daemon SSE. `provider.stream` returns Promise<UnlistenFn>; wire it
+          // into agentAbortRef once the stream is actually listening (same
+          // pattern as tweaksAbortRef). The abort closes the stream + resolves
+          // the outer Promise so the turn unwinds cleanly.
+          const streamPromise = provider.stream(
             effectivePrompt,
             {
               model: selectedModel,
@@ -5289,6 +5321,12 @@ export function EditorScreen({
                   has_artifact: finalText?.includes("<artifact") ?? false,
                 });
                 recEndTurn({ reason: "done" });
+                // BUG-CANCEL: stream finished on its own — clear the abort
+                // handle + streaming flag so STOP disappears and we don't
+                // hold a stale unlisten.
+                agentAbortRef.current = null;
+                agentUnlistenRef.current = null;
+                setAgentStreaming(false);
                 resolve();
               },
               onError: (err) => {
@@ -5362,8 +5400,58 @@ export function EditorScreen({
                   })();
                 }
                 recEndTurn({ reason: "error" });
+                // BUG-CANCEL: clear the abort handle + streaming flag on error.
+                agentAbortRef.current = null;
+                agentUnlistenRef.current = null;
+                setAgentStreaming(false);
                 resolve();
               },
+            },
+          );
+          // BUG-CANCEL: wire the abort into the ref once the stream is actually
+          // listening. Clicking STOP closes the daemon SSE (unlisten), marks
+          // the in-flight assistant message as interrupted (without breaking
+          // it), clears the streaming flag, and resolves the outer Promise so
+          // the turn unwinds. If the stream fails to start, surface the error
+          // and unwind too.
+          streamPromise.then(
+            (unlisten) => {
+              agentUnlistenRef.current = unlisten;
+              agentAbortRef.current = () => {
+                try {
+                  unlisten();
+                } catch {}
+                agentAbortRef.current = null;
+                agentUnlistenRef.current = null;
+                setAgentStreaming(false);
+                setMessages((prev) => {
+                  const next = [...prev];
+                  const last = next[next.length - 1];
+                  if (last?.role === "assistant" && last.streaming) {
+                    next[next.length - 1] = {
+                      ...last,
+                      text: `${last.text || ""}${last.text ? "\n\n" : ""}_[interrompido]_`,
+                      streaming: false,
+                    };
+                  }
+                  return next;
+                });
+                recEndTurn({ reason: "cancelled" });
+                resolve();
+              };
+            },
+            (err) => {
+              // stream() rejected before listening — nothing to abort.
+              agentAbortRef.current = null;
+              agentUnlistenRef.current = null;
+              setAgentStreaming(false);
+              recordTurn(
+                "client",
+                "stream_start_failed",
+                { err: String(err).slice(0, 200) },
+                { level: "error" },
+              );
+              resolve();
             },
           );
         });
@@ -5379,6 +5467,13 @@ export function EditorScreen({
           }
           return next;
         });
+      } finally {
+        // BUG-CANCEL: belt-and-suspenders — whatever path unwound the turn
+        // (done / error / cancel / throw), the STOP affordance must clear and
+        // the abort handle must not linger.
+        agentAbortRef.current = null;
+        agentUnlistenRef.current = null;
+        setAgentStreaming(false);
       }
     },
     [
@@ -7700,13 +7795,39 @@ export function EditorScreen({
                         onAnswerQuestion={(answer) => handleQuestionAnswer(i, msg.text, answer)}
                         onOpenSettings={onOpenSettings}
                         onRetry={() => {
+                          // BUG-RETRY-MODEL: re-send with the provider + model of
+                          // THE TURN BEING RETRIED, not the current global pick.
+                          // `handleSend` reads selectedProvider/selectedModel, so
+                          // if the global state drifted (live catalog reloaded /
+                          // user re-selected) the retry would silently swap the
+                          // model (GLM → Qwen). The assistant message (`msg`)
+                          // carries the original provider/model.
+                          //
+                          // Order matters: writeLastModel(provider, model) FIRST,
+                          // so the [selectedProvider] effect (~line 2687) — which
+                          // fires when we setSelectedProvider and recomputes via
+                          // nextModelForProvider(provider, readLastModel(provider))
+                          // — resolves back to msg.model instead of the catalog
+                          // default. setSelectedModel then lands the same value,
+                          // so every code path converges on the original pick.
+                          if (msg.provider) {
+                            if (msg.model) {
+                              writeLastModel(msg.provider, msg.model);
+                            }
+                            setSelectedProvider(msg.provider);
+                          }
+                          if (msg.model) {
+                            setSelectedModel(msg.model);
+                          }
                           // Find the last user message before this error and re-send it.
                           // Walks backward from this index so error mid-thread retries the
                           // turn that produced it, not whichever was last globally.
                           for (let j = i - 1; j >= 0; j--) {
                             if (messages[j].role === "user") {
                               setInput(messages[j].text);
-                              // Defer send so the input state lands first.
+                              // Defer send so the input + provider/model state land
+                              // first (and the [selectedProvider] reset effect runs)
+                              // before handleSend reads them.
                               window.setTimeout(() => {
                                 void handleSendRef.current();
                               }, 0);
@@ -7963,11 +8084,20 @@ export function EditorScreen({
                         {[turnStats.provider, turnStats.model].filter(Boolean).join("·")}
                       </span>
                     )}
-                    {(status === "streaming" || tweaksLoading) && (
+                    {(status === "streaming" || tweaksLoading || agentStreaming) && (
                       <button
                         type="button"
+                        // BUG-CANCEL: the Assistant / @agent flow streams outside
+                        // useClaude, so route STOP to the right aborter:
+                        //   useClaude stream → cancelStream
+                        //   tweaks stream    → tweaksAbortRef
+                        //   agent/skill stream → agentAbortRef
                         onClick={
-                          status === "streaming" ? cancelStream : () => tweaksAbortRef.current?.()
+                          status === "streaming"
+                            ? cancelStream
+                            : tweaksLoading
+                              ? () => tweaksAbortRef.current?.()
+                              : () => agentAbortRef.current?.()
                         }
                         style={{
                           background: "transparent",
@@ -8743,21 +8873,33 @@ export function EditorScreen({
                       </span>
                       <button
                         className="chat-input-send"
-                        data-disabled={status !== "streaming" && !tweaksLoading && !input.trim()}
+                        data-disabled={
+                          status !== "streaming" &&
+                          !tweaksLoading &&
+                          !agentStreaming &&
+                          !input.trim()
+                        }
+                        // BUG-CANCEL: send button doubles as Cancel during any
+                        // in-flight stream — including the Assistant / @agent
+                        // flow (agentStreaming), which streams outside useClaude.
                         onClick={
                           status === "streaming"
                             ? cancelStream
                             : tweaksLoading
                               ? () => tweaksAbortRef.current?.()
-                              : () => {
-                                  void handleSend();
-                                }
+                              : agentStreaming
+                                ? () => agentAbortRef.current?.()
+                                : () => {
+                                    void handleSend();
+                                  }
                         }
                         title={
-                          status === "streaming" || tweaksLoading ? "Cancel (Esc)" : "Send (⌘↵)"
+                          status === "streaming" || tweaksLoading || agentStreaming
+                            ? "Cancel (Esc)"
+                            : "Send (⌘↵)"
                         }
                       >
-                        {status === "streaming" || tweaksLoading ? (
+                        {status === "streaming" || tweaksLoading || agentStreaming ? (
                           <svg
                             width="12"
                             height="12"
