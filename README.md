@@ -22,22 +22,26 @@ direção e taste mais operáveis dentro do design assistido por IA. Uma
 alternativa open-source ao Claude Design e outras aplicações fechadas de design
 assistido por IA.
 
+<p align="center">
+  <img src="docs/readme/assets/hero.png" alt="Design Factory em ação — chat com direção à esquerda, artefato gerado à direita" width="100%">
+</p>
+
 ---
 
 ## O que já entra nessa versão
 
-| Área | Estado |
-| --- | --- |
-| Configuração de formatos, regras, comandos e prompts | estável |
-| Geração de artefatos HTML editáveis | estável |
-| Ingestão e preview de design systems | estável |
-| Criação e importação de skills | estável |
-| Tweaks por CSS variables | estável |
-| Edição de texto inline e propriedades de componentes | estável |
-| Comentários como direção estruturada | estável |
-| Snapshots de versão e file manager | estável |
-| Documentação pública | estável |
-| Terminal integrado | experimental |
+| Área                                                 | Estado       |
+| ---------------------------------------------------- | ------------ |
+| Configuração de formatos, regras, comandos e prompts | estável      |
+| Geração de artefatos HTML editáveis                  | estável      |
+| Ingestão e preview de design systems                 | estável      |
+| Criação e importação de skills                       | estável      |
+| Tweaks por CSS variables                             | estável      |
+| Edição de texto inline e propriedades de componentes | estável      |
+| Comentários como direção estruturada                 | estável      |
+| Snapshots de versão e file manager                   | estável      |
+| Documentação pública                                 | estável      |
+| Terminal integrado                                   | experimental |
 
 ---
 
@@ -48,11 +52,11 @@ Você pode usar qualquer combinação dentro do mesmo projeto. Tokens vivem em
 secrets; o daemon controla a execução. Fonte canônica:
 [docs/providers.md](docs/providers.md).
 
-| Classe | Providers | Notas |
-| --- | --- | --- |
-| CLI agents | Claude Code · Codex · Gemini · Opencode · Kimi | o daemon local spawna a CLI logada |
-| APIs BYOK | Anthropic · OpenAI · Gemini · OpenRouter | chaves ficam locais |
-| Server local | Ollama | offline |
+| Classe       | Providers                                      | Notas                              |
+| ------------ | ---------------------------------------------- | ---------------------------------- |
+| CLI agents   | Claude Code · Codex · Gemini · Opencode · Kimi | o daemon local spawna a CLI logada |
+| APIs BYOK    | Anthropic · OpenAI · Gemini · OpenRouter       | chaves ficam locais                |
+| Server local | Ollama                                         | offline                            |
 
 ---
 
@@ -81,11 +85,12 @@ Se `npm create design-factory` falhar, instale também o
 [Git](https://git-scm.com/downloads) e rode:
 
 ```bash
-git clone https://github.com/the-hyve-company/design-factory.git
-cd design-factory
+git clone https://github.com/the-hyve-company/design-factory-app.git
+cd design-factory-app
 npm install
 npm run dev:web
 ```
+
 </details>
 
 ### No dia a dia (depois de instalado)

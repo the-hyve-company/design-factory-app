@@ -6,31 +6,75 @@
 // via the same helpers the shipped DsSetupModal uses (invokeDsGeneration,
 // gitShallowClone, fetchUrlViaBridge, listFolder, writeFile, /ds/generate-
 // preview). Simpler than the old modal — no GitHub OAuth device flow and
-// no folder file-pick UI; the founder accepted that trade-off (Opção 1).
+// no folder file-pick UI; we accepted that trade-off.
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, FileText, Folder, GitBranch, Link, Upload, type LucideIcon } from "lucide-react";
 import {
-  BRIDGE_URL, designSystemsDir, fetchUrlViaBridge, generateDsDesignMd,
-  gitShallowClone, listFolder, readFileViaBridge, writeFile,
+  ArrowRight,
+  FileText,
+  Folder,
+  GitBranch,
+  Link,
+  Upload,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  BRIDGE_URL,
+  designSystemsDir,
+  fetchUrlViaBridge,
+  generateDsDesignMd,
+  gitShallowClone,
+  listFolder,
+  readFileViaBridge,
+  writeFile,
 } from "@/lib/claude-bridge";
-import {
-  buildFolderPrompt, buildGithubPrompt, buildUploadPrompt,
-} from "@/runtime/ds-invoker";
+import { buildFolderPrompt, buildGithubPrompt, buildUploadPrompt } from "@/runtime/ds-invoker";
 import type { DsEntry } from "@/types/ds";
 import type { ProviderId } from "@/providers/types";
 import {
-  defaultModelForProvider, readLastModel, writeLastModel,
+  defaultModelForProvider,
+  readLastModel,
+  writeLastModel,
   useLiveModelOptions,
 } from "@/providers/model-lists";
 
 type Source = "folder" | "github" | "upload" | "url";
 
-const SOURCES: Array<{ id: Source; Icon: LucideIcon; name: string; hint: string; placeholder?: string }> = [
-  { id: "folder", Icon: Folder,     name: "Pasta",     hint: "Aponte uma pasta com tokens, globals.css, tailwind.config — a IA extrai o design.md.", placeholder: "~/meu-projeto/src/styles" },
-  { id: "github", Icon: GitBranch,  name: "GitHub",    hint: "Cole a URL de um repositório público. A IA lê os arquivos de estilo e destila o design.md.", placeholder: "https://github.com/org/repo" },
-  { id: "upload", Icon: FileText,   name: "design.md", hint: "Já tem um design.md canônico? Ele entra como está, sem reprocessar.", placeholder: undefined },
-  { id: "url",    Icon: Link,       name: "URL",       hint: "Cole a URL de um site. A IA captura o fingerprint visual (cores, tipografia, espaçamento).", placeholder: "https://site.com" },
+const SOURCES: Array<{
+  id: Source;
+  Icon: LucideIcon;
+  name: string;
+  hint: string;
+  placeholder?: string;
+}> = [
+  {
+    id: "folder",
+    Icon: Folder,
+    name: "Pasta",
+    hint: "Aponte uma pasta com tokens, globals.css, tailwind.config — a IA extrai o design.md.",
+    placeholder: "~/meu-projeto/src/styles",
+  },
+  {
+    id: "github",
+    Icon: GitBranch,
+    name: "GitHub",
+    hint: "Cole a URL de um repositório público. A IA lê os arquivos de estilo e destila o design.md.",
+    placeholder: "https://github.com/org/repo",
+  },
+  {
+    id: "upload",
+    Icon: FileText,
+    name: "design.md",
+    hint: "Já tem um design.md canônico? Ele entra como está, sem reprocessar.",
+    placeholder: undefined,
+  },
+  {
+    id: "url",
+    Icon: Link,
+    name: "URL",
+    hint: "Cole a URL de um site. A IA captura o fingerprint visual (cores, tipografia, espaçamento).",
+    placeholder: "https://site.com",
+  },
 ];
 
 // Providers the DS forge can ask to generate the design.md (folder/url/
@@ -39,42 +83,60 @@ const SOURCES: Array<{ id: Source; Icon: LucideIcon; name: string; hint: string;
 // pulled. The picker greys out unavailable providers but keeps them
 // selectable so the user can switch to install them and retry.
 const PROVIDER_OPTIONS: Array<{ id: ProviderId; label: string }> = [
-  { id: "claude",     label: "Claude Code" },
-  { id: "codex",      label: "Codex CLI" },
-  { id: "gemini",     label: "Gemini CLI" },
-  { id: "opencode",   label: "Opencode CLI" },
-  { id: "kimi",       label: "Kimi Code CLI" },
-  { id: "ollama",     label: "Ollama (local)" },
+  { id: "claude", label: "Claude Code" },
+  { id: "codex", label: "Codex CLI" },
+  { id: "gemini", label: "Gemini CLI" },
+  { id: "opencode", label: "Opencode CLI" },
+  { id: "kimi", label: "Kimi Code CLI" },
+  { id: "ollama", label: "Ollama (local)" },
   { id: "openrouter", label: "OpenRouter (BYOK)" },
-  { id: "anthropic",  label: "Anthropic API (BYOK)" },
-  { id: "openai",     label: "OpenAI API (BYOK)" },
+  { id: "anthropic", label: "Anthropic API (BYOK)" },
+  { id: "openai", label: "OpenAI API (BYOK)" },
   { id: "gemini-api", label: "Gemini API (BYOK)" },
 ];
 
 const RELEVANT_FILE_NAMES = [
-  "design.md", "DESIGN.md", "design-system.md", "tokens.css", "theme.css",
-  "globals.css", "tokens.json", "theme.ts", "tailwind.config.js",
-  "tailwind.config.ts", "tailwind.config.cjs", "tailwind.config.mjs",
+  "design.md",
+  "DESIGN.md",
+  "design-system.md",
+  "tokens.css",
+  "theme.css",
+  "globals.css",
+  "tokens.json",
+  "theme.ts",
+  "tailwind.config.js",
+  "tailwind.config.ts",
+  "tailwind.config.cjs",
+  "tailwind.config.mjs",
 ];
 const RELEVANT_EXTS = [".css", ".scss"];
 
 function slugify(s: string): string {
-  return s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "untitled";
+  return (
+    s
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "untitled"
+  );
 }
 
 // Directory blocklist. Recursing into these dumps unrelated design
 // surfaces into the prompt and confuses the model — most common
-// founder repro 2026-05-28: pointed at the DF repo itself, walker
+// repro: pointed at the DF repo itself, walker
 // pulled in 10+ OTHER DSes' design.md files from `design-systems/`
 // (apple, claude, nike, framer…) alongside DF's actual src/styles.
 // Model saw 11 candidate aesthetics and synthesised a generic mush.
 // Each name here is either a known meta surface (build outputs, deps,
 // fixtures) or a place where unrelated DS files commonly live.
-const SKIP_DIRS_RX = /^(node_modules|\.git|\.github|dist|build|\.next|design-systems|apps|docs|tests|test|__tests__|scripts|projects|skills|landing|examples|public|coverage|\.turbo|\.cache|\.vite|\.husky)$/i;
+const SKIP_DIRS_RX =
+  /^(node_modules|\.git|\.github|dist|build|\.next|design-systems|apps|docs|tests|test|__tests__|scripts|projects|skills|landing|examples|public|coverage|\.turbo|\.cache|\.vite|\.husky)$/i;
 
 /** Walk a folder (depth ≤ 2) and collect up to 12 design-system files.
  *  Caps each file at 40KB (same as buildFolderPrompt's slicing). */
-async function collectRelevantFiles(root: string): Promise<Array<{ path: string; content: string }>> {
+async function collectRelevantFiles(
+  root: string,
+): Promise<Array<{ path: string; content: string }>> {
   const out: Array<{ path: string; content: string }> = [];
   const walk = async (p: string, depth: number) => {
     if (depth > 2 || out.length >= 12) return;
@@ -88,7 +150,8 @@ async function collectRelevantFiles(root: string): Promise<Array<{ path: string;
         continue;
       }
       const lower = e.name.toLowerCase();
-      const hit = RELEVANT_FILE_NAMES.includes(e.name) || RELEVANT_EXTS.some((ext) => lower.endsWith(ext));
+      const hit =
+        RELEVANT_FILE_NAMES.includes(e.name) || RELEVANT_EXTS.some((ext) => lower.endsWith(ext));
       if (!hit || e.size > 200_000) continue;
       const f = await readFileViaBridge(e.path);
       if (!f?.isText) continue;
@@ -99,7 +162,13 @@ async function collectRelevantFiles(root: string): Promise<Array<{ path: string;
   return out;
 }
 
-export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSaved: (entry: DsEntry, opts?: { openPreview?: boolean }) => void }) {
+export function DsDirectionA({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void;
+  onSaved: (entry: DsEntry, opts?: { openPreview?: boolean }) => void;
+}) {
   const [source, setSource] = useState<Source>("folder");
   const [value, setValue] = useState("");
   const [genPreview, setGenPreview] = useState(true);
@@ -114,7 +183,7 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
 
   // Provider + model picker — replaces the disabled "Claude Code/sonnet"
   // chips. Remembers the last picked provider via localStorage so the
-  // founder doesn't re-select on every modal open. Switching provider
+  // user doesn't re-select on every modal open. Switching provider
   // resets the model to that provider's last-picked (or its default).
   const [provider, setProvider] = useState<ProviderId>(
     () => (readLastModel("__df:ds-provider" as ProviderId) as ProviderId) || "claude",
@@ -145,18 +214,29 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
         provider,
         model,
       }),
-    }).catch(() => { /* DsPreviewScreen surfaces failures */ });
+    }).catch(() => {
+      /* DsPreviewScreen surfaces failures */
+    });
   };
 
   /** UPLOAD fast path: design.md content is already in hand (user
    *  uploaded a canonical .md). Synchronous write → instant navigate.
    *  No LLM step, no background, no marker files needed. */
-  const persistInstant = async (markdown: string, folder: string, src: DsEntry["source"], sourceRef?: string) => {
+  const persistInstant = async (
+    markdown: string,
+    folder: string,
+    src: DsEntry["source"],
+    sourceRef?: string,
+  ) => {
     setStatus("saving");
     const trimmed = (markdown ?? "").trim();
     if (trimmed.length < 40) {
       setStatus("idle");
-      setError(trimmed.length === 0 ? "O arquivo está vazio." : `Apenas ${trimmed.length} chars — parece truncado.`);
+      setError(
+        trimmed.length === 0
+          ? "O arquivo está vazio."
+          : `Apenas ${trimmed.length} chars — parece truncado.`,
+      );
       return;
     }
     const designMdPath = folder.replace(/\/$/, "") + "/design.md";
@@ -191,13 +271,18 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
    *  creates the DS folder + placeholder design.md so the DS appears
    *  in the grid immediately, then runs the LLM in background. Modal
    *  closes instantly; user lands on /ds/:slug with "Extraindo…"
-   *  status. Founder feedback: "click Forjar must return INSTANTLY
-   *  ... podendo fazer outras coisas enquanto roda".
+   *  status. The Forjar click must return INSTANTLY so the user can
+   *  do other things while generation runs in the background.
    *
    *  When the genPreview toggle is ON, the daemon chains into preview
    *  generation as soon as design.md lands. Both stages have their own
    *  marker files that the detail screen polls independently. */
-  const persistAsync = async (prompt: string, folder: string, src: DsEntry["source"], sourceRef?: string) => {
+  const persistAsync = async (
+    prompt: string,
+    folder: string,
+    src: DsEntry["source"],
+    sourceRef?: string,
+  ) => {
     setStatus("generating");
     writeLastModel(provider, model);
     writeLastModel("__df:ds-provider" as ProviderId, provider);
@@ -243,7 +328,9 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
   const resolveDsFolder = async (slug: string): Promise<string | null> => {
     const abs = await designSystemsDir(slug);
     if (!abs) {
-      setError("Bridge offline — não consegui resolver o caminho de design-systems/. Confirma que o dev bridge está rodando.");
+      setError(
+        "Bridge offline — não consegui resolver o caminho de design-systems/. Confirma que o dev bridge está rodando.",
+      );
       return null;
     }
     return abs;
@@ -253,11 +340,17 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
     if (saving) return;
     setError(null);
     setLog([]);
-    if (!name.trim()) { setError("Dê um nome ao design system."); return; }
+    if (!name.trim()) {
+      setError("Dê um nome ao design system.");
+      return;
+    }
     const slug = slugify(name);
     try {
       if (source === "upload") {
-        if (!uploadedFile) { setError("Escolha um arquivo design.md."); return; }
+        if (!uploadedFile) {
+          setError("Escolha um arquivo design.md.");
+          return;
+        }
         const content = await uploadedFile.text();
         const targetFolder = await resolveDsFolder(slug);
         if (!targetFolder) return;
@@ -266,17 +359,25 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
         // normalization pass. That pass reorders + summarizes the markdown
         // = silent data loss (the "enxugou meu design.md" bug). Extraction
         // from CSS / sites / repos lives in the folder/url/github sources,
-        // not here. (founder: "design.md é só upload, não processar")
+        // not here. (design.md is upload-only — never processed.)
         appendLog("upload · salvando como está, sem reprocessar");
         await persistInstant(content, targetFolder, "upload", uploadedFile.name);
         return;
       }
       if (source === "folder") {
         const raw = value.trim();
-        if (!raw) { setError("Cole o caminho da pasta."); return; }
+        if (!raw) {
+          setError("Cole o caminho da pasta.");
+          return;
+        }
         appendLog(`escaneando ${raw}…`);
         const files = await collectRelevantFiles(raw);
-        if (files.length === 0) { setError("Nenhum arquivo de design encontrado (procurei tokens.css, globals.css, design.md, tailwind.config, .css)."); return; }
+        if (files.length === 0) {
+          setError(
+            "Nenhum arquivo de design encontrado (procurei tokens.css, globals.css, design.md, tailwind.config, .css).",
+          );
+          return;
+        }
         appendLog(`achei ${files.length} arquivo(s) · enviando pra IA em background`);
         const canonical = await resolveDsFolder(slug);
         if (!canonical) return;
@@ -285,13 +386,22 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
       }
       if (source === "github") {
         const raw = value.trim();
-        if (!raw) { setError("Cole a URL do repositório."); return; }
+        if (!raw) {
+          setError("Cole a URL do repositório.");
+          return;
+        }
         appendLog(`clonando ${raw}…`);
         const cloned = await gitShallowClone(raw);
-        if ("error" in cloned) { setError(cloned.error); return; }
+        if ("error" in cloned) {
+          setError(cloned.error);
+          return;
+        }
         appendLog(`clonado em ${cloned.path}`);
         const files = await collectRelevantFiles(cloned.path);
-        if (files.length === 0) { setError("Repo clonado mas nenhum arquivo de design encontrado."); return; }
+        if (files.length === 0) {
+          setError("Repo clonado mas nenhum arquivo de design encontrado.");
+          return;
+        }
         appendLog(`achei ${files.length} arquivo(s) · enviando pra IA em background`);
         // github: clone is ephemeral (/tmp/...). The persisted design.md
         // MUST live under design-systems/ so it survives the clone GC.
@@ -302,10 +412,16 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
       }
       // source === "url"
       const raw = value.trim();
-      if (!raw) { setError("Cole a URL do site."); return; }
+      if (!raw) {
+        setError("Cole a URL do site.");
+        return;
+      }
       appendLog(`buscando ${raw}…`);
       const res = await fetchUrlViaBridge(raw);
-      if ("error" in res) { setError(res.error); return; }
+      if ("error" in res) {
+        setError(res.error);
+        return;
+      }
       appendLog(`OK (${res.size} bytes) · enviando pra IA em background`);
       const targetFolder = await resolveDsFolder(slug);
       if (!targetFolder) return;
@@ -328,11 +444,17 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
               type="button"
               className="dsl-key"
               data-active={source === s.id}
-              onClick={() => { setSource(s.id); setUploadedFile(null); setError(null); }}
+              onClick={() => {
+                setSource(s.id);
+                setUploadedFile(null);
+                setError(null);
+              }}
               disabled={saving}
             >
               <div className="dsl-key-head">
-                <span className="dsl-key-glyph" aria-hidden="true"><s.Icon size={20} strokeWidth={2} /></span>
+                <span className="dsl-key-glyph" aria-hidden="true">
+                  <s.Icon size={20} strokeWidth={2} />
+                </span>
                 <span className="dsl-key-led" aria-hidden="true" />
               </div>
               <span className="dsl-key-name">{s.name}</span>
@@ -354,13 +476,28 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
                   type="file"
                   accept=".md,.css"
                   style={{ display: "none" }}
-                  onChange={(e) => { const f = e.target.files?.[0] ?? null; e.target.value = ""; setUploadedFile(f); }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    e.target.value = "";
+                    setUploadedFile(f);
+                  }}
                 />
-                <button className="dsl-engine-chip" type="button" onClick={() => fileInputRef.current?.click()} disabled={saving}>
+                <button
+                  className="dsl-engine-chip"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={saving}
+                >
                   <Upload size={14} strokeWidth={2} aria-hidden="true" /> Escolher design.md…
                 </button>
                 {uploadedFile && (
-                  <span style={{ fontFamily: "var(--df-font-mono)", fontSize: "var(--df-text-xs)", color: "var(--df-text-muted)" }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--df-font-mono)",
+                      fontSize: "var(--df-text-xs)",
+                      color: "var(--df-text-muted)",
+                    }}
+                  >
                     {uploadedFile.name}
                   </span>
                 )}
@@ -368,7 +505,9 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
             </div>
           ) : (
             <>
-              <div className="dsl-bowl-hint" style={{ marginBottom: 9 }}>{active.hint}</div>
+              <div className="dsl-bowl-hint" style={{ marginBottom: 9 }}>
+                {active.hint}
+              </div>
               <input
                 className="dsl-input"
                 value={value}
@@ -393,7 +532,9 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
           UI complexity for the rare case where they'd legitimately
           differ. */}
       <div className="dsl-zone">
-        <span className="dsl-engrave">{source === "upload" ? "motor do preview" : "motor de extração"}</span>
+        <span className="dsl-engrave">
+          {source === "upload" ? "motor do preview" : "motor de extração"}
+        </span>
         <div className="dsl-engine">
           <label className="dsl-engine-chip" style={{ cursor: saving ? "default" : "pointer" }}>
             <span className="dsl-engine-k">provider</span>
@@ -413,7 +554,9 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
               }}
             >
               {PROVIDER_OPTIONS.map((p) => (
-                <option key={p.id} value={p.id}>{p.label}</option>
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
               ))}
             </select>
           </label>
@@ -439,18 +582,21 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
               )}
               {modelChoices.options.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.label}{m.sub ? `  ·  ${m.sub}` : ""}
+                  {m.label}
+                  {m.sub ? `  ·  ${m.sub}` : ""}
                 </option>
               ))}
             </select>
           </label>
           {modelChoices.loading && (
-            <span style={{
-              fontFamily: "var(--df-font-mono)",
-              fontSize: "10px",
-              color: "var(--df-text-muted)",
-              alignSelf: "center",
-            }}>
+            <span
+              style={{
+                fontFamily: "var(--df-font-mono)",
+                fontSize: "10px",
+                color: "var(--df-text-muted)",
+                alignSelf: "center",
+              }}
+            >
               listando…
             </span>
           )}
@@ -475,7 +621,9 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
         <div className="dsl-switch-row">
           <div className="dsl-switch-copy">
             <span className="dsl-switch-title">Gerar preview visual</span>
-            <span className="dsl-switch-sub">Renderiza um preview.html do design system assim que ele for forjado.</span>
+            <span className="dsl-switch-sub">
+              Renderiza um preview.html do design system assim que ele for forjado.
+            </span>
           </div>
           <button
             type="button"
@@ -489,7 +637,9 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
             <span className="dsl-switch-track" aria-hidden="true">
               <span className="dsl-switch-knob" />
             </span>
-            <span className="dsl-switch-state" aria-hidden="true">{genPreview ? "ON" : "OFF"}</span>
+            <span className="dsl-switch-state" aria-hidden="true">
+              {genPreview ? "ON" : "OFF"}
+            </span>
           </button>
         </div>
       </div>
@@ -498,14 +648,30 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
       {log.length > 0 && (
         <div className="dsl-zone">
           <span className="dsl-engrave">progresso</span>
-          <div className="dsl-bowl" style={{ fontFamily: "var(--df-font-mono)", fontSize: "var(--df-text-xs)", color: "var(--df-text-muted)", lineHeight: 1.6, maxHeight: 80, overflowY: "auto" }}>
-            {log.map((l, i) => <div key={i}>{l}</div>)}
+          <div
+            className="dsl-bowl"
+            style={{
+              fontFamily: "var(--df-font-mono)",
+              fontSize: "var(--df-text-xs)",
+              color: "var(--df-text-muted)",
+              lineHeight: 1.6,
+              maxHeight: 80,
+              overflowY: "auto",
+            }}
+          >
+            {log.map((l, i) => (
+              <div key={i}>{l}</div>
+            ))}
           </div>
         </div>
       )}
 
       {error && (
-        <div className="dsl-zone" style={{ color: "var(--df-accent-danger)", fontSize: "var(--df-text-xs)" }} role="alert">
+        <div
+          className="dsl-zone"
+          style={{ color: "var(--df-accent-danger)", fontSize: "var(--df-text-xs)" }}
+          role="alert"
+        >
           {error}
         </div>
       )}
@@ -528,15 +694,23 @@ export function DsDirectionA({ onClose, onSaved }: { onClose: () => void; onSave
         <button
           type="button"
           className={`cnp-begin cnp-begin--v8${saving ? " is-loading" : ""}`}
-          onClick={() => { void forge(); }}
+          onClick={() => {
+            void forge();
+          }}
           disabled={saving || !name.trim()}
           aria-busy={saving}
         >
           <span className="cnp-begin-led" aria-hidden="true" />
           <span className="cnp-begin-label">
-            {status === "generating" ? "Forjando…" : status === "saving" ? "Salvando…" : "Forjar design.md"}
+            {status === "generating"
+              ? "Forjando…"
+              : status === "saving"
+                ? "Salvando…"
+                : "Forjar design.md"}
           </span>
-          <span className="cnp-begin-arrow" aria-hidden="true"><ArrowRight size={16} strokeWidth={2} /></span>
+          <span className="cnp-begin-arrow" aria-hidden="true">
+            <ArrowRight size={16} strokeWidth={2} />
+          </span>
         </button>
       </div>
     </div>

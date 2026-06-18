@@ -156,7 +156,17 @@ export function ImportExportControls<TPayload>({
           onClick={handleExport}
           title={t("ie.export.hint")}
         >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
@@ -170,7 +180,17 @@ export function ImportExportControls<TPayload>({
           onClick={handleImportClick}
           title={t("ie.import.hint")}
         >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
@@ -188,7 +208,17 @@ export function ImportExportControls<TPayload>({
           onClick={() => setConfirmReset(true)}
           title={t("ie.reset.hint")}
         >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
             <path d="M3 12a9 9 0 1 0 3-6.7" />
             <polyline points="3 4 3 9 8 9" />
           </svg>
@@ -244,9 +274,7 @@ interface ImportPreviewModalProps {
 function ImportPreviewModal({ preview, onMerge, onReplace, onClose }: ImportPreviewModalProps) {
   const { t } = useT();
   const empty =
-    preview.added.length === 0 &&
-    preview.replaced.length === 0 &&
-    preview.removed.length === 0;
+    preview.added.length === 0 && preview.replaced.length === 0 && preview.removed.length === 0;
 
   return (
     <div
@@ -266,9 +294,7 @@ function ImportPreviewModal({ preview, onMerge, onReplace, onClose }: ImportPrev
           {t("ie.import.preview.title")}
         </h3>
         <p className="padroes-confirm-body">
-          {empty
-            ? t("ie.import.preview.empty")
-            : t("ie.import.preview.body")}
+          {empty ? t("ie.import.preview.empty") : t("ie.import.preview.body")}
         </p>
 
         {!empty && (
@@ -316,9 +342,7 @@ function ImportPreviewModal({ preview, onMerge, onReplace, onClose }: ImportPrev
                     <li className="ie-import-diff-more">+{preview.removed.length - 10}</li>
                   )}
                 </ul>
-                <div className="ie-import-diff-note">
-                  {t("ie.import.preview.removed.note")}
-                </div>
+                <div className="ie-import-diff-note">{t("ie.import.preview.removed.note")}</div>
               </div>
             )}
           </div>

@@ -21,22 +21,26 @@ An open experiment offering a local workspace that makes context, direction,
 and taste more operable inside AI-assisted design. An open-source alternative
 to Claude Design and other closed AI-assisted design applications.
 
+<p align="center">
+  <img src="docs/readme/assets/hero.png" alt="Design Factory in action — direction chat on the left, generated artifact on the right" width="100%">
+</p>
+
 ---
 
 ## What ships in this version
 
-| Area | State |
-| --- | --- |
-| Configuration of formats, rules, commands, and prompts | stable |
-| Generation of editable HTML artifacts | stable |
-| Design-system ingestion and preview | stable |
-| Skill creation and import | stable |
-| Tweaks via CSS variables | stable |
-| Inline text editing and component property edits | stable |
-| Comments as structured direction | stable |
-| Version snapshots and file manager | stable |
-| Public documentation | stable |
-| Embedded terminal | experimental |
+| Area                                                   | State        |
+| ------------------------------------------------------ | ------------ |
+| Configuration of formats, rules, commands, and prompts | stable       |
+| Generation of editable HTML artifacts                  | stable       |
+| Design-system ingestion and preview                    | stable       |
+| Skill creation and import                              | stable       |
+| Tweaks via CSS variables                               | stable       |
+| Inline text editing and component property edits       | stable       |
+| Comments as structured direction                       | stable       |
+| Version snapshots and file manager                     | stable       |
+| Public documentation                                   | stable       |
+| Embedded terminal                                      | experimental |
 
 ---
 
@@ -47,11 +51,11 @@ You can mix any combination inside the same project. Tokens live in
 provider secrets; the daemon runs them. Canonical source:
 [docs/providers.md](docs/providers.md).
 
-| Class | Providers | Notes |
-| --- | --- | --- |
-| CLI agents | Claude Code · Codex · Gemini · Opencode · Kimi | the local daemon spawns the logged-in CLI |
-| BYOK APIs | Anthropic · OpenAI · Gemini · OpenRouter | keys stay local |
-| Local server | Ollama | offline |
+| Class        | Providers                                      | Notes                                     |
+| ------------ | ---------------------------------------------- | ----------------------------------------- |
+| CLI agents   | Claude Code · Codex · Gemini · Opencode · Kimi | the local daemon spawns the logged-in CLI |
+| BYOK APIs    | Anthropic · OpenAI · Gemini · OpenRouter       | keys stay local                           |
+| Local server | Ollama                                         | offline                                   |
 
 ---
 
@@ -80,11 +84,12 @@ If `npm create design-factory` fails, install [Git](https://git-scm.com/download
 as well and run:
 
 ```bash
-git clone https://github.com/the-hyve-company/design-factory.git
-cd design-factory
+git clone https://github.com/the-hyve-company/design-factory-app.git
+cd design-factory-app
 npm install
 npm run dev:web
 ```
+
 </details>
 
 ### Day to day (once installed)

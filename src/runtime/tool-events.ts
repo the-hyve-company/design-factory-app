@@ -185,10 +185,7 @@ export function fromBridgeToolResult(
 
 // ─── Per-provider mappers ────────────────────────────────────────────────
 
-function mapClaudeFamily(
-  event: RawToolEvent,
-  now: () => string,
-): NormalizedToolEvent | null {
+function mapClaudeFamily(event: RawToolEvent, now: () => string): NormalizedToolEvent | null {
   if (event.kind === "tool_call") {
     const tc = asToolCall(event.raw);
     if (!tc) return null;
@@ -223,10 +220,7 @@ function mapClaudeFamily(
   };
 }
 
-function mapCodex(
-  event: RawToolEvent,
-  now: () => string,
-): NormalizedToolEvent | null {
+function mapCodex(event: RawToolEvent, now: () => string): NormalizedToolEvent | null {
   // The daemon already coerces Codex `command_execution` into the
   // bridge's `ToolCall` shape with name="Bash" and input={command, cwd?}.
   // We accept both the coerced shape (preferred) and the raw Codex
@@ -285,10 +279,7 @@ function mapCodex(
   };
 }
 
-function mapGemini(
-  event: RawToolEvent,
-  now: () => string,
-): NormalizedToolEvent | null {
+function mapGemini(event: RawToolEvent, now: () => string): NormalizedToolEvent | null {
   // Gemini today (daemon's wireGeminiJson) emits text-only — it never
   // forwards tool events. When the daemon adds `--tools` support, the
   // SSE will follow the same `tool_call` / `tool_result` vocabulary as
@@ -314,9 +305,8 @@ function mapGemini(
     // Best-effort Gemini-native shape: { name, args } (function calling).
     const raw = event.raw as Record<string, unknown> | undefined;
     if (raw && typeof raw === "object" && typeof raw.name === "string") {
-      const args = (raw.args && typeof raw.args === "object")
-        ? (raw.args as Record<string, unknown>)
-        : {};
+      const args =
+        raw.args && typeof raw.args === "object" ? (raw.args as Record<string, unknown>) : {};
       const id = typeof raw.id === "string" ? raw.id : `gemini-${Date.now()}`;
       return {
         type: "tool_call",

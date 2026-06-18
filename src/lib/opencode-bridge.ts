@@ -59,7 +59,11 @@ async function streamOpencodeViaBridge(
           }
           if (!dataStr) continue;
           let data: any;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
@@ -77,7 +81,9 @@ async function streamOpencodeViaBridge(
     }
   })();
   return () => {
-    try { controller.abort(); } catch {}
+    try {
+      controller.abort();
+    } catch {}
   };
 }
 
@@ -89,10 +95,7 @@ export function streamOpencode(
   return streamOpencodeViaBridge(prompt, config, callbacks);
 }
 
-export async function opencodeOnce(
-  prompt: string,
-  config: OpencodeConfig = {},
-): Promise<string> {
+export async function opencodeOnce(prompt: string, config: OpencodeConfig = {}): Promise<string> {
   const res = await fetch(`${BRIDGE_URL}/opencode/once`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

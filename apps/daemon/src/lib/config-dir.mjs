@@ -28,7 +28,7 @@ import { homedir } from "node:os";
 const LEGACY_DIR_NAME = ".design-factory";
 const CANONICAL_DIR_PARTS = [".config", "design-factory"];
 
-let cached = null;        // resolved absolute path
+let cached = null; // resolved absolute path
 let migrationDone = false; // one-shot guard
 
 function getHome() {
@@ -89,7 +89,7 @@ function tryMigrateLegacy(canonicalDir, legacyDir) {
         // daemon startup.
         process.stderr.write(
           `[config-dir] migration warning: could not move ${name} from ` +
-          `${legacyDir} to ${canonicalDir}: ${String(err.message || err)}\n`,
+            `${legacyDir} to ${canonicalDir}: ${String(err.message || err)}\n`,
         );
       }
     }

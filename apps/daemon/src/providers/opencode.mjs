@@ -30,10 +30,20 @@ const OPENCODE_BIN_ENV = "DF_OPENCODE_BIN";
 // 1.15 — see stream()). Mirrors the kimi.mjs resolveKimiSpawn() guard.
 function resolveOpencodeSpawn() {
   if (process.platform === "win32" && !process.env[OPENCODE_BIN_ENV]) {
-    const exe = join(process.env.APPDATA || "", "npm", "node_modules", "opencode-ai", "bin", "opencode.exe");
+    const exe = join(
+      process.env.APPDATA || "",
+      "npm",
+      "node_modules",
+      "opencode-ai",
+      "bin",
+      "opencode.exe",
+    );
     if (existsSync(exe)) return { cmd: exe, useShell: false };
   }
-  return { cmd: process.env[OPENCODE_BIN_ENV] || "opencode", useShell: process.platform === "win32" };
+  return {
+    cmd: process.env[OPENCODE_BIN_ENV] || "opencode",
+    useShell: process.platform === "win32",
+  };
 }
 
 /** @type {import("./types.mjs").ProviderAdapter} */
@@ -58,8 +68,9 @@ const opencode = {
   async stream(req, res, deps) {
     const { readJson, spawn } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -88,11 +99,7 @@ const opencode = {
     // pro` errors with "not supported when using Codex with a ChatGPT
     // account" for ChatGPT-OAuth credentials. `openai/gpt-5.4-mini-
     // fast` is cheapest + ChatGPT-allowed.
-    const args = [
-      "run",
-      "--dangerously-skip-permissions",
-      "--format", "json",
-    ];
+    const args = ["run", "--dangerously-skip-permissions", "--format", "json"];
     const apiModel = model && model !== "default" ? model : "openai/gpt-5.4-mini-fast";
     args.push("--model", apiModel);
     if (cwd && typeof cwd === "string") args.push("--dir", cwd);
@@ -110,27 +117,32 @@ const opencode = {
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     });
     res.flushHeaders?.();
-    res.write(`event: log\ndata: ${JSON.stringify({ level: "info", message: `opencode → ${apiModel}` })}\n\n`);
+    res.write(
+      `event: log\ndata: ${JSON.stringify({ level: "info", message: `opencode → ${apiModel}` })}\n\n`,
+    );
 
     const child = spawn(ospawn.cmd, args, spawnOpts);
 
     // Handle spawn failure (ENOENT etc) gracefully — without this the
     // daemon process crashes on unhandled 'error' event.
     child.on("error", (err) => {
-      const msg = err?.code === "ENOENT"
-        ? `opencode binary not found in PATH. Install: npm i -g opencode-cli`
-        : String(err?.message || err);
+      const msg =
+        err?.code === "ENOENT"
+          ? `opencode binary not found in PATH. Install: npm i -g opencode-cli`
+          : String(err?.message || err);
       try {
         res.write(`event: error\ndata: ${JSON.stringify({ error: msg })}\n\n`);
         res.end();
       } catch {}
     });
 
-    req.on("close", () => { if (!child.killed) child.kill("SIGTERM"); });
+    req.on("close", () => {
+      if (!child.killed) child.kill("SIGTERM");
+    });
 
     // opencode --format json emits one JSON event per line. Real-world
     // shape (verified against opencode 1.15.0 on 2026-05-15):
@@ -156,7 +168,11 @@ const opencode = {
         stdoutBuf = stdoutBuf.slice(nl + 1);
         if (!line || !line.startsWith("{")) continue;
         let evt;
-        try { evt = JSON.parse(line); } catch { continue; }
+        try {
+          evt = JSON.parse(line);
+        } catch {
+          continue;
+        }
         if (evt.type === "text" && evt.part?.text) {
           full += evt.part.text;
           res.write(`event: text\ndata: ${JSON.stringify({ content: evt.part.text })}\n\n`);
@@ -176,7 +192,12 @@ const opencode = {
           const stateInput = part.state?.input ?? part.input ?? null;
           let toolName = rawTool ?? "tool";
           let input = stateInput;
-          if (rawTool === "apply_patch" && stateInput && typeof stateInput === "object" && typeof stateInput.patchText === "string") {
+          if (
+            rawTool === "apply_patch" &&
+            stateInput &&
+            typeof stateInput === "object" &&
+            typeof stateInput.patchText === "string"
+          ) {
             const patch = stateInput.patchText;
             const m = patch.match(/\*\*\* (Add|Update|Delete) File:\s*(.+)/);
             if (m) {
@@ -188,47 +209,68 @@ const opencode = {
           } else if (rawTool === "write" || rawTool === "write_file") {
             toolName = "Write";
             // most opencode write tools use { path, content } — normalise.
-            if (stateInput && typeof stateInput === "object" && typeof stateInput.path === "string" && !stateInput.file_path) {
+            if (
+              stateInput &&
+              typeof stateInput === "object" &&
+              typeof stateInput.path === "string" &&
+              !stateInput.file_path
+            ) {
               input = { ...stateInput, file_path: stateInput.path };
             }
           } else if (rawTool === "edit" || rawTool === "edit_file" || rawTool === "replace") {
             toolName = "Edit";
-            if (stateInput && typeof stateInput === "object" && typeof stateInput.path === "string" && !stateInput.file_path) {
+            if (
+              stateInput &&
+              typeof stateInput === "object" &&
+              typeof stateInput.path === "string" &&
+              !stateInput.file_path
+            ) {
               input = { ...stateInput, file_path: stateInput.path };
             }
           } else if (rawTool === "bash" || rawTool === "shell") {
             toolName = "Bash";
           } else if (rawTool === "read" || rawTool === "read_file") {
             toolName = "Read";
-            if (stateInput && typeof stateInput === "object" && typeof stateInput.path === "string" && !stateInput.file_path) {
+            if (
+              stateInput &&
+              typeof stateInput === "object" &&
+              typeof stateInput.path === "string" &&
+              !stateInput.file_path
+            ) {
               input = { ...stateInput, file_path: stateInput.path };
             }
           }
-          res.write(`event: tool_call\ndata: ${JSON.stringify({
-            provider: "opencode",
-            id: part.callID ?? part.id ?? null,
-            name: toolName,
-            input,
-          })}\n\n`);
+          res.write(
+            `event: tool_call\ndata: ${JSON.stringify({
+              provider: "opencode",
+              id: part.callID ?? part.id ?? null,
+              name: toolName,
+              input,
+            })}\n\n`,
+          );
           // Some opencode tool steps land as a single `tool_use` event with
           // state.status === "completed" — they never fire a separate
           // tool_result. Emit a synthetic one here so the UI's iframe-reload
           // path (which gates on tool_result) doesn't get stuck waiting.
           if (part.state?.status === "completed") {
-            res.write(`event: tool_result\ndata: ${JSON.stringify({
-              provider: "opencode",
-              id: part.callID ?? part.id ?? null,
-              isError: false,
-              content: typeof part.state.output === "string" ? part.state.output : "completed",
-            })}\n\n`);
+            res.write(
+              `event: tool_result\ndata: ${JSON.stringify({
+                provider: "opencode",
+                id: part.callID ?? part.id ?? null,
+                isError: false,
+                content: typeof part.state.output === "string" ? part.state.output : "completed",
+              })}\n\n`,
+            );
           }
         }
         if (evt.type === "tool_result" || evt.type === "tool-result") {
-          res.write(`event: tool_result\ndata: ${JSON.stringify({
-            provider: "opencode",
-            id: evt.part?.callID ?? evt.part?.tool_use_id ?? evt.part?.id ?? null,
-            content: evt.part?.output ?? evt.part?.state?.output ?? evt.part?.content ?? null,
-          })}\n\n`);
+          res.write(
+            `event: tool_result\ndata: ${JSON.stringify({
+              provider: "opencode",
+              id: evt.part?.callID ?? evt.part?.tool_use_id ?? evt.part?.id ?? null,
+              content: evt.part?.output ?? evt.part?.state?.output ?? evt.part?.content ?? null,
+            })}\n\n`,
+          );
         }
         if (evt.type === "step_finish" && evt.part?.tokens) {
           const t = evt.part.tokens;
@@ -253,22 +295,29 @@ const opencode = {
           res.write(`event: done\ndata: ${JSON.stringify({ content: full })}\n\n`);
         } else {
           const tail = stderr.trim().slice(0, 300) || "no output captured";
-          res.write(`event: log\ndata: ${JSON.stringify({ level: "warn", message: `opencode closed without text. stderr: ${tail.replace(/\n/g, " ⏎ ")}` })}\n\n`);
-          res.write(`event: error\ndata: ${JSON.stringify({ error: "opencode completed without text or artifact" })}\n\n`);
+          res.write(
+            `event: log\ndata: ${JSON.stringify({ level: "warn", message: `opencode closed without text. stderr: ${tail.replace(/\n/g, " ⏎ ")}` })}\n\n`,
+          );
+          res.write(
+            `event: error\ndata: ${JSON.stringify({ error: "opencode completed without text or artifact" })}\n\n`,
+          );
         }
       } else {
         const detail = stderr.trim().slice(0, 500) || `opencode exit ${code}`;
         res.write(`event: error\ndata: ${JSON.stringify({ error: detail })}\n\n`);
       }
-      try { res.end(); } catch {}
+      try {
+        res.end();
+      } catch {}
     });
   },
 
   async once(req, res, deps) {
     const { readJson, spawn } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -283,11 +332,7 @@ const opencode = {
     // See stream() — same args (--format json + --dangerously-skip-
     // permissions + stdin:"ignore"). Default model is the same
     // ChatGPT-OAuth-safe gpt-5.4-mini-fast.
-    const args = [
-      "run",
-      "--dangerously-skip-permissions",
-      "--format", "json",
-    ];
+    const args = ["run", "--dangerously-skip-permissions", "--format", "json"];
     const apiModel = model && model !== "default" ? model : "openai/gpt-5.4-mini-fast";
     args.push("--model", apiModel);
     if (cwd && typeof cwd === "string") args.push("--dir", cwd);
@@ -300,9 +345,10 @@ const opencode = {
     // Handle ENOENT etc. gracefully
     let spawnError = null;
     child.on("error", (err) => {
-      spawnError = err?.code === "ENOENT"
-        ? `opencode binary not found in PATH. Install: npm i -g opencode-cli`
-        : String(err?.message || err);
+      spawnError =
+        err?.code === "ENOENT"
+          ? `opencode binary not found in PATH. Install: npm i -g opencode-cli`
+          : String(err?.message || err);
       if (!res.headersSent) {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: spawnError }));
@@ -332,7 +378,10 @@ const opencode = {
         }
       });
     }
-    if (child.stderr) { child.stderr.setEncoding("utf8"); child.stderr.on("data", (c) => (stderr += c)); }
+    if (child.stderr) {
+      child.stderr.setEncoding("utf8");
+      child.stderr.on("data", (c) => (stderr += c));
+    }
     child.on("close", (code) => {
       if (spawnError) return;
       res.writeHead(200, { "Content-Type": "application/json" });

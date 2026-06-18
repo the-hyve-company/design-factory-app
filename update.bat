@@ -21,7 +21,7 @@ REM Generated work in projects\ is gitignored — left untouched.
 if not exist ".git\" (
   echo No git history detected. Linking to the official repo for future updates...
   call git init
-  call git remote add origin https://github.com/the-hyve-company/design-factory.git
+  call git remote add origin https://github.com/the-hyve-company/design-factory-app.git
 )
 
 REM Hard-sync to the official latest instead of `git pull`. A plain pull fails

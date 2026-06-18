@@ -22,16 +22,16 @@ const LABEL: Record<ProviderIdValue, string> = {
 // gives the eye a color anchor without sliding into rainbow chip
 // territory. Hex picked by hand to be distinguishable on both dark + light.
 const DOT_COLOR: Record<ProviderIdValue, string> = {
-  claude: "#cf8a4a",       // claude warm tan
-  codex: "#10a37f",        // openai green (CLI)
-  gemini: "#4285f4",       // google blue (CLI)
-  opencode: "#f97316",     // sst orange
-  kimi: "#1c64f2",         // moonshot deep blue
-  anthropic: "#cf8a4a",    // same warm tan as claude (same provider, API transport)
-  openai: "#10a37f",       // openai green (API)
+  claude: "#cf8a4a", // claude warm tan
+  codex: "#10a37f", // openai green (CLI)
+  gemini: "#4285f4", // google blue (CLI)
+  opencode: "#f97316", // sst orange
+  kimi: "#1c64f2", // moonshot deep blue
+  anthropic: "#cf8a4a", // same warm tan as claude (same provider, API transport)
+  openai: "#10a37f", // openai green (API)
   "gemini-api": "#4285f4", // google blue (API)
-  openrouter: "#a855f7",   // openrouter purple
-  ollama: "#7b8794",       // local-grey
+  openrouter: "#a855f7", // openrouter purple
+  ollama: "#7b8794", // local-grey
 };
 
 interface Props {

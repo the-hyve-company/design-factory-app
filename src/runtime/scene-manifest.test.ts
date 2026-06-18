@@ -155,10 +155,7 @@ describe("extractSceneTextSnippets", () => {
   });
 
   it("dedupes repeated text", () => {
-    const html = HTML_FIXTURE.replace(
-      '<h2>Middle headline</h2>',
-      '<h2>Repeat</h2><p>Repeat</p>'
-    );
+    const html = HTML_FIXTURE.replace("<h2>Middle headline</h2>", "<h2>Repeat</h2><p>Repeat</p>");
     const snippets = extractSceneTextSnippets(html, "02");
     const repeats = snippets.filter((s) => s === "Repeat");
     expect(repeats).toHaveLength(1);
@@ -174,9 +171,9 @@ describe("buildSceneRefinePrompt", () => {
     const m = parseSceneManifest(HTML_FIXTURE)!;
     const scene = m.scenes[1];
     const prompt = buildSceneRefinePrompt(scene, "make it pop more");
-    expect(prompt).toContain('scene 02');
+    expect(prompt).toContain("scene 02");
     expect(prompt).toContain('"Middle"');
-    expect(prompt).toContain('t=3-8s');
+    expect(prompt).toContain("t=3-8s");
     expect(prompt).toContain("make it pop more");
   });
 

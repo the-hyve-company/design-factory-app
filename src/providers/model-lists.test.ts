@@ -55,9 +55,7 @@ describe("nextModelForProvider", () => {
   });
 
   it("rejects a remembered model foreign to a static-only provider", () => {
-    expect(nextModelForProvider("claude", "gemma3:latest")).toBe(
-      defaultModelForProvider("claude"),
-    );
+    expect(nextModelForProvider("claude", "gemma3:latest")).toBe(defaultModelForProvider("claude"));
   });
 });
 
@@ -111,7 +109,9 @@ describe("seen-version persistence + enrichment", () => {
 
   it("does not duplicate the version if it is already present", () => {
     writeSeenVersion("claude", "opus", "claude-opus-4-8");
-    const once = enrichWithSeenVersion("claude", getModelsForProvider("claude")).find((o) => o.id === "opus")!;
+    const once = enrichWithSeenVersion("claude", getModelsForProvider("claude")).find(
+      (o) => o.id === "opus",
+    )!;
     const twice = enrichWithSeenVersion("claude", [once]).find((o) => o.id === "opus")!;
     expect(twice.sub).toBe(once.sub);
   });

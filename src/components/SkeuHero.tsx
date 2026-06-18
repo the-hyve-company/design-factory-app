@@ -101,8 +101,7 @@ export function SkeuHero({
 
   // ASCII dot constellation — handcrafted texture. Lines kept dense
   // enough to fill any reasonable hero height without visible repeat.
-  const ascii =
-    "· · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·\n".repeat(8);
+  const ascii = "· · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·\n".repeat(8);
 
   return (
     <section
@@ -116,11 +115,9 @@ export function SkeuHero({
       )}
 
       {/* Corner mark intentionally suppressed when layout="left-right"
-        * because the brand presence is delegated to the `decoration`
-        * slot on the left. Avoids redundant logo stamping. */}
-      {showMark && layout !== "left-right" && (
-        <Logo size={logoSize} className="skeu-hero-mark" />
-      )}
+       * because the brand presence is delegated to the `decoration`
+       * slot on the left. Avoids redundant logo stamping. */}
+      {showMark && layout !== "left-right" && <Logo size={logoSize} className="skeu-hero-mark" />}
 
       {layout === "left-right" && decoration && (
         <div className="skeu-hero-decoration" aria-hidden="true">

@@ -38,8 +38,9 @@ const geminiApi = {
   async stream(req, res, deps) {
     const { readJson, getGeminiApiToken } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -47,7 +48,12 @@ const geminiApi = {
     const token = await getGeminiApiToken();
     if (!token) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "no Gemini API key configured. PUT /config/gemini { token } or export GEMINI_API_KEY." }));
+      res.end(
+        JSON.stringify({
+          error:
+            "no Gemini API key configured. PUT /config/gemini { token } or export GEMINI_API_KEY.",
+        }),
+      );
       return;
     }
     const { prompt, systemPrompt, model } = body;
@@ -61,48 +67,62 @@ const geminiApi = {
     // Inline [attached image: PATH] markers as base64 image_url parts —
     // Gemini's OpenAI-compat endpoint accepts the same shape.
     const { text: gUserText, images: gImages } = extractImageAttachments(prompt);
-    messages.push(gImages.length > 0
-      ? { role: "user", content: [
-          { type: "text", text: gUserText },
-          ...gImages.map((im) => ({ type: "image_url", image_url: { url: `data:${im.mime};base64,${im.base64}` } })),
-        ] }
-      : { role: "user", content: prompt });
+    messages.push(
+      gImages.length > 0
+        ? {
+            role: "user",
+            content: [
+              { type: "text", text: gUserText },
+              ...gImages.map((im) => ({
+                type: "image_url",
+                image_url: { url: `data:${im.mime};base64,${im.base64}` },
+              })),
+            ],
+          }
+        : { role: "user", content: prompt },
+    );
 
     res.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
       "X-Accel-Buffering": "no",
     });
     res.flushHeaders?.();
     const apiModel = model && model !== "default" ? model : GEMINI_API_DEFAULT_MODEL;
-    res.write(`event: log\ndata: ${JSON.stringify({ level: "info", message: `gemini-api → ${apiModel}` })}\n\n`);
+    res.write(
+      `event: log\ndata: ${JSON.stringify({ level: "info", message: `gemini-api → ${apiModel}` })}\n\n`,
+    );
     res.write(`event: meta\ndata: ${JSON.stringify({ model: apiModel })}\n\n`);
     const turnStartedAt = Date.now();
 
     const controller = new AbortController();
     // F3.1 — Hard 90s ceiling so a hung TLS/DNS resolve doesn't leave the
-    // client showing "Pensando no design…" indefinitely. User repro
-    // 2026-05-20: Gemini turn ended with "[error] TypeError: network
+    // client showing a "thinking" state indefinitely. Observed:
+    // a Gemini turn ended with "[error] TypeError: network
     // error" with no further detail because the catch block below
     // stringified the bare TypeError. The ceiling fires an AbortError that
     // we now translate into a designer-friendly message.
     let timeoutFired = false;
     const timeoutHandle = setTimeout(() => {
       timeoutFired = true;
-      try { controller.abort(); } catch {}
+      try {
+        controller.abort();
+      } catch {}
     }, 90_000);
     let clientClosed = false;
     req.on("close", () => {
       clientClosed = true;
-      try { controller.abort(); } catch {}
+      try {
+        controller.abort();
+      } catch {}
     });
 
     try {
       const upstream = await fetch(GEMINI_API, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ model: apiModel, messages, stream: true }),
@@ -110,7 +130,9 @@ const geminiApi = {
       });
       if (!upstream.ok || !upstream.body) {
         const errText = await upstream.text().catch(() => "");
-        res.write(`event: error\ndata: ${JSON.stringify({ error: `gemini-api HTTP ${upstream.status}: ${errText.slice(0, 500)}` })}\n\n`);
+        res.write(
+          `event: error\ndata: ${JSON.stringify({ error: `gemini-api HTTP ${upstream.status}: ${errText.slice(0, 500)}` })}\n\n`,
+        );
         res.end();
         return;
       }
@@ -132,17 +154,25 @@ const geminiApi = {
           const dataStr = trimmed.slice(6);
           if (dataStr === "[DONE]") {
             if (usage) res.write(`event: usage\ndata: ${JSON.stringify(usage)}\n\n`);
-            res.write(`event: result\ndata: ${JSON.stringify({ durationMs: Date.now() - turnStartedAt })}\n\n`);
+            res.write(
+              `event: result\ndata: ${JSON.stringify({ durationMs: Date.now() - turnStartedAt })}\n\n`,
+            );
             if (full) {
               res.write(`event: done\ndata: ${JSON.stringify({ content: full })}\n\n`);
             } else {
-              res.write(`event: error\ndata: ${JSON.stringify({ error: "gemini-api completed without text or artifact" })}\n\n`);
+              res.write(
+                `event: error\ndata: ${JSON.stringify({ error: "gemini-api completed without text or artifact" })}\n\n`,
+              );
             }
             res.end();
             return;
           }
           let v;
-          try { v = JSON.parse(dataStr); } catch { continue; }
+          try {
+            v = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           const delta = v.choices?.[0]?.delta?.content;
           if (typeof delta === "string" && delta.length > 0) {
             full += delta;
@@ -159,10 +189,14 @@ const geminiApi = {
       }
       if (full) {
         if (usage) res.write(`event: usage\ndata: ${JSON.stringify(usage)}\n\n`);
-        res.write(`event: result\ndata: ${JSON.stringify({ durationMs: Date.now() - turnStartedAt })}\n\n`);
+        res.write(
+          `event: result\ndata: ${JSON.stringify({ durationMs: Date.now() - turnStartedAt })}\n\n`,
+        );
         res.write(`event: done\ndata: ${JSON.stringify({ content: full })}\n\n`);
       } else {
-        res.write(`event: error\ndata: ${JSON.stringify({ error: "gemini-api completed without text or artifact" })}\n\n`);
+        res.write(
+          `event: error\ndata: ${JSON.stringify({ error: "gemini-api completed without text or artifact" })}\n\n`,
+        );
       }
       res.end();
     } catch (err) {
@@ -175,32 +209,47 @@ const geminiApi = {
       // unwrapped chain so the bug report has real signal.
       if (err?.name === "AbortError") {
         if (timeoutFired) {
-          res.write(`event: error\ndata: ${JSON.stringify({ error: "Gemini API timeout (90s). Verifique a conexão ou tente outro modelo." })}\n\n`);
+          res.write(
+            `event: error\ndata: ${JSON.stringify({ error: "Gemini API timeout (90s). Verifique a conexão ou tente outro modelo." })}\n\n`,
+          );
         } else if (!clientClosed) {
           // Aborts without a known cause are rare — surface them so we
           // can investigate. Client-close aborts stay silent (intentional
           // user cancel — there's nothing to render).
-          res.write(`event: error\ndata: ${JSON.stringify({ error: "Gemini API aborted unexpectedly." })}\n\n`);
+          res.write(
+            `event: error\ndata: ${JSON.stringify({ error: "Gemini API aborted unexpectedly." })}\n\n`,
+          );
         }
       } else {
         const cause = err?.cause;
         const causeMsg = cause?.message || cause?.code || String(cause ?? "");
-        const detail = causeMsg && causeMsg !== "undefined" && causeMsg !== ""
-          ? `${err?.message || err}: ${causeMsg}`
-          : String(err?.message || err);
+        const detail =
+          causeMsg && causeMsg !== "undefined" && causeMsg !== ""
+            ? `${err?.message || err}: ${causeMsg}`
+            : String(err?.message || err);
         // Common undici causes get human translations.
         const lower = detail.toLowerCase();
         let surfaced;
         if (lower.includes("enotfound") || lower.includes("eai_again") || lower.includes("dns")) {
           surfaced = `Gemini API DNS error (${detail}). Verifique se o container resolve generativelanguage.googleapis.com.`;
-        } else if (lower.includes("certificate") || lower.includes("tls") || lower.includes("self-signed")) {
+        } else if (
+          lower.includes("certificate") ||
+          lower.includes("tls") ||
+          lower.includes("self-signed")
+        ) {
           surfaced = `Gemini API TLS error (${detail}). Verifique CA root certificates.`;
-        } else if (lower.includes("econnreset") || lower.includes("socket hang up") || lower.includes("etimedout")) {
+        } else if (
+          lower.includes("econnreset") ||
+          lower.includes("socket hang up") ||
+          lower.includes("etimedout")
+        ) {
           surfaced = `Gemini API connection dropped (${detail}). Tente novamente.`;
         } else {
           surfaced = detail;
         }
-        res.write(`event: error\ndata: ${JSON.stringify({ error: `gemini-api: ${surfaced}` })}\n\n`);
+        res.write(
+          `event: error\ndata: ${JSON.stringify({ error: `gemini-api: ${surfaced}` })}\n\n`,
+        );
       }
       res.end();
     } finally {
@@ -211,8 +260,9 @@ const geminiApi = {
   async once(req, res, deps) {
     const { readJson, getGeminiApiToken } = deps;
     let body;
-    try { body = await readJson(req); }
-    catch (e) {
+    try {
+      body = await readJson(req);
+    } catch (e) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
@@ -231,7 +281,7 @@ const geminiApi = {
       const upstream = await fetch(GEMINI_API, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

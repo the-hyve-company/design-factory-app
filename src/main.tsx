@@ -17,5 +17,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <App />
       </HashRouter>
     </ErrorBoundary>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

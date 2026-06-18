@@ -41,7 +41,7 @@ describe("injectTweaksListenerIntoHtml", () => {
     const html = "<!DOCTYPE html><html><body><h1>hi</h1></body></html>";
     const out = injectTweaksListenerIntoHtml(html);
     const bodyClose = out.indexOf("</body>");
-    const tagOpen = out.indexOf("<script data-df=\"tweaks-bridge\">");
+    const tagOpen = out.indexOf('<script data-df="tweaks-bridge">');
     expect(tagOpen).toBeGreaterThan(0);
     expect(tagOpen).toBeLessThan(bodyClose);
     expect(out).toContain(TWEAKS_BRIDGE_SOURCE_ID);
@@ -55,11 +55,10 @@ describe("injectTweaksListenerIntoHtml", () => {
 
   it("uses the LAST </body> when multiple appear (defense vs <pre>)", () => {
     const html =
-      "<!DOCTYPE html><html><body><pre>example: &lt;/body&gt;</pre>" +
-      "<p>real</p></body></html>";
+      "<!DOCTYPE html><html><body><pre>example: &lt;/body&gt;</pre>" + "<p>real</p></body></html>";
     const out = injectTweaksListenerIntoHtml(html);
     const preEnd = out.indexOf("</pre>");
-    const tagOpen = out.indexOf("<script data-df=\"tweaks-bridge\">");
+    const tagOpen = out.indexOf('<script data-df="tweaks-bridge">');
     expect(tagOpen).toBeGreaterThan(preEnd);
   });
 });
@@ -142,9 +141,7 @@ describe("isTweaksIncoming", () => {
     expect(isTweaksIncoming(42)).toBe(false);
     expect(isTweaksIncoming("hi")).toBe(false);
     expect(isTweaksIncoming([])).toBe(false);
-    expect(
-      isTweaksIncoming({ source: TWEAKS_BRIDGE_SOURCE_ID, type: "unknown" }),
-    ).toBe(false);
+    expect(isTweaksIncoming({ source: TWEAKS_BRIDGE_SOURCE_ID, type: "unknown" })).toBe(false);
   });
 });
 

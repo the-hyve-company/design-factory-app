@@ -136,8 +136,8 @@ export function CanvasModal({ open, initial, onClose, onApply }: CanvasModalProp
             </span>
 
             {/* v28: Responsivo moves into the footer-left slot as a
-              * compact pill so it doesn't crowd the action buttons. Same
-              * tactile bowl/dot vocabulary as before. */}
+             * compact pill so it doesn't crowd the action buttons. Same
+             * tactile bowl/dot vocabulary as before. */}
             <label className="cnv-responsive-toggle" data-on={responsive ? "true" : "false"}>
               <input
                 type="checkbox"
@@ -153,19 +153,10 @@ export function CanvasModal({ open, initial, onClose, onApply }: CanvasModalProp
           </div>
 
           <div className="dmv2-foot-actions">
-            <button
-              type="button"
-              className="dmv2-btn-text"
-              onClick={clear}
-              disabled={!draft}
-            >
+            <button type="button" className="dmv2-btn-text" onClick={clear} disabled={!draft}>
               {t("modal.clear")}
             </button>
-            <button
-              type="button"
-              className="dmv2-btn-primary"
-              onClick={apply}
-            >
+            <button type="button" className="dmv2-btn-primary" onClick={apply}>
               {t("modal.apply")}
             </button>
           </div>
@@ -197,7 +188,9 @@ export function CanvasModal({ open, initial, onClose, onApply }: CanvasModalProp
                   <span className="dmv2-row-check-dot" />
                 </span>
                 <span className="dmv2-row-label">{canvasLabel(preset, lang)}</span>
-                <span className="dmv2-row-desc">{formatCanvasMeta(preset, canvasHint(preset, lang))}</span>
+                <span className="dmv2-row-desc">
+                  {formatCanvasMeta(preset, canvasHint(preset, lang))}
+                </span>
               </button>
             );
           })}
@@ -233,7 +226,9 @@ export function CanvasModal({ open, initial, onClose, onApply }: CanvasModalProp
                 onBlur={commitCustom}
                 aria-label={t("canvas.input.width")}
               />
-              <span className="cnv-custom-x" aria-hidden>×</span>
+              <span className="cnv-custom-x" aria-hidden>
+                ×
+              </span>
               <input
                 className="cnv-custom-input"
                 type="number"

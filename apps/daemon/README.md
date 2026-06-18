@@ -40,6 +40,7 @@ build failed.
 ## Future
 
 Possible refactors (not yet scheduled):
+
 - Convert to TypeScript with an esbuild build step
 - Split the single file into `routes/`, `providers/`, `fs/`, `git/`, `gh/` modules
 

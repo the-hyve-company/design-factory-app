@@ -14,7 +14,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { db, writeGlobalConfig } from "@/lib/claude-bridge";
-import { TaxonomyManager, type TaxonomyItem, type TaxonomyGroup } from "@/components/TaxonomyManager";
+import {
+  TaxonomyManager,
+  type TaxonomyItem,
+  type TaxonomyGroup,
+} from "@/components/TaxonomyManager";
 import { PadroesConfirmModal } from "@/components/PadroesConfirmModal";
 import { PadroesCategoryManager, type ManagedCategory } from "@/components/PadroesCategoryManager";
 import { ImportExportControls, type ImportPreview } from "@/components/ImportExportControls";
@@ -128,7 +132,10 @@ function toItem(
 }
 
 function generateItemId(label: string): string {
-  const safe = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const safe = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
   return `${safe || "item"}-${Date.now().toString(36)}`;
 }
 
@@ -140,14 +147,28 @@ interface DetailFormProps {
   groups: TaxonomyGroup[];
   builtinCategoryIds: Set<string>;
   isItemBuiltin: boolean;
-  onSave: (item: FmtItem, patch: { label?: string; descriptor?: string; prompt?: string; categoryId?: string }) => Promise<void>;
+  onSave: (
+    item: FmtItem,
+    patch: { label?: string; descriptor?: string; prompt?: string; categoryId?: string },
+  ) => Promise<void>;
   onDelete: (item: FmtItem) => Promise<void>;
   onDeleteBuiltinPermanent: (item: FmtItem) => Promise<void>;
   onDuplicate: (item: FmtItem) => Promise<void>;
   onToggleEnabled: (id: string, next: boolean) => void;
 }
 
-function DetailForm({ item, allItems, groups, builtinCategoryIds, isItemBuiltin, onSave, onDelete, onDeleteBuiltinPermanent, onDuplicate, onToggleEnabled }: DetailFormProps) {
+function DetailForm({
+  item,
+  allItems,
+  groups,
+  builtinCategoryIds,
+  isItemBuiltin,
+  onSave,
+  onDelete,
+  onDeleteBuiltinPermanent,
+  onDuplicate,
+  onToggleEnabled,
+}: DetailFormProps) {
   const { t, lang } = useT();
   const [label, setLabel] = useState(item.raw.label);
   const [descriptor, setDescriptor] = useState(item.raw.descriptor ?? "");
@@ -204,7 +225,9 @@ function DetailForm({ item, allItems, groups, builtinCategoryIds, isItemBuiltin,
       <div className="tx-mgr-detail-head">
         <div className="tx-mgr-detail-head-text">
           <span className="tx-mgr-detail-eyebrow">{t("settings.formats.detail.eyebrow")}</span>
-          <h3 className="tx-mgr-detail-title">{item.builtin ? formatItemLabel(item.categoryId, item.raw, lang) : item.raw.label}</h3>
+          <h3 className="tx-mgr-detail-title">
+            {item.builtin ? formatItemLabel(item.categoryId, item.raw, lang) : item.raw.label}
+          </h3>
         </div>
         <div className="tx-mgr-detail-actions">
           <button
@@ -272,7 +295,9 @@ function DetailForm({ item, allItems, groups, builtinCategoryIds, isItemBuiltin,
             aria-invalid={Boolean(validation.label)}
           />
           {validation.label && (
-            <span className="tx-mgr-field-error" role="alert">{validation.label}</span>
+            <span className="tx-mgr-field-error" role="alert">
+              {validation.label}
+            </span>
           )}
         </div>
         <div className="tx-mgr-field">
@@ -307,7 +332,10 @@ function DetailForm({ item, allItems, groups, builtinCategoryIds, isItemBuiltin,
             rows={6}
             style={{ minHeight: 120, resize: "vertical", lineHeight: 1.4 }}
           />
-          <span className="tx-mgr-field-hint" style={{ fontSize: 11, color: "var(--df-text-faint)", marginTop: 4, display: "block" }}>
+          <span
+            className="tx-mgr-field-hint"
+            style={{ fontSize: 11, color: "var(--df-text-faint)", marginTop: 4, display: "block" }}
+          >
             Editable for builtins too. Saved as user override, original ships in code.
           </span>
         </div>
@@ -331,7 +359,15 @@ function DetailForm({ item, allItems, groups, builtinCategoryIds, isItemBuiltin,
           </select>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginTop: 6 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 6,
+          }}
+        >
           <span className={`tx-mgr-status${savedTick > 0 ? " is-shown" : ""}`}>
             {t("settings.canvas.action.saved")}
           </span>
@@ -383,8 +419,12 @@ function DetailForm({ item, allItems, groups, builtinCategoryIds, isItemBuiltin,
 export function FormatTaxonomyEditor() {
   const { t, lang } = useT();
   const [disabled, setDisabled] = useState<Set<string>>(new Set());
-  const [hiddenItems, setHiddenItems] = useState<Set<string>>(() => new Set(getHiddenBuiltinFormatItemIds()));
-  const [hiddenCats, setHiddenCats] = useState<Set<string>>(() => new Set(getHiddenBuiltinFormatCategoryIds()));
+  const [hiddenItems, setHiddenItems] = useState<Set<string>>(
+    () => new Set(getHiddenBuiltinFormatItemIds()),
+  );
+  const [hiddenCats, setHiddenCats] = useState<Set<string>>(
+    () => new Set(getHiddenBuiltinFormatCategoryIds()),
+  );
   const [customCats, setCustomCats] = useState<FormatCategory[]>(() => getCustomFormatCategories());
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [catManagerOpen, setCatManagerOpen] = useState(false);
@@ -424,11 +464,12 @@ export function FormatTaxonomyEditor() {
   );
 
   const groups = useMemo<TaxonomyGroup[]>(
-    () => effective.map((c) => ({
-      id: c.id,
-      label: builtinCategoryIds.has(c.id) ? formatCategoryLabel(c, lang) : c.label,
-      hint: c.hint,
-    })),
+    () =>
+      effective.map((c) => ({
+        id: c.id,
+        label: builtinCategoryIds.has(c.id) ? formatCategoryLabel(c, lang) : c.label,
+        hint: c.hint,
+      })),
     [effective, builtinCategoryIds, lang],
   );
 
@@ -438,7 +479,9 @@ export function FormatTaxonomyEditor() {
       const isCustomCat = !builtinCategoryIds.has(cat.id);
       const defaultItems = isCustomCat
         ? new Set<string>()
-        : new Set((DEFAULT_FORMAT_TAXONOMY.find((c) => c.id === cat.id)?.items ?? []).map((i) => i.id));
+        : new Set(
+            (DEFAULT_FORMAT_TAXONOMY.find((c) => c.id === cat.id)?.items ?? []).map((i) => i.id),
+          );
       for (const item of cat.items) {
         const compositeKey = makeKey(cat.id, item.id);
         // permanently-hidden builtins disappear from the list entirely.
@@ -483,9 +526,7 @@ export function FormatTaxonomyEditor() {
     // currently-filtered group, if the user narrowed via pills.
     const targetCatId = groupFilter ?? effective[0]?.id ?? "other";
     const def = DEFAULT_FORMAT_TAXONOMY.find((c) => c.id === targetCatId);
-    const label = def
-      ? `${def.label} item ${Date.now().toString(36).slice(-3)}`
-      : "New format";
+    const label = def ? `${def.label} item ${Date.now().toString(36).slice(-3)}` : "New format";
     const newItem: FormatItem = {
       id: generateItemId(label),
       label,
@@ -503,7 +544,13 @@ export function FormatTaxonomyEditor() {
     item: FmtItem,
     patch: { label?: string; descriptor?: string; prompt?: string; categoryId?: string },
   ) => {
-    if (!patch.label && patch.descriptor === undefined && patch.prompt === undefined && !patch.categoryId) return;
+    if (
+      !patch.label &&
+      patch.descriptor === undefined &&
+      patch.prompt === undefined &&
+      !patch.categoryId
+    )
+      return;
     const targetCatId = patch.categoryId ?? item.categoryId;
     let baseline = ensureCustomCategory(item.categoryId);
     if (targetCatId !== item.categoryId) baseline = ensureCustomCategory(targetCatId).map((c) => c);
@@ -511,21 +558,28 @@ export function FormatTaxonomyEditor() {
     const seen = new Map(baseline.map((c) => [c.id, c]));
     if (!seen.has(targetCatId)) {
       const def = DEFAULT_FORMAT_TAXONOMY.find((c) => c.id === targetCatId);
-      seen.set(targetCatId, def ? { ...def, items: [...def.items] } : { id: targetCatId, label: titleCase(targetCatId), items: [] });
+      seen.set(
+        targetCatId,
+        def
+          ? { ...def, items: [...def.items] }
+          : { id: targetCatId, label: titleCase(targetCatId), items: [] },
+      );
     }
     let next = [...seen.values()];
     if (patch.categoryId && patch.categoryId !== item.categoryId) {
       // Move item: remove from old, add to new.
       next = next.map((c) =>
-        c.id === item.categoryId
-          ? { ...c, items: c.items.filter((i) => i.id !== item.itemId) }
-          : c,
+        c.id === item.categoryId ? { ...c, items: c.items.filter((i) => i.id !== item.itemId) } : c,
       );
       const targetItem: FormatItem = {
         id: item.itemId,
         label: patch.label ?? item.raw.label,
         descriptor: patch.descriptor ?? item.raw.descriptor,
-        ...(patch.prompt !== undefined ? { prompt: patch.prompt } : (item.raw.prompt ? { prompt: item.raw.prompt } : {})),
+        ...(patch.prompt !== undefined
+          ? { prompt: patch.prompt }
+          : item.raw.prompt
+            ? { prompt: item.raw.prompt }
+            : {}),
       };
       next = next.map((c) =>
         c.id === targetCatId ? { ...c, items: [...c.items, targetItem] } : c,
@@ -556,9 +610,7 @@ export function FormatTaxonomyEditor() {
   const handleDelete = async (item: FmtItem) => {
     const baseline = ensureCustomCategory(item.categoryId);
     const next = baseline.map((c) =>
-      c.id === item.categoryId
-        ? { ...c, items: c.items.filter((i) => i.id !== item.itemId) }
-        : c,
+      c.id === item.categoryId ? { ...c, items: c.items.filter((i) => i.id !== item.itemId) } : c,
     );
     setCustomCats(next);
     await persistCustomCats(next);
@@ -571,9 +623,7 @@ export function FormatTaxonomyEditor() {
       if (!item || item.builtin) continue;
       working = ensureFromArray(working, item.categoryId);
       working = working.map((c) =>
-        c.id === item.categoryId
-          ? { ...c, items: c.items.filter((i) => i.id !== item.itemId) }
-          : c,
+        c.id === item.categoryId ? { ...c, items: c.items.filter((i) => i.id !== item.itemId) } : c,
       );
     }
     setCustomCats(working);
@@ -654,14 +704,18 @@ export function FormatTaxonomyEditor() {
       working = ensureFromArray(working, targetCategoryId);
       // Remove from source
       working = working.map((c) =>
-        c.id === item.categoryId
-          ? { ...c, items: c.items.filter((i) => i.id !== item.itemId) }
-          : c,
+        c.id === item.categoryId ? { ...c, items: c.items.filter((i) => i.id !== item.itemId) } : c,
       );
       // Append to target
       working = working.map((c) =>
         c.id === targetCategoryId
-          ? { ...c, items: [...c.items, { id: item.itemId, label: item.raw.label, descriptor: item.raw.descriptor }] }
+          ? {
+              ...c,
+              items: [
+                ...c.items,
+                { id: item.itemId, label: item.raw.label, descriptor: item.raw.descriptor },
+              ],
+            }
           : c,
       );
     }
@@ -721,9 +775,7 @@ export function FormatTaxonomyEditor() {
       customById.delete(def.id);
     }
     for (const c of customById.values()) {
-      const itemCount = c.items.filter(
-        (it) => !disabled.has(makeKey(c.id, it.id)),
-      ).length;
+      const itemCount = c.items.filter((it) => !disabled.has(makeKey(c.id, it.id))).length;
       out.push({ id: c.id, label: c.label, builtin: false, itemCount });
     }
     return out;
@@ -744,7 +796,10 @@ export function FormatTaxonomyEditor() {
       working = working.map((c) => (c.id === id ? { ...c, label: nextLabel } : c));
     } else if (def) {
       // Builtin rename — clone default to override slot with new label.
-      working = [...working, { id: def.id, label: nextLabel, hint: def.hint, items: [...def.items] }];
+      working = [
+        ...working,
+        { id: def.id, label: nextLabel, hint: def.hint, items: [...def.items] },
+      ];
     } else {
       // Net-new category renamed before items added — unusual, defensive.
       working = [...working, { id, label: nextLabel, items: [] }];
@@ -764,7 +819,12 @@ export function FormatTaxonomyEditor() {
       existing.items.length === def.items.length &&
       existing.items.every((it, idx) => {
         const dItem = def.items[idx];
-        return dItem && it.id === dItem.id && it.label === dItem.label && (it.descriptor ?? "") === (dItem.descriptor ?? "");
+        return (
+          dItem &&
+          it.id === dItem.id &&
+          it.label === dItem.label &&
+          (it.descriptor ?? "") === (dItem.descriptor ?? "")
+        );
       });
     let next: FormatCategory[];
     if (itemsMatchDefaults) {
@@ -853,9 +913,7 @@ export function FormatTaxonomyEditor() {
       const existingOrphan = next.find((c) => c.id === ORPHAN_CATEGORY_ID);
       if (existingOrphan) {
         next = next.map((c) =>
-          c.id === ORPHAN_CATEGORY_ID
-            ? { ...c, items: [...c.items, ...orphanItems] }
-            : c,
+          c.id === ORPHAN_CATEGORY_ID ? { ...c, items: [...c.items, ...orphanItems] } : c,
         );
       } else {
         next = [
@@ -874,8 +932,12 @@ export function FormatTaxonomyEditor() {
 
   // ImportExportControls slot removed 2026-05-21 — handlers/exports
   // preserved for future surfaces. Silence TS6133 while they sit idle.
-  void previewImport; void applyImport; void handleResetAll;
-  void buildFormatTaxonomyExport; void parseFormatTaxonomyImport; void ImportExportControls;
+  void previewImport;
+  void applyImport;
+  void handleResetAll;
+  void buildFormatTaxonomyExport;
+  void parseFormatTaxonomyImport;
+  void ImportExportControls;
 
   return (
     <>

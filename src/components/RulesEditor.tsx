@@ -18,13 +18,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { db, writeGlobalConfig } from "@/lib/claude-bridge";
-import { TaxonomyManager, type TaxonomyItem, type TaxonomyGroup } from "@/components/TaxonomyManager";
+import {
+  TaxonomyManager,
+  type TaxonomyItem,
+  type TaxonomyGroup,
+} from "@/components/TaxonomyManager";
 import { PadroesConfirmModal } from "@/components/PadroesConfirmModal";
 import { PadroesCategoryManager, type ManagedCategory } from "@/components/PadroesCategoryManager";
 import { ImportExportControls, type ImportPreview } from "@/components/ImportExportControls";
 import { RuleCreateModal } from "@/components/RuleCreateModal";
 import { useT, type Lang } from "@/i18n";
-import { ruleTitle as builtinRuleTitle, ruleDescription as builtinRuleDescription } from "@/i18n/builtin-labels";
+import {
+  ruleTitle as builtinRuleTitle,
+  ruleDescription as builtinRuleDescription,
+} from "@/i18n/builtin-labels";
 import {
   buildRulesExport,
   DEFAULT_BUILTIN_RULES,
@@ -160,7 +167,16 @@ function renderInlineMarkdown(input: string): React.ReactNode[] {
       tokens.push(<strong key={key++}>{tok.slice(2, -2)}</strong>);
     } else if (tok.startsWith("`")) {
       tokens.push(
-        <code key={key++} style={{ fontFamily: "var(--df-font-mono)", fontSize: 11, padding: "1px 4px", background: "var(--df-bg-base)", borderRadius: 3 }}>
+        <code
+          key={key++}
+          style={{
+            fontFamily: "var(--df-font-mono)",
+            fontSize: 11,
+            padding: "1px 4px",
+            background: "var(--df-bg-base)",
+            borderRadius: 3,
+          }}
+        >
           {tok.slice(1, -1)}
         </code>,
       );
@@ -179,7 +195,10 @@ interface DetailFormProps {
   item: RuleItem;
   allItems: RuleItem[];
   categories: ReturnType<typeof getEffectiveCategories>;
-  onSave: (rule: Rule, patch: Partial<Pick<Rule, "title" | "description" | "category">>) => Promise<void>;
+  onSave: (
+    rule: Rule,
+    patch: Partial<Pick<Rule, "title" | "description" | "category">>,
+  ) => Promise<void>;
   onDelete: (rule: Rule) => Promise<void>;
   onDeleteBuiltinPermanent: (rule: Rule) => Promise<void>;
   onResetBuiltin: (rule: Rule) => Promise<void>;
@@ -187,7 +206,17 @@ interface DetailFormProps {
   onToggleEnabled: (id: string, next: boolean) => void;
 }
 
-function DetailForm({ item, allItems, categories, onSave, onDelete, onDeleteBuiltinPermanent, onResetBuiltin, onDuplicate, onToggleEnabled }: DetailFormProps) {
+function DetailForm({
+  item,
+  allItems,
+  categories,
+  onSave,
+  onDelete,
+  onDeleteBuiltinPermanent,
+  onResetBuiltin,
+  onDuplicate,
+  onToggleEnabled,
+}: DetailFormProps) {
   const { t, lang } = useT();
   const [title, setTitle] = useState(item.rule.title);
   const [description, setDescription] = useState(item.rule.description ?? "");
@@ -212,9 +241,7 @@ function DetailForm({ item, allItems, categories, onSave, onDelete, onDeleteBuil
       errors.title = t("settings.padroes.validation.empty.name");
     } else {
       const dup = allItems.find(
-        (it) =>
-          it.id !== item.id &&
-          it.title.toLowerCase() === trimmed.toLowerCase(),
+        (it) => it.id !== item.id && it.title.toLowerCase() === trimmed.toLowerCase(),
       );
       if (dup) errors.title = t("settings.padroes.validation.duplicate");
     }
@@ -245,7 +272,11 @@ function DetailForm({ item, allItems, categories, onSave, onDelete, onDeleteBuil
       <div className="tx-mgr-detail-head">
         <div className="tx-mgr-detail-head-text">
           <span className="tx-mgr-detail-eyebrow">{t("settings.rules.detail.eyebrow")}</span>
-          <h3 className="tx-mgr-detail-title">{item.rule.builtin && !item.hasOverride ? builtinRuleTitle(item.rule, lang) : item.rule.title}</h3>
+          <h3 className="tx-mgr-detail-title">
+            {item.rule.builtin && !item.hasOverride
+              ? builtinRuleTitle(item.rule, lang)
+              : item.rule.title}
+          </h3>
         </div>
         <div className="tx-mgr-detail-actions">
           <button
@@ -323,7 +354,9 @@ function DetailForm({ item, allItems, categories, onSave, onDelete, onDeleteBuil
             aria-invalid={Boolean(validation.title)}
           />
           {validation.title && (
-            <span className="tx-mgr-field-error" role="alert">{validation.title}</span>
+            <span className="tx-mgr-field-error" role="alert">
+              {validation.title}
+            </span>
           )}
         </div>
 
@@ -338,7 +371,9 @@ function DetailForm({ item, allItems, categories, onSave, onDelete, onDeleteBuil
             onChange={(e) => setCategoryId(e.target.value)}
           >
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.label}</option>
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
             ))}
           </select>
         </div>
@@ -376,7 +411,15 @@ function DetailForm({ item, allItems, categories, onSave, onDelete, onDeleteBuil
           )}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginTop: 6 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            gap: 12,
+            marginTop: 6,
+          }}
+        >
           <span className={`tx-mgr-status${savedTick > 0 ? " is-shown" : ""}`}>
             {t("settings.canvas.action.saved")}
           </span>
@@ -439,14 +482,20 @@ function DetailForm({ item, allItems, categories, onSave, onDelete, onDeleteBuil
 export function RulesEditor() {
   const { t, lang } = useT();
   const [disabled, setDisabled] = useState<Set<string>>(new Set());
-  const [hiddenBuiltins, setHiddenBuiltins] = useState<Set<string>>(() => new Set(getHiddenBuiltinRuleIds()));
-  const [overrides, setOverrides] = useState<Record<string, Partial<Pick<Rule, "title" | "description" | "category">>>>(() => getBuiltinOverrides());
+  const [hiddenBuiltins, setHiddenBuiltins] = useState<Set<string>>(
+    () => new Set(getHiddenBuiltinRuleIds()),
+  );
+  const [overrides, setOverrides] = useState<
+    Record<string, Partial<Pick<Rule, "title" | "description" | "category">>>
+  >(() => getBuiltinOverrides());
   const [userRules, setUserRulesState] = useState<Rule[]>(() => getUserRules());
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [catManagerOpen, setCatManagerOpen] = useState(false);
   const [customCats, setCustomCats] = useState<RuleCategoryMeta[]>(() => getCustomRuleCategories());
-  const [catLabelOverrides, setCatLabelOverrides] = useState<Record<string, string>>(() => getCategoryLabelOverrides());
+  const [catLabelOverrides, setCatLabelOverrides] = useState<Record<string, string>>(() =>
+    getCategoryLabelOverrides(),
+  );
 
   useEffect(() => {
     void loadDisabled().then((s) => setDisabled(s));
@@ -497,15 +546,16 @@ export function RulesEditor() {
   // headers flip pt↔en. Customs (no key in strings.ts) fall through to
   // their stored label.
   const groups = useMemo<TaxonomyGroup[]>(
-    () => categories.map((c) => {
-      const k = `rules.cat.${c.id}`;
-      const localized = t(k);
-      return {
-        id: c.id,
-        label: localized === k ? c.label : localized,
-        hint: c.hint,
-      };
-    }),
+    () =>
+      categories.map((c) => {
+        const k = `rules.cat.${c.id}`;
+        const localized = t(k);
+        return {
+          id: c.id,
+          label: localized === k ? c.label : localized,
+          hint: c.hint,
+        };
+      }),
     [categories, t, lang],
   );
 
@@ -530,16 +580,17 @@ export function RulesEditor() {
     });
   };
 
-  const handleSave = async (rule: Rule, patch: Partial<Pick<Rule, "title" | "description" | "category">>) => {
+  const handleSave = async (
+    rule: Rule,
+    patch: Partial<Pick<Rule, "title" | "description" | "category">>,
+  ) => {
     if (rule.builtin) {
       const next = { ...overrides };
       next[rule.id] = { ...(next[rule.id] ?? {}), ...patch };
       setOverrides(next);
       await persistOverrides(next);
     } else {
-      const next = userRules.map((r) =>
-        r.id === rule.id ? { ...r, ...patch } : r,
-      );
+      const next = userRules.map((r) => (r.id === rule.id ? { ...r, ...patch } : r));
       setUserRulesState(next);
       await persistUserRules(next);
     }
@@ -694,7 +745,10 @@ export function RulesEditor() {
   }, [customCats, catLabelOverrides, items]);
 
   const handleCatCreate = async (label: string) => {
-    const id = `cat-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
+    const id = `cat-${label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")}-${Date.now().toString(36)}`;
     const next = [...customCats, { id, label }];
     setCustomCats(next);
     await persistCustomRuleCategories(next);
@@ -784,7 +838,10 @@ export function RulesEditor() {
     setUserRulesState(nextUser);
     await persistUserRules(nextUser);
 
-    const nextOverrides = mode === "replace" ? { ...payload.builtinOverrides } : { ...overrides, ...payload.builtinOverrides };
+    const nextOverrides =
+      mode === "replace"
+        ? { ...payload.builtinOverrides }
+        : { ...overrides, ...payload.builtinOverrides };
     setOverrides(nextOverrides);
     await persistOverrides(nextOverrides);
 
@@ -794,17 +851,21 @@ export function RulesEditor() {
     setDisabledRuleIds([...nextDisabled]);
     await persistDisabled(nextDisabled);
 
-    const nextCustomCats = mode === "replace" ? [...payload.customRuleCategories] : (() => {
-      const byId = new Map(customCats.map((c) => [c.id, c]));
-      for (const c of payload.customRuleCategories ?? []) byId.set(c.id, c);
-      return [...byId.values()];
-    })();
+    const nextCustomCats =
+      mode === "replace"
+        ? [...payload.customRuleCategories]
+        : (() => {
+            const byId = new Map(customCats.map((c) => [c.id, c]));
+            for (const c of payload.customRuleCategories ?? []) byId.set(c.id, c);
+            return [...byId.values()];
+          })();
     setCustomCats(nextCustomCats);
     await persistCustomRuleCategories(nextCustomCats);
 
-    const nextLabelOverrides = mode === "replace"
-      ? { ...payload.categoryLabelOverrides }
-      : { ...catLabelOverrides, ...payload.categoryLabelOverrides };
+    const nextLabelOverrides =
+      mode === "replace"
+        ? { ...payload.categoryLabelOverrides }
+        : { ...catLabelOverrides, ...payload.categoryLabelOverrides };
     setCatLabelOverrides(nextLabelOverrides);
     await persistCategoryLabelOverrides(nextLabelOverrides);
 
@@ -833,8 +894,12 @@ export function RulesEditor() {
 
   // ImportExportControls slot removed 2026-05-21 — handlers/exports
   // preserved for future surfaces. Silence TS6133 while they sit idle.
-  void previewImport; void applyImport; void handleResetAll;
-  void buildRulesExport; void parseRulesImport; void ImportExportControls;
+  void previewImport;
+  void applyImport;
+  void handleResetAll;
+  void buildRulesExport;
+  void parseRulesImport;
+  void ImportExportControls;
 
   return (
     <>

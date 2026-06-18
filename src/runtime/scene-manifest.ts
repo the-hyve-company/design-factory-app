@@ -17,12 +17,12 @@
 export interface Scene {
   id: string;
   name: string;
-  start: number;       // seconds
-  duration: number;    // seconds
+  start: number; // seconds
+  duration: number; // seconds
 }
 
 export interface SceneManifest {
-  duration: number;    // seconds, total
+  duration: number; // seconds, total
   fps: number;
   scenes: Scene[];
   /** True if parsed from the explicit <script df-manifest>; false if
@@ -30,11 +30,9 @@ export interface SceneManifest {
   fromManifestTag: boolean;
 }
 
-const MANIFEST_RE =
-  /<script\s+type=["']application\/df-manifest["'][^>]*>([\s\S]*?)<\/script>/i;
+const MANIFEST_RE = /<script\s+type=["']application\/df-manifest["'][^>]*>([\s\S]*?)<\/script>/i;
 
-const SECTION_RE =
-  /<section\b([^>]*?)>/gi;
+const SECTION_RE = /<section\b([^>]*?)>/gi;
 
 function readAttr(tag: string, attr: string): string | null {
   const re = new RegExp(`\\b${attr}=["']([^"']*)["']`, "i");
@@ -96,9 +94,10 @@ export function parseSceneManifest(html: string): SceneManifest | null {
   if (sectionScenes.length > 0) {
     sectionScenes.sort((a, b) => a.start - b.start);
     const fps = typeof manifestJson?.fps === "number" ? manifestJson.fps : 30;
-    const total = typeof manifestJson?.duration === "number"
-      ? manifestJson.duration
-      : sumDuration(sectionScenes, true);
+    const total =
+      typeof manifestJson?.duration === "number"
+        ? manifestJson.duration
+        : sumDuration(sectionScenes, true);
     return {
       duration: total,
       fps,
@@ -116,9 +115,13 @@ export function parseSceneManifest(html: string): SceneManifest | null {
       .filter((s) => s && typeof s.start === "number" && typeof s.duration === "number")
       .map((s, i) => {
         const name = typeof s.name === "string" ? s.name : `Scene ${i + 1}`;
-        const id = typeof s.id === "string" && s.id.length > 0
-          ? s.id
-          : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || `s${i + 1}`;
+        const id =
+          typeof s.id === "string" && s.id.length > 0
+            ? s.id
+            : name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "") || `s${i + 1}`;
         return {
           id,
           name,
@@ -127,7 +130,8 @@ export function parseSceneManifest(html: string): SceneManifest | null {
         };
       });
     if (scenes.length > 0) {
-      const total = typeof manifestJson.duration === "number" ? manifestJson.duration : sumDuration(scenes);
+      const total =
+        typeof manifestJson.duration === "number" ? manifestJson.duration : sumDuration(scenes);
       const fps = typeof manifestJson.fps === "number" ? manifestJson.fps : 30;
       return {
         duration: total,
@@ -155,12 +159,14 @@ function sumDuration(scenes: Scene[], useEnd = false): number {
  * only this scene".
  */
 export function buildSceneRefinePrompt(scene: Scene, userInstruction: string): string {
-  const instr = userInstruction.trim() || "Improve this scene's animation and composition without breaking the overall timeline.";
+  const instr =
+    userInstruction.trim() ||
+    "Improve this scene's animation and composition without breaking the overall timeline.";
   return [
     `Edit ONLY scene ${scene.id} ("${scene.name}", t=${scene.start}-${scene.start + scene.duration}s).`,
     "Keep all other scenes' content, classes, ids, and animation timings intact.",
     "Preserve the data-scene/data-start/data-duration attributes on every <section>.",
-    "Preserve the <script type=\"application/df-manifest\"> JSON manifest exactly.",
+    'Preserve the <script type="application/df-manifest"> JSON manifest exactly.',
     "Do NOT renumber scenes or shift other scenes' start times.",
     "",
     `Instruction for scene ${scene.id}:`,
@@ -178,14 +184,15 @@ export function buildSceneRefinePrompt(scene: Scene, userInstruction: string): s
  * need to either (a) regenerate the CSS, or (b) ask the AI to refactor
  * the keyframes to read from CSS variables we mutate. Phase 2 work.
  */
-export function applySceneEdit(html: string, sceneId: string, patch: Partial<Pick<Scene, "start" | "duration" | "name">>): string {
+export function applySceneEdit(
+  html: string,
+  sceneId: string,
+  patch: Partial<Pick<Scene, "start" | "duration" | "name">>,
+): string {
   let out = html;
 
   // 1) Mutate the <section> attrs.
-  const sectionRe = new RegExp(
-    `(<section\\b[^>]*data-scene=["']${sceneId}["'][^>]*>)`,
-    "i",
-  );
+  const sectionRe = new RegExp(`(<section\\b[^>]*data-scene=["']${sceneId}["'][^>]*>)`, "i");
   out = out.replace(sectionRe, (_full, openTag) => {
     let tag = openTag as string;
     if (typeof patch.start === "number") {
@@ -297,9 +304,7 @@ export function findReplaceInScene(
   const inner = m[2];
   if (!inner.includes(find)) return { html, changed: false };
   const updated = inner.replace(find, replace);
-  const next = html.slice(0, m.index!) +
-    m[1] + updated + m[3] +
-    html.slice(m.index! + m[0].length);
+  const next = html.slice(0, m.index!) + m[1] + updated + m[3] + html.slice(m.index! + m[0].length);
   return { html: next, changed: true };
 }
 

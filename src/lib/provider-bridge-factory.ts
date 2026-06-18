@@ -87,7 +87,11 @@ export function makeProviderBridge(endpoint: string): GenericProviderBridge {
             if (!dataStr) continue;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let data: any;
-            try { data = JSON.parse(dataStr); } catch { continue; }
+            try {
+              data = JSON.parse(dataStr);
+            } catch {
+              continue;
+            }
             if (event === "text" && typeof data.content === "string") {
               full += data.content;
               callbacks.onText(data.content);
@@ -109,9 +113,7 @@ export function makeProviderBridge(endpoint: string): GenericProviderBridge {
           if (full) {
             callbacks.onDone(full);
           } else {
-            callbacks.onError(
-              "provider completed without text or artifact"
-            );
+            callbacks.onError("provider completed without text or artifact");
           }
         }
       } catch (err) {
@@ -121,7 +123,9 @@ export function makeProviderBridge(endpoint: string): GenericProviderBridge {
       }
     })();
     return () => {
-      try { controller.abort(); } catch {}
+      try {
+        controller.abort();
+      } catch {}
     };
   }
 

@@ -43,15 +43,19 @@ function buildSkill({ raw, absPath, source, cwd }) {
   const parsed = parseSkillFile(raw);
   if (!parsed) return null;
   const rel = cwd && absPath.startsWith(cwd + "/") ? absPath.slice(cwd.length + 1) : absPath;
-  const trigger = parsed.trigger || "/" + (parsed.name || "skill").toLowerCase().replace(/\s+/g, "-");
+  const trigger =
+    parsed.trigger || "/" + (parsed.name || "skill").toLowerCase().replace(/\s+/g, "-");
   const id = source + ":" + (rel || absPath);
   return { id, name: parsed.name, trigger, source, path: absPath };
 }
 
 async function walk(root, { source, cwd, out }) {
   let entries;
-  try { entries = await readdir(root, { withFileTypes: true }); }
-  catch { return; }
+  try {
+    entries = await readdir(root, { withFileTypes: true });
+  } catch {
+    return;
+  }
   for (const e of entries) {
     if (e.name.startsWith(".") && e.name !== ".claude") continue;
     const full = join(root, e.name);
@@ -127,7 +131,12 @@ describe("skills walker", () => {
     // Same trigger /shared, different bodies and slug names. Canonical
     // should be the one surfaced; legacy gets dedupe-dropped.
     await makeSkill(join(repoRoot, "skills"), "canonical-slug", "Canonical Version", "/shared");
-    await makeSkill(join(repoRoot, ".claude", "skills"), "legacy-slug", "Legacy Version", "/shared");
+    await makeSkill(
+      join(repoRoot, ".claude", "skills"),
+      "legacy-slug",
+      "Legacy Version",
+      "/shared",
+    );
     const skills = await buildRegistry(repoRoot);
     expect(skills).toHaveLength(1);
     expect(skills[0].name).toBe("Canonical Version");

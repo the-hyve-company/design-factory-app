@@ -60,7 +60,11 @@ async function streamGeminiViaBridge(
           }
           if (!dataStr) continue;
           let data: any;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
@@ -86,7 +90,9 @@ async function streamGeminiViaBridge(
     }
   })();
   return () => {
-    try { controller.abort(); } catch {}
+    try {
+      controller.abort();
+    } catch {}
   };
 }
 
@@ -98,10 +104,7 @@ export function streamGemini(
   return streamGeminiViaBridge(prompt, config, callbacks);
 }
 
-export async function geminiOnce(
-  prompt: string,
-  config: GeminiConfig = {},
-): Promise<string> {
+export async function geminiOnce(prompt: string, config: GeminiConfig = {}): Promise<string> {
   const res = await fetch(`${BRIDGE_URL}/gemini/once`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

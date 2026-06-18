@@ -18,26 +18,41 @@ import { join, basename } from "node:path";
 // changes, update both. The route's HTTP/scope-guard layer is exercised
 // by the live E2E harness (`scripts/validate-modals.mjs`); this test
 // pins the file-system walk semantics.
-const TEXT_EXT_RX = /\.(html?|svg|xml|css|scss|sass|less|js|jsx|mjs|cjs|ts|tsx|json|jsonc|md|markdown|mdx|txt|csv|tsv|yaml|yml|toml|ini|conf|sh|bash|zsh|py|rb|go|rs|java|kt|c|cc|cpp|h|hpp|sql|graphql|gql)$/i;
+const TEXT_EXT_RX =
+  /\.(html?|svg|xml|css|scss|sass|less|js|jsx|mjs|cjs|ts|tsx|json|jsonc|md|markdown|mdx|txt|csv|tsv|yaml|yml|toml|ini|conf|sh|bash|zsh|py|rb|go|rs|java|kt|c|cc|cpp|h|hpp|sql|graphql|gql)$/i;
 
 async function walkSkillFolder(skillDir, manifestName) {
   const out = [];
   const walk = async (p, depth, relPrefix) => {
     if (depth > 3 || out.length >= 200) return;
     let entries;
-    try { entries = await readdir(p, { withFileTypes: true }); } catch { return; }
+    try {
+      entries = await readdir(p, { withFileTypes: true });
+    } catch {
+      return;
+    }
     for (const e of entries) {
       if (out.length >= 200) break;
       if (/^\.(git|DS_Store)/.test(e.name)) continue;
       const childPath = join(p, e.name);
       const childRel = relPrefix ? `${relPrefix}/${e.name}` : e.name;
-      if (e.isDirectory()) { await walk(childPath, depth + 1, childRel); continue; }
+      if (e.isDirectory()) {
+        await walk(childPath, depth + 1, childRel);
+        continue;
+      }
       if (!e.isFile()) continue;
       let st;
-      try { st = await stat(childPath); } catch { continue; }
+      try {
+        st = await stat(childPath);
+      } catch {
+        continue;
+      }
       if (childRel === manifestName && p === skillDir) continue;
       out.push({
-        rel: childRel, name: e.name, path: childPath, size: st.size,
+        rel: childRel,
+        name: e.name,
+        path: childPath,
+        size: st.size,
         isText: TEXT_EXT_RX.test(e.name),
       });
     }

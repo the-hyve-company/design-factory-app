@@ -51,19 +51,15 @@ describe("[gate] Durable Chat Journal — auditor verdict 2026-05-08", () => {
   // visually clean; "saving" / "recovered" / "failed" surface as small
   // inline labels under the user bubble).
   it("[Fase 1 #1] ChatMessage renders persist-state badges for non-default outcomes", () => {
-    const src = readFileSync(
-      resolve(repoRoot, "src/components/ChatMessage.tsx"),
-      "utf8",
+    const src = readFileSync(resolve(repoRoot, "src/components/ChatMessage.tsx"), "utf8");
+    expect(src).toMatch(
+      /persistStatus\??:\s*"saving"\s*\|\s*"saved"\s*\|\s*"recovered"\s*\|\s*"failed"/,
     );
-    expect(src).toMatch(/persistStatus\??:\s*"saving"\s*\|\s*"saved"\s*\|\s*"recovered"\s*\|\s*"failed"/);
     expect(src).toMatch(/chat-msg-persist--saving/);
     expect(src).toMatch(/chat-msg-persist--recovered/);
     expect(src).toMatch(/chat-msg-persist--failed/);
     // Wired through from EditorScreen.
-    const editor = readFileSync(
-      resolve(repoRoot, "src/screens/EditorScreen.tsx"),
-      "utf8",
-    );
+    const editor = readFileSync(resolve(repoRoot, "src/screens/EditorScreen.tsx"), "utf8");
     expect(editor).toMatch(/persistStatus=\{msg\.persist_status\}/);
   });
 
@@ -149,17 +145,13 @@ describe("[gate] Durable Chat Journal — auditor verdict 2026-05-08", () => {
     // Daemon parity — the canonical origins must match the daemon's
     // DEFAULT_ALLOWED_ORIGINS list. If a future PR adds an origin to one
     // side, this gate forces the other side to follow.
-    const daemon = readFileSync(
-      resolve(repoRoot, "apps/daemon/src/index.mjs"),
-      "utf8",
+    const daemon = readFileSync(resolve(repoRoot, "apps/daemon/src/index.mjs"), "utf8");
+    expect(daemon).toMatch(
+      /DEFAULT_ALLOWED_ORIGINS\s*=\s*\[[\s\S]*?http:\/\/localhost:1420[\s\S]*?http:\/\/127\.0\.0\.1:1420/,
     );
-    expect(daemon).toMatch(/DEFAULT_ALLOWED_ORIGINS\s*=\s*\[[\s\S]*?http:\/\/localhost:1420[\s\S]*?http:\/\/127\.0\.0\.1:1420/);
 
     // Mount: the banner has to render on the App tree, not just exist.
-    const banner = readFileSync(
-      resolve(repoRoot, "src/components/OriginGuardBanner.tsx"),
-      "utf8",
-    );
+    const banner = readFileSync(resolve(repoRoot, "src/components/OriginGuardBanner.tsx"), "utf8");
     expect(banner).toMatch(/checkCurrentOrigin/);
     const app = readFileSync(resolve(repoRoot, "src/App.tsx"), "utf8");
     expect(app).toMatch(/<OriginGuardBanner\s*\/>/);
@@ -202,9 +194,16 @@ describe("[gate] Durable Chat Journal — auditor verdict 2026-05-08", () => {
     const candidates = [sendUserTurnAt, spawnStreamAt, streamProviderAt].filter((i) => i >= 0);
     const providerAt = candidates.length > 0 ? Math.min(...candidates) : -1;
 
-    expect(persistAt, "persistInitialTurn must be awaited inside handleSend").toBeGreaterThanOrEqual(0);
-    expect(providerAt, "no provider invocation found in handleSend window").toBeGreaterThanOrEqual(0);
-    expect(persistAt, "persistInitialTurn must precede the provider invocation").toBeLessThan(providerAt);
+    expect(
+      persistAt,
+      "persistInitialTurn must be awaited inside handleSend",
+    ).toBeGreaterThanOrEqual(0);
+    expect(providerAt, "no provider invocation found in handleSend window").toBeGreaterThanOrEqual(
+      0,
+    );
+    expect(persistAt, "persistInitialTurn must precede the provider invocation").toBeLessThan(
+      providerAt,
+    );
   });
 
   // ── FASE 1 #4 (audit close-out) — comment batch path ─────────────────
@@ -226,9 +225,14 @@ describe("[gate] Durable Chat Journal — auditor verdict 2026-05-08", () => {
     const persistAt = body.search(/await\s+persistOrRecoverTurn\(/);
     const providerAt = body.indexOf("invokeSearchReplaceEdit(");
 
-    expect(persistAt, "sendCommentBatch must `await persistOrRecoverTurn(...)`").toBeGreaterThanOrEqual(0);
+    expect(
+      persistAt,
+      "sendCommentBatch must `await persistOrRecoverTurn(...)`",
+    ).toBeGreaterThanOrEqual(0);
     expect(providerAt, "sendCommentBatch must invoke a provider call").toBeGreaterThanOrEqual(0);
-    expect(persistAt, "persistOrRecoverTurn must precede invokeSearchReplaceEdit").toBeLessThan(providerAt);
+    expect(persistAt, "persistOrRecoverTurn must precede invokeSearchReplaceEdit").toBeLessThan(
+      providerAt,
+    );
 
     // Hard-disallow the buggy shape from PR #115. If a future PR
     // accidentally reverts to `void persistOrRecoverTurn(...)` inside
@@ -243,19 +247,13 @@ describe("[gate] Durable Chat Journal — auditor verdict 2026-05-08", () => {
   // this gate just enforces the contract surface so a future PR can't
   // silently drop the recovery layer.
   it("[Fase 1 #5] chat-recovery + chat-persist expose the fallback contract", () => {
-    const recovery = readFileSync(
-      resolve(repoRoot, "src/lib/chat-recovery.ts"),
-      "utf8",
-    );
+    const recovery = readFileSync(resolve(repoRoot, "src/lib/chat-recovery.ts"), "utf8");
     expect(recovery).toMatch(/df:recovery-chat/);
     expect(recovery).toMatch(/export function saveRecovery/);
     expect(recovery).toMatch(/export function readRecovery/);
     expect(recovery).toMatch(/export function clearRecovery/);
 
-    const persist = readFileSync(
-      resolve(repoRoot, "src/lib/chat-persist.ts"),
-      "utf8",
-    );
+    const persist = readFileSync(resolve(repoRoot, "src/lib/chat-persist.ts"), "utf8");
     expect(persist).toMatch(/saveRecovery\(/);
     // Helper must race against a timeout — bounded latency is half of
     // why this layer exists. The default knob lives next to the constant.
@@ -268,12 +266,8 @@ describe("[gate] Durable Chat Journal — auditor verdict 2026-05-08", () => {
   it.todo(
     "[Fase 2] .df/chat/{threadId}/journal.ndjson exists and is append-only with typed events",
   );
-  it.todo(
-    "[Fase 2] .df/chat/{threadId}/latest.json is regenerated as derived view of journal",
-  );
-  it.todo(
-    "[Fase 2] .df/chat/{threadId}/index.json carries integrity + last_turn_id + turn_count",
-  );
+  it.todo("[Fase 2] .df/chat/{threadId}/latest.json is regenerated as derived view of journal");
+  it.todo("[Fase 2] .df/chat/{threadId}/index.json carries integrity + last_turn_id + turn_count");
 
   // ── Auditor's six obligatory test scenarios ──────────────────────────
   it.todo(
@@ -292,10 +286,7 @@ describe("[gate] Durable Chat Journal — auditor verdict 2026-05-08", () => {
   // chat-recovery-sync.test.ts; this gate just locks the contract
   // surface (worker exists + boot trigger wired in App).
   it("[scenario 4/6] daemon offline → recovery local saves AND sync on reconnect is wired", () => {
-    const sync = readFileSync(
-      resolve(repoRoot, "src/lib/chat-recovery-sync.ts"),
-      "utf8",
-    );
+    const sync = readFileSync(resolve(repoRoot, "src/lib/chat-recovery-sync.ts"), "utf8");
     expect(sync).toMatch(/export async function syncRecoveryQueue/);
     expect(sync).toMatch(/export function startRecoverySync/);
     // Triggers: boot pass, window focus, online event.
@@ -305,12 +296,8 @@ describe("[gate] Durable Chat Journal — auditor verdict 2026-05-08", () => {
     const app = readFileSync(resolve(repoRoot, "src/App.tsx"), "utf8");
     expect(app).toMatch(/startRecoverySync\(\)/);
   });
-  it.todo(
-    "[scenario 5/6] wrong origin → app blocks or warns, no chat persists if not allowed",
-  );
-  it.todo(
-    "[scenario 6/6] project switch → turn from project A never lands in project B journal",
-  );
+  it.todo("[scenario 5/6] wrong origin → app blocks or warns, no chat persists if not allowed");
+  it.todo("[scenario 6/6] project switch → turn from project A never lands in project B journal");
 });
 
 // Companion describe — invariants that ARE active today and must stay green.
@@ -346,9 +333,7 @@ describe("[gate] persistence baseline that already works", () => {
     // Pull the literal union out of the source — order-insensitive.
     const tsMatch = turnsSrc.match(/export type AiStatus\s*=\s*([^;]+);/);
     expect(tsMatch, "AiStatus type not found in chat-turns.ts").not.toBeNull();
-    const tsValues = (tsMatch![1].match(/"[a-z]+"/g) ?? [])
-      .map((s) => s.slice(1, -1))
-      .sort();
+    const tsValues = (tsMatch![1].match(/"[a-z]+"/g) ?? []).map((s) => s.slice(1, -1)).sort();
     expect(tsValues).toEqual([...expected].sort());
 
     const schemaSrc = readFileSync(resolve(repoRoot, "src/lib/schemas.ts"), "utf8");
@@ -446,7 +431,10 @@ describe("[gate] persistence baseline that already works", () => {
     // Watchdog must stop on done/error/cancel paths so a finished
     // stream can't fire a delayed interrupt.
     const stopOccurrences = (src.match(/watchdogRef\.current\?\.stop\(\)/g) ?? []).length;
-    expect(stopOccurrences, "watchdog must be stopped in done/error/cancel paths").toBeGreaterThanOrEqual(3);
+    expect(
+      stopOccurrences,
+      "watchdog must be stopped in done/error/cancel paths",
+    ).toBeGreaterThanOrEqual(3);
   });
 });
 

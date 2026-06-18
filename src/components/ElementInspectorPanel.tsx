@@ -176,8 +176,7 @@ export function ElementInspectorPanel({
             }}
           >
             {selection.boundingBox.width} × {selection.boundingBox.height} px
-            {" @ "}
-            ({selection.boundingBox.x}, {selection.boundingBox.y})
+            {" @ "}({selection.boundingBox.x}, {selection.boundingBox.y})
           </span>
         </Field>
 

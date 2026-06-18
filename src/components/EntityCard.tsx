@@ -1,7 +1,6 @@
 // EntityCard — unified card pattern for HomeScreen v8.
 //
-// two refinements per user spec:
-//   "quero os dots horizontais e tira essa bola verde do card."
+// two refinements per spec — horizontal dots and no green dot on the card:
 //   · Three-dot glyph rotated to HORIZONTAL (⋯ instead of ⋮). Reads as
 //     "more options" without colliding visually with the vertical chevrons
 //     used elsewhere in the app (provider rows, dropdowns).
@@ -100,11 +99,12 @@ export function EntityCard({
   // Normalise: if `onDelete` was passed without explicit actions, shape a
   // one-item menu so every card uses the same control surface (footer
   // dots). Eliminates the legacy `.entity-card-x` corner button.
-  const effectiveActions: EntityCardAction[] | undefined = actions && actions.length > 0
-    ? actions
-    : (onDelete
+  const effectiveActions: EntityCardAction[] | undefined =
+    actions && actions.length > 0
+      ? actions
+      : onDelete
         ? [{ label: deleteLabel, onSelect: onDelete, tone: "danger" as const }]
-        : undefined);
+        : undefined;
   const hasMenu = Array.isArray(effectiveActions) && effectiveActions.length > 0;
 
   return (
@@ -123,12 +123,16 @@ export function EntityCard({
             {subtitle && (
               <div
                 className="home-pcard-sub"
-                style={subtitleMono ? {
-                  fontFamily: "var(--df-font-mono)",
-                  color: "var(--df-text-faint)",
-                  fontSize: "var(--df-text-xs)",
-                  letterSpacing: "0.01em",
-                } : undefined}
+                style={
+                  subtitleMono
+                    ? {
+                        fontFamily: "var(--df-font-mono)",
+                        color: "var(--df-text-faint)",
+                        fontSize: "var(--df-text-xs)",
+                        letterSpacing: "0.01em",
+                      }
+                    : undefined
+                }
               >
                 {subtitle}
               </div>
@@ -217,9 +221,7 @@ export function EntityCard({
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background =
-                    a.tone === "danger"
-                      ? "rgba(255,107,107,0.1)"
-                      : "var(--df-interactive-hover)";
+                    a.tone === "danger" ? "rgba(255,107,107,0.1)" : "var(--df-interactive-hover)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "none";

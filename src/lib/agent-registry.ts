@@ -8,12 +8,7 @@
 import { BRIDGE_URL } from "@/lib/claude-bridge";
 
 // V1 beta CLI roster. Mirrors AGENT_DEFS in apps/daemon/src/index.mjs.
-export type AgentId =
-  | "claude"
-  | "codex"
-  | "gemini"
-  | "opencode"
-  | "kimi";
+export type AgentId = "claude" | "codex" | "gemini" | "opencode" | "kimi";
 
 export interface DetectedAgent {
   id: AgentId;

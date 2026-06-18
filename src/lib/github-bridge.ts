@@ -31,11 +31,7 @@ export {
   ghDeviceLogout,
   ghListRepos,
 } from "@/lib/claude-bridge";
-export type {
-  GhDeviceFlowStart,
-  GhDevicePollStatus,
-  GithubRepo,
-} from "@/lib/claude-bridge";
+export type { GhDeviceFlowStart, GhDevicePollStatus, GithubRepo } from "@/lib/claude-bridge";
 
 export interface GithubUserProfile {
   ok: boolean;
@@ -52,7 +48,7 @@ export interface GithubUserProfile {
 export async function ghGetUser(): Promise<GithubUserProfile> {
   try {
     const res = await fetch(`${BRIDGE_URL}/gh/user`);
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { ok: false, error: body?.error ?? `HTTP ${res.status}` };
     return body as GithubUserProfile;
   } catch (err) {

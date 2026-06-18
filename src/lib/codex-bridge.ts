@@ -66,7 +66,11 @@ async function streamCodexViaBridge(
           }
           if (!dataStr) continue;
           let data: any;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
@@ -92,7 +96,9 @@ async function streamCodexViaBridge(
     }
   })();
   return () => {
-    try { controller.abort(); } catch {}
+    try {
+      controller.abort();
+    } catch {}
   };
 }
 
@@ -104,10 +110,7 @@ export function streamCodex(
   return streamCodexViaBridge(prompt, config, callbacks);
 }
 
-export async function codexOnce(
-  prompt: string,
-  config: CodexConfig = {},
-): Promise<string> {
+export async function codexOnce(prompt: string, config: CodexConfig = {}): Promise<string> {
   const res = await fetch(`${BRIDGE_URL}/codex/once`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

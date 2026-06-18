@@ -2,18 +2,15 @@ import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { ElementInspectorPanel } from "./ElementInspectorPanel";
-import {
-  ELEMENT_OVERLAY_SOURCE_ID,
-  type ElementSelectedPayload,
-} from "@/runtime/element-overlay";
+import { ELEMENT_OVERLAY_SOURCE_ID, type ElementSelectedPayload } from "@/runtime/element-overlay";
 
 const fixture: ElementSelectedPayload = {
   source: ELEMENT_OVERLAY_SOURCE_ID,
   type: "df:element-selected",
   selector: "main > section:nth-of-type(2) > h2",
   xpath: "/html/body/main/section[2]/h2",
-  outerHtml: "<h2 class=\"title\">Hello</h2>",
-  parentOuterHtml: "<section><h2 class=\"title\">Hello</h2></section>",
+  outerHtml: '<h2 class="title">Hello</h2>',
+  parentOuterHtml: '<section><h2 class="title">Hello</h2></section>',
   textContent: "Hello",
   tagName: "h2",
   attrs: { class: "title", "data-test": "x" },

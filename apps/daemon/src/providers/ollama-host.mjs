@@ -10,11 +10,7 @@
 //
 // @file providers/ollama-host.mjs
 
-const DEFAULT_HOSTS = [
-  "http://127.0.0.1:11434",
-  "http://localhost:11434",
-  "http://[::1]:11434",
-];
+const DEFAULT_HOSTS = ["http://127.0.0.1:11434", "http://localhost:11434", "http://[::1]:11434"];
 
 /** Candidate hosts in probe order. A DF_OLLAMA_HOST override collapses the
  *  list to a single explicit host (no fallback — the user said where it is). */
@@ -179,7 +175,9 @@ export function resolveNumCtx(maxContext, envValue) {
  * @returns {boolean} desired think intent (before capability gating)
  */
 export function parseEnvThink(envValue) {
-  const v = String(envValue ?? "").trim().toLowerCase();
+  const v = String(envValue ?? "")
+    .trim()
+    .toLowerCase();
   if (v === "0" || v === "false" || v === "off" || v === "no") return false;
   // "", "auto", "1", "true", "on", anything else → desire thinking
   return true;

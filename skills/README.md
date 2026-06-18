@@ -2,9 +2,10 @@
 
 Skills are markdown files (`SKILL.md`) describing a slash command. The
 DesignFactory runtime walks this directory at startup and exposes each
-skill in the chat slash menu as `/<trigger>`. Every provider — Claude,
-Codex, Gemini, Cursor, Aider, OpenRouter, Anthropic API, Ollama,
-Qwen, DeepSeek — consumes the same set.
+skill in the chat slash menu as `/<trigger>`. Every provider — the five
+CLI agents (Claude Code, Codex, Gemini, Opencode, Kimi), the four BYOK
+API adapters (Anthropic, OpenAI, Gemini, OpenRouter), and local Ollama —
+consumes the same set.
 
 ## Canonical path
 
@@ -42,7 +43,7 @@ System prompt body that the provider receives when the user invokes
 
 ## Provider parity
 
-The single registry powers all 13 DF providers. CLI providers
-(Claude, Codex, Gemini, Cursor, Copilot, Crush, Aider) AND
-artifact-driven providers (OpenRouter, Anthropic API, Ollama, Qwen,
-DeepSeek, OpenCode) read from the same source.
+The single registry powers all 10 DF providers. CLI providers
+(Claude Code, Codex, Gemini, Opencode, Kimi) AND artifact-driven
+providers (Anthropic API, OpenAI API, Gemini API, OpenRouter, Ollama)
+read from the same source.

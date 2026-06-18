@@ -28,12 +28,40 @@ import { warn } from "@/lib/error-surface";
 // Empty value = use baseline.
 
 const DIAL_LABELS: Record<DialKey, { label: string; tags: Record<keyof DialDirection, string> }> = {
-  density:      { label: "Density",      tags: { extremeLow: "Spare",      softLow: "Quiet",        softHigh: "Layered",   extremeHigh: "Dense"        } },
-  motion:       { label: "Motion",       tags: { extremeLow: "Inert",      softLow: "Quiet",        softHigh: "Animated",  extremeHigh: "Kinetic"      } },
-  contrast:     { label: "Contrast",     tags: { extremeLow: "Whisper",    softLow: "Muted",        softHigh: "Bold",      extremeHigh: "Electric"     } },
-  interactions: { label: "Interactions", tags: { extremeLow: "Read-only",  softLow: "Quiet",        softHigh: "Playful",   extremeHigh: "Tactile"      } },
-  surface:      { label: "Surface",      tags: { extremeLow: "Flat",       softLow: "Soft",         softHigh: "Tactile",   extremeHigh: "Skeu"         } },
-  originality:  { label: "Originality",  tags: { extremeLow: "Strict",     softLow: "Conventional", softHigh: "Authorial", extremeHigh: "Experimental" } },
+  density: {
+    label: "Density",
+    tags: { extremeLow: "Spare", softLow: "Quiet", softHigh: "Layered", extremeHigh: "Dense" },
+  },
+  motion: {
+    label: "Motion",
+    tags: { extremeLow: "Inert", softLow: "Quiet", softHigh: "Animated", extremeHigh: "Kinetic" },
+  },
+  contrast: {
+    label: "Contrast",
+    tags: { extremeLow: "Whisper", softLow: "Muted", softHigh: "Bold", extremeHigh: "Electric" },
+  },
+  interactions: {
+    label: "Interactions",
+    tags: {
+      extremeLow: "Read-only",
+      softLow: "Quiet",
+      softHigh: "Playful",
+      extremeHigh: "Tactile",
+    },
+  },
+  surface: {
+    label: "Surface",
+    tags: { extremeLow: "Flat", softLow: "Soft", softHigh: "Tactile", extremeHigh: "Skeu" },
+  },
+  originality: {
+    label: "Originality",
+    tags: {
+      extremeLow: "Strict",
+      softLow: "Conventional",
+      softHigh: "Authorial",
+      extremeHigh: "Experimental",
+    },
+  },
 };
 
 // Stop → slider value, for the "(0)"/"(25)"/etc hints next to each
@@ -56,7 +84,9 @@ function legacyKey(dial: DialKey, side: "low" | "high"): string {
   return `tasteDial:${dial}:${side}`;
 }
 
-export async function readTasteDialOverrides(): Promise<Partial<Record<DialKey, Partial<DialDirection>>>> {
+export async function readTasteDialOverrides(): Promise<
+  Partial<Record<DialKey, Partial<DialDirection>>>
+> {
   const out: Partial<Record<DialKey, Partial<DialDirection>>> = {};
   await Promise.all(
     DIAL_KEYS.flatMap((dial) =>
@@ -67,7 +97,9 @@ export async function readTasteDialOverrides(): Promise<Partial<Record<DialKey, 
             if (!out[dial]) out[dial] = {};
             (out[dial] as DialDirection)[stop] = raw;
           }
-        } catch { /* tolerate; baseline kicks in */ }
+        } catch {
+          /* tolerate; baseline kicks in */
+        }
       }),
     ),
   );
@@ -75,22 +107,26 @@ export async function readTasteDialOverrides(): Promise<Partial<Record<DialKey, 
   // when those targets are still empty. Best-effort; failure leaves the
   // baseline in place rather than dropping the override.
   await Promise.all(
-    DIAL_KEYS.flatMap((dial) => ([
-      { legacy: "low" as const,  target: "extremeLow"  as keyof DialDirection },
-      { legacy: "high" as const, target: "extremeHigh" as keyof DialDirection },
-    ]).map(async ({ legacy, target }) => {
-      const existing = out[dial]?.[target];
-      if (typeof existing === "string" && existing.trim().length > 0) return;
-      try {
-        const raw = await db.getSetting(legacyKey(dial, legacy));
-        if (typeof raw !== "string" || !raw.trim()) return;
-        if (!out[dial]) out[dial] = {};
-        (out[dial] as DialDirection)[target] = raw;
-        // Persist forward + clear legacy so we don't re-migrate next mount.
-        await db.setSetting(settingKey(dial, target), raw).catch(() => {});
-        await db.setSetting(legacyKey(dial, legacy), "").catch(() => {});
-      } catch { /* tolerate */ }
-    })),
+    DIAL_KEYS.flatMap((dial) =>
+      [
+        { legacy: "low" as const, target: "extremeLow" as keyof DialDirection },
+        { legacy: "high" as const, target: "extremeHigh" as keyof DialDirection },
+      ].map(async ({ legacy, target }) => {
+        const existing = out[dial]?.[target];
+        if (typeof existing === "string" && existing.trim().length > 0) return;
+        try {
+          const raw = await db.getSetting(legacyKey(dial, legacy));
+          if (typeof raw !== "string" || !raw.trim()) return;
+          if (!out[dial]) out[dial] = {};
+          (out[dial] as DialDirection)[target] = raw;
+          // Persist forward + clear legacy so we don't re-migrate next mount.
+          await db.setSetting(settingKey(dial, target), raw).catch(() => {});
+          await db.setSetting(legacyKey(dial, legacy), "").catch(() => {});
+        } catch {
+          /* tolerate */
+        }
+      }),
+    ),
   );
   return out;
 }
@@ -99,10 +135,13 @@ export function TasteDialEditor() {
   // Local state mirrors what's in db.settings. We hydrate on mount and
   // save on blur (avoid hammering the bridge on every keystroke).
   const [values, setValues] = useState<Record<DialKey, DialDirection>>(() =>
-    DIAL_KEYS.reduce((acc, k) => {
-      acc[k] = { ...DEFAULT_DIAL_LANGUAGE[k] };
-      return acc;
-    }, {} as Record<DialKey, DialDirection>),
+    DIAL_KEYS.reduce(
+      (acc, k) => {
+        acc[k] = { ...DEFAULT_DIAL_LANGUAGE[k] };
+        return acc;
+      },
+      {} as Record<DialKey, DialDirection>,
+    ),
   );
   const [savedTickByKey, setSavedTickByKey] = useState<Partial<Record<string, number>>>({});
 
@@ -117,16 +156,18 @@ export function TasteDialEditor() {
           const o = overrides[dial];
           if (!o) continue;
           next[dial] = {
-            extremeLow:  o.extremeLow  ?? prev[dial].extremeLow,
-            softLow:     o.softLow     ?? prev[dial].softLow,
-            softHigh:    o.softHigh    ?? prev[dial].softHigh,
+            extremeLow: o.extremeLow ?? prev[dial].extremeLow,
+            softLow: o.softLow ?? prev[dial].softLow,
+            softHigh: o.softHigh ?? prev[dial].softHigh,
             extremeHigh: o.extremeHigh ?? prev[dial].extremeHigh,
           };
         }
         return next;
       });
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const persist = useCallback(async (dial: DialKey, stop: keyof DialDirection, text: string) => {
@@ -134,13 +175,9 @@ export function TasteDialEditor() {
     const baseline = DEFAULT_DIAL_LANGUAGE[dial][stop];
     // Empty OR matches baseline → clear the override.
     if (!trimmed || trimmed === baseline) {
-      await db
-        .setSetting(settingKey(dial, stop), "")
-        .catch(warn("setSetting:tasteDial::cleared"));
+      await db.setSetting(settingKey(dial, stop), "").catch(warn("setSetting:tasteDial::cleared"));
     } else {
-      await db
-        .setSetting(settingKey(dial, stop), text)
-        .catch(warn("setSetting:tasteDial::saved"));
+      await db.setSetting(settingKey(dial, stop), text).catch(warn("setSetting:tasteDial::saved"));
     }
     const key = settingKey(dial, stop);
     setSavedTickByKey((p) => ({ ...p, [key]: Date.now() }));
@@ -154,13 +191,16 @@ export function TasteDialEditor() {
     }, 1800);
   }, []);
 
-  const handleReset = useCallback((dial: DialKey, stop: keyof DialDirection) => {
-    setValues((p) => ({
-      ...p,
-      [dial]: { ...p[dial], [stop]: DEFAULT_DIAL_LANGUAGE[dial][stop] },
-    }));
-    void persist(dial, stop, DEFAULT_DIAL_LANGUAGE[dial][stop]);
-  }, [persist]);
+  const handleReset = useCallback(
+    (dial: DialKey, stop: keyof DialDirection) => {
+      setValues((p) => ({
+        ...p,
+        [dial]: { ...p[dial], [stop]: DEFAULT_DIAL_LANGUAGE[dial][stop] },
+      }));
+      void persist(dial, stop, DEFAULT_DIAL_LANGUAGE[dial][stop]);
+    },
+    [persist],
+  );
 
   return (
     <>
@@ -169,7 +209,6 @@ export function TasteDialEditor() {
           e edição". InsumosPanel's parent header + active sub-tab pill
           already identify this surface; readers go straight to the dials. */}
       <section className="settings-group" style={{ borderTop: 0, paddingTop: 0 }}>
-
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           {DIAL_KEYS.map((dial) => {
             const labels = DIAL_LABELS[dial];
@@ -184,39 +223,45 @@ export function TasteDialEditor() {
                   background: "var(--df-surface-elevated)",
                 }}
               >
-                <div style={{
-                  fontFamily: "var(--df-font-mono)",
-                  fontSize: 11,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.4,
-                  color: "var(--df-text-faint)",
-                  marginBottom: 12,
-                }}>
+                <div
+                  style={{
+                    fontFamily: "var(--df-font-mono)",
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.4,
+                    color: "var(--df-text-faint)",
+                    marginBottom: 12,
+                  }}
+                >
                   {labels.label}
                 </div>
 
                 {DIAL_STOPS.map((stop, i) => (
                   <div key={stop}>
                     {i === 2 && (
-                      <div style={{
-                        margin: "12px 0",
-                        height: 1,
-                        background: "var(--df-border-subtle)",
-                        position: "relative",
-                      }}>
-                        <span style={{
-                          position: "absolute",
-                          left: "50%",
-                          top: -8,
-                          transform: "translateX(-50%)",
-                          background: "var(--df-surface-elevated)",
-                          padding: "0 8px",
-                          fontFamily: "var(--df-font-mono)",
-                          fontSize: 9,
-                          textTransform: "uppercase",
-                          letterSpacing: 0.4,
-                          color: "var(--df-text-faint)",
-                        }}>
+                      <div
+                        style={{
+                          margin: "12px 0",
+                          height: 1,
+                          background: "var(--df-border-subtle)",
+                          position: "relative",
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: "absolute",
+                            left: "50%",
+                            top: -8,
+                            transform: "translateX(-50%)",
+                            background: "var(--df-surface-elevated)",
+                            padding: "0 8px",
+                            fontFamily: "var(--df-font-mono)",
+                            fontSize: 9,
+                            textTransform: "uppercase",
+                            letterSpacing: 0.4,
+                            color: "var(--df-text-faint)",
+                          }}
+                        >
                           50 · neutral (no prompt)
                         </span>
                       </div>
@@ -229,7 +274,9 @@ export function TasteDialEditor() {
                       value={cur[stop]}
                       baseline={DEFAULT_DIAL_LANGUAGE[dial][stop]}
                       saved={!!savedTickByKey[settingKey(dial, stop)]}
-                      onChange={(text) => setValues((p) => ({ ...p, [dial]: { ...p[dial], [stop]: text } }))}
+                      onChange={(text) =>
+                        setValues((p) => ({ ...p, [dial]: { ...p[dial], [stop]: text } }))
+                      }
                       onPersist={(text) => persist(dial, stop, text)}
                       onReset={() => handleReset(dial, stop)}
                     />
@@ -258,21 +305,49 @@ interface DialStopProps {
   onReset: () => void;
 }
 
-function DialStop({ dial, stop, tag, stopValue, value, baseline, saved, onChange, onPersist, onReset }: DialStopProps) {
+function DialStop({
+  dial,
+  stop,
+  tag,
+  stopValue,
+  value,
+  baseline,
+  saved,
+  onChange,
+  onPersist,
+  onReset,
+}: DialStopProps) {
   const isOverride = value.trim() !== baseline.trim() && value.trim().length > 0;
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{
-          fontFamily: "var(--df-font-mono)",
-          fontSize: 10,
-          textTransform: "uppercase",
-          letterSpacing: 0.4,
-          color: "var(--df-text-secondary)",
-        }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 4,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: "var(--df-font-mono)",
+            fontSize: 10,
+            textTransform: "uppercase",
+            letterSpacing: 0.4,
+            color: "var(--df-text-secondary)",
+          }}
+        >
           {stopValue} · {tag}
         </span>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 10, color: "var(--df-text-faint)" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            fontSize: 10,
+            color: "var(--df-text-faint)",
+          }}
+        >
           {isOverride && <span>● override</span>}
           {saved && <span style={{ color: "var(--df-accent-ok, #5faa54)" }}>saved</span>}
           <button

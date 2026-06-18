@@ -1,130 +1,222 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Pricing — Three plans</title>
-  <style>
-    :root {
-      --ink: #1a1a17;
-      --paper: #fafaf7;
-      --muted: #6b6b66;
-      --line: rgba(26,26,23,0.10);
-      --raised: #ffffff;
-      --accent: #4a3aff;
-    }
-    @media (prefers-color-scheme: dark) {
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pricing — Three plans</title>
+    <style>
       :root {
-        --ink: #f5f5ef; --paper: #14140f; --muted: #999a91;
-        --line: rgba(245,245,239,0.10); --raised: #1f1f19;
+        --ink: #1a1a17;
+        --paper: #fafaf7;
+        --muted: #6b6b66;
+        --line: rgba(26, 26, 23, 0.1);
+        --raised: #ffffff;
+        --accent: #4a3aff;
       }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-    }
-    html, body { margin: 0; }
-    body {
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--paper);
-      color: var(--ink);
-      font-size: 16px;
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
-    main { max-width: 1040px; margin: 0 auto; padding: 80px 24px; }
-    header { text-align: center; margin-bottom: 48px; }
-    h1 { font-size: 38px; letter-spacing: -0.02em; margin: 0 0 8px; }
-    .sub { color: var(--muted); font-size: 16px; margin: 0; }
-    .grid {
-      display: grid; gap: 18px;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    }
-    .plan {
-      background: var(--raised);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 28px 24px 24px;
-      display: flex; flex-direction: column; gap: 14px;
-      transition: transform 160ms ease-out, box-shadow 160ms ease-out;
-    }
-    .plan:hover { transform: translateY(-2px); }
-    .plan.is-featured {
-      background: var(--ink);
-      color: var(--paper);
-      box-shadow: 0 18px 32px -12px rgba(26,26,23,0.18);
-    }
-    .plan.is-featured .price-cents,
-    .plan.is-featured .meta { color: rgba(255,255,255,0.65); }
-    .plan-name { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
-    .plan.is-featured .plan-name { color: rgba(255,255,255,0.7); }
-    .price {
-      font-variant-numeric: tabular-nums;
-      font-weight: 600; letter-spacing: -0.02em;
-      display: flex; align-items: baseline; gap: 4px;
-    }
-    .price-int { font-size: 44px; }
-    .price-cents { font-size: 18px; color: var(--muted); }
-    .meta { font-size: 13px; color: var(--muted); margin: 0; }
-    ul { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; font-size: 14px; }
-    li::before { content: "✓ "; color: var(--accent); margin-right: 2px; }
-    .plan.is-featured li::before { color: #b3a8ff; }
-    .cta {
-      margin-top: 4px; padding: 10px 14px;
-      background: transparent; color: inherit;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      font: inherit; font-size: 14px; font-weight: 500;
-      cursor: pointer;
-      transition: background 120ms ease-out;
-    }
-    .plan.is-featured .cta { background: var(--paper); color: var(--ink); border-color: transparent; }
-    .cta:hover { background: var(--line); }
-    .plan.is-featured .cta:hover { background: rgba(250,250,247,0.92); }
-  </style>
-</head>
-<body>
-  <main>
-    <header>
-      <h1>Pick a plan that fits the team you have today.</h1>
-      <p class="sub">Switch any time. Annual saves ~17%.</p>
-    </header>
-    <section class="grid" aria-label="Plans">
-      <article class="plan">
-        <p class="plan-name">Solo</p>
-        <div class="price"><span class="price-int">$9</span><span class="price-cents">/mo</span></div>
-        <p class="meta">Per user. Cancel any time.</p>
-        <ul>
-          <li>Unlimited projects</li>
-          <li>Local-first sync</li>
-          <li>Single workspace</li>
-        </ul>
-        <button class="cta" type="button">Start free</button>
-      </article>
-      <article class="plan is-featured" aria-label="Most popular">
-        <p class="plan-name">Team</p>
-        <div class="price"><span class="price-int">$24</span><span class="price-cents">/mo · user</span></div>
-        <p class="meta">From 3 seats. Annual billed up-front.</p>
-        <ul>
-          <li>Everything in Solo</li>
-          <li>Shared design systems</li>
-          <li>Role permissions</li>
-          <li>Audit log</li>
-        </ul>
-        <button class="cta" type="button">Try Team free</button>
-      </article>
-      <article class="plan">
-        <p class="plan-name">Studio</p>
-        <div class="price"><span class="price-int">$89</span><span class="price-cents">/mo · user</span></div>
-        <p class="meta">From 10 seats. Includes onboarding.</p>
-        <ul>
-          <li>Everything in Team</li>
-          <li>SSO + SCIM</li>
-          <li>Dedicated workspace</li>
-          <li>Priority support</li>
-        </ul>
-        <button class="cta" type="button">Talk to sales</button>
-      </article>
-    </section>
-  </main>
-</body>
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ink: #f5f5ef;
+          --paper: #14140f;
+          --muted: #999a91;
+          --line: rgba(245, 245, 239, 0.1);
+          --raised: #1f1f19;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 80px 24px;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 48px;
+      }
+      h1 {
+        font-size: 38px;
+        letter-spacing: -0.02em;
+        margin: 0 0 8px;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 16px;
+        margin: 0;
+      }
+      .grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+      .plan {
+        background: var(--raised);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 28px 24px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        transition:
+          transform 160ms ease-out,
+          box-shadow 160ms ease-out;
+      }
+      .plan:hover {
+        transform: translateY(-2px);
+      }
+      .plan.is-featured {
+        background: var(--ink);
+        color: var(--paper);
+        box-shadow: 0 18px 32px -12px rgba(26, 26, 23, 0.18);
+      }
+      .plan.is-featured .price-cents,
+      .plan.is-featured .meta {
+        color: rgba(255, 255, 255, 0.65);
+      }
+      .plan-name {
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0;
+      }
+      .plan.is-featured .plan-name {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .price {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+      .price-int {
+        font-size: 44px;
+      }
+      .price-cents {
+        font-size: 18px;
+        color: var(--muted);
+      }
+      .meta {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 8px 0 0;
+        display: grid;
+        gap: 8px;
+        font-size: 14px;
+      }
+      li::before {
+        content: "✓ ";
+        color: var(--accent);
+        margin-right: 2px;
+      }
+      .plan.is-featured li::before {
+        color: #b3a8ff;
+      }
+      .cta {
+        margin-top: 4px;
+        padding: 10px 14px;
+        background: transparent;
+        color: inherit;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 120ms ease-out;
+      }
+      .plan.is-featured .cta {
+        background: var(--paper);
+        color: var(--ink);
+        border-color: transparent;
+      }
+      .cta:hover {
+        background: var(--line);
+      }
+      .plan.is-featured .cta:hover {
+        background: rgba(250, 250, 247, 0.92);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Pick a plan that fits the team you have today.</h1>
+        <p class="sub">Switch any time. Annual saves ~17%.</p>
+      </header>
+      <section class="grid" aria-label="Plans">
+        <article class="plan">
+          <p class="plan-name">Solo</p>
+          <div class="price">
+            <span class="price-int">$9</span><span class="price-cents">/mo</span>
+          </div>
+          <p class="meta">Per user. Cancel any time.</p>
+          <ul>
+            <li>Unlimited projects</li>
+            <li>Local-first sync</li>
+            <li>Single workspace</li>
+          </ul>
+          <button class="cta" type="button">Start free</button>
+        </article>
+        <article class="plan is-featured" aria-label="Most popular">
+          <p class="plan-name">Team</p>
+          <div class="price">
+            <span class="price-int">$24</span><span class="price-cents">/mo · user</span>
+          </div>
+          <p class="meta">From 3 seats. Annual billed up-front.</p>
+          <ul>
+            <li>Everything in Solo</li>
+            <li>Shared design systems</li>
+            <li>Role permissions</li>
+            <li>Audit log</li>
+          </ul>
+          <button class="cta" type="button">Try Team free</button>
+        </article>
+        <article class="plan">
+          <p class="plan-name">Studio</p>
+          <div class="price">
+            <span class="price-int">$89</span><span class="price-cents">/mo · user</span>
+          </div>
+          <p class="meta">From 10 seats. Includes onboarding.</p>
+          <ul>
+            <li>Everything in Team</li>
+            <li>SSO + SCIM</li>
+            <li>Dedicated workspace</li>
+            <li>Priority support</li>
+          </ul>
+          <button class="cta" type="button">Talk to sales</button>
+        </article>
+      </section>
+    </main>
+  </body>
 </html>

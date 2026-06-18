@@ -77,7 +77,13 @@ function BuiltinRow({ def, override, onChange, onReset }: RowProps) {
           </div>
           <svg
             className={`fmt-row-chev${open ? " is-open" : ""}`}
-            width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
           >
             <path d="m6 9 6 6 6-6" />
           </svg>
@@ -85,13 +91,23 @@ function BuiltinRow({ def, override, onChange, onReset }: RowProps) {
       </div>
       {open && (
         <div className="fmt-row-body">
-          <p style={{
-            fontSize: 12,
-            color: "var(--df-text-muted)",
-            lineHeight: 1.5,
-            margin: 0,
-          }}>
-            <code style={{ fontFamily: "var(--df-font-mono)", fontSize: 11, color: "var(--df-text-faint)" }}>{t(def.triggerKey)}</code>
+          <p
+            style={{
+              fontSize: 12,
+              color: "var(--df-text-muted)",
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
+            <code
+              style={{
+                fontFamily: "var(--df-font-mono)",
+                fontSize: 11,
+                color: "var(--df-text-faint)",
+              }}
+            >
+              {t(def.triggerKey)}
+            </code>
             {" · "}
             {t(def.descKey)}
           </p>
@@ -169,13 +185,19 @@ export function BuiltinPromptsPanel() {
       {/* Hero removed 2026-05-21 — parent InsumosPanel header carries
           the page identity; sub-tabs serve as nav. */}
       <section className="settings-group" style={{ borderTop: 0, paddingTop: 0 }}>
-        <p style={{
-          margin: "0 0 12px",
-          fontSize: "var(--df-text-xs)",
-          color: "var(--df-text-muted)",
-          display: "flex", alignItems: "center", gap: 6,
-        }}>
-          <span aria-hidden style={{ opacity: 0.7 }}>⚠</span>
+        <p
+          style={{
+            margin: "0 0 12px",
+            fontSize: "var(--df-text-xs)",
+            color: "var(--df-text-muted)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <span aria-hidden style={{ opacity: 0.7 }}>
+            ⚠
+          </span>
           {t("builtin.warning")}
         </p>
         <div className="fmt-list">

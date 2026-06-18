@@ -25,7 +25,13 @@ function formatElapsed(ms: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function RatioRegenOverlay({ visible, targetRatio, tokensCount, startedAt, onCancel }: Props) {
+export function RatioRegenOverlay({
+  visible,
+  targetRatio,
+  tokensCount,
+  startedAt,
+  onCancel,
+}: Props) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {

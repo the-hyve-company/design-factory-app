@@ -26,9 +26,9 @@ import type { Lang } from "@/i18n";
 import { ruleTitle, ruleDescription } from "@/i18n/builtin-labels";
 
 /** Localized category label/hint with fallback to the meta-provided string.
- *  Builtin categories (anti-slop, tone, motion, color, language, voice,
- *  layout, custom) have keys in strings.ts; user-added categories (no key)
- *  fall back to the rendered label as-is. */
+ *  Builtin categories (anti-slop, layout, typography, color, depth, motion,
+ *  imagery, icons, forms, states, custom) have keys in strings.ts;
+ *  user-added categories (no key) fall back to the rendered label as-is. */
 function localizedCatLabel(meta: RuleCategoryMeta): string {
   const key = `rules.cat.${meta.id}`;
   const v = tFn(key);
@@ -133,7 +133,10 @@ export function RulesModal({
     });
   }, [open, initial, groups]);
 
-  const { filtered, matched } = useMemo(() => filterGroups(groups, query, lang), [groups, query, lang]);
+  const { filtered, matched } = useMemo(
+    () => filterGroups(groups, query, lang),
+    [groups, query, lang],
+  );
   const visibleGroups = filtered;
   const isExpanded = (catId: string): boolean =>
     query.trim() ? matched.has(catId) : expanded.has(catId);
@@ -179,8 +182,7 @@ export function RulesModal({
     onClose();
   };
 
-  const countInGroup = (rules: Rule[]): number =>
-    rules.filter((r) => draft.has(r.id)).length;
+  const countInGroup = (rules: Rule[]): number => rules.filter((r) => draft.has(r.id)).length;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
@@ -242,7 +244,9 @@ export function RulesModal({
               </button>
             </header>
             <div className="dmv2-search-wrap">
-              <span className="dmv2-search-glyph" aria-hidden>⌕</span>
+              <span className="dmv2-search-glyph" aria-hidden>
+                ⌕
+              </span>
               <input
                 ref={searchRef}
                 className="dmv2-search-input"
@@ -270,7 +274,10 @@ export function RulesModal({
             <span className="dmv2-foot-stat">
               {totalSelected === 0
                 ? t("rules.foot.none")
-                : tf(totalSelected === 1 ? "rules.foot.count" : "rules.foot.count.plural", totalSelected)}
+                : tf(
+                    totalSelected === 1 ? "rules.foot.count" : "rules.foot.count.plural",
+                    totalSelected,
+                  )}
             </span>
             <div className="dmv2-foot-actions">
               <button
@@ -289,11 +296,7 @@ export function RulesModal({
               >
                 {t("modal.clearall")}
               </button>
-              <button
-                type="button"
-                className="dmv2-btn-primary"
-                onClick={apply}
-              >
+              <button type="button" className="dmv2-btn-primary" onClick={apply}>
                 {t("modal.apply")}
               </button>
             </div>
@@ -304,11 +307,7 @@ export function RulesModal({
           {visibleGroups.length === 0 && (
             <div className="dmv2-empty">
               <span>{tf("rules.empty.search", query)}</span>
-              <button
-                type="button"
-                className="dmv2-btn-text"
-                onClick={() => setQuery("")}
-              >
+              <button type="button" className="dmv2-btn-text" onClick={() => setQuery("")}>
                 {t("rules.empty.clear")}
               </button>
             </div>
@@ -392,14 +391,22 @@ function RuleCategorySection({
           <span className="dmv2-cat-count">
             {count > 0 ? `${count} / ${rules.length}` : `${rules.length}`}
           </span>
-          <span className="dmv2-cat-caret" aria-hidden>{open ? "▾" : "▸"}</span>
+          <span className="dmv2-cat-caret" aria-hidden>
+            {open ? "▾" : "▸"}
+          </span>
         </button>
         <button
           type="button"
           className={`dmv2-cat-selectall${allOn ? " is-on" : ""}`}
           onClick={onSelectAll}
-          aria-label={allOn ? `${tFn("rules.selectall.deselect")} ${catLabel}` : `${tFn("rules.selectall.select")} ${catLabel}`}
-          title={allOn ? tFn("rules.selectall.deselect.short") : tFn("rules.selectall.select.short")}
+          aria-label={
+            allOn
+              ? `${tFn("rules.selectall.deselect")} ${catLabel}`
+              : `${tFn("rules.selectall.select")} ${catLabel}`
+          }
+          title={
+            allOn ? tFn("rules.selectall.deselect.short") : tFn("rules.selectall.select.short")
+          }
         >
           {allOn ? "−" : "+"}
         </button>
@@ -449,9 +456,7 @@ function RuleRow({ rule, checked, lang, onToggle }: RuleRowProps) {
         <span className="dmv2-row-check-dot" />
       </span>
       <span className="dmv2-row-label">{title}</span>
-      {desc && (
-        <span className="dmv2-row-desc">{desc}</span>
-      )}
+      {desc && <span className="dmv2-row-desc">{desc}</span>}
     </button>
   );
 }

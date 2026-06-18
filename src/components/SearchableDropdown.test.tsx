@@ -15,11 +15,11 @@ import { SearchableDropdown, type SearchableDropdownItem } from "./SearchableDro
 
 const BIG: SearchableDropdownItem<string>[] = [
   { id: "a", label: "Alpha", payload: "A" },
-  { id: "b", label: "Beta",  payload: "B" },
+  { id: "b", label: "Beta", payload: "B" },
   { id: "g", label: "Gamma", payload: "G" },
   { id: "d", label: "Delta", payload: "D" },
   { id: "e", label: "Epsilon", payload: "E" },
-  { id: "z", label: "Zeta",  payload: "Z" },
+  { id: "z", label: "Zeta", payload: "Z" },
 ];
 
 const SMALL: SearchableDropdownItem<string>[] = BIG.slice(0, 3);
@@ -30,12 +30,14 @@ function html(props: Parameters<typeof SearchableDropdown>[0]): string {
 
 describe("SearchableDropdown — render contract", () => {
   it("returns empty render when open=false", () => {
-    expect(html({
-      open: false,
-      onClose: () => {},
-      items: BIG,
-      onPick: () => {},
-    })).toBe("");
+    expect(
+      html({
+        open: false,
+        onClose: () => {},
+        items: BIG,
+        onPick: () => {},
+      }),
+    ).toBe("");
   });
 
   it("renders all items when open=true", () => {

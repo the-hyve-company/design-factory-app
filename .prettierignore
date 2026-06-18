@@ -1,7 +1,24 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
-artifacts/
-docs/archive/
+
+# Lockfiles (managed by package managers, never reformat)
 package-lock.json
-*.html
+pnpm-lock.yaml
+*.lock
+
+# Runtime / generated state
+.df/
+projects/
+artifacts/
+
+# Generated HTML artifacts (model output, not source)
+docs/archive/
+
+# Static / binary assets
+public/
+
+# Large hand-authored CSS kept byte-for-byte in parity with artifact previews
 src/styles/

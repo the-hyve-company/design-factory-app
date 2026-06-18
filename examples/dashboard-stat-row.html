@@ -1,113 +1,172 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Dashboard — Stat row</title>
-  <style>
-    :root {
-      --ink: #1a1a17;
-      --paper: #fafaf7;
-      --muted: #6b6b66;
-      --line: rgba(26,26,23,0.08);
-      --raised: #ffffff;
-      --up: #1f7a4a;
-      --down: #b14a3a;
-    }
-    @media (prefers-color-scheme: dark) {
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard — Stat row</title>
+    <style>
       :root {
-        --ink: #f5f5ef; --paper: #14140f; --muted: #999a91;
-        --line: rgba(245,245,239,0.10); --raised: #1f1f19;
-        --up: #57c08a; --down: #e07b6a;
+        --ink: #1a1a17;
+        --paper: #fafaf7;
+        --muted: #6b6b66;
+        --line: rgba(26, 26, 23, 0.08);
+        --raised: #ffffff;
+        --up: #1f7a4a;
+        --down: #b14a3a;
       }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-    }
-    html, body { margin: 0; }
-    body {
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--paper);
-      color: var(--ink);
-      font-size: 16px;
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
-    main { max-width: 1200px; margin: 0 auto; padding: 56px 24px; }
-    header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
-    h1 { font-size: 24px; letter-spacing: -0.015em; margin: 0; font-weight: 600; }
-    .timeframe {
-      font-variant-numeric: tabular-nums;
-      font-size: 13px; color: var(--muted);
-      font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    }
-    .row {
-      display: grid; gap: 14px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-    .tile {
-      background: var(--raised);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 20px 22px 18px;
-      display: flex; flex-direction: column; gap: 6px;
-    }
-    .tile-label {
-      font-size: 12px;
-      letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--muted);
-      margin: 0;
-    }
-    .tile-value {
-      font-variant-numeric: tabular-nums;
-      font-size: 32px; font-weight: 600; letter-spacing: -0.015em;
-      margin: 0;
-    }
-    .tile-delta {
-      font-variant-numeric: tabular-nums;
-      font-size: 13px; font-weight: 500;
-      display: inline-flex; align-items: center; gap: 4px;
-      margin-top: 2px;
-    }
-    .tile-delta.up { color: var(--up); }
-    .tile-delta.down { color: var(--down); }
-    .tile-delta::before {
-      content: ""; width: 0; height: 0;
-      border-left: 4px solid transparent; border-right: 4px solid transparent;
-    }
-    .tile-delta.up::before { border-bottom: 5px solid var(--up); }
-    .tile-delta.down::before { border-top: 5px solid var(--down); }
-    .delta-note { color: var(--muted); font-weight: 400; margin-left: 4px; }
-  </style>
-</head>
-<body>
-  <main>
-    <header>
-      <h1>This week</h1>
-      <span class="timeframe">2026-05-15 → 2026-05-21</span>
-    </header>
-    <section class="row" aria-label="Key metrics">
-      <article class="tile">
-        <p class="tile-label">Active accounts</p>
-        <p class="tile-value">8,412</p>
-        <p class="tile-delta up">+312 <span class="delta-note">vs last week</span></p>
-      </article>
-      <article class="tile">
-        <p class="tile-label">Net revenue</p>
-        <p class="tile-value">$24,180</p>
-        <p class="tile-delta up">+5.4% <span class="delta-note">vs last week</span></p>
-      </article>
-      <article class="tile">
-        <p class="tile-label">Churn (annualised)</p>
-        <p class="tile-value">3.1%</p>
-        <p class="tile-delta down">+0.3pp <span class="delta-note">vs last week</span></p>
-      </article>
-      <article class="tile">
-        <p class="tile-label">P95 response time</p>
-        <p class="tile-value">218ms</p>
-        <p class="tile-delta up">−12ms <span class="delta-note">vs last week</span></p>
-      </article>
-    </section>
-  </main>
-</body>
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ink: #f5f5ef;
+          --paper: #14140f;
+          --muted: #999a91;
+          --line: rgba(245, 245, 239, 0.1);
+          --raised: #1f1f19;
+          --up: #57c08a;
+          --down: #e07b6a;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 56px 24px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 28px;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      h1 {
+        font-size: 24px;
+        letter-spacing: -0.015em;
+        margin: 0;
+        font-weight: 600;
+      }
+      .timeframe {
+        font-variant-numeric: tabular-nums;
+        font-size: 13px;
+        color: var(--muted);
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      .row {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .tile {
+        background: var(--raised);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 20px 22px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .tile-label {
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0;
+      }
+      .tile-value {
+        font-variant-numeric: tabular-nums;
+        font-size: 32px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        margin: 0;
+      }
+      .tile-delta {
+        font-variant-numeric: tabular-nums;
+        font-size: 13px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 2px;
+      }
+      .tile-delta.up {
+        color: var(--up);
+      }
+      .tile-delta.down {
+        color: var(--down);
+      }
+      .tile-delta::before {
+        content: "";
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+      }
+      .tile-delta.up::before {
+        border-bottom: 5px solid var(--up);
+      }
+      .tile-delta.down::before {
+        border-top: 5px solid var(--down);
+      }
+      .delta-note {
+        color: var(--muted);
+        font-weight: 400;
+        margin-left: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>This week</h1>
+        <span class="timeframe">2026-05-15 → 2026-05-21</span>
+      </header>
+      <section class="row" aria-label="Key metrics">
+        <article class="tile">
+          <p class="tile-label">Active accounts</p>
+          <p class="tile-value">8,412</p>
+          <p class="tile-delta up">+312 <span class="delta-note">vs last week</span></p>
+        </article>
+        <article class="tile">
+          <p class="tile-label">Net revenue</p>
+          <p class="tile-value">$24,180</p>
+          <p class="tile-delta up">+5.4% <span class="delta-note">vs last week</span></p>
+        </article>
+        <article class="tile">
+          <p class="tile-label">Churn (annualised)</p>
+          <p class="tile-value">3.1%</p>
+          <p class="tile-delta down">+0.3pp <span class="delta-note">vs last week</span></p>
+        </article>
+        <article class="tile">
+          <p class="tile-label">P95 response time</p>
+          <p class="tile-value">218ms</p>
+          <p class="tile-delta up">−12ms <span class="delta-note">vs last week</span></p>
+        </article>
+      </section>
+    </main>
+  </body>
 </html>

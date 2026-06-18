@@ -32,8 +32,12 @@ const PROMPT_B = "Reply with exactly BETA and nothing else.";
 const TOKEN_A = "ALPHA";
 const TOKEN_B = "BETA";
 
-function log(...args) { console.log(...args); }
-function logSection(t) { log(`\n${"━".repeat(8)} ${t} ${"━".repeat(8)}`); }
+function log(...args) {
+  console.log(...args);
+}
+function logSection(t) {
+  log(`\n${"━".repeat(8)} ${t} ${"━".repeat(8)}`);
+}
 
 async function createProjectWithSeed(page, name, seed) {
   // Home → New project → fill name + seed → submit. Returns project URL.
@@ -45,12 +49,16 @@ async function createProjectWithSeed(page, name, seed) {
 
   // Name field (modal has a name input above the prompt textarea on some
   // layouts; absent on others). Try a few locators.
-  const nameInput = page.locator('input[placeholder*="nome" i], input[placeholder*="name" i]').first();
-  if (await nameInput.count() > 0 && await nameInput.isVisible().catch(() => false)) {
+  const nameInput = page
+    .locator('input[placeholder*="nome" i], input[placeholder*="name" i]')
+    .first();
+  if ((await nameInput.count()) > 0 && (await nameInput.isVisible().catch(() => false))) {
     await nameInput.fill(name).catch(() => {});
   }
 
-  const promptInput = page.locator('textarea[placeholder*="descreva" i], textarea[placeholder*="prompt" i], textarea').first();
+  const promptInput = page
+    .locator('textarea[placeholder*="descreva" i], textarea[placeholder*="prompt" i], textarea')
+    .first();
   await promptInput.fill(seed, { timeout: 3000 });
 
   await page.locator('button:has-text("Criar projeto")').first().click({ timeout: 5000 });
@@ -73,8 +81,11 @@ async function visibleChatText(page) {
   // Grab the chat panel's text. Heuristic: find the largest scrollable
   // container whose text mentions our prompt or token. For a robust read,
   // just innerText of the body is enough — the chat is the dominant content.
-  try { return (await page.locator("body").innerText({ timeout: 2000 })) ?? ""; }
-  catch { return ""; }
+  try {
+    return (await page.locator("body").innerText({ timeout: 2000 })) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 (async () => {
@@ -87,14 +98,19 @@ async function visibleChatText(page) {
   try {
     const r = await fetch(`${BRIDGE_URL}/healthz`, { signal: AbortSignal.timeout(3000) });
     if (!r.ok) throw new Error(`bridge healthz ${r.status}`);
-  } catch (e) { console.error("Bridge down:", e.message); process.exit(2); }
+  } catch (e) {
+    console.error("Bridge down:", e.message);
+    process.exit(2);
+  }
 
   const browser = await chromium.launch({ headless: true });
   const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
 
   // Seed provider preference before any page mount
   await ctx.addInitScript((p) => {
-    try { localStorage.setItem("default_provider", JSON.stringify(p)); } catch {}
+    try {
+      localStorage.setItem("default_provider", JSON.stringify(p));
+    } catch {}
   }, PROVIDER);
 
   const page = await ctx.newPage();
@@ -109,8 +125,10 @@ async function visibleChatText(page) {
 
   const result = {
     provider: PROVIDER,
-    project1Url: null, project1Response: null,
-    project2Url: null, project2Response: null,
+    project1Url: null,
+    project1Response: null,
+    project2Url: null,
+    project2Response: null,
     leakDetected: null,
     pass: false,
     notes: [],
@@ -164,14 +182,22 @@ async function visibleChatText(page) {
     result.notes.push(`exception: ${e.message}`);
     result.pass = false;
   } finally {
-    try { await page.screenshot({ path: join(OUT_DIR, "leak-regression.png"), fullPage: true }); } catch {}
+    try {
+      await page.screenshot({ path: join(OUT_DIR, "leak-regression.png"), fullPage: true });
+    } catch {}
     await ctx.close().catch(() => {});
     await browser.close().catch(() => {});
   }
 
   logSection("Result");
   console.log(JSON.stringify({ ...result, consoleErrors }, null, 2));
-  writeFileSync(join(OUT_DIR, "leak-regression.json"), JSON.stringify({ ts: Date.now(), ...result, consoleErrors }, null, 2));
+  writeFileSync(
+    join(OUT_DIR, "leak-regression.json"),
+    JSON.stringify({ ts: Date.now(), ...result, consoleErrors }, null, 2),
+  );
 
   process.exit(result.pass ? 0 : 1);
-})().catch((e) => { console.error("FATAL:", e); process.exit(3); });
+})().catch((e) => {
+  console.error("FATAL:", e);
+  process.exit(3);
+});

@@ -97,9 +97,10 @@ export function saveRecovery(
   const filtered = record.turns.filter((e) => e.turn.id !== turn.id);
   filtered.push({ turn, reason, savedAt: Date.now(), slug: slug ?? null });
   // Trim FIFO to stay under the per-key budget.
-  const trimmed = filtered.length > MAX_ENTRIES_PER_KEY
-    ? filtered.slice(filtered.length - MAX_ENTRIES_PER_KEY)
-    : filtered;
+  const trimmed =
+    filtered.length > MAX_ENTRIES_PER_KEY
+      ? filtered.slice(filtered.length - MAX_ENTRIES_PER_KEY)
+      : filtered;
   try {
     s.setItem(key, JSON.stringify({ ts: Date.now(), turns: trimmed }));
     return true;
@@ -174,10 +175,7 @@ export function clearRecovery(
 }
 
 /** Clear every entry for a project/thread (used after full reconcile). */
-export function clearAllRecovery(
-  projectId: string | null | undefined,
-  threadId: string,
-): void {
+export function clearAllRecovery(projectId: string | null | undefined, threadId: string): void {
   const s = safeStorage();
   if (!s) return;
   s.removeItem(recoveryKey(projectId, threadId));

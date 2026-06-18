@@ -26,17 +26,16 @@
  * Wire-format types. Discriminated unions keep parent and iframe agreed
  * on a finite vocabulary, just like the tweaks bridge.
  */
-export type ElementOverlayOutgoingMessage =
-  | { type: "df:select-mode"; on: boolean };
+export type ElementOverlayOutgoingMessage = { type: "df:select-mode"; on: boolean };
 
 export interface ElementSelectedPayload {
   source: typeof ELEMENT_OVERLAY_SOURCE_ID;
   type: "df:element-selected";
   selector: string;
   xpath: string;
-  outerHtml: string;       // truncated to 800 chars
+  outerHtml: string; // truncated to 800 chars
   parentOuterHtml: string; // truncated to 600 chars
-  textContent: string;     // truncated to 200 chars
+  textContent: string; // truncated to 200 chars
   tagName: string;
   attrs: Record<string, string>;
   boundingBox: { x: number; y: number; width: number; height: number };
@@ -301,10 +300,7 @@ export function injectOverlayIntoHtml(html: string): string {
  * iframe is detached (no `contentWindow`); the panel UI uses that to
  * mirror state.
  */
-export function postSelectModeToIframe(
-  iframe: HTMLIFrameElement,
-  on: boolean,
-): boolean {
+export function postSelectModeToIframe(iframe: HTMLIFrameElement, on: boolean): boolean {
   const win = iframe.contentWindow;
   if (!win) return false;
   win.postMessage({ type: "df:select-mode", on }, "*");
@@ -400,7 +396,11 @@ export function buildAgentPromptFromSelection(sel: ElementSelectedPayload): stri
   parts.push("Change to apply: {{INTENT}}");
   parts.push("");
   parts.push("Constraints:");
-  parts.push("- Modify ONLY the element above. Do not touch siblings, parents, or the global stylesheet.");
-  parts.push("- Preserve the element's id and structural attributes unless the change explicitly requires removing them.");
+  parts.push(
+    "- Modify ONLY the element above. Do not touch siblings, parents, or the global stylesheet.",
+  );
+  parts.push(
+    "- Preserve the element's id and structural attributes unless the change explicitly requires removing them.",
+  );
   return parts.join("\n");
 }

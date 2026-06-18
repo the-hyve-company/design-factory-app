@@ -90,4 +90,3 @@ export function getDefaultPromptBody(id: EditablePromptId): string {
   const entry = DEFAULT_BUILTIN_PROMPTS.find((p) => p.id === id);
   return entry?.body ?? "";
 }
-

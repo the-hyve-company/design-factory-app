@@ -28,7 +28,11 @@ function newThreadId(): string {
   return `chat-${t}${r}`;
 }
 
-function formatTime(ms: number, t: (k: string) => string, tf: (k: string, ...a: Array<string | number>) => string): string {
+function formatTime(
+  ms: number,
+  t: (k: string) => string,
+  tf: (k: string, ...a: Array<string | number>) => string,
+): string {
   if (!ms) return "";
   const diff = Date.now() - ms;
   const s = Math.floor(diff / 1000);
@@ -88,7 +92,16 @@ export function ChatHistoryDropdown({ projectSlug, activeThreadId, onSwitch }: P
         aria-label={t("chat.history.aria")}
         style={{ position: "relative" }}
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
@@ -103,7 +116,16 @@ export function ChatHistoryDropdown({ projectSlug, activeThreadId, onSwitch }: P
             onMouseEnter={(e) => (e.currentTarget.style.background = "var(--df-interactive-hover)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
@@ -121,17 +143,24 @@ export function ChatHistoryDropdown({ projectSlug, activeThreadId, onSwitch }: P
                     role="menuitem"
                     onClick={() => handlePick(th.threadId)}
                     style={threadItemStyle(isActive)}
-                    onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "var(--df-interactive-hover)"; }}
-                    onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      if (!isActive)
+                        e.currentTarget.style.background = "var(--df-interactive-hover)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.background = "transparent";
+                    }}
                   >
                     <div style={threadLabelRowStyle}>
                       <span style={threadLabelStyle}>
-                        {th.firstMsg || (th.threadId === "main" ? t("chat.history.main") : th.threadId)}
+                        {th.firstMsg ||
+                          (th.threadId === "main" ? t("chat.history.main") : th.threadId)}
                       </span>
                       <span style={threadMetaStyle}>{formatTime(th.mtime, t, tf)}</span>
                     </div>
                     <span style={threadCountStyle}>
-                      {th.msgCount} {th.msgCount === 1 ? t("chat.history.msg") : t("chat.history.msgs")}
+                      {th.msgCount}{" "}
+                      {th.msgCount === 1 ? t("chat.history.msg") : t("chat.history.msgs")}
                     </span>
                   </button>
                 );
@@ -167,7 +196,6 @@ const menuStyle: React.CSSProperties = {
   zIndex: 1300,
   isolation: "isolate",
 };
-
 
 const newItemStyle: React.CSSProperties = {
   display: "flex",

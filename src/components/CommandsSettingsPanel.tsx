@@ -26,12 +26,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  loadAllVerbs,
-  type Verb,
-  type VerbCategory,
-  type VerbHue,
-} from "@/runtime/verbs/registry";
+import { loadAllVerbs, type Verb, type VerbCategory, type VerbHue } from "@/runtime/verbs/registry";
 import {
   listCustomCommands,
   writeCustomCommand,
@@ -54,8 +49,12 @@ import { useT, tf } from "@/i18n";
 async function loadHiddenBuiltins(): Promise<Set<string>> {
   const raw = await db.getSetting("commands_hidden_builtins").catch(() => null);
   if (!raw) return new Set();
-  try { const arr = JSON.parse(raw); return new Set(Array.isArray(arr) ? arr : []); }
-  catch { return new Set(); }
+  try {
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
 }
 
 async function saveHiddenBuiltins(s: Set<string>): Promise<void> {
@@ -93,20 +92,20 @@ const DEFAULT_DRAFT: CommandFormDraft = {
 };
 
 const HUE_OPTIONS: ReadonlyArray<{ id: VerbHue; key: string }> = [
-  { id: "cool-blue",   key: "cmd.hue.cool-blue" },
-  { id: "warm-gold",   key: "cmd.hue.warm-gold" },
-  { id: "warm-coral",  key: "cmd.hue.warm-coral" },
+  { id: "cool-blue", key: "cmd.hue.cool-blue" },
+  { id: "warm-gold", key: "cmd.hue.warm-gold" },
+  { id: "warm-coral", key: "cmd.hue.warm-coral" },
   { id: "cool-purple", key: "cmd.hue.cool-purple" },
-  { id: "neutral",     key: "cmd.hue.neutral" },
+  { id: "neutral", key: "cmd.hue.neutral" },
 ];
 
 const CATEGORY_OPTIONS: ReadonlyArray<{ id: VerbCategory; key: string }> = [
-  { id: "evaluate",  key: "cmd.cat.evaluate" },
-  { id: "refine",    key: "cmd.cat.refine" },
+  { id: "evaluate", key: "cmd.cat.evaluate" },
+  { id: "refine", key: "cmd.cat.refine" },
   { id: "direction", key: "cmd.cat.direction" },
-  { id: "enhance",   key: "cmd.cat.enhance" },
-  { id: "fix",       key: "cmd.cat.fix" },
-  { id: "export",    key: "cmd.cat.export" },
+  { id: "enhance", key: "cmd.cat.enhance" },
+  { id: "fix", key: "cmd.cat.fix" },
+  { id: "export", key: "cmd.cat.export" },
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -203,7 +202,7 @@ export function CommandsSettingsPanel() {
         const cfg = (await readGlobalConfig()) as Record<string, unknown> | null;
         const arr = cfg?.commands_disabled;
         return Array.isArray(arr) ? (arr as string[]) : [];
-      }
+      },
     );
     setVerbs(all);
     setDisabled(new Set(all.filter((v) => v.disabled).map((v) => v.id)));
@@ -213,7 +212,9 @@ export function CommandsSettingsPanel() {
     window.dispatchEvent(new Event("df-verbs-changed"));
   };
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => {
+    void refresh();
+  }, []);
 
   const handleHideBuiltin = async (v: Verb) => {
     if (!confirm(tf("cmd.hide.confirm", v.label))) return;
@@ -237,13 +238,16 @@ export function CommandsSettingsPanel() {
   // (mono kicker shows "padrão" / "default") then customs (user-created).
   // Hidden built-ins are filtered out; surfaced in the restore tray.
   const visibleVerbs = useMemo(
-    () => verbs.filter((v) => !(hiddenBuiltins.has(v.id) && (v.source === "builtin" || v.source === "override"))),
-    [verbs, hiddenBuiltins]
+    () =>
+      verbs.filter(
+        (v) => !(hiddenBuiltins.has(v.id) && (v.source === "builtin" || v.source === "override")),
+      ),
+    [verbs, hiddenBuiltins],
   );
   const sorted = useMemo(() => {
     return [...visibleVerbs].sort((a, b) => {
       // Builtin (incl override) before custom; then alpha.
-      const sourceWeight = (s: Verb["source"]) => s === "custom" ? 1 : 0;
+      const sourceWeight = (s: Verb["source"]) => (s === "custom" ? 1 : 0);
       const sa = sourceWeight(a.source);
       const sb = sourceWeight(b.source);
       if (sa !== sb) return sa - sb;
@@ -252,8 +256,11 @@ export function CommandsSettingsPanel() {
   }, [visibleVerbs]);
 
   const builtinIds = useMemo(
-    () => new Set(verbs.filter((v) => v.source === "builtin" || v.source === "override").map((v) => v.id)),
-    [verbs]
+    () =>
+      new Set(
+        verbs.filter((v) => v.source === "builtin" || v.source === "override").map((v) => v.id),
+      ),
+    [verbs],
   );
 
   // hiddenList memo removed alongside the restore tray. hiddenBuiltins
@@ -262,7 +269,8 @@ export function CommandsSettingsPanel() {
 
   const handleToggleDisabled = async (id: string, on: boolean) => {
     const next = new Set(disabled);
-    if (on) next.delete(id); else next.add(id);
+    if (on) next.delete(id);
+    else next.add(id);
     setDisabled(next);
     await writeGlobalConfig({ commands_disabled: Array.from(next) } as Record<string, unknown>);
     void refresh();
@@ -297,10 +305,16 @@ export function CommandsSettingsPanel() {
         setError(t("cmd.save.failed"));
       } else {
         setEditingId(null);
-        setDrafts((d) => { const n = { ...d }; delete n[verb.id]; return n; });
+        setDrafts((d) => {
+          const n = { ...d };
+          delete n[verb.id];
+          return n;
+        });
         await refresh();
       }
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleReset = async (verb: Verb) => {
@@ -310,10 +324,16 @@ export function CommandsSettingsPanel() {
       const ok = await deleteCustomCommand(verb.id);
       if (ok) {
         setEditingId(null);
-        setDrafts((d) => { const n = { ...d }; delete n[verb.id]; return n; });
+        setDrafts((d) => {
+          const n = { ...d };
+          delete n[verb.id];
+          return n;
+        });
         await refresh();
       }
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleDelete = async (verb: Verb) => {
@@ -323,10 +343,16 @@ export function CommandsSettingsPanel() {
       const ok = await deleteCustomCommand(verb.id);
       if (ok) {
         setEditingId(null);
-        setDrafts((d) => { const n = { ...d }; delete n[verb.id]; return n; });
+        setDrafts((d) => {
+          const n = { ...d };
+          delete n[verb.id];
+          return n;
+        });
         await refresh();
       }
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleCreate = async () => {
@@ -353,7 +379,9 @@ export function CommandsSettingsPanel() {
       } else {
         setError(t("cmd.alert.create.failed"));
       }
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   // builtinCount/overrideCount/customCount removed alongside the summary
@@ -374,7 +402,10 @@ export function CommandsSettingsPanel() {
         <button
           type="button"
           className="df-btn df-btn--primary"
-          onClick={() => { setError(null); setShowNew((s) => !s); }}
+          onClick={() => {
+            setError(null);
+            setShowNew((s) => !s);
+          }}
         >
           {showNew ? t("cmd.cancel") : t("cmd.new")}
         </button>
@@ -394,7 +425,11 @@ export function CommandsSettingsPanel() {
             <button
               type="button"
               className="df-btn df-btn--ghost"
-              onClick={() => { setShowNew(false); setError(null); setNewDraft(DEFAULT_DRAFT); }}
+              onClick={() => {
+                setShowNew(false);
+                setError(null);
+                setNewDraft(DEFAULT_DRAFT);
+              }}
             >
               {t("cmd.cancel")}
             </button>
@@ -402,7 +437,9 @@ export function CommandsSettingsPanel() {
               type="button"
               className="df-btn df-btn--primary"
               onClick={() => void handleCreate()}
-              disabled={busy || !isValidId(newDraft.id) || !newDraft.label.trim() || !newDraft.body.trim()}
+              disabled={
+                busy || !isValidId(newDraft.id) || !newDraft.label.trim() || !newDraft.body.trim()
+              }
             >
               {busy ? t("cmd.creating") : t("cmd.create")}
             </button>
@@ -415,7 +452,16 @@ export function CommandsSettingsPanel() {
         {sorted.length === 0 && (
           <div className="cmd-empty">
             <div className="cmd-empty-mark" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <polyline points="4 17 10 11 4 5" />
                 <line x1="12" y1="19" x2="20" y2="19" />
               </svg>
@@ -434,9 +480,11 @@ export function CommandsSettingsPanel() {
           const isOn = !disabled.has(v.id);
           const draft = drafts[v.id];
           const sourceBadge =
-            v.source === "override" ? t("cmd.row.pill.edited")
-            : v.source === "custom" ? t("cmd.row.pill.custom")
-            : t("cmd.row.pill.builtin");
+            v.source === "override"
+              ? t("cmd.row.pill.edited")
+              : v.source === "custom"
+                ? t("cmd.row.pill.custom")
+                : t("cmd.row.pill.builtin");
           return (
             <div key={v.id} className={`cmd-row${isOpen ? " is-open" : ""}`}>
               <div className="cmd-row-head">
@@ -464,7 +512,13 @@ export function CommandsSettingsPanel() {
                   <p className="cmd-row-desc">{v.description}</p>
                   <svg
                     className={`cmd-row-chev${isOpen ? " is-open" : ""}`}
-                    width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
                     aria-hidden="true"
                   >
                     <path d="m6 9 6 6 6-6" />
@@ -518,7 +572,9 @@ export function CommandsSettingsPanel() {
                       type="button"
                       className="df-btn df-btn--primary"
                       onClick={() => void handleSave(v)}
-                      disabled={busy || !isValidId(draft.id) || !draft.label.trim() || !draft.body.trim()}
+                      disabled={
+                        busy || !isValidId(draft.id) || !draft.label.trim() || !draft.body.trim()
+                      }
                     >
                       {busy ? t("cmd.saving") : t("cmd.save")}
                     </button>
@@ -568,7 +624,7 @@ function CommandForm({ draft, setDraft, isCreate, lockedId, existingIds }: Comma
           <span className="cmd-field-label">{t("cmd.field.id")}</span>
           <input
             type="text"
-            className={`cmd-field-input cmd-field-input--mono${(!idValid || idDuplicate) ? " is-invalid" : ""}`}
+            className={`cmd-field-input cmd-field-input--mono${!idValid || idDuplicate ? " is-invalid" : ""}`}
             value={draft.id}
             onChange={(e) => handleIdChange(e.target.value)}
             placeholder={t("cmd.id.placeholder")}
@@ -579,10 +635,10 @@ function CommandForm({ draft, setDraft, isCreate, lockedId, existingIds }: Comma
             {lockedId
               ? t("cmd.field.id.locked.help")
               : idDuplicate
-              ? t("cmd.alert.duplicate")
-              : !idValid
-              ? t("cmd.alert.invalid.id")
-              : t("cmd.field.id.help")}
+                ? t("cmd.alert.duplicate")
+                : !idValid
+                  ? t("cmd.alert.invalid.id")
+                  : t("cmd.field.id.help")}
           </span>
         </label>
         <label className="cmd-field">
@@ -619,7 +675,9 @@ function CommandForm({ draft, setDraft, isCreate, lockedId, existingIds }: Comma
             onChange={(e) => update({ category: e.target.value as VerbCategory })}
           >
             {CATEGORY_OPTIONS.map((opt) => (
-              <option key={opt.id} value={opt.id}>{t(opt.key)}</option>
+              <option key={opt.id} value={opt.id}>
+                {t(opt.key)}
+              </option>
             ))}
           </select>
         </label>
@@ -631,7 +689,9 @@ function CommandForm({ draft, setDraft, isCreate, lockedId, existingIds }: Comma
             onChange={(e) => update({ hue: e.target.value as VerbHue })}
           >
             {HUE_OPTIONS.map((opt) => (
-              <option key={opt.id} value={opt.id}>{t(opt.key)}</option>
+              <option key={opt.id} value={opt.id}>
+                {t(opt.key)}
+              </option>
             ))}
           </select>
         </label>

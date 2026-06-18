@@ -7,8 +7,8 @@
 // (`/^---\s*\n[\s\S]*?\n---/m || /^#\s+\S/m`) hard-failed that: no
 // closing fence → frontmatter branch misses, and the body uses `##`
 // (h2, per the generation prompt) not `# ` (h1) → heading branch misses.
-// A 205-line, well-written doc got thrown away. Founder repro 2026-05-29
-// (provider=claude, model=opus, 10663B, looksLikeMd=false).
+// A 205-line, well-written doc got thrown away. Observed with
+// provider=claude, model=opus, 10663B, looksLikeMd=false.
 //
 // coerceDesignMd repairs the common malformations (unclosed frontmatter,
 // whole-body / inline ```markdown fence, short prose lead-in) and then
@@ -64,12 +64,18 @@ export function coerceDesignMd(rawText) {
     const lines = md.split("\n");
     let headingIdx = -1;
     for (let i = 1; i < lines.length; i++) {
-      if (/^#{1,6}\s+\S/.test(lines[i])) { headingIdx = i; break; }
+      if (/^#{1,6}\s+\S/.test(lines[i])) {
+        headingIdx = i;
+        break;
+      }
     }
     const closeLimit = headingIdx === -1 ? lines.length : headingIdx;
     let hasClose = false;
     for (let i = 1; i < closeLimit; i++) {
-      if (lines[i].trim() === "---") { hasClose = true; break; }
+      if (lines[i].trim() === "---") {
+        hasClose = true;
+        break;
+      }
     }
     if (!hasClose && headingIdx !== -1) {
       let end = headingIdx;
@@ -84,5 +90,5 @@ export function coerceDesignMd(rawText) {
   const hasClosedFrontmatter = /^---\s*\n[\s\S]*?\n---\s*(?:\n|$)/.test(md);
   const startsWithHeading = /^#{1,6}\s+\S/.test(md);
   const ok = md.length >= 40 && (hasClosedFrontmatter || startsWithHeading);
-  return { md, ok, reason: ok ? "ok" : (md.length < 40 ? "too-short" : "no-structure") };
+  return { md, ok, reason: ok ? "ok" : md.length < 40 ? "too-short" : "no-structure" };
 }

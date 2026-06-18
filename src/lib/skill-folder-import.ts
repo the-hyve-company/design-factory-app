@@ -16,7 +16,9 @@
 
 import type { CreateSkillInput, FsFile } from "@/lib/claude-bridge";
 
-export type ListFolderFn = (path: string) => Promise<
+export type ListFolderFn = (
+  path: string,
+) => Promise<
   | { entries: Array<{ name: string; path: string; isDir: boolean; size: number }> }
   | { error: string }
   | null
@@ -55,7 +57,12 @@ function textToBase64(text: string): string {
   return btoa(bin);
 }
 
-interface Entry { path: string; name: string; size: number; relPath: string }
+interface Entry {
+  path: string;
+  name: string;
+  size: number;
+  relPath: string;
+}
 
 /**
  * Walk a folder (depth ≤ 3, max 80 entries) and turn it into a
@@ -119,7 +126,11 @@ export async function collectSkillFromFolder(
       const f = await deps.readFileViaBridge(c.path);
       if (!f?.isText) continue;
       const parsed = deps.parseSkillMarkdown(f.content);
-      if (parsed.name) { manifest = c; manifestParsed = parsed; break; }
+      if (parsed.name) {
+        manifest = c;
+        manifestParsed = parsed;
+        break;
+      }
     }
   }
 

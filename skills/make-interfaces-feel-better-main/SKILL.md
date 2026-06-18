@@ -1,6 +1,6 @@
 ---
 name: "make-interfaces-feel-better"
-description: "Design engineering principles for making interfaces feel polished. Use when building UI components, reviewing frontend code, implementing animations, hover states, shadows, borders, typography, micro-interactions, enter/exit animations, or any visual detail work. Triggers on UI polish, design details, \"make it feel better\", \"feels off\", stagger animations, border radius, optical alignment, font smoothing, tabular numbers, image outlines, box shadows."
+description: 'Design engineering principles for making interfaces feel polished. Use when building UI components, reviewing frontend code, implementing animations, hover states, shadows, borders, typography, micro-interactions, enter/exit animations, or any visual detail work. Triggers on UI polish, design details, "make it feel better", "feels off", stagger animations, border radius, optical alignment, font smoothing, tabular numbers, image outlines, box shadows.'
 trigger: "/make-interfaces-feel-better"
 ---
 
@@ -10,12 +10,12 @@ Great interfaces rarely come from a single thing. It's usually a collection of s
 
 ## Quick Reference
 
-| Category | When to Use |
-| --- | --- |
-| [Typography](typography.md) | Text wrapping, font smoothing, tabular numbers |
-| [Surfaces](surfaces.md) | Border radius, optical alignment, shadows, image outlines, hit areas |
-| [Animations](animations.md) | Interruptible animations, enter/exit transitions, icon animations, scale on press |
-| [Performance](performance.md) | Transition specificity, `will-change` usage |
+| Category                      | When to Use                                                                       |
+| ----------------------------- | --------------------------------------------------------------------------------- |
+| [Typography](typography.md)   | Text wrapping, font smoothing, tabular numbers                                    |
+| [Surfaces](surfaces.md)       | Border radius, optical alignment, shadows, image outlines, hit areas              |
+| [Animations](animations.md)   | Interruptible animations, enter/exit transitions, icon animations, scale on press |
+| [Performance](performance.md) | Transition specificity, `will-change` usage                                       |
 
 ## Core Principles
 
@@ -85,18 +85,18 @@ Interactive elements need at least 40×40px hit area. Extend with a pseudo-eleme
 
 ## Common Mistakes
 
-| Mistake | Fix |
-| --- | --- |
-| Same border radius on parent and child | Calculate `outerRadius = innerRadius + padding` |
-| Icons look off-center | Adjust optically with padding or fix SVG directly |
-| Hard borders between sections | Use layered `box-shadow` with transparency |
-| Jarring enter/exit animations | Split, stagger, and keep exits subtle |
-| Numbers cause layout shift | Apply `tabular-nums` |
-| Heavy text on macOS | Apply `antialiased` to root |
-| Animation plays on page load | Add `initial={false}` to `AnimatePresence` |
-| `transition: all` on elements | Specify exact properties |
-| First-frame animation stutter | Add `will-change: transform` (sparingly) |
-| Tiny hit areas on small controls | Extend with pseudo-element to 40×40px |
+| Mistake                                | Fix                                               |
+| -------------------------------------- | ------------------------------------------------- |
+| Same border radius on parent and child | Calculate `outerRadius = innerRadius + padding`   |
+| Icons look off-center                  | Adjust optically with padding or fix SVG directly |
+| Hard borders between sections          | Use layered `box-shadow` with transparency        |
+| Jarring enter/exit animations          | Split, stagger, and keep exits subtle             |
+| Numbers cause layout shift             | Apply `tabular-nums`                              |
+| Heavy text on macOS                    | Apply `antialiased` to root                       |
+| Animation plays on page load           | Add `initial={false}` to `AnimatePresence`        |
+| `transition: all` on elements          | Specify exact properties                          |
+| First-frame animation stutter          | Add `will-change: transform` (sparingly)          |
+| Tiny hit areas on small controls       | Extend with pseudo-element to 40×40px             |
 
 ## Review Output Format
 
@@ -105,22 +105,25 @@ Always present changes as a markdown table with **Before** and **After** columns
 ### Example
 
 #### Concentric border radius
-| Before | After |
-| --- | --- |
+
+| Before                                                      | After                                                          |
+| ----------------------------------------------------------- | -------------------------------------------------------------- |
 | `rounded-xl` on card + `rounded-xl` on inner button (`p-2`) | `rounded-2xl` on card (`12 + 8`), `rounded-lg` on inner button |
-| `border-radius: 16px` on both nested surfaces | Outer `24px`, inner `16px` with `8px` padding |
+| `border-radius: 16px` on both nested surfaces               | Outer `24px`, inner `16px` with `8px` padding                  |
 
 #### Tabular numbers
-| Before | After |
-| --- | --- |
-| `<span>{count}</span>` on animated counter | `<span className="tabular-nums">{count}</span>` |
-| Default numerals on timer | Added `font-variant-numeric: tabular-nums` to root |
+
+| Before                                     | After                                              |
+| ------------------------------------------ | -------------------------------------------------- |
+| `<span>{count}</span>` on animated counter | `<span className="tabular-nums">{count}</span>`    |
+| Default numerals on timer                  | Added `font-variant-numeric: tabular-nums` to root |
 
 #### Scale on press
-| Before | After |
-| --- | --- |
-| `<button className="...">` | Added `active:scale-[0.96] transition-transform` |
-| `scale(0.9)` on press | Raised to `scale(0.96)` — anything below `0.95` feels exaggerated |
+
+| Before                     | After                                                             |
+| -------------------------- | ----------------------------------------------------------------- |
+| `<button className="...">` | Added `active:scale-[0.96] transition-transform`                  |
+| `scale(0.9)` on press      | Raised to `scale(0.96)` — anything below `0.95` feels exaggerated |
 
 Rows should cite the specific file and the specific property that changed when it isn't obvious from the snippet. If a principle was reviewed but nothing needed to change, omit that table entirely — empty tables add noise.
 

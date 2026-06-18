@@ -25,11 +25,11 @@ beforeEach(() => {
 });
 
 describe("rules-taxonomy defaults", () => {
-  it("ships exactly 30 canonical builtin rules", () => {
-    // User reset 2026-05-21: replaced the 5 HYVE-internal rules
-    // with 30 globally-useful rules in DF v1 OSS prep. Each is
-    // written as "problem to avoid + concrete substitute".
-    expect(DEFAULT_BUILTIN_RULES.length).toBe(30);
+  it("ships exactly 50 canonical builtin rules", () => {
+    // 50 brand-agnostic VISUAL taste defaults across 10 categories
+    // (no copy/voice/process rules). Each is written as
+    // "problem to avoid + concrete move".
+    expect(DEFAULT_BUILTIN_RULES.length).toBe(50);
   });
 
   it("all builtins have builtin: true and well-formed ids", () => {
@@ -41,9 +41,9 @@ describe("rules-taxonomy defaults", () => {
     }
   });
 
-  it("anti-slop category covers the 8 anti-slop rules", () => {
+  it("anti-slop category covers the 5 anti-slop rules", () => {
     const as = DEFAULT_BUILTIN_RULES.filter((r) => r.category === "anti-slop");
-    expect(as.length).toBe(8);
+    expect(as.length).toBe(5);
     expect(as.every((r) => r.id.startsWith("as-"))).toBe(true);
   });
 
@@ -81,7 +81,12 @@ describe("rules-taxonomy effective catalog", () => {
   });
 
   it("user rules append to effective catalog", () => {
-    const u: Rule = { id: "usr-custom-x", title: "Custom rule X", category: "custom", builtin: false };
+    const u: Rule = {
+      id: "usr-custom-x",
+      title: "Custom rule X",
+      category: "custom",
+      builtin: false,
+    };
     setUserRules([u]);
     const eff = getEffectiveRules();
     expect(eff.find((r) => r.id === "usr-custom-x")).toEqual(u);
@@ -89,7 +94,9 @@ describe("rules-taxonomy effective catalog", () => {
   });
 
   it("builtin overrides apply title/description without changing id", () => {
-    setBuiltinOverrides({ "as-no-decorative-emojis": { title: "Sem emojis (pt)", description: "nada" } });
+    setBuiltinOverrides({
+      "as-no-decorative-emojis": { title: "Sem emojis (pt)", description: "nada" },
+    });
     const r = findRule("as-no-decorative-emojis");
     expect(r?.title).toBe("Sem emojis (pt)");
     expect(r?.description).toBe("nada");
@@ -97,9 +104,7 @@ describe("rules-taxonomy effective catalog", () => {
   });
 
   it("user rules with builtin: true get coerced to false on setUserRules", () => {
-    setUserRules([
-      { id: "evil", title: "Evil", category: "custom", builtin: true } as Rule,
-    ]);
+    setUserRules([{ id: "evil", title: "Evil", category: "custom", builtin: true } as Rule]);
     const eff = getEffectiveRules();
     const evil = eff.find((r) => r.id === "evil");
     expect(evil?.builtin).toBe(false);
@@ -145,7 +150,9 @@ describe("rules-taxonomy selection helpers", () => {
   it("describeRuleSelection in pt-BR", () => {
     expect(describeRuleSelection([])).toBe("Nenhuma regra");
     expect(describeRuleSelection(["as-no-decorative-emojis"])).toBe("No decorative emojis");
-    expect(describeRuleSelection(["as-no-decorative-emojis", "tn-skeu-premium-tier2"])).toBe("2 regras");
+    expect(describeRuleSelection(["as-no-decorative-emojis", "tn-skeu-premium-tier2"])).toBe(
+      "2 regras",
+    );
   });
 
   it("generateUserRuleId yields kebab-case usr- prefix", () => {

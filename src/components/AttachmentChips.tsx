@@ -32,10 +32,10 @@ export function isHtmlAttachment(att: ComposerAttachment): boolean {
 }
 
 function chipKindGlyph(att: ComposerAttachment): string {
-  if (isHtmlAttachment(att)) return "▤";    // HTML — page glyph
-  if (att.kind === "image") return "▦";     // image — grid
-  if (att.kind === "text") return "≡";      // text — lines
-  return "◇";                               // binary — diamond
+  if (isHtmlAttachment(att)) return "▤"; // HTML — page glyph
+  if (att.kind === "image") return "▦"; // image — grid
+  if (att.kind === "text") return "≡"; // text — lines
+  return "◇"; // binary — diamond
 }
 
 function fmtSize(bytes: number): string {
@@ -55,34 +55,48 @@ export function AttachmentChips({ attachments, onRemove, onReorder }: Attachment
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
 
-  const handleDragStart = useCallback((idx: number) => (e: DragEvent<HTMLSpanElement>) => {
-    setDraggingIdx(idx);
-    // Required for Firefox to actually start a drag operation.
-    try {
-      e.dataTransfer.setData("text/x-attachment-idx", String(idx));
-      e.dataTransfer.effectAllowed = "move";
-    } catch { /* ignore — some browsers throw on dataTransfer access */ }
-  }, []);
+  const handleDragStart = useCallback(
+    (idx: number) => (e: DragEvent<HTMLSpanElement>) => {
+      setDraggingIdx(idx);
+      // Required for Firefox to actually start a drag operation.
+      try {
+        e.dataTransfer.setData("text/x-attachment-idx", String(idx));
+        e.dataTransfer.effectAllowed = "move";
+      } catch {
+        /* ignore — some browsers throw on dataTransfer access */
+      }
+    },
+    [],
+  );
 
-  const handleDragOver = useCallback((idx: number) => (e: DragEvent<HTMLSpanElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (overIdx !== idx) setOverIdx(idx);
-  }, [overIdx]);
+  const handleDragOver = useCallback(
+    (idx: number) => (e: DragEvent<HTMLSpanElement>) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if (overIdx !== idx) setOverIdx(idx);
+    },
+    [overIdx],
+  );
 
-  const handleDragLeave = useCallback((idx: number) => () => {
-    if (overIdx === idx) setOverIdx(null);
-  }, [overIdx]);
+  const handleDragLeave = useCallback(
+    (idx: number) => () => {
+      if (overIdx === idx) setOverIdx(null);
+    },
+    [overIdx],
+  );
 
-  const handleDrop = useCallback((idx: number) => (e: DragEvent<HTMLSpanElement>) => {
-    e.preventDefault();
-    const fromStr = e.dataTransfer.getData("text/x-attachment-idx");
-    const fromIdx = fromStr ? Number(fromStr) : draggingIdx;
-    setDraggingIdx(null);
-    setOverIdx(null);
-    if (fromIdx == null || Number.isNaN(fromIdx) || fromIdx === idx) return;
-    onReorder(fromIdx, idx);
-  }, [draggingIdx, onReorder]);
+  const handleDrop = useCallback(
+    (idx: number) => (e: DragEvent<HTMLSpanElement>) => {
+      e.preventDefault();
+      const fromStr = e.dataTransfer.getData("text/x-attachment-idx");
+      const fromIdx = fromStr ? Number(fromStr) : draggingIdx;
+      setDraggingIdx(null);
+      setOverIdx(null);
+      if (fromIdx == null || Number.isNaN(fromIdx) || fromIdx === idx) return;
+      onReorder(fromIdx, idx);
+    },
+    [draggingIdx, onReorder],
+  );
 
   const handleDragEnd = useCallback(() => {
     setDraggingIdx(null);
@@ -104,14 +118,17 @@ export function AttachmentChips({ attachments, onRemove, onReorder }: Attachment
           isHtml ? "is-html" : "",
           isDragged ? "is-dragged" : "",
           isOver ? "is-over" : "",
-        ].filter(Boolean).join(" ");
+        ]
+          .filter(Boolean)
+          .join(" ");
         // Tooltip — surface the full filename + kind + (when primary)
         // canvas hint. User reads the chip; tooltip explains the role.
-        const title = isPrimary && isHtml
-          ? tf("composer.attachment.primaryHtml.title", att.name)
-          : isPrimary
-            ? tf("composer.attachment.primary.title", att.name)
-            : att.name;
+        const title =
+          isPrimary && isHtml
+            ? tf("composer.attachment.primaryHtml.title", att.name)
+            : isPrimary
+              ? tf("composer.attachment.primary.title", att.name)
+              : att.name;
 
         return (
           <span
@@ -134,7 +151,9 @@ export function AttachmentChips({ attachments, onRemove, onReorder }: Attachment
                 {t("composer.attachment.primary.badge")}
               </span>
             )}
-            <span className="np-composer-chip-kind" aria-hidden>{chipKindGlyph(att)}</span>
+            <span className="np-composer-chip-kind" aria-hidden>
+              {chipKindGlyph(att)}
+            </span>
             <span className="np-composer-chip-name">{att.name}</span>
             <span className="np-composer-chip-size">{fmtSize(att.size)}</span>
             <button
@@ -142,7 +161,9 @@ export function AttachmentChips({ attachments, onRemove, onReorder }: Attachment
               className="np-composer-chip-x"
               onClick={() => onRemove(idx)}
               aria-label={tf("composer.attachment.remove", att.name)}
-            >×</button>
+            >
+              ×
+            </button>
           </span>
         );
       })}

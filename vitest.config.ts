@@ -15,12 +15,7 @@ export default defineConfig({
     fileParallelism: false,
     testTimeout: 10000,
     hookTimeout: 15000,
-    include: [
-      "src/**/*.test.ts",
-      "src/**/*.test.tsx",
-      "apps/**/*.test.mjs",
-      "apps/**/*.test.js",
-    ],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "apps/**/*.test.mjs", "apps/**/*.test.js"],
     exclude: ["node_modules", "dist"],
     globals: false,
     reporters: ["default"],

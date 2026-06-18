@@ -76,7 +76,10 @@ describe("getModelCapabilities", () => {
   it("flags an embedding model as non-chat", async () => {
     global.fetch = vi.fn(async () => ({
       ok: true,
-      json: async () => ({ capabilities: ["embedding"], model_info: { "bert.context_length": 8192 } }),
+      json: async () => ({
+        capabilities: ["embedding"],
+        model_info: { "bert.context_length": 8192 },
+      }),
     }));
     const caps = await getModelCapabilities("http://h", "bge-m3:latest", 1000);
     expect(caps.chat).toBe(false);
@@ -84,7 +87,9 @@ describe("getModelCapabilities", () => {
   });
 
   it("returns the permissive fallback on fetch failure", async () => {
-    global.fetch = vi.fn(async () => { throw new Error("boom"); });
+    global.fetch = vi.fn(async () => {
+      throw new Error("boom");
+    });
     const caps = await getModelCapabilities("http://h", "x", 1000);
     expect(caps).toEqual({ chat: true, thinking: false, maxContext: null });
   });

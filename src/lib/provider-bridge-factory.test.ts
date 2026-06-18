@@ -63,13 +63,15 @@ describe("makeProviderBridge — final-event regressions", () => {
     // Pre-fix bug: SSE stream emits `event: done` (inner branch fires
     // onDone) → after the read-loop ends, `if (full) callbacks.onDone(full)`
     // fires onDone AGAIN. UI saw the same turn persisted twice.
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      makeSseResponse([
-        `event: text\ndata: {"content":"hello "}\n\n`,
-        `event: text\ndata: {"content":"world"}\n\n`,
-        `event: done\ndata: {"content":"hello world"}\n\n`,
-      ])
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(
+        makeSseResponse([
+          `event: text\ndata: {"content":"hello "}\n\n`,
+          `event: text\ndata: {"content":"world"}\n\n`,
+          `event: done\ndata: {"content":"hello world"}\n\n`,
+        ]),
+      );
 
     const cb = makeCallbacks();
     const bridge = makeProviderBridge("openrouter");
@@ -90,9 +92,7 @@ describe("makeProviderBridge — final-event regressions", () => {
     // Old behavior fired onDone(full). New behavior preserves that —
     // but only when the explicit-done flag is false.
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      makeSseResponse([
-        `event: text\ndata: {"content":"partial"}\n\n`,
-      ])
+      makeSseResponse([`event: text\ndata: {"content":"partial"}\n\n`]),
     );
 
     const cb = makeCallbacks();
@@ -130,7 +130,7 @@ describe("makeProviderBridge — final-event regressions", () => {
       makeSseResponse([
         `event: text\ndata: {"content":"hi"}\n\n`,
         `event: error\ndata: {"error":"upstream rate limit"}\n\n`,
-      ])
+      ]),
     );
 
     const cb = makeCallbacks();
@@ -160,7 +160,7 @@ describe("makeProviderBridge — final-event regressions", () => {
       makeSseResponse([
         `event: text\ndata: {"content":"streamed"}\n\n`,
         `event: done\ndata: {"content":"normalized"}\n\n`,
-      ])
+      ]),
     );
 
     const cb = makeCallbacks();
@@ -172,9 +172,7 @@ describe("makeProviderBridge — final-event regressions", () => {
   });
 
   it("emits onError when fetch returns non-2xx status (no onDone)", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(null, { status: 500 })
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 500 }));
 
     const cb = makeCallbacks();
     const bridge = makeProviderBridge("openrouter");
@@ -191,7 +189,7 @@ describe("makeProviderBridge — final-event regressions", () => {
       makeSseResponse([
         `event: usage\ndata: {"prompt_tokens":10,"completion_tokens":20}\n\n`,
         `event: done\ndata: {"content":"x"}\n\n`,
-      ])
+      ]),
     );
 
     const cb = makeCallbacks();
@@ -210,7 +208,7 @@ describe("makeProviderBridge — final-event regressions", () => {
 describe("makeProviderBridge — once() behavior (regression baseline)", () => {
   it("returns text from successful /once response", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ text: "answer" }), { status: 200 })
+      new Response(JSON.stringify({ text: "answer" }), { status: 200 }),
     );
     const bridge = makeProviderBridge("openrouter");
     const result = await bridge.once("q");
@@ -218,16 +216,14 @@ describe("makeProviderBridge — once() behavior (regression baseline)", () => {
   });
 
   it("throws on non-2xx /once response", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(null, { status: 503 })
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 503 }));
     const bridge = makeProviderBridge("openrouter");
     await expect(bridge.once("q")).rejects.toThrow(/bridge HTTP 503/);
   });
 
   it("throws when /once body has error field", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ error: "no token" }), { status: 200 })
+      new Response(JSON.stringify({ error: "no token" }), { status: 200 }),
     );
     const bridge = makeProviderBridge("openrouter");
     await expect(bridge.once("q")).rejects.toThrow(/no token/);

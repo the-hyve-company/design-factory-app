@@ -83,17 +83,98 @@ function stripFrontmatter(raw: string): string {
 // user actually types.
 export const DEFAULT_BUILTIN_COMMANDS: ReadonlyArray<BuiltinCommand> = Object.freeze([
   // evaluate (read-only — agent returns prose, not HTML)
-  { id: "review",     trigger: "/review-pass",  label: "Review",     description: "Editorial critique of the current design",          category: "Commands", kind: "agent", agentSystemPrompt: stripFrontmatter(reviewMd),    modifiesHtml: false },
-  { id: "check",      trigger: "/check",        label: "Check",      description: "Technical health check — a11y, responsive, perf",    category: "Commands", kind: "agent", agentSystemPrompt: stripFrontmatter(checkMd),     modifiesHtml: false },
+  {
+    id: "review",
+    trigger: "/review-pass",
+    label: "Review",
+    description: "Editorial critique of the current design",
+    category: "Commands",
+    kind: "agent",
+    agentSystemPrompt: stripFrontmatter(reviewMd),
+    modifiesHtml: false,
+  },
+  {
+    id: "check",
+    trigger: "/check",
+    label: "Check",
+    description: "Technical health check — a11y, responsive, perf",
+    category: "Commands",
+    kind: "agent",
+    agentSystemPrompt: stripFrontmatter(checkMd),
+    modifiesHtml: false,
+  },
   // refine (mutates HTML)
-  { id: "polish",     trigger: "/polish",       label: "Polish",     description: "Tighten the design — type, spacing, hierarchy",      category: "Commands", kind: "agent", agentSystemPrompt: stripFrontmatter(polishMd),    modifiesHtml: true },
-  { id: "rewrite",    trigger: "/rewrite",      label: "Rewrite",    description: "Rebuild the current section with a fresh approach",  category: "Commands", kind: "agent", agentSystemPrompt: stripFrontmatter(rewriteMd),   modifiesHtml: true },
-  { id: "simplify",   trigger: "/simplify",     label: "Simplify",   description: "Strip what doesn't need to be there",                category: "Commands", kind: "agent", agentSystemPrompt: stripFrontmatter(simplifyMd),  modifiesHtml: true },
-  { id: "reinforce",  trigger: "/reinforce",    label: "Reinforce",  description: "Production-ready — errors, empty states, edge cases",category: "Commands", kind: "agent", agentSystemPrompt: stripFrontmatter(reinforceMd), modifiesHtml: true },
+  {
+    id: "polish",
+    trigger: "/polish",
+    label: "Polish",
+    description: "Tighten the design — type, spacing, hierarchy",
+    category: "Commands",
+    kind: "agent",
+    agentSystemPrompt: stripFrontmatter(polishMd),
+    modifiesHtml: true,
+  },
+  {
+    id: "rewrite",
+    trigger: "/rewrite",
+    label: "Rewrite",
+    description: "Rebuild the current section with a fresh approach",
+    category: "Commands",
+    kind: "agent",
+    agentSystemPrompt: stripFrontmatter(rewriteMd),
+    modifiesHtml: true,
+  },
+  {
+    id: "simplify",
+    trigger: "/simplify",
+    label: "Simplify",
+    description: "Strip what doesn't need to be there",
+    category: "Commands",
+    kind: "agent",
+    agentSystemPrompt: stripFrontmatter(simplifyMd),
+    modifiesHtml: true,
+  },
+  {
+    id: "reinforce",
+    trigger: "/reinforce",
+    label: "Reinforce",
+    description: "Production-ready — errors, empty states, edge cases",
+    category: "Commands",
+    kind: "agent",
+    agentSystemPrompt: stripFrontmatter(reinforceMd),
+    modifiesHtml: true,
+  },
   // enhance (mutates HTML)
-  { id: "animate",    trigger: "/animate",      label: "Animate",    description: "Bring it to life with motion",                       category: "Commands", kind: "agent", agentSystemPrompt: stripFrontmatter(animateMd),   modifiesHtml: true },
-  { id: "type",       trigger: "/type",         label: "Type",       description: "Sharper typography hierarchy",                       category: "Commands", kind: "agent", agentSystemPrompt: stripFrontmatter(typeMd),      modifiesHtml: true },
-  { id: "color",      trigger: "/color",        label: "Color",      description: "Strategic color where it's missing",                 category: "Commands", kind: "agent", agentSystemPrompt: stripFrontmatter(colorMd),     modifiesHtml: true },
+  {
+    id: "animate",
+    trigger: "/animate",
+    label: "Animate",
+    description: "Bring it to life with motion",
+    category: "Commands",
+    kind: "agent",
+    agentSystemPrompt: stripFrontmatter(animateMd),
+    modifiesHtml: true,
+  },
+  {
+    id: "type",
+    trigger: "/type",
+    label: "Type",
+    description: "Sharper typography hierarchy",
+    category: "Commands",
+    kind: "agent",
+    agentSystemPrompt: stripFrontmatter(typeMd),
+    modifiesHtml: true,
+  },
+  {
+    id: "color",
+    trigger: "/color",
+    label: "Color",
+    description: "Strategic color where it's missing",
+    category: "Commands",
+    kind: "agent",
+    agentSystemPrompt: stripFrontmatter(colorMd),
+    modifiesHtml: true,
+  },
 ]);
 
 // Triggers hidden from the autocomplete suggestion list.
@@ -107,12 +188,12 @@ export const DEFAULT_BUILTIN_COMMANDS: ReadonlyArray<BuiltinCommand> = Object.fr
 // flagged as "actions que nem deveriam existir" — they belong to the
 // pill row, not the slash menu.
 export const HIDDEN_FROM_AUTOCOMPLETE: ReadonlySet<string> = new Set([
-  "/tweaks",   // canvas toolbar pill
-  "/edit",     // canvas toolbar pill
-  "/comment",  // canvas toolbar pill
-  "/present",  // canvas toolbar pill
+  "/tweaks", // canvas toolbar pill
+  "/edit", // canvas toolbar pill
+  "/comment", // canvas toolbar pill
+  "/present", // canvas toolbar pill
   "/terminal", // canvas toolbar pill
-  "/export",   // Share menu
+  "/export", // Share menu
 ]);
 
 /** Quick lookup helper. */

@@ -58,15 +58,15 @@ the project's editorial direction is not a vote.
 
 ## Roles
 
-| Role | Who | What they can do |
-| --- | --- | --- |
-| **Steward** | HYVE | Final say on every dimension above. Merges to `main`. |
-| **Maintainer** | HYVE staff or designated trusted contributors | Review + merge PRs that don't cross a boundary. Triage issues. |
-| **Contributor** | Anyone with a PR or issue history | Open PRs, file issues, comment on others. Earns trust by quality of contribution over time. |
-| **User** | Anyone running the app | Files bugs, requests features, joins discussions. |
+| Role            | Who                                           | What they can do                                                                            |
+| --------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Steward**     | HYVE                                          | Final say on every dimension above. Merges to `main`.                                       |
+| **Maintainer**  | HYVE staff or designated trusted contributors | Review + merge PRs that don't cross a boundary. Triage issues.                              |
+| **Contributor** | Anyone with a PR or issue history             | Open PRs, file issues, comment on others. Earns trust by quality of contribution over time. |
+| **User**        | Anyone running the app                        | Files bugs, requests features, joins discussions.                                           |
 
 Roles are not formal seats. They describe what someone is doing
-*right now*, not a job title.
+_right now_, not a job title.
 
 ---
 

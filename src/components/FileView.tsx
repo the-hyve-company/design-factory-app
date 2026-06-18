@@ -13,10 +13,13 @@ interface Props {
 // Lets the FileView shrink the iframe with transform: scale() — same trick
 // CanvasStage uses for the main canvas. Without this, opening a 1080×1920
 // HTML through Files crops to 16:9 and only the top-left renders.
-function detectIntrinsicViewport(html: string): { w: number; h: number; ratioId: "16:9" | "9:16" | "1:1" | "4k" } | null {
+function detectIntrinsicViewport(
+  html: string,
+): { w: number; h: number; ratioId: "16:9" | "9:16" | "1:1" | "4k" } | null {
   // Look at the first html/body block — captures: html, body { width: NNNNpx; height: NNNNpx }
-  const m = html.match(/html\s*,\s*body\s*\{[^}]*?width:\s*(\d+)px[^}]*?height:\s*(\d+)px/i)
-    ?? html.match(/body\s*\{[^}]*?width:\s*(\d+)px[^}]*?height:\s*(\d+)px/i);
+  const m =
+    html.match(/html\s*,\s*body\s*\{[^}]*?width:\s*(\d+)px[^}]*?height:\s*(\d+)px/i) ??
+    html.match(/body\s*\{[^}]*?width:\s*(\d+)px[^}]*?height:\s*(\d+)px/i);
   if (!m) return null;
   const w = Number(m[1]);
   const h = Number(m[2]);
@@ -46,11 +49,29 @@ export function FileView({ name, path, content, isText }: Props) {
   if (!isText) {
     // Binary — show image inline, otherwise placeholder
     body = (
-      <div style={{ flex: 1, display: "grid", placeItems: "center", padding: 24, background: "var(--df-bg-base)" }}>
+      <div
+        style={{
+          flex: 1,
+          display: "grid",
+          placeItems: "center",
+          padding: 24,
+          background: "var(--df-bg-base)",
+        }}
+      >
         {/^data:image\//.test(content) ? (
-          <img src={content} alt={name} style={{ maxWidth: "90%", maxHeight: "90%", objectFit: "contain" }} />
+          <img
+            src={content}
+            alt={name}
+            style={{ maxWidth: "90%", maxHeight: "90%", objectFit: "contain" }}
+          />
         ) : (
-          <div style={{ fontSize: 12, color: "var(--df-text-faint)", fontFamily: "var(--df-font-mono)" }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: "var(--df-text-faint)",
+              fontFamily: "var(--df-font-mono)",
+            }}
+          >
             Binary file — preview unavailable
           </div>
         )}
@@ -75,7 +96,13 @@ export function FileView({ name, path, content, isText }: Props) {
             srcDoc={content}
             title={name}
             sandbox={FILE_PREVIEW_SANDBOX}
-            style={{ width: "100%", height: "100%", border: "none", background: "white", display: "block" }}
+            style={{
+              width: "100%",
+              height: "100%",
+              border: "none",
+              background: "white",
+              display: "block",
+            }}
           />
         </CanvasStage>
       );
@@ -95,11 +122,13 @@ export function FileView({ name, path, content, isText }: Props) {
       <div
         className="chat-prose"
         style={{
-          flex: 1, overflow: "auto",
+          flex: 1,
+          overflow: "auto",
           padding: "28px 44px",
           background: "var(--df-bg-base)",
           color: "var(--df-text-primary)",
-          fontSize: 14, lineHeight: 1.7,
+          fontSize: 14,
+          lineHeight: 1.7,
           maxWidth: 820,
           margin: "0 auto",
           width: "100%",
@@ -112,8 +141,9 @@ export function FileView({ name, path, content, isText }: Props) {
     // Pretty-print JSON
     let display = content;
     if (ext === "json") {
-      try { display = JSON.stringify(JSON.parse(content), null, 2); }
-      catch {}
+      try {
+        display = JSON.stringify(JSON.parse(content), null, 2);
+      } catch {}
     }
     body = renderCodeBlock(display);
   } else {
@@ -121,16 +151,29 @@ export function FileView({ name, path, content, isText }: Props) {
   }
 
   return (
-    <div style={{ flex: 1, display: "flex", minHeight: 0, flexDirection: "column", background: "var(--df-bg-base)" }}>
-      <div style={{
-        padding: "6px 14px",
-        fontFamily: "var(--df-font-mono)",
-        fontSize: 10,
-        color: "var(--df-text-faint)",
-        borderBottom: "1px solid var(--df-border-subtle)",
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        flexShrink: 0,
-      }} title={path}>
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        minHeight: 0,
+        flexDirection: "column",
+        background: "var(--df-bg-base)",
+      }}
+    >
+      <div
+        style={{
+          padding: "6px 14px",
+          fontFamily: "var(--df-font-mono)",
+          fontSize: 10,
+          color: "var(--df-text-faint)",
+          borderBottom: "1px solid var(--df-border-subtle)",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          flexShrink: 0,
+        }}
+        title={path}
+      >
         {path}
       </div>
       {body}
@@ -140,15 +183,21 @@ export function FileView({ name, path, content, isText }: Props) {
 
 function renderCodeBlock(text: string) {
   return (
-    <pre style={{
-      margin: 0, flex: 1, overflow: "auto",
-      padding: "14px 18px",
-      fontFamily: "var(--df-font-mono)",
-      fontSize: 12, lineHeight: 1.6,
-      color: "var(--df-text-primary)",
-      background: "var(--df-bg-base)",
-      whiteSpace: "pre-wrap", wordBreak: "break-word",
-    }}>
+    <pre
+      style={{
+        margin: 0,
+        flex: 1,
+        overflow: "auto",
+        padding: "14px 18px",
+        fontFamily: "var(--df-font-mono)",
+        fontSize: 12,
+        lineHeight: 1.6,
+        color: "var(--df-text-primary)",
+        background: "var(--df-bg-base)",
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+      }}
+    >
       {text}
     </pre>
   );

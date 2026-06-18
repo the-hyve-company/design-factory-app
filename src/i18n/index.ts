@@ -33,7 +33,9 @@ function readBootLang(): Lang {
     if (typeof window === "undefined") return DEFAULT_LANG;
     const raw = window.localStorage?.getItem("df_language");
     return isLang(raw) ? raw : DEFAULT_LANG;
-  } catch { return DEFAULT_LANG; }
+  } catch {
+    return DEFAULT_LANG;
+  }
 }
 
 _lang = readBootLang();
@@ -76,7 +78,9 @@ export function setLang(next: Lang): void {
       window.localStorage?.setItem("df_language", next);
       window.dispatchEvent(new CustomEvent(LANGUAGE_CHANGE_EVENT, { detail: { lang: next } }));
     }
-  } catch { /* swallow — non-fatal */ }
+  } catch {
+    /* swallow — non-fatal */
+  }
 }
 
 // ─── React hook ───────────────────────────────────────────────────────

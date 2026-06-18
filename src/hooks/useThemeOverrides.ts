@@ -68,7 +68,9 @@ export function useThemeOverrides() {
       applyPreset(cfg.presets[cfg.active] ?? emptyPreset());
       setLoaded(true);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Re-apply on every change (live preview without save)
@@ -108,7 +110,7 @@ export function useThemeOverrides() {
 
   // ── Preset management ──────────────────────────────────────────
   const switchPreset = useCallback((name: string) => {
-    setConfig((prev) => prev.presets[name] ? { ...prev, active: name } : prev);
+    setConfig((prev) => (prev.presets[name] ? { ...prev, active: name } : prev));
   }, []);
 
   const createPreset = useCallback((name: string, fromActive = false) => {
@@ -136,7 +138,10 @@ export function useThemeOverrides() {
       const finalName = uniqueName(cleanName, taken);
       return {
         active: finalName,
-        presets: { ...prev.presets, [finalName]: { dark: { ...preset.dark }, light: { ...preset.light } } },
+        presets: {
+          ...prev.presets,
+          [finalName]: { dark: { ...preset.dark }, light: { ...preset.light } },
+        },
       };
     });
   }, []);

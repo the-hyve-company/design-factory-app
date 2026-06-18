@@ -93,34 +93,17 @@ export type StaticP0Result = StaticP0Pass | StaticP0Fail;
 
 // ─── Type categorisation ─────────────────────────────────────────────────
 
-const HTML_TYPES = new Set([
-  "text/html",
-  "application/xhtml+xml",
-]);
+const HTML_TYPES = new Set(["text/html", "application/xhtml+xml"]);
 
-const SVG_TYPES = new Set([
-  "image/svg+xml",
-]);
+const SVG_TYPES = new Set(["image/svg+xml"]);
 
-const TEXT_TYPES = new Set([
-  "text/markdown",
-  "text/x-markdown",
-  "text/plain",
-]);
+const TEXT_TYPES = new Set(["text/markdown", "text/x-markdown", "text/plain"]);
 
-const JSON_TYPES = new Set([
-  "application/json",
-  "application/ld+json",
-]);
+const JSON_TYPES = new Set(["application/json", "application/ld+json"]);
 
-const CSS_TYPES = new Set([
-  "text/css",
-]);
+const CSS_TYPES = new Set(["text/css"]);
 
-const JS_TYPES = new Set([
-  "application/javascript",
-  "text/javascript",
-]);
+const JS_TYPES = new Set(["application/javascript", "text/javascript"]);
 
 const BINARY_TYPES = new Set([
   "image/png",
@@ -196,8 +179,7 @@ function validateHtml(input: StaticP0Input): StaticP0Result {
       status: "fail",
       reason: "invalid-html-prelude",
       details:
-        "HTML must begin with <!DOCTYPE html>, <html>, <svg>, or <?xml. Got: " +
-        snippet(trimmed),
+        "HTML must begin with <!DOCTYPE html>, <html>, <svg>, or <?xml. Got: " + snippet(trimmed),
       failedChecks: checks,
     };
   }
@@ -228,7 +210,8 @@ function validateHtml(input: StaticP0Input): StaticP0Result {
   const body = parsed.doc.body;
   // happy-dom may produce a body that's `null` for malformed input; treat
   // missing body as empty-body since the runtime would crash on it anyway.
-  const hasBody = !!body && (body.children.length > 0 || (body.textContent || "").trim().length > 0);
+  const hasBody =
+    !!body && (body.children.length > 0 || (body.textContent || "").trim().length > 0);
   if (!hasBody) {
     return {
       status: "fail",
@@ -272,7 +255,8 @@ function validateSvg(input: StaticP0Input): StaticP0Result {
     return {
       status: "fail",
       reason: "invalid-svg",
-      details: "SVG must start with <svg> (optional <?xml> prolog allowed). Got: " + snippet(trimmed),
+      details:
+        "SVG must start with <svg> (optional <?xml> prolog allowed). Got: " + snippet(trimmed),
       failedChecks: checks,
     };
   }
@@ -528,8 +512,13 @@ function checkBalancedBraces(content: string): BalanceResult {
       continue;
     }
     if (inString) {
-      if (ch === "\\" && i + 1 < content.length) { i += 2; continue; }
-      if (ch === inString) { inString = null; }
+      if (ch === "\\" && i + 1 < content.length) {
+        i += 2;
+        continue;
+      }
+      if (ch === inString) {
+        inString = null;
+      }
       i++;
       continue;
     }
@@ -555,8 +544,14 @@ function checkBalancedBraces(content: string): BalanceResult {
 
 // ─── DOM parsing helpers ────────────────────────────────────────────────
 
-interface ParseOk { ok: true; doc: Document }
-interface ParseErr { ok: false; error: string }
+interface ParseOk {
+  ok: true;
+  doc: Document;
+}
+interface ParseErr {
+  ok: false;
+  error: string;
+}
 
 function tryDomParse(content: string, mime: DOMParserSupportedType): ParseOk | ParseErr {
   // happy-dom (test env) and browsers expose DOMParser globally.

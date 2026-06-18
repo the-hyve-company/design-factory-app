@@ -123,7 +123,8 @@ function extractTitleFromBody(body: string): string | null {
     const candidate = h2[1].trim();
     // Skip generic structural headings — those aren't a title, they're
     // a section. Falling through to the default name is less misleading.
-    const generic = /^(overview|introduction|about|colors?|typography|layout|components?|spacing|radii|shapes?|tokens?)$/i;
+    const generic =
+      /^(overview|introduction|about|colors?|typography|layout|components?|spacing|radii|shapes?|tokens?)$/i;
     if (!generic.test(candidate)) return candidate;
   }
   return null;
@@ -137,7 +138,13 @@ function isValidHex(v: unknown): v is string {
 
 function hexLuminance(hex: string): number {
   const h = hex.replace("#", "");
-  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h.slice(0, 6);
+  const full =
+    h.length === 3
+      ? h
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : h.slice(0, 6);
   const r = parseInt(full.slice(0, 2), 16) / 255;
   const g = parseInt(full.slice(2, 4), 16) / 255;
   const b = parseInt(full.slice(4, 6), 16) / 255;
@@ -182,8 +189,12 @@ function normalizeTypography(raw: unknown): DsTypographyEntry[] {
       name,
       fontFamily: typeof v.fontFamily === "string" ? v.fontFamily : undefined,
       fontSize: fs ? dimensionToString(fs) : undefined,
-      fontWeight: typeof v.fontWeight === "number" ? v.fontWeight
-               : typeof v.fontWeight === "string" ? Number(v.fontWeight) || undefined : undefined,
+      fontWeight:
+        typeof v.fontWeight === "number"
+          ? v.fontWeight
+          : typeof v.fontWeight === "string"
+            ? Number(v.fontWeight) || undefined
+            : undefined,
       lineHeight: lh ? dimensionToString(lh) : undefined,
       letterSpacing: ls ? dimensionToString(ls) : undefined,
     });
@@ -266,19 +277,19 @@ const NAMED_COLOR_HINTS: Record<string, string> = {
   // to a specific shade; we leave it as named-token-without-hex
   // (renderer shows a neutral chip). Whites and blacks are safer.
   "pure white": "#ffffff",
-  "white": "#ffffff",
+  white: "#ffffff",
   "off-white": "#fbfbf8",
-  "ivory": "#fbfcf3",
-  "cream": "#fbfcf3",
+  ivory: "#fbfcf3",
+  cream: "#fbfcf3",
   "pure black": "#000000",
-  "black": "#000000",
-  "ink": "#1a1a17",
-  "charcoal": "#232320",
+  black: "#000000",
+  ink: "#1a1a17",
+  charcoal: "#232320",
   "near-black": "#0a0a08",
-  "midnight": "#0e0e10",
-  "gray": "#999999",
-  "grey": "#999999",
-  "silver": "#c4c4c4",
+  midnight: "#0e0e10",
+  gray: "#999999",
+  grey: "#999999",
+  silver: "#c4c4c4",
 };
 
 function extractColorsFromProse(body: string): DsColorEntry[] {
@@ -324,12 +335,18 @@ function extractMarkdownTables(body: string): MarkdownTable[] {
     const sep = lines[i + 1]?.trim() ?? "";
     if (!header.startsWith("|") || !sep.startsWith("|")) continue;
     if (!/^\|[\s|:-]+\|$/.test(sep)) continue;
-    const headers = header.slice(1, -1).split("|").map((c) => c.trim());
+    const headers = header
+      .slice(1, -1)
+      .split("|")
+      .map((c) => c.trim());
     const rows: string[][] = [];
     let j = i + 2;
     while (j < lines.length && lines[j].trim().startsWith("|")) {
       const rowLine = lines[j].trim();
-      const cells = rowLine.slice(1, -1).split("|").map((c) => c.trim());
+      const cells = rowLine
+        .slice(1, -1)
+        .split("|")
+        .map((c) => c.trim());
       rows.push(cells);
       j++;
     }
@@ -393,7 +410,10 @@ function extractTypographyFromTables(tables: MarkdownTable[]): DsTypographyEntry
   return out;
 }
 
-function extractDimensionsFromTables(tables: MarkdownTable[], tokenNamespace: "rounded" | "spacing"): DsDimensionEntry[] {
+function extractDimensionsFromTables(
+  tables: MarkdownTable[],
+  tokenNamespace: "rounded" | "spacing",
+): DsDimensionEntry[] {
   const out: DsDimensionEntry[] = [];
   const seen = new Set<string>();
   for (const t of tables) {
@@ -449,7 +469,8 @@ function extractFontFamiliesFromProse(body: string): DsTypographyEntry[] {
     // Heuristic filter: typeface mentions usually carry a typography
     // keyword either in the family itself or in the trailing prose.
     const surrounding = body.slice(m.index, m.index + 300).toLowerCase();
-    const typographyHint = /(typeface|font|family|sans|serif|mono|variable|display|body|inter|geist|gt walsheim|mona|ibm plex|jetbrains|space mono|playfair|merriweather|roboto|open sans|helvetica|arial|times)/i;
+    const typographyHint =
+      /(typeface|font|family|sans|serif|mono|variable|display|body|inter|geist|gt walsheim|mona|ibm plex|jetbrains|space mono|playfair|merriweather|roboto|open sans|helvetica|arial|times)/i;
     if (!typographyHint.test(surrounding)) continue;
     seen.add(family.toLowerCase());
     out.push({ name: family, fontFamily: family });
@@ -458,12 +479,18 @@ function extractFontFamiliesFromProse(body: string): DsTypographyEntry[] {
   return out;
 }
 
-function extractDimensionsFromInline(body: string, tokenNamespace: "rounded" | "spacing"): DsDimensionEntry[] {
+function extractDimensionsFromInline(
+  body: string,
+  tokenNamespace: "rounded" | "spacing",
+): DsDimensionEntry[] {
   // Inline pattern: `` `{spacing.lg}` 20px `` separated by ` · ` or commas.
   // Common in bullet lists like "Tokens (front matter): `{spacing.hair}` 1px · `{spacing.xxs}` 4px · …".
   const out: DsDimensionEntry[] = [];
   const seen = new Set<string>();
-  const re = new RegExp("`\\{" + tokenNamespace + "\\.([a-z0-9_-]+)\\}`\\s*(-?\\d+(?:\\.\\d+)?\\s*[a-z%]+)", "gi");
+  const re = new RegExp(
+    "`\\{" + tokenNamespace + "\\.([a-z0-9_-]+)\\}`\\s*(-?\\d+(?:\\.\\d+)?\\s*[a-z%]+)",
+    "gi",
+  );
   let m: RegExpExecArray | null;
   while ((m = re.exec(body))) {
     const token = m[1];
@@ -484,7 +511,12 @@ export function parseDesignSystem(raw: string): ParsedDesignSystem {
   if (!raw || typeof raw !== "string") {
     return {
       name: "Design system",
-      colors: [], typography: [], spacing: [], rounded: [], components: [], sections: [],
+      colors: [],
+      typography: [],
+      spacing: [],
+      rounded: [],
+      components: [],
+      sections: [],
       findings: [{ severity: "warning", message: "Empty source" }],
       summary: { errors: 0, warnings: 1, infos: 0 },
       fallback: true,
@@ -504,10 +536,16 @@ export function parseDesignSystem(raw: string): ParsedDesignSystem {
         frontData = parsed as Record<string, unknown>;
       }
     } catch (e) {
-      findings.push({ severity: "warning", message: `YAML parse failed: ${String(e).slice(0, 80)}` });
+      findings.push({
+        severity: "warning",
+        message: `YAML parse failed: ${String(e).slice(0, 80)}`,
+      });
     }
   } else {
-    findings.push({ severity: "info", message: "No YAML frontmatter — parsing via fallback regex." });
+    findings.push({
+      severity: "info",
+      message: "No YAML frontmatter — parsing via fallback regex.",
+    });
   }
 
   const frontName = typeof frontData.name === "string" ? frontData.name : null;

@@ -110,15 +110,11 @@ async function main() {
   const port = await findFreePort();
   log(COLOR.dim(`daemon-smoke: starting daemon on :${port}`));
 
-  const daemon = spawn(
-    process.execPath,
-    ["apps/daemon/src/index.mjs"],
-    {
-      cwd: repoRoot,
-      env: { ...process.env, DF_BRIDGE_PORT: String(port) },
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
+  const daemon = spawn(process.execPath, ["apps/daemon/src/index.mjs"], {
+    cwd: repoRoot,
+    env: { ...process.env, DF_BRIDGE_PORT: String(port) },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
   daemon.stdout.on("data", () => {}); // silence boot chatter
   daemon.stderr.on("data", () => {});
 

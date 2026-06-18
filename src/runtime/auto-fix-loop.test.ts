@@ -97,7 +97,10 @@ describe("autoFixLoop — happy path", () => {
 
   it("counts skipped (type-not-previewable) as pass-after-fix", async () => {
     const input = makeInput({
-      runtimeGate: vi.fn(async () => ({ status: "skipped" as const, reason: "type-not-previewable" as const })),
+      runtimeGate: vi.fn(async () => ({
+        status: "skipped" as const,
+        reason: "type-not-previewable" as const,
+      })),
     });
     const out = await autoFixLoop(input);
     expect(out.status).toBe("pass-after-fix");
@@ -129,7 +132,9 @@ describe("autoFixLoop — failure modes", () => {
 
   it("returns provider-error if callProvider throws", async () => {
     const input = makeInput({
-      callProvider: vi.fn(async () => { throw new Error("network down"); }),
+      callProvider: vi.fn(async () => {
+        throw new Error("network down");
+      }),
     });
     const out = await autoFixLoop(input);
     expect(out.status).toBe("provider-error");

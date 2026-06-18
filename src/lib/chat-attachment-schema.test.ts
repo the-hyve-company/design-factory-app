@@ -7,11 +7,7 @@
 // attachments MUST round-trip without losing fields.
 
 import { describe, it, expect } from "vitest";
-import {
-  ChatAttachmentSchema,
-  TurnSchema,
-  type ChatAttachment,
-} from "./schemas";
+import { ChatAttachmentSchema, TurnSchema, type ChatAttachment } from "./schemas";
 
 describe("ChatAttachmentSchema", () => {
   it("accepts a minimal HTML attachment with content inline", () => {
@@ -52,18 +48,22 @@ describe("ChatAttachmentSchema", () => {
   });
 
   it("rejects attachments without a name", () => {
-    expect(() => ChatAttachmentSchema.parse({
-      size: 100,
-      mime: "text/plain",
-    })).toThrow();
+    expect(() =>
+      ChatAttachmentSchema.parse({
+        size: 100,
+        mime: "text/plain",
+      }),
+    ).toThrow();
   });
 
   it("rejects negative sizes", () => {
-    expect(() => ChatAttachmentSchema.parse({
-      name: "x",
-      size: -1,
-      mime: "text/plain",
-    })).toThrow();
+    expect(() =>
+      ChatAttachmentSchema.parse({
+        name: "x",
+        size: -1,
+        mime: "text/plain",
+      }),
+    ).toThrow();
   });
 });
 
@@ -75,7 +75,13 @@ describe("TurnSchema with attachments", () => {
       user: {
         text: "make this prettier",
         attachments: [
-          { name: "ref.html", size: 4321, mime: "text/html", kind: "html", content: "<html></html>" },
+          {
+            name: "ref.html",
+            size: 4321,
+            mime: "text/html",
+            kind: "html",
+            content: "<html></html>",
+          },
           { name: "shot.png", size: 50_000, mime: "image/png", kind: "image", path: "/p/shot.png" },
         ],
       },

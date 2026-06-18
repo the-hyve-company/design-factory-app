@@ -57,7 +57,11 @@ async function streamOpenrouterViaBridge(
           }
           if (!dataStr) continue;
           let data: any;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
@@ -77,7 +81,9 @@ async function streamOpenrouterViaBridge(
     }
   })();
   return () => {
-    try { controller.abort(); } catch {}
+    try {
+      controller.abort();
+    } catch {}
   };
 }
 
@@ -111,7 +117,10 @@ export async function openrouterOnce(
 /** Token storage: GET reports tokenSet without revealing the value, PUT writes
  *  the token to ~/.design-factory/openrouter.json (chmod 600). Env var
  *  OPENROUTER_API_KEY takes precedence so power users can shell-export. */
-export async function getOpenrouterTokenStatus(): Promise<{ tokenSet: boolean; source: "env" | "disk" | null }> {
+export async function getOpenrouterTokenStatus(): Promise<{
+  tokenSet: boolean;
+  source: "env" | "disk" | null;
+}> {
   const res = await fetch(`${BRIDGE_URL}/config/openrouter`);
   if (!res.ok) throw new Error(`bridge HTTP ${res.status}`);
   return res.json();
@@ -124,7 +133,7 @@ export async function setOpenrouterToken(token: string): Promise<void> {
     body: JSON.stringify({ token }),
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: string };
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error ?? `bridge HTTP ${res.status}`);
   }
 }

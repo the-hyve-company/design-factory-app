@@ -7,8 +7,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Download, FileText, Folder, FolderOpen, Trash2 } from "lucide-react";
 import {
-  deleteSkill, listSkillFiles, openFolderViaBridge, readFileViaBridge, updateSkill,
-  type Skill, type SkillExtraFile,
+  deleteSkill,
+  listSkillFiles,
+  openFolderViaBridge,
+  readFileViaBridge,
+  updateSkill,
+  type Skill,
+  type SkillExtraFile,
 } from "@/lib/claude-bridge";
 
 // Daemon-side validators (skills-install.mjs validateSkillInput). Mirror
@@ -22,7 +27,8 @@ function validateNameTrigger(name: string, trigger: string): string | null {
   if (!n) return "Dê um nome à skill.";
   if (n.length > NAME_MAX) return `Nome máximo ${NAME_MAX} caracteres.`;
   const t = trigger.trim();
-  if (t && !TRIGGER_RX.test(t)) return "Comando inválido — começa com / e usa letras, números, _ ou - (máx 40).";
+  if (t && !TRIGGER_RX.test(t))
+    return "Comando inválido — começa com / e usa letras, números, _ ou - (máx 40).";
   return null;
 }
 
@@ -55,10 +61,10 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
   const [error, setError] = useState<string | null>(null);
   const [openingFolder, setOpeningFolder] = useState(false);
   const dirty =
-    name !== skill.name
-    || trigger !== skill.trigger
-    || description !== (skill.description ?? "")
-    || body !== skill.body;
+    name !== skill.name ||
+    trigger !== skill.trigger ||
+    description !== (skill.description ?? "") ||
+    body !== skill.body;
   const validationError = useMemo(
     () => (dirty ? validateNameTrigger(name, trigger) : null),
     [dirty, name, trigger],
@@ -87,24 +93,35 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
       }
       setExtraFiles(r.files);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [skill.id]);
 
   // Lazy-load file content when the user clicks one. Text files are
   // rendered as-is; binary files just show "binary, N bytes".
   const openFile = async (f: SkillExtraFile) => {
     setSelectedFile(f);
-    if (!f.isText) { setFileContent(null); return; }
+    if (!f.isText) {
+      setFileContent(null);
+      return;
+    }
     setFileContentLoading(true);
     const r = await readFileViaBridge(f.path);
     setFileContentLoading(false);
-    if (!r || !r.isText) { setFileContent(null); return; }
+    if (!r || !r.isText) {
+      setFileContent(null);
+      return;
+    }
     setFileContent(r.content);
   };
 
   const save = async () => {
     if (!dirty || saving) return;
-    if (validationError) { setError(validationError); return; }
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setSaving(true);
     setError(null);
     // Pre-flight check: only forward fields the user actually edited.
@@ -119,7 +136,10 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
     if (body !== skill.body) patch.body = body;
     const result = await updateSkill(skill.id, patch);
     setSaving(false);
-    if ("error" in result) { setError(result.error); return; }
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
     onChanged(result);
     onClose();
   };
@@ -130,7 +150,10 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
    *  message when GUI integration is unavailable (SSH / headless). */
   const openFolder = async () => {
     if (openingFolder) return;
-    if (!skill.path) { setError("Skill sem path conhecido — não dá pra abrir."); return; }
+    if (!skill.path) {
+      setError("Skill sem path conhecido — não dá pra abrir.");
+      return;
+    }
     setOpeningFolder(true);
     setError(null);
     const r = await openFolderViaBridge(skill.path);
@@ -144,7 +167,10 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
     setSaving(true);
     const ok = await deleteSkill(skill.id);
     setSaving(false);
-    if (!ok) { setError("Falha ao excluir."); return; }
+    if (!ok) {
+      setError("Falha ao excluir.");
+      return;
+    }
     onDeleted(skill.id);
     onClose();
   };
@@ -155,11 +181,17 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const safe = skill.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const safe = skill.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
     a.download = `${safe || "skill"}.md`;
     document.body.appendChild(a);
     a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 100);
   };
 
   return (
@@ -242,43 +274,59 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
           <span className="dsl-engrave">
             arquivos da skill{extraFiles.length > 0 && ` · ${extraFiles.length}`}
           </span>
-          {extraFiles.length > 0 && (() => {
-            // Group by first path segment. Files at the root group as
-            // "raiz". Sort groups by count desc so the densest section
-            // shows first.
-            const groups = new Map<string, number>();
-            for (const f of extraFiles) {
-              const slash = f.rel.indexOf("/");
-              const key = slash === -1 ? "raiz" : f.rel.slice(0, slash);
-              groups.set(key, (groups.get(key) ?? 0) + 1);
-            }
-            const sorted = [...groups.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-            return (
-              <div style={{
-                marginBottom: 8,
-                color: "var(--df-text-muted)",
-                fontSize: "var(--df-text-xs)",
-                fontFamily: "var(--df-font-mono)",
-                lineHeight: 1.6,
-              }}>
-                {sorted.map(([key, count], i) => (
-                  <span key={key}>
-                    {i > 0 && " · "}
-                    <span style={{ color: "var(--df-text-primary)" }}>{key}</span>
-                    {" "}({count})
-                  </span>
-                ))}
-              </div>
-            );
-          })()}
+          {extraFiles.length > 0 &&
+            (() => {
+              // Group by first path segment. Files at the root group as
+              // "raiz". Sort groups by count desc so the densest section
+              // shows first.
+              const groups = new Map<string, number>();
+              for (const f of extraFiles) {
+                const slash = f.rel.indexOf("/");
+                const key = slash === -1 ? "raiz" : f.rel.slice(0, slash);
+                groups.set(key, (groups.get(key) ?? 0) + 1);
+              }
+              const sorted = [...groups.entries()].sort(
+                (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+              );
+              return (
+                <div
+                  style={{
+                    marginBottom: 8,
+                    color: "var(--df-text-muted)",
+                    fontSize: "var(--df-text-xs)",
+                    fontFamily: "var(--df-font-mono)",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {sorted.map(([key, count], i) => (
+                    <span key={key}>
+                      {i > 0 && " · "}
+                      <span style={{ color: "var(--df-text-primary)" }}>{key}</span> ({count})
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
           <div className="dsl-bowl" style={{ padding: 0 }}>
             {filesLoading ? (
-              <div style={{ padding: "12px 14px", color: "var(--df-text-muted)", fontSize: "var(--df-text-xs)" }}>
+              <div
+                style={{
+                  padding: "12px 14px",
+                  color: "var(--df-text-muted)",
+                  fontSize: "var(--df-text-xs)",
+                }}
+              >
                 Carregando…
               </div>
             ) : (
               <>
-                <div style={{ maxHeight: 160, overflowY: "auto", borderBottom: selectedFile ? "1px solid var(--df-border-subtle)" : "none" }}>
+                <div
+                  style={{
+                    maxHeight: 160,
+                    overflowY: "auto",
+                    borderBottom: selectedFile ? "1px solid var(--df-border-subtle)" : "none",
+                  }}
+                >
                   {extraFiles.map((f) => (
                     <button
                       key={f.rel}
@@ -291,7 +339,8 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
                         gap: 10,
                         width: "100%",
                         padding: "8px 14px",
-                        background: selectedFile?.rel === f.rel ? "var(--df-surface-hover)" : "none",
+                        background:
+                          selectedFile?.rel === f.rel ? "var(--df-surface-hover)" : "none",
                         border: "none",
                         borderTop: "1px solid var(--df-border-subtle)",
                         cursor: "pointer",
@@ -302,11 +351,19 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
                       }}
                     >
                       <span style={{ color: "var(--df-text-muted)" }} aria-hidden="true">
-                        {f.isText
-                          ? <FileText size={14} strokeWidth={2} />
-                          : <Folder size={14} strokeWidth={2} />}
+                        {f.isText ? (
+                          <FileText size={14} strokeWidth={2} />
+                        ) : (
+                          <Folder size={14} strokeWidth={2} />
+                        )}
                       </span>
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {f.rel}
                       </span>
                       <span style={{ color: "var(--df-text-muted)", fontSize: "10px" }}>
@@ -316,28 +373,46 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
                   ))}
                 </div>
                 {selectedFile && (
-                  <div style={{ padding: "12px 14px", borderTop: extraFiles.length > 0 ? "0" : "1px solid var(--df-border-subtle)" }}>
-                    <div style={{ fontFamily: "var(--df-font-mono)", fontSize: "10px", color: "var(--df-text-muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <div
+                    style={{
+                      padding: "12px 14px",
+                      borderTop: extraFiles.length > 0 ? "0" : "1px solid var(--df-border-subtle)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: "var(--df-font-mono)",
+                        fontSize: "10px",
+                        color: "var(--df-text-muted)",
+                        marginBottom: 8,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
                       {selectedFile.rel}
                     </div>
                     {fileContentLoading ? (
-                      <div style={{ color: "var(--df-text-muted)", fontSize: "var(--df-text-xs)" }}>Lendo…</div>
+                      <div style={{ color: "var(--df-text-muted)", fontSize: "var(--df-text-xs)" }}>
+                        Lendo…
+                      </div>
                     ) : selectedFile.isText && fileContent != null ? (
-                      <pre style={{
-                        margin: 0,
-                        padding: "10px 12px",
-                        background: "var(--df-surface-recessed)",
-                        border: "1px solid var(--df-border-subtle)",
-                        borderRadius: "var(--df-r-sm)",
-                        fontFamily: "var(--df-font-mono)",
-                        fontSize: "11px",
-                        lineHeight: 1.5,
-                        color: "var(--df-text-primary)",
-                        maxHeight: 240,
-                        overflow: "auto",
-                        whiteSpace: "pre-wrap",
-                        wordBreak: "break-word",
-                      }}>
+                      <pre
+                        style={{
+                          margin: 0,
+                          padding: "10px 12px",
+                          background: "var(--df-surface-recessed)",
+                          border: "1px solid var(--df-border-subtle)",
+                          borderRadius: "var(--df-r-sm)",
+                          fontFamily: "var(--df-font-mono)",
+                          fontSize: "11px",
+                          lineHeight: 1.5,
+                          color: "var(--df-text-primary)",
+                          maxHeight: 240,
+                          overflow: "auto",
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-word",
+                        }}
+                      >
                         {fileContent}
                       </pre>
                     ) : (
@@ -354,12 +429,19 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
       )}
 
       {(error || validationError) && (
-        <div className="dsl-zone" style={{ color: "var(--df-accent-danger)", fontSize: "var(--df-text-xs)" }} role="alert">
+        <div
+          className="dsl-zone"
+          style={{ color: "var(--df-accent-danger)", fontSize: "var(--df-text-xs)" }}
+          role="alert"
+        >
           {error || validationError}
         </div>
       )}
 
-      <div className="dsl-foot" style={{ justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      <div
+        className="dsl-foot"
+        style={{ justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}
+      >
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button
             type="button"
@@ -367,18 +449,29 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
             onClick={remove}
             disabled={saving}
             title="Excluir skill"
-            style={{ color: "var(--df-accent-danger)", borderColor: "color-mix(in srgb, var(--df-accent-danger) 40%, var(--df-border-subtle))" }}
+            style={{
+              color: "var(--df-accent-danger)",
+              borderColor:
+                "color-mix(in srgb, var(--df-accent-danger) 40%, var(--df-border-subtle))",
+            }}
           >
             <Trash2 size={14} strokeWidth={2} aria-hidden="true" /> Excluir
           </button>
-          <button type="button" className="dsl-engine-chip" onClick={exportMd} title="Baixar como .md">
+          <button
+            type="button"
+            className="dsl-engine-chip"
+            onClick={exportMd}
+            title="Baixar como .md"
+          >
             <Download size={14} strokeWidth={2} aria-hidden="true" /> Exportar .md
           </button>
           {skill.path && (
             <button
               type="button"
               className="dsl-engine-chip"
-              onClick={() => { void openFolder(); }}
+              onClick={() => {
+                void openFolder();
+              }}
               disabled={openingFolder || saving}
               title={`Abrir ${skill.path} no Finder / Explorer`}
             >
@@ -390,13 +483,17 @@ export function SkillDetailDirectionA({ skill, onClose, onChanged, onDeleted }: 
         <button
           type="button"
           className={`cnp-begin cnp-begin--v8${saving ? " is-loading" : ""}`}
-          onClick={() => { void save(); }}
+          onClick={() => {
+            void save();
+          }}
           disabled={!dirty || saving || validationError !== null}
           aria-busy={saving}
         >
           <span className="cnp-begin-led" aria-hidden="true" />
           <span className="cnp-begin-label">{saving ? "Salvando…" : "Salvar"}</span>
-          <span className="cnp-begin-arrow" aria-hidden="true"><ArrowRight size={16} strokeWidth={2} /></span>
+          <span className="cnp-begin-arrow" aria-hidden="true">
+            <ArrowRight size={16} strokeWidth={2} />
+          </span>
         </button>
       </div>
     </div>

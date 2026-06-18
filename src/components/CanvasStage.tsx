@@ -40,7 +40,14 @@ function viewportForRatio(ratioId: Props["ratioId"], aspectNum: number): { w: nu
   return { w: 1080, h: 1080 };
 }
 
-export function CanvasStage({ children, isVideoProject, aspectNum, ratioId, onClick, cursor }: Props) {
+export function CanvasStage({
+  children,
+  isVideoProject,
+  aspectNum,
+  ratioId,
+  onClick,
+  cursor,
+}: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [stageDims, setStageDims] = useState({ w: 0, h: 0 });
 
@@ -124,9 +131,7 @@ export function CanvasStage({ children, isVideoProject, aspectNum, ratioId, onCl
           </div>
         </div>
       ) : (
-        <div style={{ width: "100%", height: "100%", display: "flex" }}>
-          {children}
-        </div>
+        <div style={{ width: "100%", height: "100%", display: "flex" }}>{children}</div>
       )}
     </div>
   );

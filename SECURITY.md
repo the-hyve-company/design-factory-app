@@ -5,11 +5,11 @@
 Design Factory is pre-1.0 and ships from `main`. Security fixes land in the
 next release; we do not backport to tagged 0.x versions.
 
-| Version | Supported |
-|---------|-----------|
-| `main` (latest) | yes |
-| `0.1.x` | best effort |
-| < `0.1` | no |
+| Version         | Supported   |
+| --------------- | ----------- |
+| `main` (latest) | yes         |
+| `0.1.x`         | best effort |
+| < `0.1`         | no          |
 
 ## Reporting a vulnerability
 
@@ -118,4 +118,4 @@ After a fix lands and a release ships, we publish the advisory through
 GitHub Security Advisories with credit to the reporter (unless you prefer
 to remain anonymous).
 
-[advisories]: https://github.com/the-hyve-company/design-factory/security/advisories
+[advisories]: https://github.com/the-hyve-company/design-factory-app/security/advisories

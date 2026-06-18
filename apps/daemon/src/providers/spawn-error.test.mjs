@@ -11,7 +11,7 @@ describe("spawnErrorMessage", () => {
     expect(msg).toMatch(/Claude Code CLI not found/);
     expect(msg).toMatch(/"claude"/);
     expect(msg).toMatch(/DF_CLAUDE_BIN/);
-    // Mac founders see a narrower PATH than their shell when launched
+    // Mac users see a narrower PATH than their shell when launched
     // from a bundle. Mention it so they know where to look.
     expect(msg).toMatch(/macOS/i);
   });

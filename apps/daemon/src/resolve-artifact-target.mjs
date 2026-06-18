@@ -54,11 +54,7 @@ const ROLE_FOLDER_MAP = {
   assets: "asset",
 };
 
-const PREVIEWABLE_TYPES = new Set([
-  "text/html",
-  "image/svg+xml",
-  "application/xhtml+xml",
-]);
+const PREVIEWABLE_TYPES = new Set(["text/html", "image/svg+xml", "application/xhtml+xml"]);
 
 const EXT_TO_TYPE = {
   html: "text/html",
@@ -104,7 +100,11 @@ const TYPE_TO_DEFAULT_ROLES = {
 
 /** Forward-slash, strip leading `./` and `/`. Does not resolve `..`. */
 function tidy(path) {
-  return String(path).replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/^\/+/, "").replace(/\/+/g, "/");
+  return String(path)
+    .replace(/\\/g, "/")
+    .replace(/^\.\/+/, "")
+    .replace(/^\/+/, "")
+    .replace(/\/+/g, "/");
 }
 
 function normalizeIdentifier(identifier, projectId) {
@@ -125,7 +125,9 @@ function normalizeIdentifier(identifier, projectId) {
   return `projects/${projectId}/${tidied}`;
 }
 
-function extOf(p) { return extname(p).slice(1).toLowerCase(); }
+function extOf(p) {
+  return extname(p).slice(1).toLowerCase();
+}
 
 function inferTypeFromPath(p) {
   const ext = extOf(p);
@@ -166,7 +168,9 @@ function isTypeRoleConsistent(type, role) {
 
 // ─── Result builders ────────────────────────────────────────────────────
 
-function ok(out) { return out; }
+function ok(out) {
+  return out;
+}
 
 function err(code, message, details) {
   const error = { code, message };
@@ -207,7 +211,15 @@ function err(code, message, details) {
  * @returns {ResolveOutput|ResolveError}
  */
 export function resolveArtifactTarget(input, projectsRoot) {
-  const { projectId, requestedIdentifier, currentActiveFile, currentPrimaryFile, requestedType, intent, existingFiles } = input || {};
+  const {
+    projectId,
+    requestedIdentifier,
+    currentActiveFile,
+    currentPrimaryFile,
+    requestedType,
+    intent,
+    existingFiles,
+  } = input || {};
 
   if (typeof projectId !== "string" || !projectId) {
     return err("BAD_REQUEST", "projectId required");
@@ -246,7 +258,8 @@ export function resolveArtifactTarget(input, projectsRoot) {
   }
 
   // Step 3: determine type — explicit > path-derived > unknown.
-  const resolvedType = (typeof requestedType === "string" && requestedType) || inferTypeFromPath(normalized) || "";
+  const resolvedType =
+    (typeof requestedType === "string" && requestedType) || inferTypeFromPath(normalized) || "";
 
   // Step 4: figure out role.
   // Priority:
@@ -255,8 +268,7 @@ export function resolveArtifactTarget(input, projectsRoot) {
   //   c) path folder hint → use it.
   //   d) top-level previewable file → primary.
   //   e) fallback by type.
-  const isOverride =
-    normalized === currentActiveFile || normalized === currentPrimaryFile;
+  const isOverride = normalized === currentActiveFile || normalized === currentPrimaryFile;
 
   let role;
   let setPrimary = false;
@@ -320,15 +332,16 @@ export function resolveArtifactTarget(input, projectsRoot) {
   // that doesn't match the resolved role (e.g. asset role with text/html
   // type), surface INVALID_ROLE.
   if (resolvedType && !isTypeRoleConsistent(resolvedType, role)) {
-    return err(
-      "INVALID_ROLE",
-      `type "${resolvedType}" is not allowed for role "${role}"`,
-      { type: resolvedType, role, allowed: TYPE_TO_DEFAULT_ROLES[resolvedType] || null },
-    );
+    return err("INVALID_ROLE", `type "${resolvedType}" is not allowed for role "${role}"`, {
+      type: resolvedType,
+      role,
+      allowed: TYPE_TO_DEFAULT_ROLES[resolvedType] || null,
+    });
   }
 
   // Step 6: previewAfterWrite + activeFile/primaryFile decisions.
-  const previewAfterWrite = previewableForType(resolvedType) && (role === "primary" || role === "variant");
+  const previewAfterWrite =
+    previewableForType(resolvedType) && (role === "primary" || role === "variant");
 
   let setActive;
   if (role === "primary") {
@@ -342,7 +355,9 @@ export function resolveArtifactTarget(input, projectsRoot) {
   }
 
   // Decide isNewFile: did this path already exist in the registry?
-  const isNewFile = !(existingFiles && Object.prototype.hasOwnProperty.call(existingFiles, normalized));
+  const isNewFile = !(
+    existingFiles && Object.prototype.hasOwnProperty.call(existingFiles, normalized)
+  );
 
   return ok({
     finalPath,
@@ -353,7 +368,9 @@ export function resolveArtifactTarget(input, projectsRoot) {
     setActive,
     setPrimary,
     parent,
-    resolvedType: resolvedType || (role === "primary" || role === "variant" ? "text/html" : "application/octet-stream"),
+    resolvedType:
+      resolvedType ||
+      (role === "primary" || role === "variant" ? "text/html" : "application/octet-stream"),
   });
 }
 

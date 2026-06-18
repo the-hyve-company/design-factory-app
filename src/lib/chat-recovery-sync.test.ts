@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { syncRecoveryQueue, lastSyncReport } from "./chat-recovery-sync";
-import {
-  saveRecovery,
-  readRecovery,
-  listAllPendingRecovery,
-} from "./chat-recovery";
+import { saveRecovery, readRecovery, listAllPendingRecovery } from "./chat-recovery";
 import type { Turn } from "./chat-turns";
 
 const turn = (id: string, text: string): Turn => ({
@@ -105,7 +101,10 @@ describe("chat-recovery-sync", () => {
     saveRecovery("p1", "thread", "slug", turn("t1", "hi"), "timeout");
     let resolve: (v: Response) => void = () => {};
     globalThis.fetch = vi.fn(
-      () => new Promise<Response>((r) => { resolve = r; }),
+      () =>
+        new Promise<Response>((r) => {
+          resolve = r;
+        }),
     ) as typeof fetch;
 
     const first = syncRecoveryQueue({ delayBetweenMs: 0 });

@@ -71,7 +71,11 @@ describe("canvas-presets effective catalog", () => {
 
   it("isCustomCanvasPreset distinguishes user vs builtin", () => {
     const custom: CanvasPreset = {
-      id: "x", name: "X", ratio: "1:1", width: 100, height: 100,
+      id: "x",
+      name: "X",
+      ratio: "1:1",
+      width: 100,
+      height: 100,
     };
     setCustomCanvasPresets([custom]);
     expect(isCustomCanvasPreset("x")).toBe(true);
@@ -122,16 +126,27 @@ describe("canvas-presets describe + format helpers", () => {
 describe("canvas-presets selection schema", () => {
   it("accepts valid kinds (preset/custom only — v6 dropped responsive kind)", () => {
     expect(CanvasSelectionSchema.safeParse({ kind: "preset", presetId: "x" }).success).toBe(true);
-    expect(CanvasSelectionSchema.safeParse({ kind: "custom", width: 100, height: 100 }).success).toBe(true);
+    expect(
+      CanvasSelectionSchema.safeParse({ kind: "custom", width: 100, height: 100 }).success,
+    ).toBe(true);
   });
 
   it("v6: accepts the responsive flag on either kind", () => {
-    expect(CanvasSelectionSchema.safeParse({
-      kind: "preset", presetId: "x", responsive: true,
-    }).success).toBe(true);
-    expect(CanvasSelectionSchema.safeParse({
-      kind: "custom", width: 100, height: 100, responsive: false,
-    }).success).toBe(true);
+    expect(
+      CanvasSelectionSchema.safeParse({
+        kind: "preset",
+        presetId: "x",
+        responsive: true,
+      }).success,
+    ).toBe(true);
+    expect(
+      CanvasSelectionSchema.safeParse({
+        kind: "custom",
+        width: 100,
+        height: 100,
+        responsive: false,
+      }).success,
+    ).toBe(true);
   });
 
   it("rejects invalid kinds (and the legacy 'responsive' kind)", () => {
@@ -142,12 +157,22 @@ describe("canvas-presets selection schema", () => {
 
 describe("custom presets isolation", () => {
   it("getCustomCanvasPresets returns a copy (mutations don't leak)", () => {
-    setCustomCanvasPresets([{
-      id: "a", name: "A", ratio: "1:1", width: 1, height: 1,
-    }]);
+    setCustomCanvasPresets([
+      {
+        id: "a",
+        name: "A",
+        ratio: "1:1",
+        width: 1,
+        height: 1,
+      },
+    ]);
     const arr = getCustomCanvasPresets();
     arr.push({
-      id: "b", name: "B", ratio: "1:1", width: 1, height: 1,
+      id: "b",
+      name: "B",
+      ratio: "1:1",
+      width: 1,
+      height: 1,
     });
     expect(getCustomCanvasPresets().length).toBe(1);
   });

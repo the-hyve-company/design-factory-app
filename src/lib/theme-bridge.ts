@@ -32,7 +32,8 @@ export async function getThemeConfig(): Promise<ThemeConfig> {
     if (!res.ok) return emptyThemeConfig();
     const body = (await res.json()) as Partial<ThemeConfig>;
     if (body && body.presets && Object.keys(body.presets).length > 0) {
-      const active = (body.active && body.presets[body.active]) ? body.active : Object.keys(body.presets)[0];
+      const active =
+        body.active && body.presets[body.active] ? body.active : Object.keys(body.presets)[0];
       return { active, presets: body.presets as Record<string, ThemePreset> };
     }
     return emptyThemeConfig();
@@ -48,7 +49,7 @@ export async function setThemeConfig(config: ThemeConfig): Promise<void> {
     body: JSON.stringify(config),
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: string };
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(body.error ?? `bridge HTTP ${res.status}`);
   }
 }
@@ -64,24 +65,24 @@ export type TokenGroup = "Surfaces" | "Text" | "Borders" | "Accents";
 
 export const EDITABLE_TOKENS: EditableToken[] = [
   // Surfaces
-  { id: "--df-bg-sunken",        label: "Background sunken",     group: "Surfaces" },
-  { id: "--df-bg-base",          label: "Background base",       group: "Surfaces" },
-  { id: "--df-bg-section",       label: "Background section",    group: "Surfaces" },
-  { id: "--df-surface-raised",   label: "Surface raised",        group: "Surfaces" },
-  { id: "--df-surface-elevated", label: "Surface elevated",      group: "Surfaces" },
+  { id: "--df-bg-sunken", label: "Background sunken", group: "Surfaces" },
+  { id: "--df-bg-base", label: "Background base", group: "Surfaces" },
+  { id: "--df-bg-section", label: "Background section", group: "Surfaces" },
+  { id: "--df-surface-raised", label: "Surface raised", group: "Surfaces" },
+  { id: "--df-surface-elevated", label: "Surface elevated", group: "Surfaces" },
   // Text
-  { id: "--df-text-primary",     label: "Text primary",          group: "Text" },
-  { id: "--df-text-secondary",   label: "Text secondary",        group: "Text" },
-  { id: "--df-text-muted",       label: "Text muted",            group: "Text" },
-  { id: "--df-text-faint",       label: "Text faint",            group: "Text" },
+  { id: "--df-text-primary", label: "Text primary", group: "Text" },
+  { id: "--df-text-secondary", label: "Text secondary", group: "Text" },
+  { id: "--df-text-muted", label: "Text muted", group: "Text" },
+  { id: "--df-text-faint", label: "Text faint", group: "Text" },
   // Borders
-  { id: "--df-border-subtle",    label: "Border subtle",         group: "Borders" },
-  { id: "--df-border-hover",     label: "Border hover",          group: "Borders" },
-  { id: "--df-border-strong",    label: "Border strong",         group: "Borders" },
+  { id: "--df-border-subtle", label: "Border subtle", group: "Borders" },
+  { id: "--df-border-hover", label: "Border hover", group: "Borders" },
+  { id: "--df-border-strong", label: "Border strong", group: "Borders" },
   // Accents (shared across themes by default — overrides apply per-theme via specificity)
-  { id: "--df-accent-user",      label: "Accent (success/info)", group: "Accents" },
-  { id: "--df-accent-warn",      label: "Accent warn",           group: "Accents" },
-  { id: "--df-accent-danger",    label: "Accent danger",         group: "Accents" },
+  { id: "--df-accent-user", label: "Accent (success/info)", group: "Accents" },
+  { id: "--df-accent-warn", label: "Accent warn", group: "Accents" },
+  { id: "--df-accent-danger", label: "Accent danger", group: "Accents" },
 ];
 
 /** Read the live computed value of a CSS var for a given theme. */

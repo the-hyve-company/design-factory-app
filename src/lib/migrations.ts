@@ -144,10 +144,7 @@ function inferProvider(m: Record<string, unknown>): ProviderId {
  * backfilled ones (1970-01-01). UI doesn't surface timestamps yet so this
  * is purely an audit trail for diagnostics.
  */
-function buildLegacyToolEvents(
-  tools: unknown[],
-  provider: ProviderId,
-): NormalizedToolEvent[] {
+function buildLegacyToolEvents(tools: unknown[], provider: ProviderId): NormalizedToolEvent[] {
   const out: NormalizedToolEvent[] = [];
   const stamp = () => "1970-01-01T00:00:00.000Z";
   for (const raw of tools) {
@@ -158,11 +155,7 @@ function buildLegacyToolEvents(
       t.input && typeof t.input === "object" && !Array.isArray(t.input)
         ? (t.input as Record<string, unknown>)
         : {};
-    const call = fromBridgeToolCall(
-      { id: t.id, name: t.name, input },
-      provider,
-      { now: stamp },
-    );
+    const call = fromBridgeToolCall({ id: t.id, name: t.name, input }, provider, { now: stamp });
     if (call) out.push(call);
 
     const result = t.result;
@@ -170,11 +163,9 @@ function buildLegacyToolEvents(
       const r = result as Record<string, unknown>;
       const isError = r.isError === true || r.isError === "true";
       const content = typeof r.content === "string" ? r.content : "";
-      const resultEv = fromBridgeToolResult(
-        { id: t.id, isError, content },
-        provider,
-        { now: stamp },
-      );
+      const resultEv = fromBridgeToolResult({ id: t.id, isError, content }, provider, {
+        now: stamp,
+      });
       if (resultEv) out.push(resultEv);
     }
   }

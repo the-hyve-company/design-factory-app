@@ -58,11 +58,7 @@ export function getRecentErrors(): SurfacedError[] {
  * Pass `context` describing where it happened ("appendChatTurn",
  * "writeProjectMeta", etc) — that's what the user sees in the toast.
  */
-export function surfaceError(
-  e: unknown,
-  context: string,
-  severity: ErrorSeverity = "error",
-): void {
+export function surfaceError(e: unknown, context: string, severity: ErrorSeverity = "error"): void {
   const message = extractMessage(e);
   const entry: SurfacedError = {
     ts: Date.now(),
@@ -81,7 +77,11 @@ export function surfaceError(
     console.log(`[surfacedError] ${context}:`, message);
   }
   for (const fn of listeners) {
-    try { fn(entry); } catch { /* listener bug shouldn't kill the chain */ }
+    try {
+      fn(entry);
+    } catch {
+      /* listener bug shouldn't kill the chain */
+    }
   }
 }
 
@@ -107,11 +107,7 @@ export async function trace<T>(p: Promise<T>, context: string): Promise<T> {
  *
  *   const ok = await traceOr(appendChatTurn(...), false, "appendChatTurn");
  */
-export async function traceOr<T>(
-  p: Promise<T>,
-  fallback: T,
-  context: string,
-): Promise<T> {
+export async function traceOr<T>(p: Promise<T>, fallback: T, context: string): Promise<T> {
   try {
     return await p;
   } catch (e) {
@@ -142,6 +138,11 @@ export function warn(context: string): (e: unknown) => void {
 function extractMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
   if (typeof e === "string") return e;
-  if (e && typeof e === "object" && "message" in e) return String((e as { message: unknown }).message);
-  try { return JSON.stringify(e); } catch { return String(e); }
+  if (e && typeof e === "object" && "message" in e)
+    return String((e as { message: unknown }).message);
+  try {
+    return JSON.stringify(e);
+  } catch {
+    return String(e);
+  }
 }

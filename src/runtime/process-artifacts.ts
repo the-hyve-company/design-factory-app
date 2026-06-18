@@ -45,7 +45,11 @@ export interface ProcessArtifactsOptions {
 }
 
 export type ProcessArtifactsOutcome =
-  | { status: "skipped"; reason: "no-artifact" | "feature-disabled" | "provider-uses-write"; cleanedText: string }
+  | {
+      status: "skipped";
+      reason: "no-artifact" | "feature-disabled" | "provider-uses-write";
+      cleanedText: string;
+    }
   | { status: "rejected"; reason: ParseRejection; cleanedText: string }
   | {
       status: "written";
@@ -66,7 +70,13 @@ export type ProcessArtifactsOutcome =
       /** : did the runtime gate need to preview after this write? */
       previewAfterWrite?: boolean;
     }
-  | { status: "write-failed"; httpStatus: number; error: string; code: string | null; cleanedText: string };
+  | {
+      status: "write-failed";
+      httpStatus: number;
+      error: string;
+      code: string | null;
+      cleanedText: string;
+    };
 
 export type ParseRejection =
   | "multiple-artifacts"
@@ -111,7 +121,7 @@ interface DaemonWriteResponse {
  */
 export async function processArtifacts(
   fullText: string,
-  opts: ProcessArtifactsOptions = {}
+  opts: ProcessArtifactsOptions = {},
 ): Promise<ProcessArtifactsOutcome> {
   const result = await parseArtifact(fullText, { maxBytes: opts.maxBytes });
   return await dispatchParseResult(result, opts);
@@ -124,7 +134,7 @@ export async function processArtifacts(
  */
 export async function dispatchParseResult(
   result: ParseResult,
-  opts: ProcessArtifactsOptions = {}
+  opts: ProcessArtifactsOptions = {},
 ): Promise<ProcessArtifactsOutcome> {
   if (result.status === "none") {
     return { status: "skipped", reason: "no-artifact", cleanedText: result.cleanedText };
@@ -138,7 +148,7 @@ export async function dispatchParseResult(
 async function postToDaemon(
   artifact: ArtifactBlock,
   cleanedText: string,
-  opts: ProcessArtifactsOptions
+  opts: ProcessArtifactsOptions,
 ): Promise<ProcessArtifactsOutcome> {
   const url = (opts.bridgeUrl || BRIDGE_URL) + "/fs/write/artifact";
   let response: Response;
@@ -194,6 +204,8 @@ async function postToDaemon(
     ...(payload?.setActive !== undefined ? { setActive: payload.setActive } : {}),
     ...(payload?.setPrimary !== undefined ? { setPrimary: payload.setPrimary } : {}),
     ...(payload?.isNewFile !== undefined ? { isNewFile: payload.isNewFile } : {}),
-    ...(payload?.previewAfterWrite !== undefined ? { previewAfterWrite: payload.previewAfterWrite } : {}),
+    ...(payload?.previewAfterWrite !== undefined
+      ? { previewAfterWrite: payload.previewAfterWrite }
+      : {}),
   };
 }

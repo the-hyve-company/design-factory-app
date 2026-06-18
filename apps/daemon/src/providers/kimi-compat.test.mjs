@@ -60,15 +60,15 @@ describe("kimiVersionHint", () => {
     const hint = kimiVersionHint("0.5.0");
     expect(hint).toMatch(/0\.5\.0 is untested/);
     // The adapter targets a known window — the hint must surface that
-    // window so the founder knows whether to downgrade or wait for an
+    // window so the user knows whether to downgrade or wait for an
     // adapter update.
     expect(hint).toMatch(new RegExp(`${KIMI_TESTED_MIN}`));
     expect(hint).toMatch(new RegExp(`${KIMI_TESTED_MAX}`));
   });
 
-  it("hint mentions the 'unknown option' symptom the founder will see", () => {
+  it("hint mentions the 'unknown option' symptom the user will see", () => {
     // The 0.1.x → 0.2.x break manifested as "unknown option '--print'".
-    // Surfacing that string lets the founder pattern-match the error
+    // Surfacing that string lets the user pattern-match the error
     // they're staring at to the hint.
     const hint = kimiVersionHint("0.1.0");
     expect(hint).toMatch(/unknown option/);

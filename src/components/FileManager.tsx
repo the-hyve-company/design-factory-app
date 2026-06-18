@@ -76,7 +76,9 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
     setLoading(false);
   }, [currentPath]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   // External refresh trigger — bumps when the agent writes a file so the
   // gallery picks up the change without the user clicking Refresh.
@@ -86,7 +88,9 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
   }, [refreshKey, refresh]);
 
   // Auto-focus the inline create input when entering create mode.
-  useEffect(() => { if (creating) createInputRef.current?.focus(); }, [creating]);
+  useEffect(() => {
+    if (creating) createInputRef.current?.focus();
+  }, [creating]);
 
   const drillInto = useCallback((entry: FsEntry) => {
     if (entry.isDir) {
@@ -102,7 +106,11 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
 
   const commitCreate = useCallback(async () => {
     const name = createName.trim();
-    if (!name) { setCreating(null); setCreateName(""); return; }
+    if (!name) {
+      setCreating(null);
+      setCreateName("");
+      return;
+    }
     if (name.includes("/") || name.includes("\\")) {
       setError("Name can't contain slashes — drag the file into a subfolder after creating it.");
       return;
@@ -123,12 +131,15 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
     }
   }, [createName, creating, currentPath, refresh]);
 
-  const handleDelete = useCallback(async (entry: FsEntry) => {
-    if (typeof window !== "undefined" && !window.confirm(`Deletar "${entry.name}"?`)) return;
-    const ok = await removeFsEntryViaBridge(entry.path);
-    if (ok) void refresh();
-    else setError("Could not delete");
-  }, [refresh]);
+  const handleDelete = useCallback(
+    async (entry: FsEntry) => {
+      if (typeof window !== "undefined" && !window.confirm(`Deletar "${entry.name}"?`)) return;
+      const ok = await removeFsEntryViaBridge(entry.path);
+      if (ok) void refresh();
+      else setError("Could not delete");
+    },
+    [refresh],
+  );
 
   // Categories — same triage the tree-view used. Mirrors the user's
   // mental model: deliverables first, then attachments, then folders.
@@ -153,22 +164,29 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
   const atRoot = currentPath === initialPath;
 
   return (
-    <div style={{
-      flex: 1,
-      minWidth: 0,
-      height: "100%",
-      background: "var(--df-bg-section)",
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden",
-    }}>
+    <div
+      style={{
+        flex: 1,
+        minWidth: 0,
+        height: "100%",
+        background: "var(--df-bg-section)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       {/* Header — breadcrumb + close */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-        padding: "10px 12px",
-        borderBottom: "1px solid var(--df-border-subtle)",
-        boxShadow: "var(--df-shadow-tab-inset)",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          padding: "10px 12px",
+          borderBottom: "1px solid var(--df-border-subtle)",
+          boxShadow: "var(--df-shadow-tab-inset)",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
           <FolderIcon size={14} color="var(--df-text-secondary)" />
           <Breadcrumb
@@ -184,21 +202,33 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
       </div>
 
       {/* Toolbar — tactile actions (skeumorphic) */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 6,
-        padding: "8px 12px",
-        borderBottom: "1px solid var(--df-border-subtle)",
-        background: "var(--df-bg-section)",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "8px 12px",
+          borderBottom: "1px solid var(--df-border-subtle)",
+          background: "var(--df-bg-section)",
+        }}
+      >
         <TactileBtn
-          onClick={() => { setCreating("file"); setCreateName(""); setError(null); }}
+          onClick={() => {
+            setCreating("file");
+            setCreateName("");
+            setError(null);
+          }}
           disabled={creating !== null}
         >
           <PlusIcon size={11} />
           <span>File</span>
         </TactileBtn>
         <TactileBtn
-          onClick={() => { setCreating("folder"); setCreateName(""); setError(null); }}
+          onClick={() => {
+            setCreating("folder");
+            setCreateName("");
+            setError(null);
+          }}
           disabled={creating !== null}
         >
           <PlusIcon size={11} />
@@ -223,7 +253,10 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
                 name={createName}
                 onChange={setCreateName}
                 onCommit={() => void commitCreate()}
-                onCancel={() => { setCreating(null); setCreateName(""); }}
+                onCancel={() => {
+                  setCreating(null);
+                  setCreateName("");
+                }}
                 inputRef={createInputRef}
               />
             </div>
@@ -231,15 +264,21 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
         )}
 
         {loading && (
-          <div style={{ padding: "12px 0", fontSize: 11, color: "var(--df-text-faint)" }}>Loading…</div>
+          <div style={{ padding: "12px 0", fontSize: 11, color: "var(--df-text-faint)" }}>
+            Loading…
+          </div>
         )}
 
         {error && (
           <div style={{ padding: "14px 0", display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{
-              fontSize: 12, color: "var(--df-text-secondary)",
-              fontFamily: "var(--df-font-body)", lineHeight: 1.5,
-            }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--df-text-secondary)",
+                fontFamily: "var(--df-font-body)",
+                lineHeight: 1.5,
+              }}
+            >
               {/ENOENT|no such file/i.test(error)
                 ? "This folder doesn't exist on disk yet."
                 : error}
@@ -248,7 +287,10 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
               <TactileBtn
                 onClick={async () => {
                   const ok = await mkdirViaBridge(currentPath);
-                  if (ok) { setError(null); void refresh(); }
+                  if (ok) {
+                    setError(null);
+                    void refresh();
+                  }
                 }}
               >
                 Create folder
@@ -258,18 +300,29 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
         )}
 
         {!loading && !error && entries.length === 0 && !creating && (
-          <div style={{
-            padding: "60px 18px",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
-            color: "var(--df-text-muted)", textAlign: "center",
-          }}>
+          <div
+            style={{
+              padding: "60px 18px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 12,
+              color: "var(--df-text-muted)",
+              textAlign: "center",
+            }}
+          >
             <FolderIcon size={28} color="var(--df-text-faint)" />
             <div style={{ fontSize: 12, lineHeight: 1.5, maxWidth: 240 }}>
               {atRoot
                 ? "No files in this project yet. Claude will create them automatically when you generate a design."
                 : "Empty folder."}
             </div>
-            <TactileBtn onClick={() => { setCreating("file"); setCreateName(""); }}>
+            <TactileBtn
+              onClick={() => {
+                setCreating("file");
+                setCreateName("");
+              }}
+            >
               <PlusIcon size={11} />
               <span>Create first file</span>
             </TactileBtn>
@@ -331,20 +384,30 @@ export function FileManager({ initialPath, onOpen, onClose, refreshKey }: Props)
 // Layout primitives
 // ============================================================================
 
-function Section({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
+function Section({
+  label,
+  count,
+  children,
+}: {
+  label: string;
+  count: number;
+  children: React.ReactNode;
+}) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{
-        padding: "0 0 8px 4px",
-        fontFamily: "var(--df-font-mono)",
-        fontSize: 10,
-        letterSpacing: "0.14em",
-        textTransform: "uppercase",
-        color: "var(--df-text-faint)",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "baseline",
-      }}>
+      <div
+        style={{
+          padding: "0 0 8px 4px",
+          fontFamily: "var(--df-font-mono)",
+          fontSize: 10,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: "var(--df-text-faint)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
         <span>{label}</span>
         <span style={{ opacity: 0.6 }}>{count}</span>
       </div>
@@ -383,13 +446,31 @@ function Breadcrumb({
   }, [rootLabel, rootPath, currentPath]);
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 2, minWidth: 0, overflow: "hidden", flex: 1 }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        minWidth: 0,
+        overflow: "hidden",
+        flex: 1,
+      }}
+    >
       {segments.map((seg, i) => {
         const isLast = i === segments.length - 1;
         return (
           <Fragment key={`${seg.path}-${i}`}>
             {i > 0 && (
-              <span style={{ color: "var(--df-text-faint)", fontSize: 12, padding: "0 2px", flexShrink: 0 }}>›</span>
+              <span
+                style={{
+                  color: "var(--df-text-faint)",
+                  fontSize: 12,
+                  padding: "0 2px",
+                  flexShrink: 0,
+                }}
+              >
+                ›
+              </span>
             )}
             <button
               type="button"
@@ -469,12 +550,21 @@ function FileThumb({ entry }: { entry: FsEntry }) {
   // the card never opens. User repro 2026-05-20.
   if (entry.isDir) {
     return (
-      <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", background: "var(--df-surface-raised)", pointerEvents: "none" }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "grid",
+          placeItems: "center",
+          background: "var(--df-surface-raised)",
+          pointerEvents: "none",
+        }}
+      >
         <FolderIcon size={56} color="var(--df-text-faint)" />
       </div>
     );
   }
-  const ext = (entry.name.toLowerCase().split(".").pop() || "");
+  const ext = entry.name.toLowerCase().split(".").pop() || "";
   if (["png", "jpg", "jpeg", "gif", "webp", "avif", "ico"].includes(ext)) {
     return <LazyImageThumb path={entry.path} alt={entry.name} />;
   }
@@ -482,7 +572,16 @@ function FileThumb({ entry }: { entry: FsEntry }) {
     return <LazyHtmlThumb path={entry.path} />;
   }
   return (
-    <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", background: "var(--df-surface-raised)", pointerEvents: "none" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "grid",
+        placeItems: "center",
+        background: "var(--df-surface-raised)",
+        pointerEvents: "none",
+      }}
+    >
       {iconForExtBig(entry.name)}
     </div>
   );
@@ -500,32 +599,58 @@ function LazyHtmlThumb({ path }: { path: string }) {
     const el = wrapRef.current;
     if (!el) return;
     let cancelled = false;
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting) {
-          io.disconnect();
-          (async () => {
-            const file = await readFileViaBridge(path);
-            if (cancelled) return;
-            if (file && file.isText && isUsableHtmlContent(file.content)) {
-              setHtml(file.content);
-            }
-            setTried(true);
-          })();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            io.disconnect();
+            (async () => {
+              const file = await readFileViaBridge(path);
+              if (cancelled) return;
+              if (file && file.isText && isUsableHtmlContent(file.content)) {
+                setHtml(file.content);
+              }
+              setTried(true);
+            })();
+          }
         }
-      }
-    }, { threshold: 0.01, rootMargin: "120px 0px" });
+      },
+      { threshold: 0.01, rootMargin: "120px 0px" },
+    );
     io.observe(el);
-    return () => { cancelled = true; io.disconnect(); };
+    return () => {
+      cancelled = true;
+      io.disconnect();
+    };
   }, [path]);
 
   return (
-    <div ref={wrapRef} style={{ width: "100%", height: "100%", background: "var(--df-surface-raised)", pointerEvents: "none" }}>
+    <div
+      ref={wrapRef}
+      style={{
+        width: "100%",
+        height: "100%",
+        background: "var(--df-surface-raised)",
+        pointerEvents: "none",
+      }}
+    >
       {html ? (
         <HtmlPreviewCover html={html} ratio="16:9" />
       ) : (
-        <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: "var(--df-text-faint)" }}>
-          {tried ? <HtmlIcon size={56} color="var(--df-text-faint)" /> : <HtmlIcon size={56} color="var(--df-text-faint)" />}
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "grid",
+            placeItems: "center",
+            color: "var(--df-text-faint)",
+          }}
+        >
+          {tried ? (
+            <HtmlIcon size={56} color="var(--df-text-faint)" />
+          ) : (
+            <HtmlIcon size={56} color="var(--df-text-faint)" />
+          )}
         </div>
       )}
     </div>
@@ -542,31 +667,43 @@ function LazyImageThumb({ path, alt }: { path: string; alt: string }) {
     const el = wrapRef.current;
     if (!el) return;
     let cancelled = false;
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting) {
-          io.disconnect();
-          (async () => {
-            const file = await readFileViaBridge(path);
-            if (cancelled) return;
-            if (file && !file.isText && file.content.startsWith("data:image/")) {
-              setSrc(file.content);
-            }
-          })();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            io.disconnect();
+            (async () => {
+              const file = await readFileViaBridge(path);
+              if (cancelled) return;
+              if (file && !file.isText && file.content.startsWith("data:image/")) {
+                setSrc(file.content);
+              }
+            })();
+          }
         }
-      }
-    }, { threshold: 0.01, rootMargin: "120px 0px" });
+      },
+      { threshold: 0.01, rootMargin: "120px 0px" },
+    );
     io.observe(el);
-    return () => { cancelled = true; io.disconnect(); };
+    return () => {
+      cancelled = true;
+      io.disconnect();
+    };
   }, [path]);
 
   return (
-    <div ref={wrapRef} style={{
-      width: "100%", height: "100%",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      background: "var(--df-surface-raised)",
-      pointerEvents: "none",
-    }}>
+    <div
+      ref={wrapRef}
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--df-surface-raised)",
+        pointerEvents: "none",
+      }}
+    >
       {src ? (
         <img
           src={src}
@@ -602,13 +739,21 @@ function InlineCreateCard({
   return (
     <div className="home-pcard-tile entity-card">
       <div className="home-pcard" style={{ width: "100%" }}>
-        <div className="home-pcard-thumb" style={{ display: "grid", placeItems: "center", background: "var(--df-surface-raised)" }}>
-          {kind === "folder"
-            ? <FolderIcon size={56} color="var(--df-text-faint)" />
-            : <FileIcon size={56} color="var(--df-text-faint)" />}
+        <div
+          className="home-pcard-thumb"
+          style={{ display: "grid", placeItems: "center", background: "var(--df-surface-raised)" }}
+        >
+          {kind === "folder" ? (
+            <FolderIcon size={56} color="var(--df-text-faint)" />
+          ) : (
+            <FileIcon size={56} color="var(--df-text-faint)" />
+          )}
         </div>
         <div className="home-pcard-meta">
-          <div className="home-pcard-meta-text" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <div
+            className="home-pcard-meta-text"
+            style={{ display: "flex", gap: 6, alignItems: "center" }}
+          >
             <input
               ref={inputRef}
               value={name}
@@ -675,10 +820,13 @@ function iconForExtBig(name: string): React.ReactNode {
   const ext = name.toLowerCase().split(".").pop() ?? "";
   const color = "var(--df-text-faint)";
   if (["html", "htm", "svg"].includes(ext)) return <HtmlIcon size={56} color={color} />;
-  if (["png", "jpg", "jpeg", "gif", "webp", "avif", "ico"].includes(ext)) return <ImageIcon size={48} color={color} />;
+  if (["png", "jpg", "jpeg", "gif", "webp", "avif", "ico"].includes(ext))
+    return <ImageIcon size={48} color={color} />;
   if (["css", "scss", "sass"].includes(ext)) return <CssIcon size={48} color={color} />;
-  if (["js", "mjs", "cjs", "ts", "tsx", "jsx"].includes(ext)) return <CodeIcon size={48} color={color} />;
-  if (["md", "txt", "json", "yml", "yaml"].includes(ext)) return <DocIcon size={48} color={color} />;
+  if (["js", "mjs", "cjs", "ts", "tsx", "jsx"].includes(ext))
+    return <CodeIcon size={48} color={color} />;
+  if (["md", "txt", "json", "yml", "yaml"].includes(ext))
+    return <DocIcon size={48} color={color} />;
   return <FileIcon size={48} color={color} />;
 }
 
@@ -686,11 +834,23 @@ function iconForExtBig(name: string): React.ReactNode {
 // Inline SVG icons (Lucide-style — single source, no emoji)
 // ============================================================================
 
-interface IconProps { size?: number; color?: string }
+interface IconProps {
+  size?: number;
+  color?: string;
+}
 
 function FolderIcon({ size = 14, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M4 4h5l2 2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
     </svg>
   );
@@ -698,7 +858,16 @@ function FolderIcon({ size = 14, color = "currentColor" }: IconProps) {
 
 function FileIcon({ size = 14, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" />
     </svg>
@@ -707,7 +876,16 @@ function FileIcon({ size = 14, color = "currentColor" }: IconProps) {
 
 function HtmlIcon({ size = 14, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="16 18 22 12 16 6" />
       <polyline points="8 6 2 12 8 18" />
     </svg>
@@ -716,7 +894,16 @@ function HtmlIcon({ size = 14, color = "currentColor" }: IconProps) {
 
 function ImageIcon({ size = 14, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <circle cx="9" cy="9" r="2" />
       <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
@@ -726,7 +913,16 @@ function ImageIcon({ size = 14, color = "currentColor" }: IconProps) {
 
 function CssIcon({ size = 14, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="13.5" cy="6.5" r="2.5" />
       <circle cx="17.5" cy="10.5" r="2.5" />
       <circle cx="8.5" cy="7.5" r="2.5" />
@@ -738,7 +934,16 @@ function CssIcon({ size = 14, color = "currentColor" }: IconProps) {
 
 function CodeIcon({ size = 14, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="16 18 22 12 16 6" />
       <polyline points="8 6 2 12 8 18" />
     </svg>
@@ -747,7 +952,16 @@ function CodeIcon({ size = 14, color = "currentColor" }: IconProps) {
 
 function DocIcon({ size = 14, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" />
       <line x1="16" y1="13" x2="8" y2="13" />
@@ -759,7 +973,16 @@ function DocIcon({ size = 14, color = "currentColor" }: IconProps) {
 
 function PlusIcon({ size = 12, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
@@ -768,7 +991,16 @@ function PlusIcon({ size = 12, color = "currentColor" }: IconProps) {
 
 function XIcon({ size = 12, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
@@ -777,7 +1009,16 @@ function XIcon({ size = 12, color = "currentColor" }: IconProps) {
 
 function CheckIcon({ size = 12, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -785,7 +1026,16 @@ function CheckIcon({ size = 12, color = "currentColor" }: IconProps) {
 
 function RefreshIcon({ size = 12, color = "currentColor" }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <polyline points="23 4 23 10 17 10" />
       <polyline points="1 20 1 14 7 14" />
       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />

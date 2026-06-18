@@ -35,7 +35,9 @@ describe("shouldAppendArtifactContract — capability gate", () => {
 
 describe("buildArtifactContractBlock", () => {
   it("returns empty string when capability is tool-driven", () => {
-    expect(buildArtifactContractBlock({ fileWrite: "tool", filePath: "projects/x/x.html" })).toBe("");
+    expect(buildArtifactContractBlock({ fileWrite: "tool", filePath: "projects/x/x.html" })).toBe(
+      "",
+    );
   });
 
   it("includes the file path, type, and title in the canonical block", () => {
@@ -53,7 +55,10 @@ describe("buildArtifactContractBlock", () => {
   });
 
   it("falls back to filename stem when projectName is omitted", () => {
-    const out = buildArtifactContractBlock({ fileWrite: "artifact", filePath: "projects/abc/abc.html" });
+    const out = buildArtifactContractBlock({
+      fileWrite: "artifact",
+      filePath: "projects/abc/abc.html",
+    });
     expect(out).toContain('title="abc"');
   });
 

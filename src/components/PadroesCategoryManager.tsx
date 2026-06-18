@@ -89,10 +89,7 @@ export function PadroesCategoryManager({
   const [renameDraft, setRenameDraft] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  const customCount = useMemo(
-    () => categories.filter((c) => !c.builtin).length,
-    [categories],
-  );
+  const customCount = useMemo(() => categories.filter((c) => !c.builtin).length, [categories]);
   const atCapacity = customCount >= MAX_CUSTOM_CATEGORIES;
 
   const pendingDelete = useMemo(
@@ -108,9 +105,7 @@ export function PadroesCategoryManager({
       setCreateError(t("settings.padroes.cats.empty.input"));
       return;
     }
-    const exists = categories.some(
-      (c) => c.label.trim().toLowerCase() === trimmed.toLowerCase(),
-    );
+    const exists = categories.some((c) => c.label.trim().toLowerCase() === trimmed.toLowerCase());
     if (exists) {
       setCreateError(t("settings.padroes.cats.duplicate"));
       return;
@@ -224,7 +219,9 @@ export function PadroesCategoryManager({
             </button>
           </div>
           {createError && (
-            <p className="padroes-cat-create-error" role="alert">{createError}</p>
+            <p className="padroes-cat-create-error" role="alert">
+              {createError}
+            </p>
           )}
 
           {/* LIST */}
@@ -271,9 +268,7 @@ export function PadroesCategoryManager({
                         </span>
                       )}
                       {cat.builtin && cat.hasOverride && (
-                        <span className="padroes-cat-badge padroes-cat-badge--edited">
-                          ✎
-                        </span>
+                        <span className="padroes-cat-badge padroes-cat-badge--edited">✎</span>
                       )}
                       <span className="padroes-cat-row-count">{itemLabel}</span>
                     </div>
@@ -321,11 +316,7 @@ export function PadroesCategoryManager({
           </ul>
 
           <footer className="padroes-cat-modal-foot">
-            <button
-              type="button"
-              className="padroes-cat-modal-foot-btn"
-              onClick={onClose}
-            >
+            <button type="button" className="padroes-cat-modal-foot-btn" onClick={onClose}>
               {t("settings.padroes.cats.close")}
             </button>
           </footer>
@@ -342,10 +333,7 @@ export function PadroesCategoryManager({
               ? t("settings.padroes.cats.delete.cascade.confirm")
                   .replace("{0}", pendingDelete.label)
                   .replace("{1}", String(pendingDelete.itemCount))
-              : t("settings.padroes.cats.delete.empty.confirm").replace(
-                  "{0}",
-                  pendingDelete.label,
-                )
+              : t("settings.padroes.cats.delete.empty.confirm").replace("{0}", pendingDelete.label)
             : ""
         }
         tone="danger"

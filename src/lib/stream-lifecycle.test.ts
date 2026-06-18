@@ -28,16 +28,12 @@ describe("isSuspiciousDone", () => {
   });
 
   it("does not flag a turn that produced any tool call", () => {
-    expect(
-      isSuspiciousDone({ text: "x", toolCount: 1, promptText: "anything" }),
-    ).toBe(false);
+    expect(isSuspiciousDone({ text: "x", toolCount: 1, promptText: "anything" })).toBe(false);
   });
 
   it("does not flag a normal-length response", () => {
     const longText = "x".repeat(SUSPICIOUS_TEXT_CHAR_LIMIT);
-    expect(
-      isSuspiciousDone({ text: longText, toolCount: 0, promptText: "anything" }),
-    ).toBe(false);
+    expect(isSuspiciousDone({ text: longText, toolCount: 0, promptText: "anything" })).toBe(false);
   });
 
   it("does not flag short replies to trivial prompts", () => {
@@ -48,7 +44,9 @@ describe("isSuspiciousDone", () => {
 
   it("treats null/undefined text as truncation when prompt is non-trivial", () => {
     expect(isSuspiciousDone({ text: null, toolCount: 0, promptText: "build me X" })).toBe(true);
-    expect(isSuspiciousDone({ text: undefined, toolCount: 0, promptText: "build me X" })).toBe(true);
+    expect(isSuspiciousDone({ text: undefined, toolCount: 0, promptText: "build me X" })).toBe(
+      true,
+    );
     expect(isSuspiciousDone({ text: "", toolCount: 0, promptText: "build me X" })).toBe(true);
   });
 

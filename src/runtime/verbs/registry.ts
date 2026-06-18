@@ -66,38 +66,75 @@ function agentCommandToVerb(c: BuiltinCommand): Verb | null {
 // frontmatter values from the original .md files.
 function categoryForAgentCommand(id: string): VerbCategory {
   switch (id) {
-    case "review": case "check": return "evaluate";
-    case "polish": case "rewrite": case "simplify": case "reinforce": return "refine";
-    case "animate": case "type": case "color": return "enhance";
-    default: return "refine";
+    case "review":
+    case "check":
+      return "evaluate";
+    case "polish":
+    case "rewrite":
+    case "simplify":
+    case "reinforce":
+      return "refine";
+    case "animate":
+    case "type":
+    case "color":
+      return "enhance";
+    default:
+      return "refine";
   }
 }
 function hueForAgentCommand(id: string): VerbHue {
   switch (id) {
-    case "review": case "check": return "cool-blue";
-    case "polish": case "rewrite": case "simplify": case "reinforce": return "warm-gold";
-    case "animate": case "type": case "color": return "cool-purple";
-    default: return "neutral";
+    case "review":
+    case "check":
+      return "cool-blue";
+    case "polish":
+    case "rewrite":
+    case "simplify":
+    case "reinforce":
+      return "warm-gold";
+    case "animate":
+    case "type":
+    case "color":
+      return "cool-purple";
+    default:
+      return "neutral";
   }
 }
 function iconForAgentCommand(id: string): string {
   switch (id) {
-    case "review": return "eye";
-    case "check": return "shield-check";
-    case "polish": return "sparkles";
-    case "rewrite": return "edit-3";
-    case "simplify": return "minimize";
-    case "reinforce": return "shield";
-    case "animate": return "play";
-    case "type": return "type";
-    case "color": return "palette";
-    default: return "command";
+    case "review":
+      return "eye";
+    case "check":
+      return "shield-check";
+    case "polish":
+      return "sparkles";
+    case "rewrite":
+      return "edit-3";
+    case "simplify":
+      return "minimize";
+    case "reinforce":
+      return "shield";
+    case "animate":
+      return "play";
+    case "type":
+      return "type";
+    case "color":
+      return "palette";
+    default:
+      return "command";
   }
 }
 
 // Display order — used by Library drawer and slash menu. `export` lands
 // last because it's a terminal action, not a refinement step.
-export const CATEGORY_ORDER: VerbCategory[] = ["evaluate", "refine", "direction", "enhance", "fix", "export"];
+export const CATEGORY_ORDER: VerbCategory[] = [
+  "evaluate",
+  "refine",
+  "direction",
+  "enhance",
+  "fix",
+  "export",
+];
 
 export const CATEGORY_LABEL: Record<VerbCategory, string> = {
   evaluate: "Evaluate",
@@ -129,7 +166,10 @@ function parseFrontmatter(raw: string): { fm: Record<string, string>; body: stri
     if (!m) continue;
     let value = m[2].trim();
     // Strip optional surrounding quotes.
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
     fm[m[1]] = value;
@@ -182,7 +222,7 @@ export function loadBuiltinVerbs(): Verb[] {
 export async function loadAllVerbs(
   fetchCustomList: () => Promise<{ id: string; body: string }[]>,
   fetchDisabled: () => Promise<string[]>,
-  fetchHidden?: () => Promise<string[]>
+  fetchHidden?: () => Promise<string[]>,
 ): Promise<Verb[]> {
   const builtins = loadBuiltinVerbs();
   const byId = new Map<string, Verb>(builtins.map((v) => [v.id, v]));

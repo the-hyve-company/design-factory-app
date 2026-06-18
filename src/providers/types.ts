@@ -21,11 +21,11 @@ export type ProviderId =
   | "ollama";
 
 export type ProviderStatus =
-  | "connected"     // binary found + ready to stream
-  | "needs-auth"    // binary found but not logged in
+  | "connected" // binary found + ready to stream
+  | "needs-auth" // binary found but not logged in
   | "not-installed" // binary missing
-  | "unknown"       // probe failed or adapter not implemented
-  | "error";        // binary errored out
+  | "unknown" // probe failed or adapter not implemented
+  | "error"; // binary errored out
 
 // release readiness signal returned by GET /providers.
 // Mirrors apps/daemon/src/providers/types.mjs ProviderReadiness — keep
@@ -117,10 +117,11 @@ export interface LLMProvider {
   status(): Promise<ProviderStatusReport>;
 }
 
-export const CAPABILITY_LABELS: { key: keyof ProviderCapabilities; label: string; note: string }[] = [
-  { key: "tools",        label: "Tools",         note: "Bash, Read, Edit, Grep native" },
-  { key: "mcp",          label: "MCP",           note: "Honours .mcp.json servers" },
-  { key: "nativeSkills", label: "Slash skills",  note: "Resolves .claude/skills/* natively" },
-  { key: "nativeAgents", label: "Agents",        note: "Accepts --agent {alias}" },
-  { key: "streamJson",   label: "Stream-JSON",   note: "Structured stream events" },
-];
+export const CAPABILITY_LABELS: { key: keyof ProviderCapabilities; label: string; note: string }[] =
+  [
+    { key: "tools", label: "Tools", note: "Bash, Read, Edit, Grep native" },
+    { key: "mcp", label: "MCP", note: "Honours .mcp.json servers" },
+    { key: "nativeSkills", label: "Slash skills", note: "Resolves .claude/skills/* natively" },
+    { key: "nativeAgents", label: "Agents", note: "Accepts --agent {alias}" },
+    { key: "streamJson", label: "Stream-JSON", note: "Structured stream events" },
+  ];

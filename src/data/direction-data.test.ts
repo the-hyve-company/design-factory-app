@@ -171,10 +171,7 @@ describe("composePrompt", () => {
   it("appends only ENABLED preset anti-slop", () => {
     const formato = getFormatoById("explainer")!;
     const firstSlop = formato.anti_slop[0];
-    const out = composePrompt(
-      baseSelection({ enabledAntiSlop: [firstSlop] }),
-      "x",
-    );
+    const out = composePrompt(baseSelection({ enabledAntiSlop: [firstSlop] }), "x");
     expect(out).toContain(firstSlop);
   });
 
@@ -186,10 +183,7 @@ describe("composePrompt", () => {
   });
 
   it("appends custom anti-slop entries", () => {
-    const out = composePrompt(
-      baseSelection({ customAntiSlop: ["No purple bg"] }),
-      "x",
-    );
+    const out = composePrompt(baseSelection({ customAntiSlop: ["No purple bg"] }), "x");
     expect(out).toContain("No purple bg");
   });
 

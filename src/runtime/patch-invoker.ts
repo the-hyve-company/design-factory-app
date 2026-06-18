@@ -37,12 +37,12 @@ export const PATCH_SYSTEM = [
   "",
   "OUTPUT — JSON only, no markdown fences, no prose:",
   "",
-  '{',
+  "{",
   '  "patches": [',
   '    { "search": "<literal substring from the HTML>", "replace": "<what to put there>" }',
-  '  ],',
+  "  ],",
   '  "summary": "1-sentence description of what changed"',
-  '}',
+  "}",
   "",
   "RULES:",
   "- `search` MUST be a verbatim substring of the current HTML — copy it",
@@ -53,7 +53,7 @@ export const PATCH_SYSTEM = [
   "- Emit multiple patches to handle multiple spots. Each patch replaces the",
   "  FIRST occurrence of its `search`.",
   "- If the change is structural enough that patches would be larger than the",
-  "  full file, return `{ \"patches\": [], \"needsFullRewrite\": true }` and the",
+  '  full file, return `{ "patches": [], "needsFullRewrite": true }` and the',
   "  caller will fall back to a full regeneration.",
   "- Never invent selectors or elements that aren't in the source HTML.",
   "- Preserve surrounding formatting/whitespace exactly.",
@@ -62,15 +62,10 @@ export const PATCH_SYSTEM = [
 /** Execute the patch invocation. Returns parsed patches or null on failure. */
 export async function invokeSearchReplaceEdit(
   instruction: string,
-  ctx: ProjectContext
+  ctx: ProjectContext,
 ): Promise<PatchResponse | null> {
   if (!ctx.currentHtml) return null;
-  const prompt = [
-    `HTML atual:`,
-    ctx.currentHtml,
-    "",
-    `Instrução: ${instruction}`,
-  ].join("\n");
+  const prompt = [`HTML atual:`, ctx.currentHtml, "", `Instrução: ${instruction}`].join("\n");
   // 1 stabilize (regression report): pass providerId so the
   // patch invocation actually goes to the picker-selected provider. Pre-fix,
   // ctx.providerId was silently dropped here — picker showed Codex/Gemini
@@ -100,7 +95,9 @@ export function parsePatchResponse(raw: string): PatchResponse | null {
       patches,
       summary: typeof parsed.summary === "string" ? parsed.summary : undefined,
     };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -113,8 +110,10 @@ export function parsePatchResponse(raw: string): PatchResponse | null {
  */
 export function applyPatches(
   html: string,
-  patches: HtmlPatch[]
-): { html: string; applied: number } | { html: null; failedAt: number; reason: "not-found" | "ambiguous" } {
+  patches: HtmlPatch[],
+):
+  | { html: string; applied: number }
+  | { html: null; failedAt: number; reason: "not-found" | "ambiguous" } {
   let out = html;
   for (let i = 0; i < patches.length; i++) {
     const { search, replace } = patches[i];
@@ -178,10 +177,7 @@ const MAX_DOM_PATCH_SIZE = 2000;
  *   first N-1 stay applied (partial application). Caller logs + can offer
  *   reload to clean state.
  */
-export function applyPatchesToDom(
-  iframe: HTMLIFrameElement,
-  patches: HtmlPatch[]
-): DomPatchResult {
+export function applyPatchesToDom(iframe: HTMLIFrameElement, patches: HtmlPatch[]): DomPatchResult {
   const doc = iframe.contentDocument;
   if (!doc) return { applied: 0, failedAt: 0, reason: "no-document" };
 

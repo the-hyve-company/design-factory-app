@@ -58,7 +58,11 @@ async function streamOllamaViaBridge(
           }
           if (!dataStr) continue;
           let data: any;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
@@ -78,7 +82,9 @@ async function streamOllamaViaBridge(
     }
   })();
   return () => {
-    try { controller.abort(); } catch {}
+    try {
+      controller.abort();
+    } catch {}
   };
 }
 
@@ -90,10 +96,7 @@ export function streamOllama(
   return streamOllamaViaBridge(prompt, config, callbacks);
 }
 
-export async function ollamaOnce(
-  prompt: string,
-  config: OllamaConfig = {},
-): Promise<string> {
+export async function ollamaOnce(prompt: string, config: OllamaConfig = {}): Promise<string> {
   const res = await fetch(`${BRIDGE_URL}/ollama/once`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

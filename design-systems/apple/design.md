@@ -353,6 +353,7 @@ Hero and product-tile imagery is always full-bleed rectangular (`{rounded.none}`
 ## Do's and Don'ts
 
 ### Do
+
 - Use `{colors.primary}` (#0066cc) for every interactive element — links, pill CTAs, focus rings — and nothing else. The single accent is the system's identity.
 - Apply negative letter-spacing (`-0.28px` to `-0.374px`) to every headline at 17px and above. The "Apple tight" tracking is load-bearing; it defines the display voice.
 - Set body copy at `{typography.body-md}` (17px / 400 / 1.47). The 17px base and 1.47 line-height are both brand signals — do not reduce either.
@@ -364,6 +365,7 @@ Hero and product-tile imagery is always full-bleed rectangular (`{rounded.none}`
 - Use `{colors.primary-on-dark}` (#2997ff) for in-copy links on dark tile surfaces and `{colors.primary}` (#0066cc) for in-copy links on light surfaces.
 
 ### Don't
+
 - Don't introduce a second accent color. Every interactive element routes through `{colors.primary}`.
 - Don't apply shadows to cards, buttons, or text. Shadow belongs to product photography alone.
 - Don't use CSS gradients as decorative backgrounds. Atmosphere is photographic, never tokenized.

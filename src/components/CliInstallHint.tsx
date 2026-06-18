@@ -96,7 +96,9 @@ export function CliInstallHint({ provider, defaultOpen = false }: CliInstallHint
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        <span className="cli-install-hint-icon" aria-hidden="true">ⓘ</span>
+        <span className="cli-install-hint-icon" aria-hidden="true">
+          ⓘ
+        </span>
         <span className="cli-install-hint-prompt">{t(promptLabelKey)}</span>
         <span className="cli-install-hint-cta">
           {t(triggerLabelKey)}
@@ -109,9 +111,7 @@ export function CliInstallHint({ provider, defaultOpen = false }: CliInstallHint
         <div className="cli-install-hint-body" role="region">
           {commands.map((c, idx) => (
             <div key={idx} className="cli-install-hint-cmd">
-              {c.caption && (
-                <div className="cli-install-hint-caption">{t(c.caption)}</div>
-              )}
+              {c.caption && <div className="cli-install-hint-caption">{t(c.caption)}</div>}
               <div className="cli-install-hint-cmd-row">
                 <code>{c.cmd}</code>
                 <button

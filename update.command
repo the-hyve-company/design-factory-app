@@ -21,7 +21,7 @@ echo "Updating Design Factory to the latest version..."
 if [ ! -d .git ]; then
   echo "No git history detected. Linking to the official repo for future updates..."
   git init
-  git remote add origin https://github.com/the-hyve-company/design-factory.git
+  git remote add origin https://github.com/the-hyve-company/design-factory-app.git
 fi
 
 # Hard-sync to the official latest instead of `git pull`. A plain pull fails

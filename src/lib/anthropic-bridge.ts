@@ -40,7 +40,9 @@ async function streamAnthropicViaBridge(
       });
       if (!res.ok || !res.body) {
         const errText = await res.text().catch(() => "");
-        callbacks.onError(`bridge HTTP ${res.status}${errText ? `: ${errText.slice(0, 200)}` : ""}`);
+        callbacks.onError(
+          `bridge HTTP ${res.status}${errText ? `: ${errText.slice(0, 200)}` : ""}`,
+        );
         return;
       }
       const reader = res.body.getReader();
@@ -64,7 +66,11 @@ async function streamAnthropicViaBridge(
           }
           if (!dataStr) continue;
           let data: any;
-          try { data = JSON.parse(dataStr); } catch { continue; }
+          try {
+            data = JSON.parse(dataStr);
+          } catch {
+            continue;
+          }
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
@@ -86,7 +92,9 @@ async function streamAnthropicViaBridge(
     }
   })();
   return () => {
-    try { controller.abort(); } catch {}
+    try {
+      controller.abort();
+    } catch {}
   };
 }
 
@@ -98,10 +106,7 @@ export function streamAnthropic(
   return streamAnthropicViaBridge(prompt, config, callbacks);
 }
 
-export async function anthropicOnce(
-  prompt: string,
-  config: AnthropicConfig = {},
-): Promise<string> {
+export async function anthropicOnce(prompt: string, config: AnthropicConfig = {}): Promise<string> {
   const res = await fetch(`${BRIDGE_URL}/anthropic/once`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -145,7 +150,7 @@ export async function saveAnthropicToken(token: string): Promise<{ ok: boolean; 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token }),
     });
-    const body = await res.json().catch(() => null) as any;
+    const body = (await res.json().catch(() => null)) as any;
     if (!res.ok) return { ok: false, error: body?.error ?? `HTTP ${res.status}` };
     return { ok: true };
   } catch (err) {

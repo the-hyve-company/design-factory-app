@@ -1,4 +1,8 @@
-import { streamOpenrouter, openrouterOnce, getOpenrouterTokenStatus } from "@/lib/openrouter-bridge";
+import {
+  streamOpenrouter,
+  openrouterOnce,
+  getOpenrouterTokenStatus,
+} from "@/lib/openrouter-bridge";
 import type { LLMProvider } from "./types";
 
 // OpenRouter adapter — proxy to 200+ open-weights and paid models with one
@@ -31,7 +35,12 @@ export const openrouterProvider: LLMProvider = {
   async status() {
     try {
       const cfg = await getOpenrouterTokenStatus();
-      if (!cfg.tokenSet) return { status: "needs-auth", version: null, detail: "Set OPENROUTER_API_KEY or paste it in Settings → Tokens" };
+      if (!cfg.tokenSet)
+        return {
+          status: "needs-auth",
+          version: null,
+          detail: "Set OPENROUTER_API_KEY or paste it in Settings → Tokens",
+        };
       return { status: "connected", version: cfg.source === "env" ? "env key" : "disk key" };
     } catch (e) {
       return { status: "error", version: null, detail: String(e) };

@@ -2,6 +2,7 @@
   "name": "@df/daemon",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "description": "Design Factory daemon — exposes the local CLI agents (Claude/Codex/Gemini/Ollama) and filesystem to the browser UI via HTTP/SSE on :1421.",
   "main": "src/index.mjs",

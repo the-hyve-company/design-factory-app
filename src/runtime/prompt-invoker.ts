@@ -1,7 +1,17 @@
 import { spawnStream, spawnOnce } from "./cli-spawner";
-import { extractHtmlFromOutput, validateHtml, validateTweaks, type TweaksConfig } from "./schema-validator";
+import {
+  extractHtmlFromOutput,
+  validateHtml,
+  validateTweaks,
+  type TweaksConfig,
+} from "./schema-validator";
 import { getBuiltinPrompt } from "./builtin-prompts";
-import { buildCanonicalPlusSummary, type CanonicalPlusInput, type DialKey, type DialDirection } from "./canonical-plus-prompt";
+import {
+  buildCanonicalPlusSummary,
+  type CanonicalPlusInput,
+  type DialKey,
+  type DialDirection,
+} from "./canonical-plus-prompt";
 import { buildArtifactContractBlock } from "./output-contract";
 import { getProvider } from "@/providers/registry";
 import type { StreamCallbacks } from "@/lib/claude-bridge";
@@ -31,8 +41,12 @@ function artifactContractForCtx(ctx: ProjectContext, opts?: { isEdit?: boolean }
   // (`<repoRoot>/projects/<slug>/`) or `~`-prefixed; we strip down to
   // the `projects/<slug>/` form the contract example shows and the
   // parser keys off.
-  const stem = (ctx.projectPath ?? "").replace(/^~\/?/, "").replace(/^.*?\/(projects\/[^/]+\/?)$/, "$1");
-  const filePath = stem ? `${stem.replace(/\/$/, "")}/${ctx.primaryFile}` : `projects/default/${ctx.primaryFile}`;
+  const stem = (ctx.projectPath ?? "")
+    .replace(/^~\/?/, "")
+    .replace(/^.*?\/(projects\/[^/]+\/?)$/, "$1");
+  const filePath = stem
+    ? `${stem.replace(/\/$/, "")}/${ctx.primaryFile}`
+    : `projects/default/${ctx.primaryFile}`;
   return buildArtifactContractBlock({
     fileWrite: "artifact",
     filePath,
@@ -166,25 +180,29 @@ export function workspaceContextPreamble(ctx: ProjectContext): string {
     "",
     "AskUserQuestion, ToolSearch — error on call. For discrete options",
     "use the ::question protocol above.",
-    ...(ctx.hasDesignSystem && ctx.designSystemMarkdown ? [
-      "",
-      "## Design system attached — USE THESE TOKENS",
-      `Name: ${ctx.designSystemName ?? "design-system"}`,
-      `Path: ${ctx.designSystemPath ?? "(path)"}`,
-      "Schema: @google/design.md (github.com/google-labs-code/design.md)",
-      "",
-      "Treat every token (colors, typography, spacing, rounded,",
-      "components) as SOURCE OF TRUTH. Don't invent new colors or fonts.",
-      "",
-      "--- BEGIN design.md ---",
-      ctx.designSystemMarkdown,
-      "--- END design.md ---",
-    ] : ctx.hasDesignSystem && ctx.designSystemPath ? [
-      "",
-      "## Design system attached",
-      `Path: ${ctx.designSystemPath}`,
-      "Read `design.md` in that folder. Honour its tokens; don't invent.",
-    ] : []),
+    ...(ctx.hasDesignSystem && ctx.designSystemMarkdown
+      ? [
+          "",
+          "## Design system attached — USE THESE TOKENS",
+          `Name: ${ctx.designSystemName ?? "design-system"}`,
+          `Path: ${ctx.designSystemPath ?? "(path)"}`,
+          "Schema: @google/design.md (github.com/google-labs-code/design.md)",
+          "",
+          "Treat every token (colors, typography, spacing, rounded,",
+          "components) as SOURCE OF TRUTH. Don't invent new colors or fonts.",
+          "",
+          "--- BEGIN design.md ---",
+          ctx.designSystemMarkdown,
+          "--- END design.md ---",
+        ]
+      : ctx.hasDesignSystem && ctx.designSystemPath
+        ? [
+            "",
+            "## Design system attached",
+            `Path: ${ctx.designSystemPath}`,
+            "Read `design.md` in that folder. Honour its tokens; don't invent.",
+          ]
+        : []),
   ].join("\n");
 }
 
@@ -252,16 +270,16 @@ export const VISUAL_CRAFT_CONTRACT = [
   "",
   "Acceptable: a 18KB single-file HTML where the JS balances, the closing tags are present, the palette is restrained, and one detail (a micro-interaction, a typographic move, a paint quality) elevates it above template.",
   "",
-  "NOT acceptable: a file that opens but the iframe shows a blank page because line 240 of the <script> has an unclosed brace. A file with 7 colours when the brief asked for 2. A file with <img src=\"https://...\"> or `@import url(...)` to Google Fonts.",
+  'NOT acceptable: a file that opens but the iframe shows a blank page because line 240 of the <script> has an unclosed brace. A file with 7 colours when the brief asked for 2. A file with <img src="https://..."> or `@import url(...)` to Google Fonts.',
   "",
   "## Tom da resposta no chat",
   "",
   "User ask 2026-05-21: NÃO escrever frases de hedge/disclaimers tipo:",
-  "  ✗ \"Ship exigiria duas passadas de polish que não cabem nesta resposta\"",
-  "  ✗ \"sinalizo abaixo os riscos remanescentes\"",
-  "  ✗ \"em uma próxima iteração eu poderia...\"",
-  "  ✗ \"esta versão ainda precisa de mais polish\"",
-  "  ✗ \"para um output production-ready precisaríamos...\"",
+  '  ✗ "Ship exigiria duas passadas de polish que não cabem nesta resposta"',
+  '  ✗ "sinalizo abaixo os riscos remanescentes"',
+  '  ✗ "em uma próxima iteração eu poderia..."',
+  '  ✗ "esta versão ainda precisa de mais polish"',
+  '  ✗ "para um output production-ready precisaríamos..."',
   "",
   "Just ship. Se há trade-offs, faça a escolha e siga. Se há limites de",
   "tempo/contexto, NÃO informe o usuário — entregue o melhor que conseguir",
@@ -288,14 +306,18 @@ export function buildGenerateSystem(ctx: ProjectContext, core: string): string {
     preamble,
     "",
     `Fidelity: ${ctx.mode === "wireframe" ? "Wireframe (skeleton, no polished colours)" : "High fidelity (polished type + real colours)"}`,
-    ctx.hasDesignSystem && ctx.designSystemPath ? `Design system available at: ${ctx.designSystemPath}` : "",
+    ctx.hasDesignSystem && ctx.designSystemPath
+      ? `Design system available at: ${ctx.designSystemPath}`
+      : "",
     summary ? `\n${summary}` : "",
     "",
     core,
     "",
     VISUAL_CRAFT_CONTRACT,
     contract,
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export function buildRefineSystem(ctx: ProjectContext, core: string): string {
@@ -319,28 +341,29 @@ export function buildRefineSystem(ctx: ProjectContext, core: string): string {
   // this directive, edits via Codex/Kimi/Claude often strip the panel
   // when refactoring CSS — the user has to regenerate Tweaks from
   // scratch after every refine. User repro 2026-05-20.
-  const tweaksPreserve = (ctx.currentHtml && ctx.currentHtml.includes("df-tweaks-panel"))
-    ? [
-        "",
-        "## CRITICAL: existing Tweaks panel detected",
-        "The HTML contains a `#df-tweaks-panel` element (built by a previous",
-        "turn). This panel MUST be preserved VERBATIM in your output —",
-        "do not remove, rename, or restructure it. You may refactor the",
-        "surrounding CSS / HTML / scripts freely as long as:",
-        "  - Every CSS variable the panel binds to (data-var attributes)",
-        "    still exists in :root with a sensible default.",
-        "  - The panel's <script> block is kept unchanged so the slider",
-        "    bindings keep working.",
-        "  - The panel stays as the LAST element before </body>.",
-      ].join("\n")
-    : "";
+  const tweaksPreserve =
+    ctx.currentHtml && ctx.currentHtml.includes("df-tweaks-panel")
+      ? [
+          "",
+          "## CRITICAL: existing Tweaks panel detected",
+          "The HTML contains a `#df-tweaks-panel` element (built by a previous",
+          "turn). This panel MUST be preserved VERBATIM in your output —",
+          "do not remove, rename, or restructure it. You may refactor the",
+          "surrounding CSS / HTML / scripts freely as long as:",
+          "  - Every CSS variable the panel binds to (data-var attributes)",
+          "    still exists in :root with a sensible default.",
+          "  - The panel's <script> block is kept unchanged so the slider",
+          "    bindings keep working.",
+          "  - The panel stays as the LAST element before </body>.",
+        ].join("\n")
+      : "";
   return [summary, summary ? "" : "", core, contract, tweaksPreserve].filter(Boolean).join("\n");
 }
 
 export async function invokeGenerateBase(
   userPrompt: string,
   ctx: ProjectContext,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
 ): Promise<UnlistenFn> {
   // When we have a Claude session id stored, skip the plain-text concat —
   // the CLI reloads the entire transcript from its own JSONL via --resume.
@@ -358,31 +381,39 @@ export async function invokeGenerateBase(
 
   const core = await getBuiltinPrompt("generate", GENERATE_CORE_SYSTEM, ctx.projectId);
   const system = buildGenerateSystem(ctx, core);
-  return spawnStream("generate", prompt, system, {
-    onText: callbacks.onText,
-    onMeta: callbacks.onMeta,
-    onUsage: callbacks.onUsage,
-    onResult: callbacks.onResult,
-    onToolCall: callbacks.onToolCall,
-    onToolResult: callbacks.onToolResult,
-    onSession: callbacks.onSession,
-    onAuthRequired: callbacks.onAuthRequired,
-    onDone: (fullText) => {
-      const html = extractHtmlFromOutput(fullText);
-      const valid = validateHtml(html);
-      if (valid.ok) {
-        callbacks.onDone(valid.value);
-      } else {
-        // Return raw anyway — don't block the user
-        callbacks.onDone(html);
-      }
+  return spawnStream(
+    "generate",
+    prompt,
+    system,
+    {
+      onText: callbacks.onText,
+      onMeta: callbacks.onMeta,
+      onUsage: callbacks.onUsage,
+      onResult: callbacks.onResult,
+      onToolCall: callbacks.onToolCall,
+      onToolResult: callbacks.onToolResult,
+      onSession: callbacks.onSession,
+      onAuthRequired: callbacks.onAuthRequired,
+      onDone: (fullText) => {
+        const html = extractHtmlFromOutput(fullText);
+        const valid = validateHtml(html);
+        if (valid.ok) {
+          callbacks.onDone(valid.value);
+        } else {
+          // Return raw anyway — don't block the user
+          callbacks.onDone(html);
+        }
+      },
+      onError: callbacks.onError,
     },
-    onError: callbacks.onError,
-  }, {
-    providerId: ctx.providerId,
-    model: ctx.model, cwd: ctx.cwd, agent: ctx.agent,
-    sessionId: useResume ? ctx.sessionId ?? undefined : undefined,
-  });
+    {
+      providerId: ctx.providerId,
+      model: ctx.model,
+      cwd: ctx.cwd,
+      agent: ctx.agent,
+      sessionId: useResume ? (ctx.sessionId ?? undefined) : undefined,
+    },
+  );
 }
 
 // ─── PP-02: apply_style ─────────────────────────────────────────────────────
@@ -432,7 +463,7 @@ export async function invokeConsult(
     model: ctx.model,
     cwd: ctx.cwd,
     agent: ctx.agent,
-    sessionId: useResume ? ctx.sessionId ?? undefined : undefined,
+    sessionId: useResume ? (ctx.sessionId ?? undefined) : undefined,
   });
 }
 
@@ -444,7 +475,7 @@ export async function invokeConsult(
 //   - Starts with a question-word: que, qual, quais, como, por que, porque,
 //     onde, quando, what, how, why, when, where, which, should, can, do
 //   - Contains a "what do you think / o que você acha / sugere / propõe"
-//     phrase anywhere (user verbatim 2026-04-29: "o que propoe?")
+//     phrase anywhere (e.g. asking the model for its opinion)
 //
 // Conservative: returns false if the message contains imperative verbs
 // like "muda", "troca", "remove", "use", "make", "change", "add" near the
@@ -452,12 +483,26 @@ export async function invokeConsult(
 export function looksLikeQuestion(text: string): boolean {
   const t = text.trim().toLowerCase();
   if (!t) return false;
-  if (/^(muda|troca|altera|remove|tira|adiciona|coloca|use|usa|faz|cria|gera|aplica|change|swap|remove|add|use|make|create|apply|build|generate)\b/i.test(t)) {
+  if (
+    /^(muda|troca|altera|remove|tira|adiciona|coloca|use|usa|faz|cria|gera|aplica|change|swap|remove|add|use|make|create|apply|build|generate)\b/i.test(
+      t,
+    )
+  ) {
     return false;
   }
   if (/[?]\s*$/.test(t)) return true;
-  if (/^(que|qual|quais|como|por\s*que|porque|onde|quando|what|how|why|when|where|which|should|can|do|does|would)\b/i.test(t)) return true;
-  if (/\b(o\s+que\s+(você|voce)|que\s+(você|voce)|o\s+que\s+(propõe|propoe|sugere|acha|recomenda)|what\s+do\s+you\s+(think|suggest|recommend)|any\s+(suggestions?|ideas?))\b/i.test(t)) return true;
+  if (
+    /^(que|qual|quais|como|por\s*que|porque|onde|quando|what|how|why|when|where|which|should|can|do|does|would)\b/i.test(
+      t,
+    )
+  )
+    return true;
+  if (
+    /\b(o\s+que\s+(você|voce)|que\s+(você|voce)|o\s+que\s+(propõe|propoe|sugere|acha|recomenda)|what\s+do\s+you\s+(think|suggest|recommend)|any\s+(suggestions?|ideas?))\b/i.test(
+      t,
+    )
+  )
+    return true;
   return false;
 }
 
@@ -469,7 +514,7 @@ export const REFINE_SYSTEM = [
   "- Try surgical search-and-replace first. Find the smallest unique",
   "  block (one rule, one element, one variable) and patch just that.",
   "- Full rewrite is the last resort. If you fall back, say so in chat:",
-  "  \"Couldn't apply patch, regenerating section.\"",
+  '  "Couldn\'t apply patch, regenerating section."',
   "- Never paste new HTML alongside old HTML.",
   "- Never duplicate sections during edit.",
   "- Preserve `assets/` folder and any `tab-N-*.html` siblings.",
@@ -491,19 +536,25 @@ export const REFINE_SYSTEM = [
 export async function invokeApplyStyle(
   instruction: string,
   ctx: ProjectContext,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
 ): Promise<UnlistenFn> {
   const prompt = `HTML atual:\n${ctx.currentHtml || ""}\n\nInstrução de estilo: ${instruction}`;
   const refineCore = await getBuiltinPrompt("refine", REFINE_SYSTEM, ctx.projectId);
   const system = buildRefineSystem(ctx, refineCore);
-  return spawnStream("refine", prompt, system, {
-    onText: callbacks.onText,
-    onMeta: callbacks.onMeta,
-    onUsage: callbacks.onUsage,
-    onResult: callbacks.onResult,
-    onDone: (fullText) => callbacks.onDone(extractHtmlFromOutput(fullText)),
-    onError: callbacks.onError,
-  }, { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent });
+  return spawnStream(
+    "refine",
+    prompt,
+    system,
+    {
+      onText: callbacks.onText,
+      onMeta: callbacks.onMeta,
+      onUsage: callbacks.onUsage,
+      onResult: callbacks.onResult,
+      onDone: (fullText) => callbacks.onDone(extractHtmlFromOutput(fullText)),
+      onError: callbacks.onError,
+    },
+    { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent },
+  );
 }
 
 // ─── PP-02b: editorial verb ──────────────────────────────────────────────
@@ -522,12 +573,10 @@ export interface EditorialVerbInvocation {
 export async function invokeEditorialVerb(
   verb: EditorialVerbInvocation,
   ctx: ProjectContext,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
 ): Promise<UnlistenFn> {
   const html = ctx.currentHtml || "";
-  const argsLine = verb.args.trim()
-    ? `\n\nUser focus for this pass: ${verb.args.trim()}`
-    : "";
+  const argsLine = verb.args.trim() ? `\n\nUser focus for this pass: ${verb.args.trim()}` : "";
   const prompt = verb.modifiesHtml
     ? `Existing HTML document:\n${html}${argsLine}`
     : `HTML to evaluate:\n${html}${argsLine}`;
@@ -539,24 +588,30 @@ export async function invokeEditorialVerb(
   const verbSystem = verb.modifiesHtml
     ? buildRefineSystem(ctx, verb.systemPrompt)
     : verb.systemPrompt;
-  return spawnStream("refine", prompt, verbSystem, {
-    onText: callbacks.onText,
-    onMeta: callbacks.onMeta,
-    onUsage: callbacks.onUsage,
-    onResult: callbacks.onResult,
-    onSession: callbacks.onSession,
-    onAuthRequired: callbacks.onAuthRequired,
-    onDone: (fullText) => {
-      if (verb.modifiesHtml) {
-        callbacks.onDone(extractHtmlFromOutput(fullText));
-      } else {
-        // Read-only verbs (review, check, …) — pass the prose straight to
-        // the chat without trying to extract an HTML document.
-        callbacks.onDone(fullText);
-      }
+  return spawnStream(
+    "refine",
+    prompt,
+    verbSystem,
+    {
+      onText: callbacks.onText,
+      onMeta: callbacks.onMeta,
+      onUsage: callbacks.onUsage,
+      onResult: callbacks.onResult,
+      onSession: callbacks.onSession,
+      onAuthRequired: callbacks.onAuthRequired,
+      onDone: (fullText) => {
+        if (verb.modifiesHtml) {
+          callbacks.onDone(extractHtmlFromOutput(fullText));
+        } else {
+          // Read-only verbs (review, check, …) — pass the prose straight to
+          // the chat without trying to extract an HTML document.
+          callbacks.onDone(fullText);
+        }
+      },
+      onError: callbacks.onError,
     },
-    onError: callbacks.onError,
-  }, { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent });
+    { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent },
+  );
 }
 
 // ─── PP-03: edit_element ────────────────────────────────────────────────────
@@ -571,18 +626,24 @@ export async function invokeEditElement(
   selector: string,
   instruction: string,
   ctx: ProjectContext,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
 ): Promise<UnlistenFn> {
   const prompt = `HTML:\n${ctx.currentHtml || ""}\n\nElemento: ${selector}\nInstrução: ${instruction}`;
   const system = buildRefineSystem(ctx, EDIT_ELEMENT_SYSTEM);
-  return spawnStream("refine", prompt, system, {
-    onText: callbacks.onText,
-    onMeta: callbacks.onMeta,
-    onUsage: callbacks.onUsage,
-    onResult: callbacks.onResult,
-    onDone: (fullText) => callbacks.onDone(extractHtmlFromOutput(fullText)),
-    onError: callbacks.onError,
-  }, { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent });
+  return spawnStream(
+    "refine",
+    prompt,
+    system,
+    {
+      onText: callbacks.onText,
+      onMeta: callbacks.onMeta,
+      onUsage: callbacks.onUsage,
+      onResult: callbacks.onResult,
+      onDone: (fullText) => callbacks.onDone(extractHtmlFromOutput(fullText)),
+      onError: callbacks.onError,
+    },
+    { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent },
+  );
 }
 
 // ─── PP-04: add_component ───────────────────────────────────────────────────
@@ -596,18 +657,24 @@ const ADD_COMPONENT_SYSTEM = [
 export async function invokeAddComponent(
   description: string,
   ctx: ProjectContext,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
 ): Promise<UnlistenFn> {
   const prompt = `HTML:\n${ctx.currentHtml || ""}\n\nAdicionar: ${description}`;
   const system = buildRefineSystem(ctx, ADD_COMPONENT_SYSTEM);
-  return spawnStream("refine", prompt, system, {
-    onText: callbacks.onText,
-    onMeta: callbacks.onMeta,
-    onUsage: callbacks.onUsage,
-    onResult: callbacks.onResult,
-    onDone: (fullText) => callbacks.onDone(extractHtmlFromOutput(fullText)),
-    onError: callbacks.onError,
-  }, { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent });
+  return spawnStream(
+    "refine",
+    prompt,
+    system,
+    {
+      onText: callbacks.onText,
+      onMeta: callbacks.onMeta,
+      onUsage: callbacks.onUsage,
+      onResult: callbacks.onResult,
+      onDone: (fullText) => callbacks.onDone(extractHtmlFromOutput(fullText)),
+      onError: callbacks.onError,
+    },
+    { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent },
+  );
 }
 
 // ─── PP-05: tweaks_generate (legacy, kept for fallback) ─────────────────────
@@ -670,7 +737,7 @@ const TWEAKS_PANEL_STANDARDS = [
   "    faint). Value shows '12px' for slider with unit, '#6366f1' is",
   "    rendered as a swatch+hex for colors, 'on/off' for toggles.",
   "  - Control below the line:",
-  "    * slider: <input type=\"range\"> full width, accent-color: var(--primary)",
+  '    * slider: <input type="range"> full width, accent-color: var(--primary)',
   "      (or whatever the design's dominant accent is)",
   "    * color: 22×18 swatch + hex text input side by side",
   "    * toggle: 32×18 pill switch (off = grey, on = primary)",
@@ -777,10 +844,10 @@ const TWEAKS_INTERACTIVE_SYSTEM = [
   "  imported). Never propose a family the document doesn't load.",
   "",
   "OUTPUT (raw JSON, exactly this shape):",
-  '{',
+  "{",
   '  "refactoredHtml": "<!DOCTYPE html>...",',
   '  "summary": "Added 7 controls: primary, bg, text, heading size, spacing, radius, shadow"',
-  '}',
+  "}",
   "",
   "The 'summary' is a 1-sentence human-readable description of what changed",
   "— shown in the chat for the user to scan.",
@@ -833,12 +900,17 @@ export const TWEAKS_SYSTEM_PROMPT = TWEAKS_INTERACTIVE_SYSTEM;
 /** Streaming version: returns the stream unlisten. Caller collects text + parses at onDone. */
 export async function invokeTweaksInteractive(
   userRequest: string,
-  ctx: ProjectContext
+  ctx: ProjectContext,
 ): Promise<InteractiveTweaksResult | null> {
   if (!ctx.currentHtml) return null;
   const prompt = buildTweaksPrompt(userRequest, ctx.currentHtml);
   const system = await getBuiltinPrompt("tweaks", TWEAKS_INTERACTIVE_SYSTEM);
-  const raw = await spawnOnce("generate", prompt, system, { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent });
+  const raw = await spawnOnce("generate", prompt, system, {
+    providerId: ctx.providerId,
+    model: ctx.model,
+    cwd: ctx.cwd,
+    agent: ctx.agent,
+  });
   return parseTweaksResponse(raw);
 }
 
@@ -849,7 +921,8 @@ type ExportFormat = "html" | "react" | "vue" | "tailwind";
 function buildExportSystem(format: ExportFormat): string {
   const map: Record<ExportFormat, string> = {
     html: "Return clean, self-contained HTML (CSS and JS inline). No unnecessary comments.",
-    react: "Convert to a functional React component with TypeScript. Props for configurable values. No external frameworks beyond React.",
+    react:
+      "Convert to a functional React component with TypeScript. Props for configurable values. No external frameworks beyond React.",
     vue: "Convert to a Vue 3 Single File Component with <script setup> + TypeScript.",
     tailwind: "Rewrite the CSS using Tailwind v4 classes. Keep the HTML semantic.",
   };

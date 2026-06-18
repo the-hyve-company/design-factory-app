@@ -69,8 +69,8 @@ export interface NewProjectChatComposerProps {
   hideHint?: boolean;
 }
 
-const IMAGE_MAX_BYTES = 5 * 1024 * 1024;   // 5 MB
-const TEXT_MAX_BYTES = 500 * 1024;          // 500 kB
+const IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const TEXT_MAX_BYTES = 500 * 1024; // 500 kB
 
 const TEXT_EXTENSIONS = /\.(md|ts|tsx|jsx|js|json|yml|yaml|txt|csv|html|css)$/i;
 function isTextLike(mime: string, name: string): boolean {
@@ -119,7 +119,11 @@ export function NewProjectChatComposer({
   // Cleanup on unmount.
   useEffect(() => {
     return () => {
-      try { recognitionRef.current?.stop(); } catch { /* ignore */ }
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        /* ignore */
+      }
       void recordingRef.current?.stop();
     };
   }, []);
@@ -215,7 +219,11 @@ export function NewProjectChatComposer({
 
   const startRecording = useCallback(async () => {
     if (isRecording) {
-      try { recognitionRef.current?.stop(); } catch { /* ignore */ }
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        /* ignore */
+      }
       void recordingRef.current?.stop();
       return;
     }
@@ -225,13 +233,19 @@ export function NewProjectChatComposer({
       continuous: boolean;
       interimResults: boolean;
       lang: string;
-      onresult: (e: { resultIndex: number; results: { isFinal: boolean; 0: { transcript: string } }[] & { length: number } }) => void;
+      onresult: (e: {
+        resultIndex: number;
+        results: { isFinal: boolean; 0: { transcript: string } }[] & { length: number };
+      }) => void;
       onerror: (e: { error: string }) => void;
       onend: () => void;
       start: () => void;
       stop: () => void;
     };
-    const w = window as unknown as { SpeechRecognition?: SRConstructor; webkitSpeechRecognition?: SRConstructor };
+    const w = window as unknown as {
+      SpeechRecognition?: SRConstructor;
+      webkitSpeechRecognition?: SRConstructor;
+    };
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (SR) {
       try {
@@ -304,7 +318,11 @@ export function NewProjectChatComposer({
       };
       recordingRef.current = {
         stop: async () => {
-          try { recorder.stop(); } catch { /* ignore */ }
+          try {
+            recorder.stop();
+          } catch {
+            /* ignore */
+          }
           setIsRecording(false);
           recordingRef.current = null;
         },
@@ -356,7 +374,16 @@ export function NewProjectChatComposer({
           title={t("composer.attach.title")}
           onClick={() => fileInputRef.current?.click()}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="m21 12-9 9a6 6 0 0 1-8.5-8.5l9-9a4 4 0 0 1 5.7 5.7l-9 9a2 2 0 0 1-2.8-2.8l8.5-8.5" />
           </svg>
         </button>
@@ -382,7 +409,16 @@ export function NewProjectChatComposer({
               <rect x="6" y="6" width="12" height="12" rx="1" />
             </svg>
           ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
               <line x1="12" x2="12" y1="19" y2="22" />
@@ -396,7 +432,11 @@ export function NewProjectChatComposer({
           <span className="np-composer-bar-mid">{toolbarMid}</span>
         ) : !hideHint ? (
           <span className="np-composer-bar-hint">
-            {error ? error : value.length > 0 ? `${value.length} ${t("newproject.prompt.chars")}` : t("composer.hint.empty")}
+            {error
+              ? error
+              : value.length > 0
+                ? `${value.length} ${t("newproject.prompt.chars")}`
+                : t("composer.hint.empty")}
           </span>
         ) : null}
 
@@ -408,9 +448,7 @@ export function NewProjectChatComposer({
 
         <span className="np-composer-bar-spacer" />
 
-        {toolbarRight && (
-          <span className="np-composer-bar-extra">{toolbarRight}</span>
-        )}
+        {toolbarRight && <span className="np-composer-bar-extra">{toolbarRight}</span>}
       </div>
     </div>
   );

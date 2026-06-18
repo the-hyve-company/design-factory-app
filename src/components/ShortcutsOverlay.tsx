@@ -52,7 +52,9 @@ export function ShortcutsOverlay({ open, onClose }: Props) {
     <DfModal open={open} onClose={onClose} size="md" className="shortcuts-modal">
       <div className="shortcuts-head">
         <h2 className="shortcuts-title">Keyboard shortcuts</h2>
-        <p className="shortcuts-sub">Press <kbd>?</kbd> anytime to toggle this list.</p>
+        <p className="shortcuts-sub">
+          Press <kbd>?</kbd> anytime to toggle this list.
+        </p>
       </div>
       <div className="shortcuts-grid">
         {GROUPS.map((g) => (
@@ -64,7 +66,9 @@ export function ShortcutsOverlay({ open, onClose }: Props) {
                   <span className="shortcuts-keys">
                     {keys.split(" / ").map((k, i, arr) => (
                       <span key={k}>
-                        {k.split(" ").map((part, j) => <kbd key={`${k}-${j}`}>{part}</kbd>)}
+                        {k.split(" ").map((part, j) => (
+                          <kbd key={`${k}-${j}`}>{part}</kbd>
+                        ))}
                         {i < arr.length - 1 && <span className="shortcuts-or">or</span>}
                       </span>
                     ))}

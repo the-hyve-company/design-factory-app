@@ -19,13 +19,11 @@
 // the same data file but are loaded by their own runtime registry —
 // they don't appear in this menu's autocomplete by default.
 
-import {
-  HIDDEN_FROM_AUTOCOMPLETE as TAXONOMY_HIDDEN,
-} from "@/data/commands-taxonomy";
+import { HIDDEN_FROM_AUTOCOMPLETE as TAXONOMY_HIDDEN } from "@/data/commands-taxonomy";
 
 export interface SlashCommand {
   id: string;
-  trigger: string;        // full trigger token including leading / or @ (e.g. "/canvas", "@canvas")
+  trigger: string; // full trigger token including leading / or @ (e.g. "/canvas", "@canvas")
   label: string;
   description?: string;
   category?: string;
@@ -77,7 +75,8 @@ export function findMatches(query: string, commands: SlashCommand[]): SlashComma
     const t = c.trigger.toLowerCase();
     const l = c.label.toLowerCase();
     const startsWith = t.startsWith(q) || l.startsWith(q.replace(/^[/@]/, ""));
-    const includesQ = t.includes(q) || l.includes(q) || (c.description || "").toLowerCase().includes(q);
+    const includesQ =
+      t.includes(q) || l.includes(q) || (c.description || "").toLowerCase().includes(q);
     if (startsWith) {
       starts.push(c);
     } else if (includesQ && !hidden) {
@@ -88,7 +87,10 @@ export function findMatches(query: string, commands: SlashCommand[]): SlashComma
 }
 
 /** Extracts the trigger token the cursor is currently in. Returns null if no / or @ context. */
-export function triggerAtCursor(value: string, cursor: number): { token: string; start: number } | null {
+export function triggerAtCursor(
+  value: string,
+  cursor: number,
+): { token: string; start: number } | null {
   // Walk back from cursor until whitespace or start
   let i = cursor - 1;
   while (i >= 0 && !/\s/.test(value[i])) i--;

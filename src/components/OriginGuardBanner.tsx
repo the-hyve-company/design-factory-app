@@ -24,20 +24,14 @@ export function OriginGuardBanner() {
 
   return (
     <div className="origin-guard-banner" role="alert" aria-live="assertive">
-      <div className="origin-guard-banner__title">
-        Origem não permitida
-      </div>
+      <div className="origin-guard-banner__title">Origem não permitida</div>
       <div className="origin-guard-banner__body">
-        Esta página está em <code>{check.currentOrigin}</code>, mas o daemon
-        do Design Factory só aceita conexões de{" "}
-        <code>{canonical}</code> (ou pela app Tauri). Chamadas para o
-        bridge vão falhar — chat, salvamento e geração ficam quebrados.
+        Esta página está em <code>{check.currentOrigin}</code>, mas o daemon do Design Factory só
+        aceita conexões de <code>{canonical}</code> (ou pela app Tauri). Chamadas para o bridge vão
+        falhar — chat, salvamento e geração ficam quebrados.
       </div>
       <div className="origin-guard-banner__cta">
-        <a
-          href={canonical}
-          className="origin-guard-banner__link"
-        >
+        <a href={canonical} className="origin-guard-banner__link">
           Abrir em {canonical}
         </a>
       </div>

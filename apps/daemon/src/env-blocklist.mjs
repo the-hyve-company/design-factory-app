@@ -10,12 +10,12 @@
 // with a structured warning, never crash the request.
 
 const BLOCKED_PREFIXES = [
-  "DF_",                    // DF internal config
-  "MULTICA_",               // reserved for future Multica-style daemon coords
-  "AIOS_",                  // AIOS framework reserved
-  "NODE_",                  // node runtime (NODE_OPTIONS, NODE_PATH, NODE_AUTH_TOKEN, etc.)
-  "LD_",                    // Linux loader (LD_PRELOAD, LD_LIBRARY_PATH)
-  "DYLD_",                  // macOS loader
+  "DF_", // DF internal config
+  "MULTICA_", // reserved for future Multica-style daemon coords
+  "AIOS_", // AIOS framework reserved
+  "NODE_", // node runtime (NODE_OPTIONS, NODE_PATH, NODE_AUTH_TOKEN, etc.)
+  "LD_", // Linux loader (LD_PRELOAD, LD_LIBRARY_PATH)
+  "DYLD_", // macOS loader
 ];
 
 const BLOCKED_EXACT = new Set([

@@ -24,7 +24,10 @@ export function SlashMenu({ matches, highlightIdx, onSelect, onHover, anchor }: 
 
   // Compute viewport coordinates of the menu based on the anchor rect.
   useLayoutEffect(() => {
-    if (!anchor) { setPos(null); return; }
+    if (!anchor) {
+      setPos(null);
+      return;
+    }
     const r = anchor.getBoundingClientRect();
     const gap = 8;
     const vh = window.innerHeight;
@@ -74,11 +77,9 @@ export function SlashMenu({ matches, highlightIdx, onSelect, onHover, anchor }: 
   if (matches.length === 0) {
     return createPortal(
       <div className="slash-menu" style={styleAttrs}>
-        <div style={{ padding: 10, fontSize: 11, color: "var(--df-text-faint)" }}>
-          No matches
-        </div>
+        <div style={{ padding: 10, fontSize: 11, color: "var(--df-text-faint)" }}>No matches</div>
       </div>,
-      document.body
+      document.body,
     );
   }
 
@@ -92,19 +93,20 @@ export function SlashMenu({ matches, highlightIdx, onSelect, onHover, anchor }: 
               key={cmd.id}
               data-idx={idx}
               onMouseEnter={() => onHover(idx)}
-              onClick={(e) => { e.preventDefault(); onSelect(cmd); }}
+              onClick={(e) => {
+                e.preventDefault();
+                onSelect(cmd);
+              }}
               className={`slash-menu-item${idx === highlightIdx ? " is-active" : ""}`}
               title={cmd.description ? `${cmd.label} — ${cmd.description}` : cmd.label}
             >
               <span className="slash-menu-label">{cmd.label}</span>
-              {cmd.description && (
-                <span className="slash-menu-desc">{cmd.description}</span>
-              )}
+              {cmd.description && <span className="slash-menu-desc">{cmd.description}</span>}
             </button>
           ))}
         </div>
       ))}
     </div>,
-    document.body
+    document.body,
   );
 }

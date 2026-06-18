@@ -69,11 +69,11 @@ function dialPhrase(
   const override = overrides?.[key];
   // Bins (see DIAL_STOPS): neutral 38-62 returns null.
   let stop: keyof DialDirection | null = null;
-  if (value < 10)       stop = "extremeLow";
-  else if (value < 38)  stop = "softLow";
+  if (value < 10) stop = "extremeLow";
+  else if (value < 38) stop = "softLow";
   else if (value <= 62) stop = null;
   else if (value <= 89) stop = "softHigh";
-  else                  stop = "extremeHigh";
+  else stop = "extremeHigh";
   if (!stop) return null;
   return override?.[stop] ?? baseline[stop];
 }
@@ -220,8 +220,8 @@ export function buildCanonicalPlusSummary(
       // hierarchy" → "Generous"). Falls back to the static adjective
       // map. Keeps the summary in sync with Settings → Taste edits.
       const override = dialOverrides?.[key]?.[stop];
-      const adjective = (override?.split(/\s+/)[0] ?? "").trim().toLowerCase()
-        || stopAdjective(key, stop);
+      const adjective =
+        (override?.split(/\s+/)[0] ?? "").trim().toLowerCase() || stopAdjective(key, stop);
       if (adjective) tasteParts.push(`${adjective} (${v})`);
     });
     if (tasteParts.length > 0) {
@@ -265,20 +265,35 @@ export function describeCanonicalPlus(input: CanonicalPlusInput): CanonicalPlusC
 // Internal helpers for the summary form. The full block uses whole
 // phrases; the summary just needs one adjective per (dial, stop).
 function stopForValue(value: number): keyof DialDirection | null {
-  if (value < 10)       return "extremeLow";
-  if (value < 38)       return "softLow";
-  if (value <= 62)      return null;
-  if (value <= 89)      return "softHigh";
+  if (value < 10) return "extremeLow";
+  if (value < 38) return "softLow";
+  if (value <= 62) return null;
+  if (value <= 89) return "softHigh";
   return "extremeHigh";
 }
 
 const STOP_ADJECTIVE: Record<DialKey, Record<keyof DialDirection, string>> = {
-  density:      { extremeLow: "empty",     softLow: "spacious",  softHigh: "layered",   extremeHigh: "dense" },
-  motion:       { extremeLow: "inert",     softLow: "quiet",     softHigh: "animated",  extremeHigh: "kinetic" },
-  contrast:     { extremeLow: "whisper",   softLow: "muted",     softHigh: "bold",      extremeHigh: "electric" },
-  interactions: { extremeLow: "static",    softLow: "restrained", softHigh: "playful",  extremeHigh: "tactile" },
-  surface:      { extremeLow: "paper",     softLow: "flat",      softHigh: "textured",  extremeHigh: "skeuomorphic" },
-  originality:  { extremeLow: "strict",    softLow: "conventional", softHigh: "authorial", extremeHigh: "experimental" },
+  density: { extremeLow: "empty", softLow: "spacious", softHigh: "layered", extremeHigh: "dense" },
+  motion: { extremeLow: "inert", softLow: "quiet", softHigh: "animated", extremeHigh: "kinetic" },
+  contrast: { extremeLow: "whisper", softLow: "muted", softHigh: "bold", extremeHigh: "electric" },
+  interactions: {
+    extremeLow: "static",
+    softLow: "restrained",
+    softHigh: "playful",
+    extremeHigh: "tactile",
+  },
+  surface: {
+    extremeLow: "paper",
+    softLow: "flat",
+    softHigh: "textured",
+    extremeHigh: "skeuomorphic",
+  },
+  originality: {
+    extremeLow: "strict",
+    softLow: "conventional",
+    softHigh: "authorial",
+    extremeHigh: "experimental",
+  },
 };
 
 function stopAdjective(key: DialKey, stop: keyof DialDirection): string {

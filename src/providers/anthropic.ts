@@ -37,7 +37,11 @@ export const anthropicProvider: LLMProvider = {
   async status() {
     const state = await getAnthropicTokenState().catch(() => ({ tokenSet: false, source: null }));
     if (!state.tokenSet) {
-      return { status: "needs-auth", version: null, detail: "no API key — set in Settings or export ANTHROPIC_API_KEY" };
+      return {
+        status: "needs-auth",
+        version: null,
+        detail: "no API key — set in Settings or export ANTHROPIC_API_KEY",
+      };
     }
     return { status: "connected", version: state.source === "env" ? "env" : "saved" };
   },

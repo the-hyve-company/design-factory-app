@@ -18,12 +18,12 @@ import type { ProviderId } from "@/providers/types";
 type UnlistenFn = () => void;
 
 export type PromptCategory =
-  | "generate"      // full streaming, HTML output
-  | "refine"        // streaming, edit existing HTML
-  | "tweaks"        // one-shot JSON, no tools
-  | "export"        // one-shot, format conversion
-  | "consult"       // streaming, conversation only — no Write/Edit
-  | "comment";      // one-shot, annotation
+  | "generate" // full streaming, HTML output
+  | "refine" // streaming, edit existing HTML
+  | "tweaks" // one-shot JSON, no tools
+  | "export" // one-shot, format conversion
+  | "consult" // streaming, conversation only — no Write/Edit
+  | "comment"; // one-shot, annotation
 
 const CATEGORY_CONFIG: Record<PromptCategory, Partial<ClaudeConfig>> = {
   generate: {
@@ -89,29 +89,35 @@ export async function spawnStream(
   prompt: string,
   systemPrompt: string,
   callbacks: StreamCallbacks,
-  overrides?: string | SpawnOverrides
+  overrides?: string | SpawnOverrides,
 ): Promise<UnlistenFn> {
   const config = CATEGORY_CONFIG[category];
-  const o: SpawnOverrides = typeof overrides === "string" ? { model: overrides } : (overrides ?? {});
+  const o: SpawnOverrides =
+    typeof overrides === "string" ? { model: overrides } : (overrides ?? {});
   const provider = resolveProvider(o.providerId);
-  return provider.stream(prompt, {
-    ...config,
-    systemPrompt,
-    ...(o.model ? { model: o.model } : {}),
-    cwd: o.cwd,
-    agent: o.agent,
-    sessionId: o.sessionId,
-  }, callbacks);
+  return provider.stream(
+    prompt,
+    {
+      ...config,
+      systemPrompt,
+      ...(o.model ? { model: o.model } : {}),
+      cwd: o.cwd,
+      agent: o.agent,
+      sessionId: o.sessionId,
+    },
+    callbacks,
+  );
 }
 
 export async function spawnOnce(
   category: PromptCategory,
   prompt: string,
   systemPrompt: string,
-  overrides?: string | SpawnOverrides
+  overrides?: string | SpawnOverrides,
 ): Promise<string> {
   const config = CATEGORY_CONFIG[category];
-  const o: SpawnOverrides = typeof overrides === "string" ? { model: overrides } : (overrides ?? {});
+  const o: SpawnOverrides =
+    typeof overrides === "string" ? { model: overrides } : (overrides ?? {});
   const provider = resolveProvider(o.providerId);
   return provider.once(prompt, {
     ...config,

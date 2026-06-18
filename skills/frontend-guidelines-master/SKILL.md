@@ -1,897 +1,716 @@
 ---
 name: "frontend-guidelines-master"
+description: "Opinionated, terse principles for writing clean HTML, CSS, and JavaScript — semantics, accessibility, performance, low-specificity CSS, transform-only animation, and stateless/functional JS. Use when authoring or reviewing frontend code, untangling CSS specificity, or replacing imperative loops and bind/apply with native and functional patterns."
 trigger: "/frontend-guidelines-master"
 ---
 
 # Frontend Guidelines
 
+> Adapted from Ben Delarre's frontend-guidelines (https://github.com/bendc/frontend-guidelines).
+> The principles below are paraphrased and re-illustrated with original examples; no text or code
+> from the source is reproduced verbatim.
+
+A compact rulebook for hand-written HTML, CSS, and JavaScript. Each rule states the intent, then
+shows a weaker form against a preferred form. Optimize for clarity and maintainability first.
+
 ## HTML
 
-### Semantics
+### Use the right element for the job
 
-HTML5 provides us with lots of semantic elements aimed to describe precisely the content. Make sure you benefit from its rich vocabulary.
+The element vocabulary describes meaning, not just layout. Reach for the tag that names what the
+content _is_ before falling back to a generic container.
 
 ```html
-<!-- bad -->
-<div id=main>
-  <div class=article>
-    <div class=header>
-      <h1>Blog post</h1>
-      <p>Published: <span>21st Feb, 2015</span></p>
-    </div>
-    <p>…</p>
+<!-- weak: every box is a div -->
+<div class="post">
+  <div class="meta">
+    <h2>Release notes</h2>
+    <span>Mar 4, 2026</span>
   </div>
+  <div class="body">…</div>
 </div>
 
-<!-- good -->
-<main>
-  <article>
-    <header>
-      <h1>Blog post</h1>
-      <p>Published: <time datetime=2015-02-21>21st Feb, 2015</time></p>
-    </header>
-    <p>…</p>
-  </article>
-</main>
+<!-- preferred: structure carries meaning -->
+<article class="post">
+  <header class="meta">
+    <h2>Release notes</h2>
+    <time datetime="2026-03-04">Mar 4, 2026</time>
+  </header>
+  <div class="body">…</div>
+</article>
 ```
 
-Make sure you understand the semantics of the elements you're using. It's worse to use a semantic
-element in a wrong way than staying neutral.
+A misapplied semantic element is worse than a neutral container. If a tag's meaning doesn't match
+the content, don't force it.
 
 ```html
-<!-- bad -->
-<h1>
-  <figure>
-    <img alt=Company src=logo.png>
-  </figure>
-</h1>
+<!-- weak: a logo is not a paragraph of emphasis -->
+<strong><img src="brand.svg" alt="Acme" /></strong>
 
-<!-- good -->
-<h1>
-  <img alt=Company src=logo.png>
-</h1>
+<!-- preferred: just the image, with a real alt -->
+<img src="brand.svg" alt="Acme" />
 ```
 
-### Brevity
+### Keep the markup lean
 
-Keep your code terse. Forget about your old XHTML habits.
+Drop boilerplate the parser doesn't need. Modern HTML lets you omit redundant attributes and some
+closing tags; quoting and explicit types are optional where they add nothing.
 
 ```html
-<!-- bad -->
-<!doctype html>
-<html lang=en>
-  <head>
-    <meta http-equiv=Content-Type content="text/html; charset=utf-8" />
-    <title>Contact</title>
-    <link rel=stylesheet href=style.css type=text/css />
-  </head>
-  <body>
-    <h1>Contact me</h1>
-    <label>
-      Email address:
-      <input type=email placeholder=you@email.com required=required />
-    </label>
-    <script src=main.js type=text/javascript></script>
-  </body>
-</html>
+<!-- weak: ceremony left over from XHTML -->
+<input type="text" required="required" autocomplete="off" />
 
-<!-- good -->
-<!doctype html>
-<html lang=en>
-  <meta charset=utf-8>
-  <title>Contact</title>
-  <link rel=stylesheet href=style.css>
+<!-- preferred -->
+<input type="text" required autocomplete="off" />
+```
 
-  <h1>Contact me</h1>
-  <label>
-    Email address:
-    <input type=email placeholder=you@email.com required>
-  </label>
-  <script src=main.js></script>
+### Treat accessibility as table stakes
+
+You don't need to memorize the spec to make real gains. A few habits cover most cases:
+
+- write `alt` text that conveys purpose, not "image of …"
+- use real `<button>` and `<a>` so keyboard and screen-reader behavior comes for free
+- never encode meaning in color alone — pair it with text, shape, or an icon
+- bind every form control to a label
+
+```html
+<!-- weak: a clickable div has no role, no focus, no keyboard -->
+<div class="btn" onclick="save()">Save</div>
+
+<!-- preferred -->
+<button type="button" onclick="save()">Save</button>
+```
+
+### Declare language and encoding
+
+Set the document language on the root element and declare UTF-8 at the top of the document, even
+when a server header also sends it. Both belong on the page itself.
+
+```html
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <title>Status</title>
 </html>
 ```
 
-### Accessibility
+### Don't let scripts block first paint
 
-Accessibility shouldn't be an afterthought. You don't have to be a WCAG expert to improve your
-website, you can start immediately by fixing the little things that make a huge difference, such as:
-
-* learning to use the `alt` attribute properly
-* making sure your links and buttons are marked as such (no `<div class=button>` atrocities)
-* not relying exclusively on colors to communicate information
-* explicitly labelling form controls
+Content should reach the user before non-essential scripts run. Put deferred or analytics-style
+scripts after the content (or use `defer`), and inline only the styles needed for the first view.
 
 ```html
-<!-- bad -->
-<h1><img alt=Logo src=logo.png></h1>
+<!-- weak: analytics blocks the page -->
+<head>
+  <script src="analytics.js"></script>
+  <title>Status</title>
+</head>
+<body>
+  <p>…</p>
+</body>
 
-<!-- good -->
-<h1><img alt=Company src=logo.png></h1>
-```
-
-### Language & character encoding
-
-While defining the language is optional, it's recommended to always declare
-it on the root element.
-
-The HTML standard requires that pages use the UTF-8 character encoding.
-It has to be declared, and although it can be declared in the Content-Type HTTP header,
-it is recommended to always declare it at the document level.
-
-```html
-<!-- bad -->
-<!doctype html>
-<title>Hello, world.</title>
-
-<!-- good -->
-<!doctype html>
-<html lang=en>
-  <meta charset=utf-8>
-  <title>Hello, world.</title>
-</html>
-```
-
-### Performance
-
-Unless there's a valid reason for loading your scripts before your content, don't block the
-rendering of your page. If your style sheet is heavy, isolate the styles that are absolutely
-required initially and defer the loading of the secondary declarations in a separate style sheet.
-Two HTTP requests is significantly slower than one, but the perception of speed is the most
-important factor.
-
-```html
-<!-- bad -->
-<!doctype html>
-<meta charset=utf-8>
-<script src=analytics.js></script>
-<title>Hello, world.</title>
-<p>...</p>
-
-<!-- good -->
-<!doctype html>
-<meta charset=utf-8>
-<title>Hello, world.</title>
-<p>...</p>
-<script src=analytics.js></script>
+<!-- preferred: content first, script last -->
+<head>
+  <title>Status</title>
+</head>
+<body>
+  <p>…</p>
+  <script src="analytics.js" defer></script>
+</body>
 ```
 
 ## CSS
 
-### Semicolons
+### Set the box model once, globally
 
-While the semicolon is technically a separator in CSS, always treat it as a terminator.
-
-```css
-/* bad */
-div {
-  color: red
-}
-
-/* good */
-div {
-  color: red;
-}
-```
-
-### Box model
-
-The box model should ideally be the same for the entire document. A global
-`* { box-sizing: border-box; }` is fine, but don't change the default box model
-on specific elements if you can avoid it.
+Pick one box model for the whole document with a single universal rule, then stop fiddling with it
+per element. Per-element overrides make sizing unpredictable.
 
 ```css
-/* bad */
-div {
-  width: 100%;
-  padding: 10px;
+/* once, at the top of the sheet */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-/* good */
-div {
-  padding: 10px;
+/* then just author padding without re-declaring the model */
+.card {
+  padding: 1rem;
 }
 ```
 
-### Flow
+### Stay in the normal flow
 
-Don't change the default behavior of an element if you can avoid it. Keep elements in the
-natural document flow as much as you can. For example, removing the white-space below an
-image shouldn't make you change its default display:
-
-```css
-/* bad */
-img {
-  display: block;
-}
-
-/* good */
-img {
-  vertical-align: middle;
-}
-```
-
-Similarly, don't take an element off the flow if you can avoid it.
+Default display and positioning are usually what you want. Don't change `display` or pull elements
+out with absolute positioning unless the layout genuinely requires it.
 
 ```css
-/* bad */
-div {
-  width: 100px;
+/* weak: absolute positioning to push right */
+.badge {
   position: absolute;
   right: 0;
 }
 
-/* good */
-div {
-  width: 100px;
+/* preferred: let auto margins do it in flow */
+.badge {
   margin-left: auto;
 }
 ```
 
-### Positioning
+Prefer Flexbox and Grid for layout over taking elements off the flow.
 
-There are many ways to position elements in CSS. Favor modern layout specifications
-such as Flexbox and Grid, and avoid removing elements from the normal document flow, for example
-with `position: absolute`.
+### Keep selectors shallow and decoupled
 
-### Selectors
-
-Minimize selectors tightly coupled to the DOM. Consider adding a class to the elements
-you want to match when your selector exceeds 3 structural pseudo-classes, descendant or
-sibling combinators.
+Long chains of combinators and structural pseudo-classes tie your CSS to a fragile DOM shape. When
+a selector grows past a few combinators, add a class to the target instead.
 
 ```css
-/* bad */
-div:first-of-type :last-child > p ~ *
+/* weak: brittle, coupled to structure */
+section > ul li:first-child > a ~ span { … }
 
-/* good */
-div:first-of-type .info
+/* preferred: name the thing you mean */
+.nav-label { … }
 ```
 
-Avoid overloading your selectors when you don't need to.
+Don't over-qualify when the extra specificity buys nothing.
 
 ```css
-/* bad */
-img[src$=svg], ul > li:first-child {
-  opacity: 0;
-}
+/* weak */
+ul > li:first-child { … }
 
-/* good */
-[src$=svg], ul > :first-child {
-  opacity: 0;
-}
+/* preferred */
+ul > :first-child { … }
 ```
 
-### Specificity
+### Keep specificity low and overridable
 
-Don't make values and selectors hard to override. Minimize the use of `id`'s
-and avoid `!important`.
+Avoid `!important` and `#id` selectors — they make later styles hard to override and turn debugging
+into a fight. Reach the weight you need by combining classes, not by escalating.
 
 ```css
-/* bad */
-.bar {
+/* weak: now everything below has to shout louder */
+.cta {
   color: green !important;
 }
-.foo {
-  color: red;
-}
 
-/* good */
-.foo.bar {
+/* preferred: a more specific class composition */
+.btn.cta {
   color: green;
 }
-.foo {
-  color: red;
+.btn {
+  color: gray;
 }
 ```
 
-### Overriding
+### Write rules so you rarely override them
 
-Overriding styles makes selectors and debugging harder. Avoid it when possible.
+Structure your selectors so the common case is the rule and the exception is small, instead of
+setting a value everywhere and clawing it back.
 
 ```css
-/* bad */
+/* weak: set on all, then undo the first */
 li {
-  visibility: hidden;
+  display: none;
 }
 li:first-child {
-  visibility: visible;
+  display: block;
 }
 
-/* good */
+/* preferred: target only the ones you mean to hide */
 li + li {
-  visibility: hidden;
+  display: none;
 }
 ```
 
-### Inheritance
+### Lean on inheritance
 
-Don't duplicate style declarations that can be inherited.
+If a property inherits, declare it once on a common ancestor rather than repeating it on each child.
 
 ```css
-/* bad */
-div h1, div p {
-  text-shadow: 0 1px 0 #fff;
+/* weak */
+.card h2,
+.card p {
+  font-family: Inter, sans-serif;
 }
 
-/* good */
-div {
-  text-shadow: 0 1px 0 #fff;
+/* preferred */
+.card {
+  font-family: Inter, sans-serif;
 }
 ```
 
-### Brevity
+### Be terse: shorthands and computed values
 
-Keep your code terse. Use shorthand properties and avoid using multiple properties when
-it's not needed.
+Use shorthand properties and compute related values inline instead of stacking longhand
+declarations or extra helper offsets.
 
 ```css
-/* bad */
-div {
-  transition: all 1s;
+/* weak */
+.box {
+  padding-top: 4px;
+  padding-right: 8px;
+  padding-bottom: 16px;
+  padding-left: 8px;
   top: 50%;
   margin-top: -10px;
-  padding-top: 5px;
-  padding-right: 10px;
-  padding-bottom: 20px;
-  padding-left: 10px;
 }
 
-/* good */
-div {
-  transition: 1s;
+/* preferred */
+.box {
+  padding: 4px 8px 16px;
   top: calc(50% - 10px);
-  padding: 5px 10px 20px;
 }
 ```
 
-### Language
+### Say what you mean
 
-Prefer English over math.
+Use the readable form of a value when one exists — keyword selectors, named rotations — over the
+equivalent arithmetic.
 
 ```css
-/* bad */
+/* weak */
 :nth-child(2n + 1) {
   transform: rotate(360deg);
 }
 
-/* good */
+/* preferred */
 :nth-child(odd) {
   transform: rotate(1turn);
 }
 ```
 
-### Vendor prefixes
+### Prune dead vendor prefixes
 
-Kill obsolete vendor prefixes aggressively. If you need to use them, insert them before the
-standard property.
+Drop prefixes that no current browser needs. When a prefix is still required, write it before the
+standard property so the standard one wins.
 
 ```css
-/* bad */
-div {
-  transform: scale(2);
-  -webkit-transform: scale(2);
-  -moz-transform: scale(2);
-  -ms-transform: scale(2);
-  transition: 1s;
-  -webkit-transition: 1s;
-  -moz-transition: 1s;
-  -ms-transition: 1s;
-}
-
-/* good */
-div {
-  -webkit-transform: scale(2);
-  transform: scale(2);
-  transition: 1s;
+/* preferred: prefixed first, standard last, nothing obsolete */
+.scale {
+  -webkit-mask-image: linear-gradient(black, transparent);
+  mask-image: linear-gradient(black, transparent);
 }
 ```
 
-### Animations
+### Animate only what's cheap to animate
 
-Favor transitions over animations. Avoid animating other properties than
-`opacity` and `transform`.
+Prefer transitions to keyframe animations, and restrict what you animate to `opacity` and
+`transform`. Animating layout properties forces reflow and stutters.
 
 ```css
-/* bad */
-div:hover {
-  animation: move 1s forwards;
+/* weak: animating margin reflows the page */
+.panel:hover {
+  animation: slide 0.3s forwards;
 }
-@keyframes move {
-  100% {
-    margin-left: 100px;
+@keyframes slide {
+  to {
+    margin-left: 120px;
   }
 }
 
-/* good */
-div:hover {
-  transition: 1s;
-  transform: translateX(100px);
+/* preferred: transform is composited, no reflow */
+.panel {
+  transition: transform 0.3s;
+}
+.panel:hover {
+  transform: translateX(120px);
 }
 ```
 
-### Units
+### Prefer sensible units
 
-Use unitless values when you can. Favor `rem` if you use relative units. Prefer seconds over
-milliseconds.
+Drop the unit on zero. For relative sizing favor `rem`; for line height a unitless multiplier; for
+durations seconds read more naturally than milliseconds.
 
 ```css
-/* bad */
-div {
+/* weak */
+.t {
   margin: 0px;
-  font-size: .9em;
-  line-height: 22px;
-  transition: 500ms;
+  font-size: 14px;
+  line-height: 20px;
+  transition: 300ms;
 }
 
-/* good */
-div {
+/* preferred */
+.t {
   margin: 0;
-  font-size: .9rem;
+  font-size: 0.875rem;
   line-height: 1.5;
-  transition: .5s;
+  transition: 0.3s;
 }
 ```
 
-### Colors
+### Color format
 
-If you need transparency, use `rgba`. Otherwise, always use the hexadecimal format.
+Use a hex value for opaque colors and `rgb()` with an alpha channel only when you need
+transparency.
 
 ```css
-/* bad */
-div {
-  color: hsl(103, 54%, 43%);
+/* opaque */
+.ok {
+  color: #4caf50;
 }
 
-/* good */
-div {
-  color: #5a3;
+/* needs transparency */
+.veil {
+  background: rgb(0 0 0 / 0.5);
 }
 ```
 
-### Drawing
+### Draw simple shapes in CSS, don't fetch them
 
-Avoid HTTP requests when the resources are easily replicable with CSS.
+A circle, dot, or triangle is cheaper to draw with a pseudo-element than to download as an image.
+Save the HTTP request.
 
 ```css
-/* bad */
-div::before {
-  content: url(white-circle.svg);
+/* weak: a network request for a dot */
+.status::before {
+  content: url(dot.svg);
 }
 
-/* good */
-div::before {
+/* preferred */
+.status::before {
   content: "";
-  display: block;
-  width: 20px;
-  height: 20px;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
-  background: #fff;
+  background: currentColor;
 }
 ```
 
-### Hacks
+### Avoid hacks
 
-Don't use them.
+Skip magic declarations whose only job is to trip a rendering quirk. If you need a compositing hint,
+say so explicitly, and use real CSS comments.
 
 ```css
-/* bad */
-div {
-  // position: relative;
+/* weak: opaque trick + JS-style comment */
+.layer {
+  // bump to its own layer
   transform: translateZ(0);
 }
 
-/* good */
-div {
-  /* position: relative; */
+/* preferred: intent is stated, comment is valid CSS */
+.layer {
+  /* promote to its own compositing layer */
   will-change: transform;
 }
 ```
 
 ## JavaScript
 
-### Performance
+### Readability beats micro-performance
 
-Favor readability, correctness and expressiveness over performance. JavaScript will basically never
-be your performance bottleneck. Optimize things like image compression, network access and DOM
-reflows instead. If you remember just one guideline from this document, choose this one.
+JS is almost never the bottleneck — network, images, and DOM reflow are. Write the clear version;
+optimize bytes on the wire and layout thrash instead. If you take one rule from here, take this one.
 
 ```javascript
-// bad (albeit way faster)
-const arr = [1, 2, 3, 4];
-const len = arr.length;
-var i = -1;
-var result = [];
-while (++i < len) {
-  var n = arr[i];
-  if (n % 2 > 0) continue;
-  result.push(n * n);
+// weak: hand-rolled loop chasing speed nobody will notice
+function evenSquares(nums) {
+  let out = [];
+  for (let i = 0; i < nums.length; i++) {
+    if (nums[i] % 2 === 0) out.push(nums[i] * nums[i]);
+  }
+  return out;
 }
 
-// good
-const arr = [1, 2, 3, 4];
-const isEven = n => n % 2 == 0;
-const square = n => n * n;
-
-const result = arr.filter(isEven).map(square);
+// preferred: intent is obvious
+const evenSquares = (nums) => nums.filter((n) => n % 2 === 0).map((n) => n * n);
 ```
 
-### Statelessness
+### Keep functions pure
 
-Try to keep your functions pure. All functions should ideally produce no side-effects, use no outside data and return new objects instead of mutating existing ones.
+Aim for functions with no side effects: don't read hidden outside state, and return fresh values
+instead of mutating the inputs.
 
 ```javascript
-// bad
-const merge = (target, ...sources) => Object.assign(target, ...sources);
-merge({ foo: "foo" }, { bar: "bar" }); // => { foo: "foo", bar: "bar" }
+// weak: mutates the first argument
+const apply = (state, patch) => Object.assign(state, patch);
 
-// good
-const merge = (...sources) => Object.assign({}, ...sources);
-merge({ foo: "foo" }, { bar: "bar" }); // => { foo: "foo", bar: "bar" }
+// preferred: returns a new object
+const apply = (state, patch) => ({ ...state, ...patch });
 ```
 
-### Natives
+### Reach for native methods first
 
-Rely on native methods as much as possible.
+The standard library covers most of what you'd otherwise hand-write. Use it before reinventing it.
 
 ```javascript
-// bad
-const toArray = obj => [].slice.call(obj);
+// weak: manual array-like conversion
+const toArray = (nodeList) => Array.prototype.slice.call(nodeList);
 
-// good
-const toArray = (() =>
-  Array.from ? Array.from : obj => [].slice.call(obj)
-)();
+// preferred
+const toArray = (nodeList) => Array.from(nodeList);
 ```
 
-### Coercion
+### Use coercion deliberately
 
-Embrace implicit coercion when it makes sense. Avoid it otherwise. Don't cargo-cult.
+Implicit coercion is fine when it reads clearly and dangerous when it surprises. A loose equality
+check against `null` catches both `null` and `undefined`; reserve the trick for cases where that's
+exactly the intent.
 
 ```javascript
-// bad
-if (x === undefined || x === null) { ... }
+// verbose
+if (value === null || value === undefined) {
+  /* … */
+}
 
-// good
-if (x == undefined) { ... }
+// concise, when the two-value check is the actual goal
+if (value == null) {
+  /* … */
+}
 ```
 
-### Loops
+### Replace loops with array methods
 
-Don't use loops as they force you to use mutable objects. Rely on `array.prototype` methods.
+Imperative loops push you toward mutable accumulators. Most loops are really a `map`, `filter`, or
+`reduce`.
 
 ```javascript
-// bad
-const sum = arr => {
-  var sum = 0;
-  var i = -1;
-  for (;arr[++i];) {
-    sum += arr[i];
-  }
+// weak
+function total(nums) {
+  let sum = 0;
+  for (const n of nums) sum += n;
   return sum;
+}
+
+// preferred
+const total = (nums) => nums.reduce((a, b) => a + b, 0);
+```
+
+When an array method would be a stretch, recursion is clearer than a mutable loop.
+
+```javascript
+// preferred: no mutable counter
+const repeat = (fn, times) => {
+  if (times <= 0) return;
+  fn();
+  repeat(fn, times - 1);
 };
-
-sum([1, 2, 3]); // => 6
-
-// good
-const sum = arr =>
-  arr.reduce((x, y) => x + y);
-
-sum([1, 2, 3]); // => 6
-```
-If you can't, or if using `array.prototype` methods is arguably abusive, use recursion.
-
-```javascript
-// bad
-const createDivs = howMany => {
-  while (howMany--) {
-    document.body.insertAdjacentHTML("beforeend", "<div></div>");
-  }
-};
-createDivs(5);
-
-// bad
-const createDivs = howMany =>
-  [...Array(howMany)].forEach(() =>
-    document.body.insertAdjacentHTML("beforeend", "<div></div>")
-  );
-createDivs(5);
-
-// good
-const createDivs = howMany => {
-  if (!howMany) return;
-  document.body.insertAdjacentHTML("beforeend", "<div></div>");
-  return createDivs(howMany - 1);
-};
-createDivs(5);
 ```
 
-Here's a [generic loop function](https://gist.github.com/bendc/6cb2db4a44ec30208e86) making recursion easier to use.
+### Prefer rest parameters to `arguments`
 
-### Arguments
-
-Forget about the `arguments` object. The rest parameter is always a better option because:
-
-1. it's named, so it gives you a better idea of the arguments the function is expecting
-2. it's a real array, which makes it easier to use.
+The rest parameter is named (self-documenting) and is a genuine array, so array methods just work.
 
 ```javascript
-// bad
-const sortNumbers = () =>
-  Array.prototype.slice.call(arguments).sort();
+// weak
+function maxOf() {
+  return Math.max.apply(null, Array.prototype.slice.call(arguments));
+}
 
-// good
-const sortNumbers = (...numbers) => numbers.sort();
+// preferred
+const maxOf = (...nums) => Math.max(...nums);
 ```
 
-### Apply
+### Spread instead of `apply`
 
-Forget about `apply()`. Use the spread operator instead.
+Spreading an array into a call is clearer than threading it through `apply`.
 
 ```javascript
-const greet = (first, last) => `Hi ${first} ${last}`;
-const person = ["John", "Doe"];
+const point = [3, 7];
+const place = (x, y) => `${x},${y}`;
 
-// bad
-greet.apply(null, person);
+// weak
+place.apply(null, point);
 
-// good
-greet(...person);
+// preferred
+place(...point);
 ```
 
-### Bind
+### Avoid `bind` when an idiom exists
 
-Don't `bind()` when there's a more idiomatic approach.
+Arrow functions capture `this` lexically, so you rarely need `bind` to preserve context inside a
+method.
 
 ```javascript
-// bad
-["foo", "bar"].forEach(func.bind(this));
-
-// good
-["foo", "bar"].forEach(func, this);
-```
-```javascript
-// bad
-const person = {
-  first: "John",
-  last: "Doe",
-  greet() {
-    const full = function() {
-      return `${this.first} ${this.last}`;
+// weak
+const counter = {
+  count: 0,
+  start() {
+    const tick = function () {
+      this.count++;
     }.bind(this);
-    return `Hello ${full()}`;
-  }
-}
+    setInterval(tick, 1000);
+  },
+};
 
-// good
-const person = {
-  first: "John",
-  last: "Doe",
-  greet() {
-    const full = () => `${this.first} ${this.last}`;
-    return `Hello ${full()}`;
-  }
-}
+// preferred
+const counter = {
+  count: 0,
+  start() {
+    setInterval(() => {
+      this.count++;
+    }, 1000);
+  },
+};
 ```
 
-### Higher-order functions
+### Don't wrap a function that's already the function you want
 
-Avoid nesting functions when you don't have to.
+If a callback just forwards its argument to another function with the same shape, pass that
+function directly.
 
 ```javascript
-// bad
-[1, 2, 3].map(num => String(num));
+// weak
+["1", "2", "3"].map((s) => Number(s));
 
-// good
-[1, 2, 3].map(String);
+// preferred
+["1", "2", "3"].map(Number);
 ```
 
-### Composition
+### Compose instead of nesting calls
 
-Avoid multiple nested function calls. Use composition instead.
+Deeply nested calls read inside-out. A small composition helper reads left-to-right.
 
 ```javascript
-const plus1 = a => a + 1;
-const mult2 = a => a * 2;
+const inc = (n) => n + 1;
+const double = (n) => n * 2;
 
-// bad
-mult2(plus1(5)); // => 12
+// weak
+double(inc(5)); // 12
 
-// good
-const pipeline = (...funcs) => val => funcs.reduce((a, b) => b(a), val);
-const addThenMult = pipeline(plus1, mult2);
-addThenMult(5); // => 12
+// preferred
+const pipe =
+  (...fns) =>
+  (x) =>
+    fns.reduce((acc, fn) => fn(acc), x);
+const incThenDouble = pipe(inc, double);
+incThenDouble(5); // 12
 ```
 
-### Caching
+### Cache expensive work
 
-Cache feature tests, large data structures and any expensive operation.
+Feature checks, big lookups, and other costly setup should run once and be reused, not repeated on
+every call.
 
 ```javascript
-// bad
-const contains = (arr, value) =>
-  Array.prototype.includes
-    ? arr.includes(value)
-    : arr.some(el => el === value);
-contains(["foo", "bar"], "baz"); // => false
+// weak: probes support on every call
+const supportsClipboard = () => "clipboard" in navigator;
 
-// good
-const contains = (() =>
-  Array.prototype.includes
-    ? (arr, value) => arr.includes(value)
-    : (arr, value) => arr.some(el => el === value)
-)();
-contains(["foo", "bar"], "baz"); // => false
+// preferred: resolve once
+const supportsClipboard = (() => "clipboard" in navigator)();
 ```
 
-### Variables
+### Prefer `const`, then `let`, never `var`
 
-Favor `const` over `let` and `let` over `var`.
+Default to `const`. Use `let` only when you must reassign. `var` has no place in new code.
 
 ```javascript
-// bad
-var me = new Map();
-me.set("name", "Ben").set("country", "Belgium");
-
-// good
-const me = new Map();
-me.set("name", "Ben").set("country", "Belgium");
+// preferred
+const ids = new Set();
+let attempts = 0;
 ```
 
-### Conditions
+### Prefer expressions to statement ladders
 
-Favor IIFE's and return statements over if, else if, else and switch statements.
+An IIFE with early returns reads better than a mutable variable threaded through `if/else if/else`.
 
 ```javascript
-// bad
-var grade;
-if (result < 50)
-  grade = "bad";
-else if (result < 90)
-  grade = "good";
-else
-  grade = "excellent";
+// weak
+let tier;
+if (score < 50) tier = "low";
+else if (score < 90) tier = "mid";
+else tier = "high";
 
-// good
-const grade = (() => {
-  if (result < 50)
-    return "bad";
-  if (result < 90)
-    return "good";
-  return "excellent";
+// preferred
+const tier = (() => {
+  if (score < 50) return "low";
+  if (score < 90) return "mid";
+  return "high";
 })();
 ```
 
-### Object iteration
+### Avoid `for...in` for own properties
 
-Avoid `for...in` when you can.
+`for...in` walks the prototype chain. Iterate the keys you actually own.
 
 ```javascript
-const shared = { foo: "foo" };
-const obj = Object.create(shared, {
-  bar: {
-    value: "bar",
-    enumerable: true
-  }
-});
-
-// bad
-for (var prop in obj) {
-  if (obj.hasOwnProperty(prop))
-    console.log(prop);
+// weak
+for (const key in obj) {
+  if (Object.hasOwn(obj, key)) handle(key);
 }
 
-// good
-Object.keys(obj).forEach(prop => console.log(prop));
+// preferred
+Object.keys(obj).forEach(handle);
 ```
 
-### Objects as Maps
+### Use a `Map` for dynamic key/value data
 
-While objects have legitimate use cases, maps are usually a better, more powerful choice. When in
-doubt, use a `Map`.
+When keys are added, removed, or counted at runtime, `Map` is clearer than poking properties onto a
+plain object — and `.size` is built in.
 
 ```javascript
-// bad
-const me = {
-  name: "Ben",
-  age: 30
-};
-var meSize = Object.keys(me).length;
-meSize; // => 2
-me.country = "Belgium";
-meSize++;
-meSize; // => 3
+// weak
+const seen = {};
+seen["a"] = 1;
+Object.keys(seen).length; // 1
 
-// good
-const me = new Map();
-me.set("name", "Ben");
-me.set("age", 30);
-me.size; // => 2
-me.set("country", "Belgium");
-me.size; // => 3
+// preferred
+const seen = new Map();
+seen.set("a", 1);
+seen.size; // 1
 ```
 
-### Curry
+### Don't over-curry
 
-Currying is a powerful but foreign paradigm for many developers. Don't abuse it as its appropriate
-use cases are fairly unusual.
+Currying has its place, but those places are uncommon. Don't split arguments into a chain of
+single-argument functions out of habit.
 
 ```javascript
-// bad
-const sum = a => b => a + b;
-sum(5)(3); // => 8
+// weak
+const add = (a) => (b) => a + b;
+add(2)(3);
 
-// good
-const sum = (a, b) => a + b;
-sum(5, 3); // => 8
+// preferred
+const add = (a, b) => a + b;
+add(2, 3);
 ```
 
-### Readability
+### Write the obvious form, not the clever one
 
-Don't obfuscate the intent of your code by using seemingly smart tricks.
+Short-circuit side effects, bitwise floor tricks, and similar cleverness hide intent. Spell it out.
 
 ```javascript
-// bad
-foo || doSomething();
+// weak
+ready && init();
+const n = ~~3.9;
 
-// good
-if (!foo) doSomething();
-```
-```javascript
-// bad
-void function() { /* IIFE */ }();
-
-// good
-(function() { /* IIFE */ }());
-```
-```javascript
-// bad
-const n = ~~3.14;
-
-// good
-const n = Math.floor(3.14);
+// preferred
+if (ready) init();
+const n = Math.trunc(3.9);
 ```
 
-### Code reuse
+### Build small, reusable functions
 
-Don't be afraid of creating lots of small, highly composable and reusable functions.
+Tiny composable helpers beat repeated inline expressions. Name the operation once and reuse it.
 
 ```javascript
-// bad
-arr[arr.length - 1];
+// weak
+const lastItem = list[list.length - 1];
 
-// good
-const first = arr => arr[0];
-const last = arr => first(arr.slice(-1));
-last(arr);
-```
-```javascript
-// bad
-const product = (a, b) => a * b;
-const triple = n => n * 3;
-
-// good
-const product = (a, b) => a * b;
-const triple = product.bind(null, 3);
+// preferred
+const last = (arr) => arr[arr.length - 1];
+last(list);
 ```
 
-### Dependencies
+### Keep dependencies minimal
 
-Minimize dependencies. Third-party is code you don't know. Don't load an entire library for just a couple of methods easily replicable:
+A third-party package is code you don't own. Don't pull in a whole library for a one-liner you can
+write yourself.
 
 ```javascript
-// bad
-var _ = require("underscore");
-_.compact(["foo", 0]));
-_.unique(["foo", "foo"]);
-_.union(["foo"], ["bar"], ["foo"]);
+// weak
+import uniq from "lodash/uniq";
+uniq([1, 1, 2]);
 
-// good
-const compact = arr => arr.filter(el => el);
-const unique = arr => [...new Set(arr)];
-const union = (...arr) => unique([].concat(...arr));
-
-compact(["foo", 0]);
-unique(["foo", "foo"]);
-union(["foo"], ["bar"], ["foo"]);
+// preferred
+const uniq = (arr) => [...new Set(arr)];
+uniq([1, 1, 2]);
 ```
+
+---
+
+Adapted from Ben Delarre's frontend-guidelines (https://github.com/bendc/frontend-guidelines).

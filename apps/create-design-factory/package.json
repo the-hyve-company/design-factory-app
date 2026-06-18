@@ -1,6 +1,6 @@
 {
   "name": "create-design-factory",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Scaffolder for Design Factory — local-first AI design workspace.",
   "type": "module",
   "bin": {
@@ -13,14 +13,14 @@
     "tar": "^7.4.3"
   },
   "license": "Apache-2.0",
-  "homepage": "https://github.com/the-hyve-company/design-factory#readme",
+  "homepage": "https://github.com/the-hyve-company/design-factory-app#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/the-hyve-company/design-factory.git",
+    "url": "git+https://github.com/the-hyve-company/design-factory-app.git",
     "directory": "apps/create-design-factory"
   },
   "bugs": {
-    "url": "https://github.com/the-hyve-company/design-factory/issues"
+    "url": "https://github.com/the-hyve-company/design-factory-app/issues"
   },
   "files": [
     "index.js",

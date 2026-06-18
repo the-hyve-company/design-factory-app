@@ -25,11 +25,15 @@ let repoRoot;
 let projectsRoot;
 let slug;
 
-const HTML = '<!DOCTYPE html><html><body>' + 'x'.repeat(300) + '</body></html>';
+const HTML = "<!DOCTYPE html><html><body>" + "x".repeat(300) + "</body></html>";
 
 beforeEach(async () => {
   repoRoot = await mkdtemp(join(tmpdir(), "df-pf-"));
-  try { execFileSync("git", ["init", "-q", repoRoot], { stdio: "pipe" }); } catch { /* */ }
+  try {
+    execFileSync("git", ["init", "-q", repoRoot], { stdio: "pipe" });
+  } catch {
+    /* */
+  }
   slug = `proj-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   projectsRoot = join(repoRoot, "projects");
   await mkdir(join(projectsRoot, slug), { recursive: true });
@@ -66,7 +70,15 @@ describe("validateRegistryShape", () => {
       version: 99,
       primaryFile: "x",
       activeFile: "x",
-      files: { x: { type: "text/html", role: "primary", previewable: true, createdAt: "x", updatedAt: "x" } },
+      files: {
+        x: {
+          type: "text/html",
+          role: "primary",
+          previewable: true,
+          createdAt: "x",
+          updatedAt: "x",
+        },
+      },
     };
     const out = validateRegistryShape(r);
     expect(out?.error).toMatch(/unsupported-version/);
@@ -77,7 +89,15 @@ describe("validateRegistryShape", () => {
       version: 1,
       primaryFile: "nope",
       activeFile: "x",
-      files: { x: { type: "text/html", role: "primary", previewable: true, createdAt: "x", updatedAt: "x" } },
+      files: {
+        x: {
+          type: "text/html",
+          role: "primary",
+          previewable: true,
+          createdAt: "x",
+          updatedAt: "x",
+        },
+      },
     };
     expect(validateRegistryShape(r)?.error).toBe("primaryFile-not-in-files");
   });
@@ -87,7 +107,15 @@ describe("validateRegistryShape", () => {
       version: 1,
       primaryFile: "x",
       activeFile: "nope",
-      files: { x: { type: "text/html", role: "primary", previewable: true, createdAt: "x", updatedAt: "x" } },
+      files: {
+        x: {
+          type: "text/html",
+          role: "primary",
+          previewable: true,
+          createdAt: "x",
+          updatedAt: "x",
+        },
+      },
     };
     expect(validateRegistryShape(r)?.error).toBe("activeFile-not-in-files");
   });
@@ -97,7 +125,9 @@ describe("validateRegistryShape", () => {
       version: 1,
       primaryFile: "x",
       activeFile: "x",
-      files: { x: { type: "text/html", role: "blorp", previewable: true, createdAt: "x", updatedAt: "x" } },
+      files: {
+        x: { type: "text/html", role: "blorp", previewable: true, createdAt: "x", updatedAt: "x" },
+      },
     };
     expect(validateRegistryShape(r)?.error).toMatch(/entry-role-invalid/);
   });
@@ -160,7 +190,10 @@ describe("inferRegistryFromFilesystem", () => {
     await writeFile(join(projectsRoot, slug, "variants", "dark.html"), HTML);
     await writeFile(join(projectsRoot, slug, "docs", "notes.md"), "# notes");
     await writeFile(join(projectsRoot, slug, "data", "config.json"), "{}");
-    await writeFile(join(projectsRoot, slug, "assets", "images", "logo.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    await writeFile(
+      join(projectsRoot, slug, "assets", "images", "logo.png"),
+      Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+    );
 
     const r = await inferRegistryFromFilesystem(slug, projectsRoot);
     expect(r.files[`projects/${slug}/index.html`].role).toBe("primary");
@@ -223,7 +256,11 @@ describe("readRegistry / writeRegistry roundtrip", () => {
   it("returns null on schema-invalid registry", async () => {
     const path = registryPathForSlug(slug, projectsRoot);
     await mkdir(join(projectsRoot, slug, REGISTRY_DIRNAME), { recursive: true });
-    await writeFile(path, JSON.stringify({ version: 1, primaryFile: "x", activeFile: "x", files: {} }), "utf8");
+    await writeFile(
+      path,
+      JSON.stringify({ version: 1, primaryFile: "x", activeFile: "x", files: {} }),
+      "utf8",
+    );
     const r = await readRegistry(slug, projectsRoot);
     expect(r).toBeNull();
   });
@@ -231,7 +268,11 @@ describe("readRegistry / writeRegistry roundtrip", () => {
   it("writeRegistry rejects invalid registry shape", async () => {
     const bad = { version: 1, primaryFile: "x", activeFile: "x", files: {} };
     let caught = null;
-    try { await writeRegistry(slug, projectsRoot, bad); } catch (e) { caught = e; }
+    try {
+      await writeRegistry(slug, projectsRoot, bad);
+    } catch (e) {
+      caught = e;
+    }
     expect(caught).toBeTruthy();
     expect(caught.code).toBe("INVALID_REGISTRY");
   });
@@ -336,17 +377,23 @@ describe("upsertFile", () => {
   it("merges over existing entry preserving createdAt + bumping updatedAt", async () => {
     const key = `projects/${slug}/index.html`;
     const r1 = await upsertFile({
-      slug, projectsRoot, key,
+      slug,
+      projectsRoot,
+      key,
       entry: { type: "text/html", role: "primary", previewable: true, hash: "a".repeat(64) },
-      setActive: true, setPrimary: true,
+      setActive: true,
+      setPrimary: true,
     });
     const created = r1.entry.createdAt;
     // Sleep a tick so updatedAt definitely differs.
     await new Promise((r) => setTimeout(r, 10));
     const r2 = await upsertFile({
-      slug, projectsRoot, key,
+      slug,
+      projectsRoot,
+      key,
       entry: { type: "text/html", role: "primary", previewable: true, hash: "b".repeat(64) },
-      setActive: true, setPrimary: true,
+      setActive: true,
+      setPrimary: true,
     });
     expect(r2.entry.createdAt).toBe(created);
     expect(r2.entry.updatedAt).not.toBe(created);
@@ -362,11 +409,20 @@ describe("upsertFile — concurrency", () => {
     const tasks = [];
     for (let i = 0; i < 5; i++) {
       const key = `projects/${slug}/variants/v-${i}.html`;
-      tasks.push(upsertFile({
-        slug, projectsRoot, key,
-        entry: { type: "text/html", role: "variant", previewable: true, hash: String(i).repeat(64) },
-        setActive: true,
-      }));
+      tasks.push(
+        upsertFile({
+          slug,
+          projectsRoot,
+          key,
+          entry: {
+            type: "text/html",
+            role: "variant",
+            previewable: true,
+            hash: String(i).repeat(64),
+          },
+          setActive: true,
+        }),
+      );
     }
     const results = await Promise.all(tasks);
     expect(results.every((r) => r.registry)).toBe(true);

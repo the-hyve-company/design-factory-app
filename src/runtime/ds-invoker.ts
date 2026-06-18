@@ -27,12 +27,12 @@ const DS_GENERATION_SYSTEM = [
   "  name: <string>                   # required",
   "  description: <string>            # optional, one line",
   "  colors:                          # at least primary; hex sRGB like '#1A1C1E'",
-  "    primary: \"#...\"",
-  "    secondary: \"#...\"",
-  "    tertiary: \"#...\"             # optional",
-  "    neutral: \"#...\"               # optional",
-  "    surface: \"#...\"               # optional",
-  "    on-surface: \"#...\"            # optional",
+  '    primary: "#..."',
+  '    secondary: "#..."',
+  '    tertiary: "#..."             # optional',
+  '    neutral: "#..."               # optional',
+  '    surface: "#..."               # optional',
+  '    on-surface: "#..."            # optional',
   "  typography:                      # map of typography tokens",
   "    h1:",
   "      fontFamily: <string>",
@@ -62,15 +62,15 @@ const DS_GENERATION_SYSTEM = [
   "    xl: 64px",
   "  components:                      # optional; map of component name to sub-tokens",
   "    button-primary:",
-  "      backgroundColor: \"{colors.primary}\"",
-  "      textColor: \"{colors.on-primary}\"",
-  "      rounded: \"{rounded.md}\"",
+  '      backgroundColor: "{colors.primary}"',
+  '      textColor: "{colors.on-primary}"',
+  '      rounded: "{rounded.md}"',
   "      padding: 12px",
   "    button-primary-hover:",
-  "      backgroundColor: \"{colors.primary-container}\"",
+  '      backgroundColor: "{colors.primary-container}"',
   "",
   "TOKEN REFERENCE SYNTAX: use {path.to.token} inside quotes to reference",
-  "an existing token (e.g. backgroundColor: \"{colors.primary}\").",
+  'an existing token (e.g. backgroundColor: "{colors.primary}").',
   "",
   "COLOR RULES: hex sRGB only (#RRGGBB or #RRGGBBAA). No rgb(), no hsl(),",
   "no named colors. Dimension units: px, em, rem. Typography fontWeight is",
@@ -88,7 +88,7 @@ const DS_GENERATION_SYSTEM = [
   "",
   "STYLE OF WRITING: concise, declarative, product-design vocabulary.",
   "Avoid marketing copy. Each prose section must reference the token names",
-  "it describes, like \"The palette leads with primary (#1A1C1E)…\".",
+  'it describes, like "The palette leads with primary (#1A1C1E)…".',
   "",
   "NEVER include ``` fences around the output. NEVER wrap the document in",
   "commentary. Emit the frontmatter as the very first characters of the",
@@ -107,7 +107,7 @@ const DS_GENERATION_SYSTEM = [
 // extraction sandbox), and returns a prose summary like "DESIGN.md is
 // written at <path>. Here's what the document covers: ..." — which the
 // daemon dutifully writes as the design.md, corrupting the result.
-// Founder repro 2026-05-28.
+// Observed in repro.
 const ABSOLUTE_CONSTRAINTS = [
   "",
   "ABSOLUTE CONSTRAINTS — read these before producing any output:",
@@ -242,24 +242,30 @@ export interface DsStreamCallbacks extends StreamCallbacks {
 export async function invokeDsGeneration(
   userPrompt: string,
   callbacks: DsStreamCallbacks,
-  opts: { provider?: string; model?: string; cwd?: string } = {}
+  opts: { provider?: string; model?: string; cwd?: string } = {},
 ): Promise<UnlistenFn> {
-  return spawnStream("generate", userPrompt, DS_GENERATION_SYSTEM, {
-    onText: callbacks.onText,
-    onMeta: callbacks.onMeta,
-    onUsage: callbacks.onUsage,
-    onResult: callbacks.onResult,
-    onDone: (fullText) => {
-      const cleaned = cleanMarkdown(fullText);
-      callbacks.onMarkdown?.(cleaned);
-      callbacks.onDone(cleaned);
+  return spawnStream(
+    "generate",
+    userPrompt,
+    DS_GENERATION_SYSTEM,
+    {
+      onText: callbacks.onText,
+      onMeta: callbacks.onMeta,
+      onUsage: callbacks.onUsage,
+      onResult: callbacks.onResult,
+      onDone: (fullText) => {
+        const cleaned = cleanMarkdown(fullText);
+        callbacks.onMarkdown?.(cleaned);
+        callbacks.onDone(cleaned);
+      },
+      onError: callbacks.onError,
     },
-    onError: callbacks.onError,
-  }, {
-    providerId: (opts.provider as any) ?? "claude",
-    model: opts.model ?? "sonnet",
-    cwd: opts.cwd,
-  });
+    {
+      providerId: (opts.provider as any) ?? "claude",
+      model: opts.model ?? "sonnet",
+      cwd: opts.cwd,
+    },
+  );
 }
 
 /** Strip stray ``` fences Claude sometimes adds despite instructions. */

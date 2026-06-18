@@ -5,7 +5,9 @@ import { PreviewSandboxBadge } from "./PreviewSandboxBadge";
 
 describe("PreviewSandboxBadge", () => {
   it("renders 'strict' label when sandbox lacks allow-same-origin", () => {
-    const html = renderToStaticMarkup(createElement(PreviewSandboxBadge, { sandbox: "allow-scripts" }));
+    const html = renderToStaticMarkup(
+      createElement(PreviewSandboxBadge, { sandbox: "allow-scripts" }),
+    );
     expect(html).toContain("sandbox · strict");
     expect(html).toContain('data-df="sandbox-badge"');
   });
