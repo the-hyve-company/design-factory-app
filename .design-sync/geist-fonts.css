@@ -1,0 +1,18 @@
+/* Geist + Geist Mono (OFL, github.com/vercel/geist-font) — the families the
+ * DF tokens (--df-font-sans / --df-font-mono) call for. Variable woff2 so one
+ * file covers the full weight range. Wired via cfg.extraFonts; the converter
+ * copies the woff2 into fonts/ and @imports this from styles.css. */
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/Geist-Variable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/GeistMono-Variable.woff2") format("woff2");
+}
