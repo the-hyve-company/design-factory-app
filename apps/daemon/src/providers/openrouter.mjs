@@ -71,7 +71,9 @@ const openrouter = {
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
     // Inline [attached image: PATH] markers as base64 image_url parts
     // (OpenAI-compatible). The routed model must be vision-capable.
-    const { text: orUserText, images: orImages } = extractImageAttachments(prompt);
+    const { text: orUserText, images: orImages } = extractImageAttachments(prompt, {
+      isInScope: deps.imagePathInScope,
+    });
     messages.push(
       orImages.length > 0
         ? {

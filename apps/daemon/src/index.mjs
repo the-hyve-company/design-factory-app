@@ -29,11 +29,12 @@ import { existsSync, realpathSync, mkdirSync, readFileSync, writeFileSync } from
 import { resolve, join, dirname, basename, relative, isAbsolute } from "node:path";
 import { promisify } from "node:util";
 import { createHash, randomBytes } from "node:crypto";
+import { ssrfSafeFetch } from "./lib/ssrf-guard.mjs";
 import { WebSocketServer } from "ws";
 
 import { assertPathInScope, PathScopeError } from "./path-scope.mjs";
 import { normalizeProjectSlug, sanitizeVersionId } from "./slug.mjs";
-import { isBlockedEnvKey, filterEnv } from "./env-blocklist.mjs";
+import { isBlockedEnvKey, filterEnv, sanitizedSpawnEnv } from "./env-blocklist.mjs";
 import {
   writeArtifactSafely,
   deleteArtifactSafely,
@@ -901,8 +902,14 @@ const cors = (req, res) => {
   return false;
 };
 
-const readJson = (req) =>
-  new Promise((resolve, reject) => {
+// Idempotent: the request stream can only be drained once, so we cache the
+// parse promise on `req`. This lets a pre-dispatch guard (cwd scope check)
+// read the body without starving the adapter's own readJson(req) call — both
+// share the single cached promise (resolved OR rejected, so a parse error
+// surfaces identically to both callers).
+const readJson = (req) => {
+  if (req.__dfBodyPromise) return req.__dfBodyPromise;
+  req.__dfBodyPromise = new Promise((resolve, reject) => {
     let data = "";
     let bytes = 0;
     req.on("data", (c) => {
@@ -924,6 +931,8 @@ const readJson = (req) =>
     });
     req.on("error", reject);
   });
+  return req.__dfBodyPromise;
+};
 
 function expandHomePath(input) {
   let path = String(input || "");
@@ -2044,6 +2053,17 @@ const PROVIDER_DEPS = Object.freeze({
   spawn,
   CLAUDE_BIN,
   ensureGitRepo,
+  // Workspace-scope check for [attached image: PATH] markers — the API adapters
+  // pass this to extractImageAttachments so a forged absolute path can't read
+  // arbitrary files off disk and exfiltrate them to a third-party provider.
+  imagePathInScope: (p) => {
+    try {
+      resolveLocalFsPath(p, { write: false });
+      return true;
+    } catch {
+      return false;
+    }
+  },
 });
 
 const server = http.createServer(async (req, res) => {
@@ -2822,10 +2842,9 @@ const server = http.createServer(async (req, res) => {
       }
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 15000);
-      const r = await fetch(target, {
+      const r = await ssrfSafeFetch(target, {
         signal: controller.signal,
         headers: { "User-Agent": "design-factory/1.0 (DS extraction)" },
-        redirect: "follow",
       });
       clearTimeout(timer);
       const text = await r.text();
@@ -5692,6 +5711,36 @@ const server = http.createServer(async (req, res) => {
     if (m) {
       const provider = getProvider(m[1]);
       if (provider) {
+        // cwd scope guard — single choke point covering every provider
+        // (the 5 CLIs spawn with `body.cwd`). A forged cwd like "/etc" or
+        // "/home/user/.ssh" would let a CLI read/write outside the
+        // workspace; reject before dispatch. Reads via the cached readJson
+        // so the adapter's own readJson(req) still resolves. Parse errors
+        // fall through — the adapter surfaces its own 400.
+        if (!ALLOW_ARBITRARY_FS) {
+          let cwdToCheck = null;
+          try {
+            const body = await readJson(req);
+            if (body && typeof body.cwd === "string" && body.cwd.trim()) {
+              cwdToCheck = body.cwd;
+            }
+          } catch {
+            cwdToCheck = null;
+          }
+          if (cwdToCheck) {
+            try {
+              resolveLocalFsPath(cwdToCheck, { write: true });
+            } catch (e) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(
+                JSON.stringify({
+                  error: `cwd outside Design Factory workspace: ${String(e?.message || e)}`,
+                }),
+              );
+              return;
+            }
+          }
+        }
         // Heartbeat: keep SSE connections alive during provider buffering
         // windows (kimi-cli batches JSONL at turn end — without pings,
         // curl/browser/proxy timeouts kill the stream before events arrive).
@@ -7547,7 +7596,11 @@ wss.on("connection", async (ws) => {
       cols: 80,
       rows: 24,
       cwd: process.env.HOME || "/",
-      env: { ...process.env, TERM: "xterm-256color" },
+      // Strip the daemon's launch-time provider keys / GitHub tokens from the
+      // interactive terminal: it's reachable over the WS (origin-checked, but
+      // a sandbox-escaped page is the threat), and the user's own shell rc
+      // re-exports anything they legitimately set themselves.
+      env: { ...sanitizedSpawnEnv("terminal"), TERM: "xterm-256color" },
     });
   } catch (e) {
     ws.send(

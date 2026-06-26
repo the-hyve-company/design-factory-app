@@ -55,7 +55,9 @@ const openai = {
     const messages = [];
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
     // Inline [attached image: PATH] markers as base64 image_url parts.
-    const { text: userText, images } = extractImageAttachments(prompt);
+    const { text: userText, images } = extractImageAttachments(prompt, {
+      isInScope: deps.imagePathInScope,
+    });
     messages.push(
       images.length > 0
         ? {
