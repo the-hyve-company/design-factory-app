@@ -614,38 +614,6 @@ export async function invokeEditorialVerb(
   );
 }
 
-// ─── PP-03: edit_element ────────────────────────────────────────────────────
-
-const EDIT_ELEMENT_SYSTEM = [
-  "Você recebe HTML existente, um seletor CSS e uma instrução de edição.",
-  "Modifique APENAS o elemento indicado. Retorne o HTML completo modificado.",
-  "Somente o código. Sem explicações.",
-].join("\n");
-
-export async function invokeEditElement(
-  selector: string,
-  instruction: string,
-  ctx: ProjectContext,
-  callbacks: StreamCallbacks,
-): Promise<UnlistenFn> {
-  const prompt = `HTML:\n${ctx.currentHtml || ""}\n\nElemento: ${selector}\nInstrução: ${instruction}`;
-  const system = buildRefineSystem(ctx, EDIT_ELEMENT_SYSTEM);
-  return spawnStream(
-    "refine",
-    prompt,
-    system,
-    {
-      onText: callbacks.onText,
-      onMeta: callbacks.onMeta,
-      onUsage: callbacks.onUsage,
-      onResult: callbacks.onResult,
-      onDone: (fullText) => callbacks.onDone(extractHtmlFromOutput(fullText)),
-      onError: callbacks.onError,
-    },
-    { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent },
-  );
-}
-
 // ─── PP-04: add_component ───────────────────────────────────────────────────
 
 const ADD_COMPONENT_SYSTEM = [
