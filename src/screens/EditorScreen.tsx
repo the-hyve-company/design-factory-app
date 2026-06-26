@@ -9389,7 +9389,7 @@ export function EditorScreen({
                     >
                       <div
                         role="dialog"
-                        aria-label="Ativar modo de edição"
+                        aria-label={t("editor.sandbox.gate.title")}
                         onClick={(e) => e.stopPropagation()}
                         style={{
                           maxWidth: 360,
@@ -9409,7 +9409,7 @@ export function EditorScreen({
                             color: "var(--df-text-primary)",
                           }}
                         >
-                          Ativar modo de edição
+                          {t("editor.sandbox.gate.title")}
                         </strong>
                         <p
                           style={{
@@ -9419,10 +9419,10 @@ export function EditorScreen({
                             color: "var(--df-text-muted)",
                           }}
                         >
-                          O modo {sandboxGateFor === "edit" ? "Edit" : "Comment"} edita o preview
-                          direto na página, o que precisa de permissões extras no preview
-                          (isolamento reduzido). Recarrego a página pra ativar — teu projeto não se
-                          perde.
+                          {tf(
+                            "editor.sandbox.gate.body",
+                            sandboxGateFor === "edit" ? "Edit" : "Comment",
+                          )}
                         </p>
                         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                           <button
@@ -9438,7 +9438,7 @@ export function EditorScreen({
                               cursor: "pointer",
                             }}
                           >
-                            Cancelar
+                            {t("editor.sandbox.gate.cancel")}
                           </button>
                           <button
                             type="button"
@@ -9454,7 +9454,7 @@ export function EditorScreen({
                               cursor: "pointer",
                             }}
                           >
-                            Habilitar e recarregar
+                            {t("editor.sandbox.gate.enable")}
                           </button>
                         </div>
                       </div>
