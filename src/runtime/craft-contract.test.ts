@@ -47,6 +47,15 @@ describe("VISUAL_CRAFT_CONTRACT", () => {
   it("mandates a single Write call", () => {
     expect(VISUAL_CRAFT_CONTRACT).toMatch(/Single Write call|single Write call/);
   });
+
+  it("stays locale-neutral English (no hardcoded Portuguese island)", () => {
+    // C1 put this contract on EVERY fresh write for EVERY provider. A
+    // PT-hardcoded "Tom da resposta" block would nudge non-PT models to
+    // reply in Portuguese — the contract must stay English-neutral.
+    expect(VISUAL_CRAFT_CONTRACT).toContain("## Response tone");
+    expect(VISUAL_CRAFT_CONTRACT).not.toContain("Tom da resposta");
+    expect(VISUAL_CRAFT_CONTRACT).not.toMatch(/[áàâãéêíóôõúç]/i);
+  });
 });
 
 describe("buildGenerateSystem (fresh write)", () => {
