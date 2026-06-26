@@ -51,6 +51,7 @@ import {
   validateTurnOutput,
   sendUserTurn,
   composeUserPrompt,
+  assembleTurnBlocks,
   isTurnPipelineV2Enabled,
   TurnPrepareError,
   type UserTurnInput,
@@ -150,9 +151,46 @@ describe("prepare", () => {
     expect(ctx.startedAt).toBe(1700);
     expect(ctx.turnId).toBe("t-fixed");
   });
+
+  it("injects the craft contract on a fresh write (no current file)", () => {
+    // Regression: the craft floor used to be dead in the live path (only
+    // the legacy invokeGenerateBase reached it). It must now land on every
+    // fresh generation through prepare().
+    const ctx = prepare(baseInput);
+    expect(ctx.systemPrompt).toContain("## Craft contract");
+    expect(ctx.systemPrompt).toContain("balances ( [ {");
+  });
+
+  it("does NOT inject the craft contract on a refine (current file present)", () => {
+    const ctx = prepare({
+      ...baseInput,
+      context: { ...baseInput.context, iframeHtml: "<!doctype html><html></html>" },
+    });
+    expect(ctx.systemPrompt).not.toContain("## Craft contract");
+  });
+
+  it("does NOT inject the craft contract when systemPromptOverride is set", () => {
+    const ctx = prepare(baseInput, { systemPromptOverride: "CUSTOM PROMPT" });
+    expect(ctx.systemPrompt).not.toContain("## Craft contract");
+  });
 });
 
 // ─── composeUserPrompt ──────────────────────────────────────────────────
+
+describe("assembleTurnBlocks — inspector stays in sync with prepare", () => {
+  it("includes a craft block on a fresh write", () => {
+    const blocks = assembleTurnBlocks(baseInput);
+    expect(blocks.some((b) => b.id === "craft")).toBe(true);
+  });
+
+  it("omits the craft block on a refine (current file present)", () => {
+    const blocks = assembleTurnBlocks({
+      ...baseInput,
+      context: { ...baseInput.context, iframeHtml: "<!doctype html><html></html>" },
+    });
+    expect(blocks.some((b) => b.id === "craft")).toBe(false);
+  });
+});
 
 describe("composeUserPrompt", () => {
   it("returns userMessage unchanged when no attachments", () => {
