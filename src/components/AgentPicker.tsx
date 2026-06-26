@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchAgents, type AgentId, type DetectedAgent } from "@/lib/agent-registry";
 import { db, writeGlobalConfig, readGlobalConfig, BRIDGE_URL } from "@/lib/claude-bridge";
+import { getProvider } from "@/providers/registry";
 
 const STORAGE_KEY = "df_active_agent";
 
@@ -127,11 +128,42 @@ export function AgentPicker({ onChange }: Props) {
   const [active, setActive] = useState<PickerId>(loadActive());
   const [open, setOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // Per-provider readiness for the FALLBACK path (when /providers is empty,
+  // e.g. older daemon). Keyed by PickerId; true only when the provider's
+  // status() reports "connected" (credential set / server reachable). The
+  // normal /providers path already carries correct `available`, so this
+  // map is only consumed by fallbackEntries below. A provider absent from
+  // the map is treated as not-yet-probed → not available (fail-closed).
+  const [fallbackReady, setFallbackReady] = useState<Partial<Record<PickerId, boolean>>>({});
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Probe API/local providers through their canonical status() adapters so
+  // the fallback never presents an un-credentialed provider as ready. CLI
+  // providers come from /agents/list (already credential-correct), so only
+  // the BYOK APIs + ollama need this probe.
+  const probeFallbackReady = async () => {
+    const probeIds: PickerId[] = ["openrouter", "anthropic", "openai", "gemini-api", "ollama"];
+    const entries = await Promise.all(
+      probeIds.map(async (id) => {
+        try {
+          const provider = getProvider(id);
+          if (!provider) return [id, false] as const;
+          const st = await provider.status();
+          return [id, st.status === "connected"] as const;
+        } catch {
+          // Probe failed → fail-closed: better to hide than to present a
+          // provider that will break with a cryptic bridge error on send.
+          return [id, false] as const;
+        }
+      }),
+    );
+    setFallbackReady(Object.fromEntries(entries) as Partial<Record<PickerId, boolean>>);
+  };
 
   useEffect(() => {
     void fetchAgents().then(setAgents);
     void fetchProviders().then(setProviders);
+    void probeFallbackReady();
     // Hydrate active from saved global default_provider so picker matches
     // whatever EditorScreen will actually use on next chat send.
     void readGlobalConfig().then((cfg) => {
@@ -175,8 +207,14 @@ export function AgentPicker({ onChange }: Props) {
   };
 
   // Fallback derivation when /providers fetch failed (empty list):
-  // synthesize from /agents/list + token state. This preserves picker
-  // function on older daemons.
+  // synthesize from /agents/list + credential probe. This preserves picker
+  // function on older daemons WITHOUT ever marking an un-credentialed
+  // provider as ready. API providers (openrouter/anthropic/openai/gemini-api)
+  // are only `available: true` when their status() reported "connected"
+  // (credential set); ollama only when the local server is reachable. Until
+  // the probe resolves (fallbackReady empty), they read as not-available —
+  // better to hide than to present a provider that breaks on send with a
+  // cryptic bridge error.
   const fallbackEntries: ProviderDescriptor[] = [
     ...agents
       .map((a) => ({
@@ -186,8 +224,11 @@ export function AgentPicker({ onChange }: Props) {
         version: a.version ?? null,
       }))
       .filter((e) => SUPPORTED_NOW.has(e.id)),
-    { id: "openrouter", label: "OpenRouter", available: true, version: null },
-    { id: "ollama", label: "Ollama", available: true, version: null },
+    { id: "anthropic", label: "Anthropic API", available: fallbackReady.anthropic === true, version: null },
+    { id: "openai", label: "OpenAI API", available: fallbackReady.openai === true, version: null },
+    { id: "gemini-api", label: "Gemini API", available: fallbackReady["gemini-api"] === true, version: null },
+    { id: "openrouter", label: "OpenRouter", available: fallbackReady.openrouter === true, version: null },
+    { id: "ollama", label: "Ollama", available: fallbackReady.ollama === true, version: null },
   ];
 
   const sourceList = providers.length > 0 ? providers : fallbackEntries;
@@ -232,6 +273,7 @@ export function AgentPicker({ onChange }: Props) {
     const [nextAgents, nextProviders] = await Promise.all([
       fetchAgents({ force: true }),
       fetchProviders(),
+      probeFallbackReady(),
     ]);
     setAgents(nextAgents);
     setProviders(nextProviders);
