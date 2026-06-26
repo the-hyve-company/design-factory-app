@@ -116,12 +116,20 @@ import { FileManager } from "@/components/FileManager";
 import { ChatMessage, ChatAttachmentChips, type ToolUseRecord } from "@/components/ChatMessage";
 import { FileView } from "@/components/FileView";
 import { PromptConsole } from "@/components/PromptConsole";
-// ElementInspectorPanel + PreviewSandboxBadge are not mounted in
-// EditorScreen for the current public surface. Their component files
-// are preserved so a later wave can reactivate them. The element
-// overlay injector still runs (no-op on iframe contents) so the
-// preview HTML stays unchanged regardless of reactivation.
+// ElementInspectorPanel is not mounted in EditorScreen for the current
+// public surface; its component file is preserved so a later wave can
+// reactivate it. The element overlay injector still runs (no-op on iframe
+// contents) so the preview HTML stays unchanged regardless of reactivation.
 import { injectOverlayIntoHtml } from "@/runtime/element-overlay";
+// PreviewSandboxBadge is mounted (sandbox posture indicator). The sandbox
+// resolution helpers live in its module so posture display + resolution
+// share one source of truth.
+import {
+  PreviewSandboxBadge,
+  resolvePreviewSandbox,
+  isPermissiveSandbox,
+  enablePermissiveSandboxAndReload,
+} from "@/components/PreviewSandboxBadge";
 import { injectNavGuardIntoHtml } from "@/runtime/viewport-fit";
 import { useT, tf } from "@/i18n";
 import { injectTweaksListenerIntoHtml, listenTweaksFromIframe } from "@/runtime/tweaks-bridge";
@@ -192,40 +200,15 @@ type ChatTab = "chat" | "comments";
 // codebase so the pipe can be reactivated later.
 type CanvasMode = "tweaks" | "comment" | "edit";
 
-// — sandbox config. Spec D21 mandates `allow-scripts` only,
-// but EditorScreen has four legacy DOM-coupled features (Edit overrides,
-// Comment-mode click handler, in-place patch DOM mutation, VideoTab
-// transport) that use `iframe.contentDocument`. Removing
-// `allow-same-origin` would break all four. The deliverables
-// (tweaks bridge, element overlay) are postMessage-only and DO work
-// with strict sandbox — they're forward-compatible with the eventual
-// migration. Until those four features port to postMessage (v0.4
-// territory), this constant stays "permissive" by default.
-//
-// Flip via `?strictSandbox=1` URL param OR the `DF_STRICT_SANDBOX`
-// localStorage key. The PreviewSandboxBadge surfaces the active mode.
-//
-// The current default is documented in SECURITY.md § Threat model.
-// The honest read: permissive trades isolation for feature continuity
-// during the v0.1.x line. Migration to a strict default is tracked
-// for a future release once the four DOM-coupled features port to
-// postMessage.
-const PREVIEW_SANDBOX_PERMISSIVE = "allow-scripts allow-same-origin";
-const PREVIEW_SANDBOX_STRICT = "allow-scripts";
-
-function resolvePreviewSandbox(): string {
-  if (typeof window === "undefined") return PREVIEW_SANDBOX_PERMISSIVE;
-  try {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("strictSandbox") === "1") return PREVIEW_SANDBOX_STRICT;
-    if (window.localStorage?.getItem("DF_STRICT_SANDBOX") === "1") return PREVIEW_SANDBOX_STRICT;
-  } catch {
-    /* private mode / strict csp */
-  }
-  return PREVIEW_SANDBOX_PERMISSIVE;
-}
-
+// — sandbox posture. STRICT (`allow-scripts`) is the default; permissive
+// (`allow-scripts allow-same-origin`) is opt-in. Four legacy DOM-coupled
+// features (inline Edit, Comment-mode click, in-place patch, VideoTab
+// transport) read `iframe.contentDocument` and need permissive — under
+// strict the Edit/Comment toggles surface an actionable prompt to enable it
+// (the in-place patch degrades to a full reload). Resolution + opt-in helpers
+// live in PreviewSandboxBadge. Documented in SECURITY.md § Threat model.
 const PREVIEW_SANDBOX = resolvePreviewSandbox();
+const PREVIEW_SANDBOX_IS_PERMISSIVE = isPermissiveSandbox(PREVIEW_SANDBOX);
 
 interface CanvasTab {
   id: string;
@@ -630,6 +613,20 @@ export function EditorScreen({
   const [canvasMode, setCanvasMode] = useState<CanvasMode | null>(null);
   const toggleMode = (mode: CanvasMode) => setCanvasMode((prev) => (prev === mode ? null : mode));
 
+  // Under a strict sandbox the iframe has no allow-same-origin, so Edit and
+  // Comment can't reach `contentDocument`. Rather than silently activating a
+  // dead mode, we stash which mode the user reached for and surface an
+  // actionable prompt to opt into the permissive sandbox (one-time + reload).
+  const [sandboxGateFor, setSandboxGateFor] = useState<CanvasMode | null>(null);
+
+  // Returns true if a permissive-only mode (edit/comment) may proceed; false
+  // means we surfaced the enable-edit prompt instead of activating it.
+  const requirePermissiveSandbox = (mode: CanvasMode): boolean => {
+    if (PREVIEW_SANDBOX_IS_PERMISSIVE) return true;
+    setSandboxGateFor(mode);
+    return false;
+  };
+
   // Bumped whenever the agent completes a file write so the Files panel
   // can auto-refresh its listing without the user clicking Refresh.
   // User ask 2026-05-20.
@@ -796,7 +793,11 @@ export function EditorScreen({
       }
 
       if (iframe?.contentWindow) {
-        pendingScrollRestoreRef.current = iframe.contentWindow.scrollY;
+        try {
+          pendingScrollRestoreRef.current = iframe.contentWindow.scrollY;
+        } catch {
+          // strict sandbox → cross-origin frame; scroll position is unreadable.
+        }
       }
       setIframeHtml(next.html);
     },
@@ -1703,11 +1704,15 @@ export function EditorScreen({
     const iframe = iframeRef.current;
     if (!iframe) return;
     const onLoad = () => {
-      const win = iframe.contentWindow;
-      const target = pendingScrollRestoreRef.current;
-      if (win && target !== null) {
-        win.scrollTo({ top: target, behavior: "instant" as ScrollBehavior });
-        pendingScrollRestoreRef.current = null;
+      try {
+        const win = iframe.contentWindow;
+        const target = pendingScrollRestoreRef.current;
+        if (win && target !== null) {
+          win.scrollTo({ top: target, behavior: "instant" as ScrollBehavior });
+          pendingScrollRestoreRef.current = null;
+        }
+      } catch {
+        // strict sandbox → cross-origin frame; can't restore scroll.
       }
       // Edge case 6.1: re-validate comment selectors after every reload.
       // Covers Versions restore, generate, tweaks panel injection, etc.
@@ -1773,18 +1778,31 @@ export function EditorScreen({
       if (scrollSaveScheduledRef.current !== null) return;
       scrollSaveScheduledRef.current = requestAnimationFrame(() => {
         scrollSaveScheduledRef.current = null;
-        const y = iframe.contentWindow?.scrollY ?? 0;
+        let y = 0;
+        try {
+          y = iframe.contentWindow?.scrollY ?? 0;
+        } catch {
+          return; // strict sandbox → cross-origin frame; scroll unreadable.
+        }
         db.setSetting(tabKey, String(y)).catch(warn("setSetting:tabKey"));
       });
     };
     const attach = () => {
-      iframe.contentWindow?.addEventListener("scroll", onScroll, { passive: true });
+      try {
+        iframe.contentWindow?.addEventListener("scroll", onScroll, { passive: true });
+      } catch {
+        // strict sandbox → cross-origin frame; can't observe scroll.
+      }
     };
     iframe.addEventListener("load", attach);
     attach();
     return () => {
       iframe.removeEventListener("load", attach);
-      iframe.contentWindow?.removeEventListener("scroll", onScroll);
+      try {
+        iframe.contentWindow?.removeEventListener("scroll", onScroll);
+      } catch {
+        /* cross-origin frame already torn down */
+      }
       if (scrollSaveScheduledRef.current !== null) {
         cancelAnimationFrame(scrollSaveScheduledRef.current);
         scrollSaveScheduledRef.current = null;
@@ -5685,7 +5703,11 @@ export function EditorScreen({
     // handler in the persistent-canvas effects above will restore it.
     const iframe = iframeRef.current;
     if (iframe?.contentWindow) {
-      pendingScrollRestoreRef.current = iframe.contentWindow.scrollY;
+      try {
+        pendingScrollRestoreRef.current = iframe.contentWindow.scrollY;
+      } catch {
+        // strict sandbox → cross-origin frame; scroll position is unreadable.
+      }
     }
     // Re-read the canonical file from disk before re-mounting the iframe.
     // Without this, the agent's Edit tool (or any out-of-band writer like
@@ -9027,6 +9049,9 @@ export function EditorScreen({
                   label="Comment"
                   active={canvasMode === "comment"}
                   onClick={() => {
+                    // Strict sandbox → Comment can't reach contentDocument.
+                    // Surface the enable-edit prompt instead of a dead mode.
+                    if (canvasMode !== "comment" && !requirePermissiveSandbox("comment")) return;
                     // Comment + Edit only work against the main iframe. When the
                     // user is on a file tab and the main tab also exists, auto-
                     // switch so the activation is visible. If the file tab IS
@@ -9073,6 +9098,9 @@ export function EditorScreen({
                   label="Edit"
                   active={canvasMode === "edit"}
                   onClick={() => {
+                    // Strict sandbox → inline Edit can't reach contentDocument.
+                    // Surface the enable-edit prompt instead of a dead mode.
+                    if (canvasMode !== "edit" && !requirePermissiveSandbox("edit")) return;
                     if (canvasMode !== "edit") {
                       if (canvasTabs.some((t) => t.id === "main")) {
                         setActiveCanvasTab("main");
@@ -9337,10 +9365,101 @@ export function EditorScreen({
                       sandbox={PREVIEW_SANDBOX}
                     />
                   </CanvasStage>
-                  {/* The sandbox posture badge is intentionally absent
-                    from the UI. The sandbox config (PREVIEW_SANDBOX)
-                    still applies to the iframe — only the visible
-                    badge is gone. */}
+                  {/* Posture badge shows ONLY under permissive sandbox — a
+                    visible reminder that isolation is reduced. Strict (the
+                    default) stays clean. */}
+                  {PREVIEW_SANDBOX_IS_PERMISSIVE && (
+                    <PreviewSandboxBadge sandbox={PREVIEW_SANDBOX} warnIfPermissive />
+                  )}
+                  {/* Actionable gate: when the user reaches for Edit/Comment
+                    under a strict sandbox, offer the one-time opt-in instead
+                    of silently activating a mode that can't reach the iframe. */}
+                  {sandboxGateFor && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        zIndex: 6,
+                        display: "grid",
+                        placeItems: "center",
+                        background: "color-mix(in srgb, var(--df-bg-base) 70%, transparent)",
+                        pointerEvents: "auto",
+                      }}
+                      onClick={() => setSandboxGateFor(null)}
+                    >
+                      <div
+                        role="dialog"
+                        aria-label="Ativar modo de edição"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          maxWidth: 360,
+                          padding: 20,
+                          background: "var(--df-bg-elevated, var(--df-bg-base))",
+                          border: "1px solid var(--df-border-subtle)",
+                          borderRadius: "var(--df-r-md, 8px)",
+                          boxShadow: "0 8px 28px color-mix(in srgb, var(--df-bg-base) 60%, black)",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
+                        <strong
+                          style={{
+                            fontSize: 14,
+                            color: "var(--df-text-primary)",
+                          }}
+                        >
+                          Ativar modo de edição
+                        </strong>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: 13,
+                            lineHeight: 1.5,
+                            color: "var(--df-text-muted)",
+                          }}
+                        >
+                          O modo {sandboxGateFor === "edit" ? "Edit" : "Comment"} edita o preview
+                          direto na página, o que precisa de permissões extras no preview
+                          (isolamento reduzido). Recarrego a página pra ativar — teu projeto não se
+                          perde.
+                        </p>
+                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                          <button
+                            type="button"
+                            onClick={() => setSandboxGateFor(null)}
+                            style={{
+                              padding: "7px 12px",
+                              fontSize: 13,
+                              background: "transparent",
+                              color: "var(--df-text-muted)",
+                              border: "1px solid var(--df-border-subtle)",
+                              borderRadius: "var(--df-r-sm, 4px)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => enablePermissiveSandboxAndReload()}
+                            style={{
+                              padding: "7px 12px",
+                              fontSize: 13,
+                              fontWeight: 600,
+                              background: "var(--df-accent)",
+                              color: "var(--df-accent-contrast, var(--df-bg-base))",
+                              border: "1px solid var(--df-accent)",
+                              borderRadius: "var(--df-r-sm, 4px)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Habilitar e recarregar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {/* Canvas-pinned status pill removed 2026-05-20 — the global
                     processing banner above (rendered right after canvas-toolbar)
                     is the single source of truth across every tab. User
