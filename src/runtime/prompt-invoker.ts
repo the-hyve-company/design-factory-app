@@ -1,7 +1,6 @@
 import { spawnStream, spawnOnce } from "./cli-spawner";
 import {
   extractHtmlFromOutput,
-  validateHtml,
   validateTweaks,
   type TweaksConfig,
 } from "./schema-validator";
@@ -113,16 +112,6 @@ export interface ProjectContext {
    * (and the full block's phrases) respect customisation.
    */
   dialOverrides?: DialOverrides;
-}
-
-/**
- * True when this turn should rely on `--resume` instead of sending history.
- * Two conditions: (1) the spawn is actually going to claude; (2) a stored
- * session id exists for the project.
- */
-function canUseClaudeResume(ctx: ProjectContext): boolean {
-  const provider = ctx.providerId ?? "claude";
-  return provider === "claude" && typeof ctx.sessionId === "string" && ctx.sessionId.length > 0;
 }
 
 // ─── PP-01: generate_base ───────────────────────────────────────────────────
@@ -360,112 +349,7 @@ export function buildRefineSystem(ctx: ProjectContext, core: string): string {
   return [summary, summary ? "" : "", core, contract, tweaksPreserve].filter(Boolean).join("\n");
 }
 
-export async function invokeGenerateBase(
-  userPrompt: string,
-  ctx: ProjectContext,
-  callbacks: StreamCallbacks,
-): Promise<UnlistenFn> {
-  // When we have a Claude session id stored, skip the plain-text concat —
-  // the CLI reloads the entire transcript from its own JSONL via --resume.
-  // Without a stored session (fresh project, non-claude agent, session file
-  // deleted), fall back to the legacy concat path.
-  const useResume = canUseClaudeResume(ctx);
-  const prompt = useResume
-    ? userPrompt
-    : (() => {
-        const history = ctx.conversationHistory
-          .map((m) => `${m.role === "user" ? "User" : "Claude"}: ${m.content}`)
-          .join("\n");
-        return history ? `${history}\nUser: ${userPrompt}` : userPrompt;
-      })();
-
-  const core = await getBuiltinPrompt("generate", GENERATE_CORE_SYSTEM, ctx.projectId);
-  const system = buildGenerateSystem(ctx, core);
-  return spawnStream(
-    "generate",
-    prompt,
-    system,
-    {
-      onText: callbacks.onText,
-      onMeta: callbacks.onMeta,
-      onUsage: callbacks.onUsage,
-      onResult: callbacks.onResult,
-      onToolCall: callbacks.onToolCall,
-      onToolResult: callbacks.onToolResult,
-      onSession: callbacks.onSession,
-      onAuthRequired: callbacks.onAuthRequired,
-      onDone: (fullText) => {
-        const html = extractHtmlFromOutput(fullText);
-        const valid = validateHtml(html);
-        if (valid.ok) {
-          callbacks.onDone(valid.value);
-        } else {
-          // Return raw anyway — don't block the user
-          callbacks.onDone(html);
-        }
-      },
-      onError: callbacks.onError,
-    },
-    {
-      providerId: ctx.providerId,
-      model: ctx.model,
-      cwd: ctx.cwd,
-      agent: ctx.agent,
-      sessionId: useResume ? (ctx.sessionId ?? undefined) : undefined,
-    },
-  );
-}
-
 // ─── PP-02: apply_style ─────────────────────────────────────────────────────
-
-// Editable in Settings → Built-in prompts.
-// ─── Consult / Ask mode ───────────────────────────────────────────
-// Some user messages are questions, not edit requests. "what do you
-// suggest?", "como ficaria se…", "isso aqui ta funcionando?" — the
-// user wants conversation, not code. Routing those through the
-// generate / patch pipeline produces unwanted regenerations.
-//
-// invokeConsult takes the question + the current HTML (so Claude can
-// see what it's looking at) and returns conversational text only.
-// The system prompt forbids Write/Edit so the bridge can't accidentally
-// rewrite the file mid-thought.
-const CONSULT_SYSTEM = [
-  "You are a design + code consultant looking at an HTML document the",
-  "user is iterating on. They are asking a question, NOT requesting an",
-  "edit. Answer conversationally in 2–6 sentences. Be direct.",
-  "",
-  "RULES:",
-  "- DO NOT use Write, Edit, or any file-modification tool.",
-  "- DO NOT paste the HTML or large code blocks. Refer to lines/sections",
-  "  by description, not by quoting them verbatim.",
-  "- If asked for suggestions, list them as 2–5 short bullets — concrete,",
-  "  not generic. Each bullet is one specific change the user could ask",
-  "  for next.",
-  "- Match the user's language. PT-BR in, PT-BR out.",
-  "- Do NOT preface with 'Sure!', 'Great question!', 'Here are…'. Get to",
-  "  the answer in the first sentence.",
-].join("\n");
-
-export async function invokeConsult(
-  question: string,
-  ctx: ProjectContext,
-  callbacks: StreamCallbacks,
-): Promise<UnlistenFn> {
-  const useResume = canUseClaudeResume(ctx);
-  const html = ctx.currentHtml ?? "";
-  const prompt = useResume
-    ? question
-    : html
-      ? `Current HTML (read-only, do not edit):\n\`\`\`html\n${html.slice(0, 12000)}${html.length > 12000 ? "\n…(truncated)" : ""}\n\`\`\`\n\nQuestion: ${question}`
-      : question;
-  return spawnStream("consult", prompt, CONSULT_SYSTEM, callbacks, {
-    providerId: ctx.providerId,
-    model: ctx.model,
-    cwd: ctx.cwd,
-    agent: ctx.agent,
-    sessionId: useResume ? (ctx.sessionId ?? undefined) : undefined,
-  });
-}
 
 // Heuristic: does this user message look like a question rather than an
 // edit instruction? Used by the chat input when chatMode is "auto".
@@ -608,37 +492,6 @@ export async function invokeEditorialVerb(
           callbacks.onDone(fullText);
         }
       },
-      onError: callbacks.onError,
-    },
-    { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent },
-  );
-}
-
-// ─── PP-04: add_component ───────────────────────────────────────────────────
-
-const ADD_COMPONENT_SYSTEM = [
-  "Você recebe HTML existente e a descrição de um componente a adicionar.",
-  "Insira o componente na posição mais lógica do layout.",
-  "Retorne o HTML COMPLETO modificado. Somente o código.",
-].join("\n");
-
-export async function invokeAddComponent(
-  description: string,
-  ctx: ProjectContext,
-  callbacks: StreamCallbacks,
-): Promise<UnlistenFn> {
-  const prompt = `HTML:\n${ctx.currentHtml || ""}\n\nAdicionar: ${description}`;
-  const system = buildRefineSystem(ctx, ADD_COMPONENT_SYSTEM);
-  return spawnStream(
-    "refine",
-    prompt,
-    system,
-    {
-      onText: callbacks.onText,
-      onMeta: callbacks.onMeta,
-      onUsage: callbacks.onUsage,
-      onResult: callbacks.onResult,
-      onDone: (fullText) => callbacks.onDone(extractHtmlFromOutput(fullText)),
       onError: callbacks.onError,
     },
     { providerId: ctx.providerId, model: ctx.model, cwd: ctx.cwd, agent: ctx.agent },
