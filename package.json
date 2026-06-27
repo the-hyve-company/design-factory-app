@@ -2,6 +2,9 @@
   "name": "design-factory",
   "version": "1.1.1",
   "private": true,
+  "bin": {
+    "df": "scripts/df.mjs"
+  },
   "license": "Apache-2.0",
   "description": "A local-first AI design workspace for turning prompts into editable HTML artifacts.",
   "homepage": "https://github.com/the-hyve-company/design-factory-app#readme",
@@ -22,9 +25,10 @@
   "scripts": {
     "dev": "vite",
     "bridge": "npm start -w @df/daemon",
-    "start": "node scripts/dev-web.mjs --prod",
-    "start:dev": "node scripts/dev-web.mjs --dev",
-    "dev:web": "node scripts/dev-web.mjs --dev",
+    "df": "node scripts/df.mjs",
+    "start": "node scripts/df.mjs --prod",
+    "start:dev": "node scripts/df.mjs --dev",
+    "dev:web": "node scripts/df.mjs --dev",
     "dev:web:legacy": "npm start -w @df/daemon & vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
