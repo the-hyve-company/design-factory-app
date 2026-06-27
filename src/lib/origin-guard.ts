@@ -50,6 +50,20 @@ export function checkOrigin(
  */
 export function checkCurrentOrigin(): OriginCheck {
   const origin = typeof window !== "undefined" ? window.location?.origin : "";
+  // Same-origin bridge (the default, or VITE_BRIDGE_URL="/__bridge"): the client
+  // reaches the daemon through the Vite proxy on its OWN origin, so the page
+  // origin never has to match the daemon's CORS list — this guard is moot and
+  // would be a false positive on a reclaimed port (page on :1424 while the guard
+  // expects :1420). Only an explicit ABSOLUTE override (direct daemon) reinstates
+  // the cross-origin check this banner was built for.
+  const bridge =
+    typeof import.meta !== "undefined"
+      ? (import.meta as { env?: { VITE_BRIDGE_URL?: string } }).env?.VITE_BRIDGE_URL
+      : undefined;
+  const sameOriginBridge = !bridge || bridge.startsWith("/");
+  if (sameOriginBridge) {
+    return { ok: true, currentOrigin: origin ?? "", expectedOrigins: [...ALLOWED_BRIDGE_ORIGINS] };
+  }
   const devPort =
     typeof import.meta !== "undefined"
       ? (import.meta as { env?: { VITE_DF_WEB_PORT?: string } }).env?.VITE_DF_WEB_PORT

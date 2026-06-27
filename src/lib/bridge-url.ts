@@ -24,9 +24,20 @@ const DEFAULT_WS = "ws://127.0.0.1:1421";
  *  - empty/false → default daemon port
  *  `origin` is window.location.origin in the browser, undefined under SSR/tests. */
 export function resolveBridgeBase(env: string | false | undefined, origin?: string): string {
-  if (!env) return DEFAULT_HTTP;
-  if (env.startsWith("/")) return origin ? origin + env : env;
-  return env;
+  // Explicit override: relative resolves against the page origin; absolute
+  // passes through (direct-daemon setups).
+  if (env) {
+    if (env.startsWith("/")) return origin ? origin + env : env;
+    return env;
+  }
+  // Default = same-origin proxy. The app is always served by Vite (dev server or
+  // `vite preview`), which proxies /__bridge → daemon. This MUST be the default,
+  // not just an env opt-in: prod (`npm start`) runs `vite build` WITHOUT
+  // VITE_BRIDGE_URL set, so an env-only scheme bakes a hardcoded daemon port
+  // (127.0.0.1:1421) into the bundle that goes stale the moment the port is
+  // reclaimed (1421→1424). Fall back to the direct port only when there is no
+  // page origin (SSR/tests).
+  return origin ? `${origin}/__bridge` : DEFAULT_HTTP;
 }
 
 /** Resolve the configured bridge value into an absolute WebSocket base URL.
@@ -39,11 +50,18 @@ export function resolveBridgeWs(
   host?: string,
   protocol?: string,
 ): string {
-  if (!env) return DEFAULT_WS;
-  if (env.startsWith("/")) {
-    if (!host) return env;
-    const proto = protocol === "https:" ? "wss" : "ws";
-    return `${proto}://${host}${env}`;
+  if (env) {
+    if (env.startsWith("/")) {
+      if (!host) return env;
+      const proto = protocol === "https:" ? "wss" : "ws";
+      return `${proto}://${host}${env}`;
+    }
+    return env.replace(/^http/, "ws");
   }
-  return env.replace(/^http/, "ws");
+  // Default = same-origin proxy (see resolveBridgeBase).
+  if (host) {
+    const proto = protocol === "https:" ? "wss" : "ws";
+    return `${proto}://${host}/__bridge`;
+  }
+  return DEFAULT_WS;
 }
