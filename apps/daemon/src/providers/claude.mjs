@@ -22,6 +22,7 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnErrorMessage } from "./spawn-error.mjs";
+import { sanitizedSpawnEnv } from "../env-blocklist.mjs";
 
 // Linux MAX_ARG_STRLEN is typically 128KB (PAGE_SIZE * 32). Stay well
 // under that so the args (CLI flags + model name + cwd path) all fit
@@ -55,9 +56,11 @@ async function maybeSpoolSystemPrompt(systemPrompt) {
 // CLI provider must always use the login. So we spawn it with the ambient key
 // stripped, making the two providers cleanly distinct.
 function claudeSpawnEnv() {
-  const env = { ...process.env };
-  delete env.ANTHROPIC_API_KEY;
-  return env;
+  // sanitizedSpawnEnv("claude") strips ANTHROPIC_API_KEY (forcing OAuth, the
+  // reason this helper existed) AND every other provider's key / GitHub token
+  // — the claude CLI never needs them, and a spawned agent shouldn't carry
+  // the daemon's whole credential set.
+  return sanitizedSpawnEnv("claude");
 }
 
 /** @type {import("./types.mjs").ProviderAdapter} */
