@@ -21,8 +21,8 @@ export interface DoneReportPanelProps {
 }
 
 export function DoneReportPanel({ report, defaultExpanded }: DoneReportPanelProps) {
-  // Auto-expand on catastrophic so the user sees the diagnostic immediately.
-  const initial = defaultExpanded ?? report.overall === "catastrophic";
+  // Auto-expand only when the caller asks (no catastrophic state anymore).
+  const initial = defaultExpanded ?? false;
   const [expanded, setExpanded] = useState<boolean>(Boolean(initial));
   const { lang } = useT();
 
@@ -146,10 +146,6 @@ function toneFromOverall(overall: DoneReport["overall"]): ToneSpec {
   switch (overall) {
     case "pass":
       return { fg: "#15803d", bg: "rgba(34,197,94,0.06)", border: "rgba(34,197,94,0.25)" };
-    case "fail":
-      return { fg: "#b45309", bg: "rgba(245,158,11,0.07)", border: "rgba(245,158,11,0.28)" };
-    case "catastrophic":
-      return { fg: "#b91c1c", bg: "rgba(239,68,68,0.07)", border: "rgba(239,68,68,0.28)" };
     case "static-fail":
       return { fg: "#b91c1c", bg: "rgba(239,68,68,0.07)", border: "rgba(239,68,68,0.28)" };
   }
