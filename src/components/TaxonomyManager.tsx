@@ -44,6 +44,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { SkeuHero } from "@/components/SkeuHero";
+import { GroupFilterDropdown } from "@/components/GroupFilterDropdown";
 import { useT } from "@/i18n";
 import "@/styles/skeu-hero.css";
 import "@/styles/settings-taxonomy.css";
@@ -417,33 +418,22 @@ export function TaxonomyManager<T extends TaxonomyItem>({
       {((groups && groups.length > 1 && onGroupFilterChange) || onManageCategories) && (
         <div className="padroes-cats-toolbar">
           {groups && groups.length > 1 && onGroupFilterChange ? (
-            <div className="tx-mgr-group-pills" role="tablist" aria-label={t("tax.filter.aria")}>
-              <button
-                type="button"
-                className={`tx-mgr-group-pill${!groupFilter ? " is-active" : ""}`}
-                aria-selected={!groupFilter}
-                onClick={() => onGroupFilterChange(null)}
-              >
-                {t("tax.filter.all")} <span className="tx-mgr-group-pill-count">{total}</span>
-              </button>
-              {groups.map((g) => {
-                const count = items.filter((i) => i.group === g.id).length;
-                if (count === 0) return null;
-                const active = groupFilter === g.id;
-                return (
-                  <button
-                    key={g.id}
-                    type="button"
-                    className={`tx-mgr-group-pill${active ? " is-active" : ""}`}
-                    aria-selected={active}
-                    onClick={() => onGroupFilterChange(active ? null : g.id)}
-                    title={g.hint}
-                  >
-                    {g.label} <span className="tx-mgr-group-pill-count">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <GroupFilterDropdown
+              ariaLabel={t("tax.filter.aria")}
+              value={groupFilter ?? null}
+              onChange={onGroupFilterChange}
+              options={[
+                { id: null, label: t("tax.filter.all"), count: total },
+                ...groups
+                  .map((g) => ({
+                    id: g.id,
+                    label: g.label,
+                    count: items.filter((i) => i.group === g.id).length,
+                    hint: g.hint,
+                  }))
+                  .filter((o) => o.count > 0),
+              ]}
+            />
           ) : (
             <span aria-hidden style={{ flex: 1 }} />
           )}
