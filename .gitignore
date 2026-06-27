@@ -78,3 +78,7 @@ docs/readme/git-history-full.txt
 !/index.html
 # Dev launcher lock (local only)
 /.df/
+# This repo uses npm (package-lock.json). pnpm lockfiles are local-only artifacts
+# from a dev who happened to run pnpm — never tracked.
+pnpm-lock.yaml
+pnpm-workspace.yaml

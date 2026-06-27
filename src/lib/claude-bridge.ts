@@ -1,3 +1,5 @@
+import { resolveBridgeBase } from "./bridge-url";
+
 // DesignFactory is web+dev-bridge only. Tauri scaffolding was cut.
 // UnlistenFn kept as a zero-arg disposer so existing stream return
 // shapes stay identical.
@@ -11,11 +13,15 @@ export type UnlistenFn = () => void;
 // user whether the browser preview is "live" or just mock.
 
 function resolveBridgeUrl(): string {
-  // The dev:web launcher sets VITE_BRIDGE_URL to the daemon's resolved port
-  // (it picks a free one when 1421 is busy); otherwise fall back to the
-  // default daemon port.
+  // The launcher sets VITE_BRIDGE_URL to "/__bridge" (relative) so the client
+  // talks to the daemon via the Vite same-origin proxy — no hardcoded daemon
+  // port to go stale when 1421 is reclaimed. resolveBridgeBase turns a relative
+  // value into an absolute URL against the page origin; absolute values (direct
+  // daemon) pass through. See src/lib/bridge-url.ts.
   const env = typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_BRIDGE_URL;
-  return env || "http://127.0.0.1:1421";
+  const origin =
+    typeof window !== "undefined" && window.location?.origin ? window.location.origin : undefined;
+  return resolveBridgeBase(env, origin);
 }
 
 export const BRIDGE_URL: string = resolveBridgeUrl();
