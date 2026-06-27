@@ -458,3 +458,21 @@ export function extractFileWrites(events: NormalizedToolEvent[]): ToolFileWrite[
   }
   return out;
 }
+
+/**
+ * Paths of native Write calls, in order — even when the event carries no
+ * inline content. Codex surfaces a `file_change` item that the daemon emits
+ * as a `Write` tool_call with only `file_path` (the CLI already wrote the
+ * bytes to disk via its sandboxed FS), so `extractFileWrites` skips it. The
+ * craft net recovers those by reading the path back off disk; this is how it
+ * finds them.
+ */
+export function extractFileWritePaths(events: NormalizedToolEvent[]): string[] {
+  const out: string[] = [];
+  for (const ev of events) {
+    if (ev.type !== "tool_call" || ev.name !== "Write") continue;
+    const path = typeof ev.input.file_path === "string" ? ev.input.file_path : null;
+    if (path) out.push(path);
+  }
+  return out;
+}

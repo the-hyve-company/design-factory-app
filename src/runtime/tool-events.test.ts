@@ -5,6 +5,7 @@ import {
   fromBridgeToolResult,
   canonicalToolName,
   extractFileWrites,
+  extractFileWritePaths,
   type NormalizedToolEvent,
 } from "./tool-events";
 
@@ -414,5 +415,34 @@ describe("extractFileWrites", () => {
       },
     ];
     expect(extractFileWrites(events)).toEqual([]);
+  });
+});
+
+describe("extractFileWritePaths", () => {
+  const call = (name: string, input: Record<string, unknown>): NormalizedToolEvent => ({
+    type: "tool_call",
+    id: `${name}-1`,
+    name,
+    input,
+    provider: "codex",
+    timestamp: fixedNow(),
+  });
+
+  it("returns paths of Write calls even without content (Codex file_change)", () => {
+    const paths = extractFileWritePaths([
+      call("Write", { file_path: "/p/index.html" }),
+      call("Write", { file_path: "/p/about.html", content: "<html/>" }),
+      call("Bash", { command: "ls" }),
+    ]);
+    expect(paths).toEqual(["/p/index.html", "/p/about.html"]);
+  });
+
+  it("skips Write calls without a string path and non-Write events", () => {
+    const paths = extractFileWritePaths([
+      call("Write", { content: "<html/>" }),
+      call("Edit", { file_path: "/p/a.html", old_string: "x", new_string: "y" }),
+      call("Write", { file_path: 7 }),
+    ]);
+    expect(paths).toEqual([]);
   });
 });
