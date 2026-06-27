@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Logo } from "@/components/Logo";
 import { db, readGlobalConfig, writeGlobalConfig } from "@/lib/claude-bridge";
+import { ProviderIdSchema } from "@/lib/schemas";
 import { useT, setLang, type Lang } from "@/i18n";
 import { PROVIDERS, probeAllProviders } from "@/providers/registry";
 import { type ProviderId, type ProviderStatusReport } from "@/providers/types";
@@ -135,7 +136,11 @@ export function SettingsScreen({
       const fromFs = await readGlobalConfig();
       const raw =
         fromFs?.default_provider ?? (await db.getSetting("default_provider").catch(() => null));
-      if (raw === "claude") setDefaultProvider(raw);
+      // P0 fix: the prior `if (raw === "claude")` literal silently dropped
+      // every other provider, snapping Settings back to Claude on reload.
+      // Mirror HomeScreen's canonical ProviderIdSchema.safeParse hydration.
+      const parsed = ProviderIdSchema.safeParse(raw);
+      if (parsed.success) setDefaultProvider(parsed.data);
       // Built-in prompt overrides: filesystem stores them together under
       // builtin_prompts; DB still uses the old per-key format
       // ("builtin_prompt:{id}") as fallback.
