@@ -107,6 +107,8 @@ import {
   getUserRules,
   setUserRules,
   getEffectiveRules,
+  getCoreRuleIds,
+  resolveDefaultRuleIds,
   type Rule,
 } from "@/data/rules-taxonomy";
 import {
@@ -441,7 +443,12 @@ export function NewProjectFormSkeu({
   const [prompt, setPrompt] = useState("");
   const [canvas, setCanvas] = useState<CanvasSelection | null>(null);
   const [format, setFormat] = useState<FormatSelection | null>(null);
-  const [rules, setRules] = useState<string[]>([]);
+  // Picker starts from the factory-core rule set (14 default-on rules), so
+  // craft ships enabled instead of an empty selection. The hydration effect
+  // below overrides it with the saved `default_rule_ids` when present. The
+  // ref keeps the resolved default so `reset()` returns to it, not to [].
+  const [rules, setRules] = useState<string[]>(() => getCoreRuleIds());
+  const defaultRuleIdsRef = useRef<string[]>(getCoreRuleIds());
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -464,8 +471,8 @@ export function NewProjectFormSkeu({
 
   // Provider + model.
   const [provider, setProvider] = useState<ProviderId>("claude");
-  const [model, setModel] = useState<string>(
-    () => nextModelForProvider("claude", readLastModel("claude")),
+  const [model, setModel] = useState<string>(() =>
+    nextModelForProvider("claude", readLastModel("claude")),
   );
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const modelMenuRef = useRef<HTMLDivElement>(null);
@@ -564,6 +571,16 @@ export function NewProjectFormSkeu({
     };
     window.addEventListener("df:provider-change", onProviderChange);
     return () => window.removeEventListener("df:provider-change", onProviderChange);
+  }, []);
+
+  // Hydrate the rule picker from the saved factory default (`default_rule_ids`),
+  // falling back to the core set. Runs once on mount, like default_provider.
+  useEffect(() => {
+    void db.getSetting("default_rule_ids").then((raw) => {
+      const resolved = resolveDefaultRuleIds(raw);
+      defaultRuleIdsRef.current = resolved;
+      setRules(resolved);
+    });
   }, []);
 
   useEffect(() => {
@@ -676,7 +693,7 @@ export function NewProjectFormSkeu({
     setPrompt("");
     setCanvas(null);
     setFormat(null);
-    setRules([]);
+    setRules(defaultRuleIdsRef.current);
     setAttachments([]);
     setSelectedDsPath(null);
     setSubmitError(null);

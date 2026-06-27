@@ -1692,6 +1692,39 @@ export function findRule(id: string): Rule | null {
   return getEffectiveRules().find((r) => r.id === id) ?? null;
 }
 
+// ─── Factory default rule set ─────────────────────────────────────────
+// The `core: true` builtins (14) ship enabled and pre-fill the New
+// Project picker. The user can override this per project (the picker)
+// and, eventually, edit their personal default (the `default_rule_ids`
+// setting + a config panel). `getCoreRuleIds` is the immutable factory
+// floor; `resolveDefaultRuleIds` turns a persisted setting into a clean
+// id list, falling back to the floor.
+
+/** The 14 factory-core rule ids — the default-on set. */
+export function getCoreRuleIds(): string[] {
+  return DEFAULT_BUILTIN_RULES.filter((r) => r.core).map((r) => r.id);
+}
+
+/** Resolve a persisted `default_rule_ids` setting (raw string from
+ *  db.getSetting) to a clean id list: valid JSON array, keep only ids
+ *  that still exist, fall back to the core set when absent/empty/corrupt. */
+export function resolveDefaultRuleIds(raw: unknown): string[] {
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      const arr: unknown = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        const known = arr.filter(
+          (id): id is string => typeof id === "string" && findRule(id) !== null,
+        );
+        if (known.length > 0) return known;
+      }
+    } catch {
+      // corrupt JSON → fall back to the factory core set
+    }
+  }
+  return getCoreRuleIds();
+}
+
 export function describeRuleSelection(ids: string[]): string {
   const total = ids.length;
   if (total === 0) return "Nenhuma regra";

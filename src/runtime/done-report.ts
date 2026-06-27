@@ -28,6 +28,8 @@ import type { StaticP0Result } from "./static-p0";
 import type { RuntimeP0Result, CatastrophicReason } from "./runtime-p0";
 import { detectCatastrophicRuntimeFail } from "./runtime-p0";
 import type { AutoFixOutcome } from "./auto-fix-loop";
+import type { CraftCheckResult } from "./craft-checks";
+import { summarizeCraftChecks } from "./craft-checks";
 
 /** Bumped on every breaking change to the field shape. Users grep for
  *  `checkVersion` in archived chats to know which schema applies. */
@@ -53,6 +55,14 @@ export interface DoneReportInput {
   runtimeP0?: RuntimeP0Result;
   /** Auto-fix loop outcome, if the loop ran. Absent on first-pass success. */
   autoFix?: AutoFixOutcome;
+  /** Deterministic craft net result (taste tells). Signals, never blocks —
+   *  does not affect `overall`. Absent when no HTML artifact was checked. */
+  craftCheck?: CraftCheckResult;
+  /** Which channel produced the artifact: `artifact` (the model emitted an
+   *  <artifact> block the gate parsed) or `tool` (a CLI provider wrote via
+   *  its native Write tool; the gate ran post-hoc on what it wrote).
+   *  Defaults to `artifact`. */
+  channel?: "artifact" | "tool";
 }
 
 export interface DoneReport {
@@ -69,8 +79,15 @@ export interface DoneReport {
    *  artifacts). When null, the artifact is the canonical state. */
   catastrophic: CatastrophicReason | null;
   /** Coarse outcome the chat UI renders as a single ✓/✗/⚠. Derived from
-   *  the other fields for convenience. */
+   *  the other fields for convenience. Craft tells do NOT affect this — a
+   *  pass with craft warnings is still `pass`. */
   overall: "pass" | "fail" | "catastrophic" | "static-fail";
+  /** Deterministic craft net result. Null when no HTML artifact was
+   *  checked. Surfaced separately from `overall` (warns, never blocks). */
+  craftCheck: CraftCheckResult | null;
+  /** Channel that produced the artifact (`artifact` gate-parsed, or `tool`
+   *  CLI native-write validated post-hoc). */
+  channel: "artifact" | "tool";
 }
 
 /**
@@ -112,6 +129,8 @@ export function composeDoneReport(input: DoneReportInput): DoneReport {
     runtimeP0: effectiveRuntime ?? null,
     catastrophic,
     overall,
+    craftCheck: input.craftCheck ?? null,
+    channel: input.channel ?? "artifact",
   };
 }
 
@@ -154,6 +173,15 @@ function pickEffectiveRuntime(
  * the UI having to learn every shape.
  */
 export function summarizeDoneReport(report: DoneReport): string {
+  const base = baseSummary(report);
+  // Craft tells are additive — appended to whatever the hard gate said.
+  if (report.craftCheck && report.craftCheck.status === "warn") {
+    return `${base} · ${summarizeCraftChecks(report.craftCheck)}`;
+  }
+  return base;
+}
+
+function baseSummary(report: DoneReport): string {
   switch (report.overall) {
     case "pass":
       return `✓ Runtime gate pass · ${report.provider}/${report.model} · ${report.duration_ms}ms${report.fixRounds ? ` · ${report.fixRounds} fix round(s)` : ""}`;
@@ -162,7 +190,11 @@ export function summarizeDoneReport(report: DoneReport): string {
     case "catastrophic":
       return `✗ Catastrophic · ${report.provider}/${report.model} · ${report.catastrophic ?? "unknown"} · rolling back`;
     case "static-fail":
-      return `✗ Static P0 fail · ${report.provider}/${report.model} · ${describeStaticFail(report.staticP0)} · file not replaced`;
+      // Artifact channel: the gate blocked the write. Tool channel: the CLI
+      // already wrote the file, so this is a post-hoc diagnostic, not a block.
+      return `✗ Static P0 fail · ${report.provider}/${report.model} · ${describeStaticFail(report.staticP0)} · ${
+        report.channel === "tool" ? "written file has errors" : "file not replaced"
+      }`;
   }
 }
 

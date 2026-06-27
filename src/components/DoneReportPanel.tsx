@@ -11,6 +11,8 @@
 
 import { useState } from "react";
 import { summarizeDoneReport, type DoneReport } from "@/runtime/done-report";
+import { useT } from "@/i18n";
+import { ruleTitle } from "@/i18n/builtin-labels";
 
 export interface DoneReportPanelProps {
   report: DoneReport;
@@ -22,9 +24,11 @@ export function DoneReportPanel({ report, defaultExpanded }: DoneReportPanelProp
   // Auto-expand on catastrophic so the user sees the diagnostic immediately.
   const initial = defaultExpanded ?? report.overall === "catastrophic";
   const [expanded, setExpanded] = useState<boolean>(Boolean(initial));
+  const { lang } = useT();
 
   const summary = summarizeDoneReport(report);
   const tone = toneFromOverall(report.overall);
+  const craft = report.craftCheck;
 
   return (
     <div
@@ -74,6 +78,44 @@ export function DoneReportPanel({ report, defaultExpanded }: DoneReportPanelProp
           {expanded ? "ocultar" : "ver detalhes"}
         </button>
       </div>
+      {craft && craft.status === "warn" ? (
+        <ul
+          style={{
+            margin: 0,
+            marginTop: 6,
+            padding: 0,
+            listStyle: "none",
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+          }}
+        >
+          {craft.findings.map((f, i) => (
+            <li
+              key={`${f.ruleId}-${i}`}
+              style={{ display: "flex", gap: 6, alignItems: "baseline" }}
+            >
+              <span
+                style={{
+                  flexShrink: 0,
+                  fontWeight: 700,
+                  fontVariantNumeric: "tabular-nums",
+                  opacity: f.tier === "P0" ? 0.95 : f.tier === "P1" ? 0.7 : 0.45,
+                }}
+                title={`craft · ${f.tier}`}
+              >
+                ⚑ {f.tier}
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <strong style={{ fontWeight: 600 }}>
+                  {ruleTitle({ id: f.ruleId, title: f.title }, lang)}
+                </strong>
+                <span style={{ opacity: 0.75 }}> — {f.detail}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {expanded ? (
         <pre
           style={{

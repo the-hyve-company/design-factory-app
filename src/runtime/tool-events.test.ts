@@ -4,6 +4,8 @@ import {
   fromBridgeToolCall,
   fromBridgeToolResult,
   canonicalToolName,
+  extractFileWrites,
+  type NormalizedToolEvent,
 } from "./tool-events";
 
 const fixedNow = () => "2026-05-04T12:00:00.000Z";
@@ -354,5 +356,63 @@ describe("canonicalToolName", () => {
 
   it("returns the original when input is empty", () => {
     expect(canonicalToolName("")).toBe("");
+  });
+});
+
+describe("extractFileWrites", () => {
+  const call = (name: string, input: Record<string, unknown>): NormalizedToolEvent => ({
+    type: "tool_call",
+    id: `${name}-1`,
+    name,
+    input,
+    provider: "claude",
+    timestamp: fixedNow(),
+  });
+
+  it("pulls Write calls with path + content", () => {
+    const writes = extractFileWrites([
+      call("Write", { file_path: "/p/index.html", content: "<html></html>" }),
+      call("Bash", { command: "ls" }),
+    ]);
+    expect(writes).toEqual([{ path: "/p/index.html", content: "<html></html>" }]);
+  });
+
+  it("preserves write order (last is final state)", () => {
+    const writes = extractFileWrites([
+      call("Write", { file_path: "/p/a.html", content: "<html>1</html>" }),
+      call("Write", { file_path: "/p/a.html", content: "<html>2</html>" }),
+    ]);
+    expect(writes[writes.length - 1].content).toBe("<html>2</html>");
+  });
+
+  it("skips Edit/MultiEdit (fragments, not full files)", () => {
+    const writes = extractFileWrites([
+      call("Edit", { file_path: "/p/a.html", old_string: "x", new_string: "y" }),
+      call("MultiEdit", { file_path: "/p/a.html", edits: [] }),
+    ]);
+    expect(writes).toEqual([]);
+  });
+
+  it("ignores Write calls missing path or content", () => {
+    const writes = extractFileWrites([
+      call("Write", { file_path: "/p/a.html" }),
+      call("Write", { content: "<html/>" }),
+      call("Write", { file_path: 5, content: "<html/>" }),
+    ]);
+    expect(writes).toEqual([]);
+  });
+
+  it("ignores result/error events", () => {
+    const events: NormalizedToolEvent[] = [
+      {
+        type: "tool_result",
+        toolCallId: "x",
+        ok: true,
+        output: "done",
+        provider: "claude",
+        timestamp: fixedNow(),
+      },
+    ];
+    expect(extractFileWrites(events)).toEqual([]);
   });
 });

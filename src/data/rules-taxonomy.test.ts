@@ -7,6 +7,8 @@ import {
   RuleSchema,
   describeRuleSelection,
   findRule,
+  getCoreRuleIds,
+  resolveDefaultRuleIds,
   generateUserRuleId,
   getEffectiveCategories,
   getEffectiveRules,
@@ -167,5 +169,31 @@ describe("rules-taxonomy selection helpers", () => {
   it("generateUserRuleId tolerates empty / weird category", () => {
     const id = generateUserRuleId("");
     expect(id.startsWith("usr-custom-")).toBe(true);
+  });
+});
+
+describe("rules-taxonomy factory default set", () => {
+  it("getCoreRuleIds returns exactly the 14 core builtins", () => {
+    const core = getCoreRuleIds();
+    expect(core.length).toBe(14);
+    for (const id of core) {
+      expect(findRule(id)?.core).toBe(true);
+    }
+  });
+
+  it("resolveDefaultRuleIds falls back to core when absent/empty/corrupt", () => {
+    expect(resolveDefaultRuleIds(null)).toEqual(getCoreRuleIds());
+    expect(resolveDefaultRuleIds("")).toEqual(getCoreRuleIds());
+    expect(resolveDefaultRuleIds("not json")).toEqual(getCoreRuleIds());
+    expect(resolveDefaultRuleIds("[]")).toEqual(getCoreRuleIds());
+    expect(resolveDefaultRuleIds('["nope-zzz"]')).toEqual(getCoreRuleIds());
+  });
+
+  it("resolveDefaultRuleIds keeps a valid saved subset and drops unknown ids", () => {
+    const saved = JSON.stringify(["as-no-decorative-emojis", "nope-zzz", "ty-limited-type-scale"]);
+    expect(resolveDefaultRuleIds(saved)).toEqual([
+      "as-no-decorative-emojis",
+      "ty-limited-type-scale",
+    ]);
   });
 });
