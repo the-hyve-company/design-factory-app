@@ -1,8 +1,8 @@
-// done-report.ts — Runtime Completion Gate, done report.
+// done-report.ts — Completion Gate done report.
 //
-// Composes the result of Static P0 + Runtime P0 + (optional) auto-fix
-// loop into the persistent record the chat UI renders and the
-// next-turn handoff can grep. Field shape:
+// Composes the result of Static P0 (+ the deterministic craft net) into
+// the persistent record the chat UI renders and the next-turn handoff can
+// grep. Field shape:
 //
 //   {
 //     "artifactHash": "sha256:...",
@@ -10,11 +10,16 @@
 //     "provider": "codex",
 //     "model": "default",
 //     "duration_ms": 3245,
-//     "fixRounds": 1,
 //     "staticP0": {...},
-//     "runtimeP0": {...},
-//     "catastrophic": null
+//     "craftCheck": {...} | null,
+//     "channel": "artifact" | "tool",
+//     "overall": "pass" | "static-fail"
 //   }
+//
+// The runtime probe + auto-fix loop were retired when the pipeline was
+// simplified to a single post-stream Static P0 gate (their modules are
+// gone), so `overall` is now just pass / static-fail. Git history holds
+// the old machinery if iframe runtime validation is ever revived.
 //
 // We deliberately keep this structurally separate from `process-artifacts.ts`
 // so that:
@@ -25,9 +30,6 @@
 //     without dragging the daemon coupling along.
 
 import type { StaticP0Result } from "./static-p0";
-import type { RuntimeP0Result, CatastrophicReason } from "./runtime-p0";
-import { detectCatastrophicRuntimeFail } from "./runtime-p0";
-import type { AutoFixOutcome } from "./auto-fix-loop";
 import type { CraftCheckResult } from "./craft-checks";
 import { summarizeCraftChecks } from "./craft-checks";
 
@@ -47,14 +49,6 @@ export interface DoneReportInput {
   /** Static P0 result. Always present (the gate is type-aware but always
    *  runs). */
   staticP0: StaticP0Result;
-  /**
-   * Runtime P0 result. Absent when Static P0 failed (we never run Runtime
-   * over an artifact that didn't make it to disk). For non-previewable
-   * types (markdown/JSON/CSS/JS), Runtime returns `{ status: "skipped" }`.
-   */
-  runtimeP0?: RuntimeP0Result;
-  /** Auto-fix loop outcome, if the loop ran. Absent on first-pass success. */
-  autoFix?: AutoFixOutcome;
   /** Deterministic craft net result (taste tells). Signals, never blocks —
    *  does not affect `overall`. Absent when no HTML artifact was checked. */
   craftCheck?: CraftCheckResult;
@@ -71,17 +65,11 @@ export interface DoneReport {
   provider: string;
   model: string;
   duration_ms: number;
-  /** Number of fix rounds the auto-fix loop consumed. 0 when first-pass. */
-  fixRounds: number;
   staticP0: StaticP0Result;
-  runtimeP0: RuntimeP0Result | null;
-  /** When non-null, the daemon must roll back (or empty-state for first
-   *  artifacts). When null, the artifact is the canonical state. */
-  catastrophic: CatastrophicReason | null;
-  /** Coarse outcome the chat UI renders as a single ✓/✗/⚠. Derived from
-   *  the other fields for convenience. Craft tells do NOT affect this — a
-   *  pass with craft warnings is still `pass`. */
-  overall: "pass" | "fail" | "catastrophic" | "static-fail";
+  /** Coarse outcome the chat UI renders as a single ✓/✗. Derived from
+   *  Static P0. Craft tells do NOT affect this — a pass with craft warnings
+   *  is still `pass`. */
+  overall: "pass" | "static-fail";
   /** Deterministic craft net result. Null when no HTML artifact was
    *  checked. Surfaced separately from `overall` (warns, never blocks). */
   craftCheck: CraftCheckResult | null;
@@ -91,32 +79,13 @@ export interface DoneReport {
 }
 
 /**
- * Compose a `DoneReport` from the gate results. Pure transform — no I/O.
+ * Compose a `DoneReport` from the gate result. Pure transform — no I/O.
  *
- * Decision tree for `overall`:
- *   1. Static P0 failed → `static-fail` (no runtime ran).
- *   2. Catastrophic runtime → `catastrophic` (rollback expected).
- *   3. Auto-fix passed → `pass` (runtime succeeded after retry).
- *   4. Runtime fail (with or without auto-fix exhaustion) → `fail`.
- *   5. Otherwise → `pass`.
+ * `overall` is `static-fail` when Static P0 failed (no write happened),
+ * otherwise `pass`. Craft tells are surfaced separately and never change it.
  */
 export function composeDoneReport(input: DoneReportInput): DoneReport {
-  const fixRounds = countFixRounds(input.autoFix);
-  const effectiveRuntime = pickEffectiveRuntime(input.runtimeP0, input.autoFix);
-  const catastrophic = effectiveRuntime ? detectCatastrophicRuntimeFail(effectiveRuntime) : null;
-
-  let overall: DoneReport["overall"];
-  if (input.staticP0.status === "fail") {
-    overall = "static-fail";
-  } else if (catastrophic) {
-    overall = "catastrophic";
-  } else if (input.autoFix?.status === "pass-after-fix") {
-    overall = "pass";
-  } else if (effectiveRuntime && effectiveRuntime.status === "fail") {
-    overall = "fail";
-  } else {
-    overall = "pass";
-  }
+  const overall: DoneReport["overall"] = input.staticP0.status === "fail" ? "static-fail" : "pass";
 
   return {
     artifactHash: input.artifactHash,
@@ -124,46 +93,11 @@ export function composeDoneReport(input: DoneReportInput): DoneReport {
     provider: input.provider,
     model: input.model,
     duration_ms: input.duration_ms,
-    fixRounds,
     staticP0: input.staticP0,
-    runtimeP0: effectiveRuntime ?? null,
-    catastrophic,
     overall,
     craftCheck: input.craftCheck ?? null,
     channel: input.channel ?? "artifact",
   };
-}
-
-function countFixRounds(autoFix: AutoFixOutcome | undefined): number {
-  if (!autoFix) return 0;
-  if (autoFix.status === "provider-error") return autoFix.rounds;
-  return autoFix.rounds;
-}
-
-/**
- * The auto-fix loop, if present, owns the final runtime result for the
- * turn. We surface IT as the canonical runtime status so the done report
- * reflects the post-fix reality.
- */
-function pickEffectiveRuntime(
-  initial: RuntimeP0Result | undefined,
-  autoFix: AutoFixOutcome | undefined,
-): RuntimeP0Result | undefined {
-  if (!autoFix) return initial;
-  switch (autoFix.status) {
-    case "pass-after-fix":
-      return { status: "pass", metrics: autoFix.finalMetrics };
-    case "fail-exceeded-rounds":
-      return autoFix.lastResult;
-    case "catastrophic-on-fix":
-      return autoFix.lastResult;
-    case "static-fail-on-fix":
-      // The latest gate signal is the static fail — runtime didn't run on
-      // the fix attempt. Surface the original initial result.
-      return initial;
-    case "provider-error":
-      return initial;
-  }
 }
 
 /**
@@ -184,11 +118,7 @@ export function summarizeDoneReport(report: DoneReport): string {
 function baseSummary(report: DoneReport): string {
   switch (report.overall) {
     case "pass":
-      return `✓ Runtime gate pass · ${report.provider}/${report.model} · ${report.duration_ms}ms${report.fixRounds ? ` · ${report.fixRounds} fix round(s)` : ""}`;
-    case "fail":
-      return `⚠ Runtime fail · ${report.provider}/${report.model} · ${describeRuntimeFail(report.runtimeP0)} · ${report.fixRounds} fix round(s)`;
-    case "catastrophic":
-      return `✗ Catastrophic · ${report.provider}/${report.model} · ${report.catastrophic ?? "unknown"} · rolling back`;
+      return `✓ Runtime gate pass · ${report.provider}/${report.model} · ${report.duration_ms}ms`;
     case "static-fail":
       // Artifact channel: the gate blocked the write. Tool channel: the CLI
       // already wrote the file, so this is a post-hoc diagnostic, not a block.
@@ -196,13 +126,6 @@ function baseSummary(report: DoneReport): string {
         report.channel === "tool" ? "written file has errors" : "file not replaced"
       }`;
   }
-}
-
-function describeRuntimeFail(rt: RuntimeP0Result | null): string {
-  if (!rt) return "no runtime result";
-  if (rt.status === "fail") return rt.reason;
-  if (rt.status === "catastrophic") return rt.reason;
-  return rt.status;
 }
 
 function describeStaticFail(sr: StaticP0Result): string {
