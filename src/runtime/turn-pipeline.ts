@@ -41,6 +41,7 @@ import {
 import { parseArtifact } from "@/runtime/artifact-processor";
 import { validateArtifactStaticP0 } from "@/runtime/static-p0";
 import { composeDoneReport } from "@/runtime/done-report";
+import { runCraftChecks } from "@/runtime/craft-checks";
 import {
   fromBridgeToolCall,
   fromBridgeToolResult,
@@ -890,12 +891,19 @@ export async function validateTurnOutput(
     type: artifact.type,
   });
 
+  // Deterministic craft net — signals taste tells (does not block).
+  const craftCheck = runCraftChecks({
+    content: artifact.content,
+    type: artifact.type,
+  });
+
   const doneReport = composeDoneReport({
     artifactHash: artifact.contentHash,
     provider: ctx.providerId,
     model: ctx.model ?? "(unknown)",
     duration_ms: Date.now() - ctx.startedAt,
     staticP0,
+    craftCheck,
   });
 
   if (staticP0.status === "fail") {
