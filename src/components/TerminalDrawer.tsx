@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { resolveBridgeWs } from "@/lib/bridge-url";
 import "@xterm/xterm/css/xterm.css";
 
 interface Props {
@@ -9,14 +10,16 @@ interface Props {
   inline?: boolean;
 }
 
-const BRIDGE_WS =
-  typeof import.meta !== "undefined" &&
-  (import.meta as { env?: { VITE_BRIDGE_URL?: string } }).env?.VITE_BRIDGE_URL
-    ? (import.meta as unknown as { env: { VITE_BRIDGE_URL: string } }).env.VITE_BRIDGE_URL.replace(
-        /^http/,
-        "ws",
-      )
-    : "ws://127.0.0.1:1421";
+// Same-origin bridge: VITE_BRIDGE_URL is "/__bridge" (relative) under the
+// launcher, so the terminal socket rides the page origin through the Vite proxy
+// (wss when the page is https). See src/lib/bridge-url.ts.
+const BRIDGE_WS = resolveBridgeWs(
+  typeof import.meta !== "undefined"
+    ? (import.meta as { env?: { VITE_BRIDGE_URL?: string } }).env?.VITE_BRIDGE_URL
+    : undefined,
+  typeof window !== "undefined" ? window.location.host : undefined,
+  typeof window !== "undefined" ? window.location.protocol : undefined,
+);
 
 type ConnState = "connecting" | "connected" | "disconnected" | "error";
 

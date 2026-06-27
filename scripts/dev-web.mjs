@@ -594,7 +594,13 @@ async function boot() {
     // guard trusts the actual served port, even when reclaimed off the default.
     env: {
       ...process.env,
-      VITE_BRIDGE_URL: `http://127.0.0.1:${DAEMON_PORT}`,
+      // Same-origin bridge: the client hits `<origin>/__bridge`, which Vite
+      // (dev + preview) proxies to the daemon on loopback. Only the web port
+      // needs forwarding, and a reclaimed daemon port never strands the built
+      // bundle on a stale hardcoded port. DF_BRIDGE_PORT tells vite.config which
+      // daemon port to proxy to (follows the auto-pick above).
+      VITE_BRIDGE_URL: "/__bridge",
+      DF_BRIDGE_PORT: String(DAEMON_PORT),
       VITE_DF_WEB_PORT: String(VITE_PORT),
     },
     stdio: ["ignore", "inherit", "inherit"],
