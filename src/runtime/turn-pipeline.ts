@@ -46,8 +46,10 @@ import {
   fromBridgeToolCall,
   fromBridgeToolResult,
   extractFileWrites,
+  extractFileWritePaths,
   type NormalizedToolEvent,
 } from "@/runtime/tool-events";
+import { readFileViaBridge, isUsableHtmlContent } from "@/lib/claude-bridge";
 import { upsertProviderSession } from "@/lib/provider-sessions";
 import type { ProviderId, ProviderCapabilities } from "@/providers/types";
 import type {
@@ -860,10 +862,15 @@ export interface TurnValidation {
   doneReport: DoneReport | null;
 }
 
+/** Reads a file's content back off disk (defaults to the daemon bridge).
+ *  Injected so the tool-channel craft net is unit-testable without I/O. */
+export type ArtifactReader = (path: string) => Promise<{ content: string } | null>;
+
 export async function validateTurnOutput(
   ctx: TurnContext,
   s: TurnStream,
   artifactOutcome: ProcessArtifactsOutcome,
+  readFile: ArtifactReader = readFileViaBridge,
 ): Promise<TurnValidation> {
   // No artifact written by the gate. Tool-channel providers (Claude Code,
   // and any CLI writing via its native Write tool) land here with
@@ -873,7 +880,7 @@ export async function validateTurnOutput(
   // skip/reject/write-failed reasons surface in the assistant message text.
   if (artifactOutcome.status !== "written") {
     if (artifactOutcome.status === "skipped" && artifactOutcome.reason === "provider-uses-write") {
-      const toolReport = await validateToolChannelOutput(ctx, s);
+      const toolReport = await validateToolChannelOutput(ctx, s, readFile);
       if (toolReport) return { ok: true, doneReport: toolReport };
     }
     return { ok: true, doneReport: null };
@@ -939,11 +946,10 @@ export async function validateTurnOutput(
 async function validateToolChannelOutput(
   ctx: TurnContext,
   s: TurnStream,
+  readFile: ArtifactReader,
 ): Promise<DoneReport | null> {
-  const htmlWrites = extractFileWrites(s.toolEvents).filter(isHtmlWrite);
-  if (htmlWrites.length === 0) return null;
-  // The last write is the file's final state for the turn.
-  const primary = htmlWrites[htmlWrites.length - 1];
+  const primary = await resolveToolChannelHtml(s.toolEvents, readFile);
+  if (!primary) return null;
   const contentHash = await sha256Hex(primary.content);
   const staticP0 = validateArtifactStaticP0({
     finalPath: primary.path,
@@ -961,6 +967,37 @@ async function validateToolChannelOutput(
     craftCheck,
     channel: "tool",
   });
+}
+
+/**
+ * Find the HTML a tool-channel provider wrote this turn, two ways:
+ *   1. Writes that carry content inline (Claude Code) — taken directly.
+ *   2. Writes that carry only a path (Codex `file_change`) — read back off
+ *      disk best-effort. This is FAIL-SAFE: a missing/unreadable/non-HTML
+ *      file yields no result, so it never regresses (worst case: no craft
+ *      report, exactly as before). opencode emits no tool events at all, so
+ *      it stays uncovered by this path.
+ *
+ * NOTE: the disk-read branch is verified by unit test (injected reader) but
+ * not yet by a live Codex run — coverage of Codex is best-effort pending
+ * that end-to-end confirmation.
+ */
+async function resolveToolChannelHtml(
+  events: NormalizedToolEvent[],
+  readFile: ArtifactReader,
+): Promise<{ path: string; content: string } | null> {
+  // 1. Inline-content writes (the last one is the turn's final state).
+  const inline = extractFileWrites(events).filter(isHtmlWrite);
+  if (inline.length > 0) return inline[inline.length - 1];
+
+  // 2. Path-only writes — read the most recent .html(?) back off disk.
+  const paths = extractFileWritePaths(events).filter((p) => /\.html?$/i.test(p));
+  for (let i = paths.length - 1; i >= 0; i--) {
+    const file = await readFile(paths[i]);
+    const content = file && typeof file.content === "string" ? file.content : null;
+    if (isUsableHtmlContent(content)) return { path: paths[i], content };
+  }
+  return null;
 }
 
 function isHtmlWrite(w: { path: string; content: string }): boolean {

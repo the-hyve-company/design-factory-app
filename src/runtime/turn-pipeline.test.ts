@@ -340,6 +340,75 @@ describe("validateTurnOutput", () => {
     expect(v.ok).toBe(true);
     expect(v.doneReport).toBeNull();
   });
+
+  it("runs the craft net on a tool-channel path-only write, read off disk (Codex)", async () => {
+    const ctx = prepare(baseInput);
+    const html =
+      "<!doctype html><html><head><title>t</title></head><body>" +
+      '<main style="color:#000000"><h1>Hello</h1><p>' +
+      "lorem ipsum dolor sit amet ".repeat(20) +
+      "</p></main></body></html>";
+    const s: TurnStream = {
+      fullText: "",
+      tools: [],
+      toolEvents: [
+        {
+          type: "tool_call",
+          id: "codex-1",
+          name: "Write",
+          input: { file_path: "/proj/index.html" }, // path only, no content (Codex file_change)
+          provider: "codex",
+          timestamp: "2026-05-04T12:00:00.000Z",
+        },
+      ],
+      sessionId: null,
+      meta: null,
+      result: null,
+      errored: false,
+      aborted: false,
+    };
+    const fakeReader = async (p: string) => (p === "/proj/index.html" ? { content: html } : null);
+    const v = await validateTurnOutput(
+      ctx,
+      s,
+      { status: "skipped", reason: "provider-uses-write", cleanedText: "" },
+      fakeReader,
+    );
+    expect(v.ok).toBe(true);
+    expect(v.doneReport?.channel).toBe("tool");
+    expect(v.doneReport?.craftCheck).not.toBeNull();
+  });
+
+  it("is fail-safe when a path-only write can't be read (no regression)", async () => {
+    const ctx = prepare(baseInput);
+    const s: TurnStream = {
+      fullText: "",
+      tools: [],
+      toolEvents: [
+        {
+          type: "tool_call",
+          id: "codex-1",
+          name: "Write",
+          input: { file_path: "/proj/index.html" },
+          provider: "codex",
+          timestamp: "2026-05-04T12:00:00.000Z",
+        },
+      ],
+      sessionId: null,
+      meta: null,
+      result: null,
+      errored: false,
+      aborted: false,
+    };
+    const v = await validateTurnOutput(
+      ctx,
+      s,
+      { status: "skipped", reason: "provider-uses-write", cleanedText: "" },
+      async () => null, // read fails → no report, exactly as before
+    );
+    expect(v.ok).toBe(true);
+    expect(v.doneReport).toBeNull();
+  });
 });
 
 // ─── finalize ───────────────────────────────────────────────────────────
