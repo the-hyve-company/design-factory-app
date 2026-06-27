@@ -66,7 +66,6 @@ import {
   parseTweaksResponse,
   TWEAKS_SYSTEM_PROMPT,
   workspaceContextPreamble,
-  invokeConsult,
   looksLikeQuestion,
   GENERATE_CORE_SYSTEM,
   REFINE_SYSTEM,
@@ -78,7 +77,6 @@ import {
   upsertProviderSession,
   EMPTY_PROVIDER_SESSIONS,
 } from "@/lib/provider-sessions";
-import { bumpArtifactVersion } from "@/lib/artifact-state";
 import type { ProviderSessions } from "@/lib/schemas";
 import { ProviderIdSchema } from "@/lib/schemas";
 import { getBuiltinPrompt } from "@/runtime/builtin-prompts";
@@ -319,8 +317,6 @@ interface ChatMessage {
 // full documentation of the three sweeps (empty, dedup, leaked-HTML).
 import {
   sanitizeMessages as sanitizeMessagesImpl,
-  INTERRUPTED_RESPONSE_MARKER,
-  TRUNCATED_RESPONSE_MARKER,
 } from "@/lib/chat-sanitizer";
 function sanitizeMessages(msgs: ChatMessage[]): { messages: ChatMessage[]; cleaned: number } {
   return sanitizeMessagesImpl(msgs);
@@ -1325,9 +1321,7 @@ export function EditorScreen({
     modelName,
     result,
     tools,
-    generate,
     applyStyle,
-    addComponent,
     runVerb,
     cancel: cancelStream,
     reset,
@@ -4149,37 +4143,6 @@ export function EditorScreen({
         role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
         content: m.text,
       }));
-    const ctx = {
-      projectId,
-      projectPath: projectPath || "~/design-factory/projeto",
-      primaryFile: projectFileName,
-      mode,
-      conversationHistory,
-      hasDesignSystem: Boolean(dsPath),
-      designSystemPath: dsPath,
-      designSystemName: dsName,
-      designSystemMarkdown: dsMarkdown,
-      cwd: workspaceRoot ?? projectPath ?? undefined,
-      currentHtml: iframeHtml ?? undefined,
-      model: selectedModel,
-      // Drives spawnStream's provider dispatch in invoke* helpers. Without
-      // this, every consult/applyStyle/refine call defaulted to Claude even
-      // when the picker said Codex/Gemini/Anthropic — surfaced 2026-05-04
-      // as "Codex badge but Claude rate-limited".
-      providerId: selectedProvider,
-      // --resume path: set only when the active provider is Claude. Invokers
-      // gate on (providerId === "claude" && sessionId) internally, but
-      // forwarding this on non-Claude turns wastes no cycles and keeps the
-      // shape stable.
-      sessionId: selectedProvider === "claude" ? claudeSessionId : null,
-      // Canonical+ direction (Format / Rules / Taste) injected into the
-      // system prompt of EVERY turn as a compact summary. User
-      // decision 2026-05-17 (audit P0-C). prompt-invoker.buildGenerate
-      // System / buildRefineSystem read these via ctx.canonicalPlus +
-      // ctx.dialOverrides.
-      canonicalPlus: canonicalPlusPayload,
-      dialOverrides: tasteDialOverrides,
-    };
 
     // turn pipeline V2 (DF_ENABLE_TURN_PIPELINE_V2=1). When the
     // flag is on, route through the modular `sendUserTurn()` instead of
@@ -4441,297 +4404,6 @@ export function EditorScreen({
       }
       // V2 ran end-to-end — return so the legacy fan-out below stays inert.
       return;
-    }
-
-    // Side channels for session persistence and auth-failure surfacing —
-    // shared by the three generate-family calls below and threaded through
-    // useClaude. Captured by closure on this handleSend call so `projectId`
-    // is the one the user clicked on, not whatever it becomes later.
-    const sideChannels = {
-      onSession: (sid: string) => {
-        persistProviderSession(sid);
-        setAuthRequiredBanner(null); // successful init clears any stale auth banner
-        if (projectId) {
-          db.setProjectSession(projectId, sid).catch(() => {});
-          db.logSession(projectId, sid, workspaceRoot ?? undefined).catch(() => {});
-        }
-      },
-      onAuthRequired: (detail: string) => {
-        setAuthRequiredBanner(detail);
-      },
-      // Stream Lifecycle audit (PR #120). When the idle watchdog
-      // terminates a stream that went silent past 90s, mark the
-      // assistant placeholder paired with this turn so the chat
-      // surface renders a "resposta interrompida" banner with Retry.
-      onInterrupted: () => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.role === "assistant" && m.turn_id === turnId
-              ? { ...m, text: INTERRUPTED_RESPONSE_MARKER, streaming: false }
-              : m,
-          ),
-        );
-      },
-      // Same shape — provider returned `done` with a suspiciously thin
-      // payload (user repro: 4-char "Você" with zero tools). We
-      // overwrite the placeholder with the truncated marker so the
-      // bubble can show the structured error UI.
-      onSuspiciousDone: () => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.role === "assistant" && m.turn_id === turnId
-              ? { ...m, text: TRUNCATED_RESPONSE_MARKER, streaming: false }
-              : m,
-          ),
-        );
-      },
-      // When Claude writes/edits the project's HTML file, open it in
-      // a tab and refresh the iframe by reading the file from disk.
-      // Mirrors the same logic used in sendSkillCommand. Without
-      // this, first-prompt generation writes to disk but the iframe
-      // stays blank until the user opens the file manually.
-      onToolCall: (call: { name: string; input: Record<string, unknown> }) => {
-        const rawPath = (call.input?.file_path ?? call.input?.path) as string | undefined;
-        // Instrument BEFORE the early return so the timeline records every
-        // tool_call from the regular chat path (sideChannels), not just
-        // Write/Edit. User QA 2026-05-18 — timeline panel was showing
-        // only `client:handleSend` because this branch was never wired to
-        // the recorder.
-        recordTurn("tool", "tool_call", {
-          id: (call as { id?: string }).id ?? null,
-          name: call.name,
-          file_path: rawPath,
-          via: "sideChannels",
-        });
-        if ((call.name !== "Write" && call.name !== "Edit") || !rawPath) return;
-        // Code-tab auto-open removed 2026-05-03 — Write to the primary HTML
-        // already updates the preview iframe (refresh below); cracking open
-        // a code view on every tool call produced 2-3 duplicate tabs per
-        // turn (raw vs resolved path bypassed openFileTab's dedup). User
-        // wants code view via FileManager click only. Non-HTML writes also
-        // skip auto-open — same reason.
-        const isHtml = /\.(html?|svg)$/i.test(rawPath);
-        if (!isHtml) return;
-        // Resolve the path so we can read it from disk even when Claude used
-        // a relative path or just a basename. User reported "terminou de
-        // gerar e nao apareceu o html" — the previous strict
-        // `filePath.startsWith(projectPath)` check rejected those cases and
-        // left the iframe empty. 2026-04-27.
-        let resolved = rawPath;
-        if (projectPath) {
-          if (rawPath.startsWith("/")) {
-            resolved = rawPath;
-          } else if (rawPath.startsWith("./")) {
-            resolved = `${projectPath.replace(/\/$/, "")}/${rawPath.slice(2)}`;
-          } else if (!rawPath.includes("/")) {
-            // Bare filename — assume it sits inside projectPath.
-            resolved = `${projectPath.replace(/\/$/, "")}/${rawPath}`;
-          }
-        }
-        // Only refresh the iframe when the resolved file ends up inside the
-        // current project (or at least matches the primary file by name).
-        // This prevents random Writes elsewhere from clobbering the preview.
-        const inProject = projectPath && resolved.startsWith(projectPath);
-        const matchesPrimary = projectFileName && resolved.endsWith(`/${projectFileName}`);
-        if (!inProject && !matchesPrimary) return;
-        // Defer: tool_call fires before the file is actually written to disk.
-        // Re-read with a small delay so we get the new content, not the old.
-        void (async () => {
-          await new Promise((r) => setTimeout(r, 120));
-          try {
-            const fresh = await readFileViaBridge(resolved);
-            if (
-              fresh &&
-              typeof fresh === "object" &&
-              "content" in fresh &&
-              typeof (fresh as FsFile).content === "string"
-            ) {
-              const html = (fresh as FsFile).content;
-              setIframeHtml(html);
-              lastPushedOutputRef.current = html;
-              if (projectId)
-                void db
-                  .setSetting(`html:${projectId}`, html)
-                  .catch(warn("setSetting:html::projectId"));
-              // Provider Handoff Layer v1: bump snapshot_version so the
-              // next provider switch knows L3 needs to re-ship. Best-effort.
-              if (projectSlug) {
-                void bumpArtifactVersion(projectSlug, {
-                  primary_path: resolved,
-                  byte_size: html.length,
-                }).catch(() => {});
-              }
-            }
-          } catch {}
-        })();
-      },
-    };
-    // The legacy [FORMAT REMINDER ...] prepend that used to fire here
-    // every send was retired 2026-05-17 (audit P0-D, Rota A). The
-    // Canonical+ compact summary now ships in the system prompt of
-    // every turn (see prompt-invoker.buildGenerate/RefineSystem),
-    // carrying Direction / Constraints / Taste continuously — that
-    // covers the "no scene contract, no anti-slop guard" drift the
-    // reminder existed to prevent. Canvas spec (ratio / duration) is
-    // handled by videoRatio state + the canvas-aware export pipeline,
-    // not by reminder prose.
-    //
-    // The `projectDirection` state still hydrates for legacy projects
-    // (created via NewProjectLabScreen pre-migration) so the EditorScreen
-    // can show the original ratio in the canvas selector — but it no
-    // longer drives prompt content.
-
-    // Ask-mode shortcut: route conversational questions to
-    // invokeConsult, which streams a text-only response without
-    // firing Write/Edit tools. The chatMode toggle in the input bar
-    // forces Ask or Edit; Auto uses the looksLikeQuestion heuristic.
-    const wantsAsk = chatMode === "ask" || (chatMode === "auto" && looksLikeQuestion(userMsg));
-    if (wantsAsk) {
-      // The user + assistant placeholders were already pushed by the regular
-      // path above (around line 2314). Re-pushing here used to double the
-      // user message in the chat (regression report). Reuse the
-      // existing assistant placeholder via its index.
-      const claudeIdx = messages.length + 1;
-      let accumulated = "";
-      try {
-        await invokeConsult(userMsg, ctx, {
-          onText: (chunk) => {
-            accumulated += chunk;
-            setMessages((prev) => {
-              const next = [...prev];
-              if (next[claudeIdx]) {
-                next[claudeIdx] = { ...next[claudeIdx], text: accumulated };
-              }
-              return next;
-            });
-          },
-          onDone: (full) => {
-            const finalText = full || accumulated;
-            setMessages((prev) => {
-              const next = [...prev];
-              if (next[claudeIdx]) {
-                next[claudeIdx] = {
-                  ...next[claudeIdx],
-                  text: finalText || "(no response)",
-                  streaming: false,
-                };
-              }
-              return next;
-            });
-            if (projectId && finalText) {
-              db.saveMessage(projectId, "assistant", finalText, false).catch(() => {});
-            }
-          },
-          onError: (err) => {
-            setMessages((prev) => {
-              const next = [...prev];
-              if (next[claudeIdx]) {
-                next[claudeIdx] = { ...next[claudeIdx], text: `[error] ${err}`, streaming: false };
-              }
-              return next;
-            });
-          },
-        });
-      } catch (e) {
-        showToast(`Ask failed: ${String(e).slice(0, 80)}`);
-      }
-      return;
-    }
-
-    // Refine if we already have a design, else generate from scratch.
-    // 'Add component:' prefix (from palette) routes to the dedicated add_component
-    // system prompt instead of the generic apply_style one.
-    if (iframeHtml) {
-      const addMatch = userMsg.match(/^(?:add\s+component|component)\s*:\s*(.+)$/i);
-      if (addMatch) {
-        await addComponent(addMatch[1].trim(), ctx, sideChannels);
-      } else {
-        // Try search-replace patch first. Small, targeted edits skip the
-        // full-regen cost. On any parse / apply failure, fall back silently
-        // to invokeApplyStyle so the UX is identical for the user.
-        // The manualBusy flag drives the global status bar above the
-        // composer while this network request is in flight.
-        setManualBusy("patching...");
-        const patchResp = await invokeSearchReplaceEdit(userMsg, ctx).catch(() => null);
-        setManualBusy(null);
-        const applied =
-          patchResp && patchResp.patches.length > 0
-            ? applyPatches(iframeHtml, patchResp.patches)
-            : null;
-        if (applied && "applied" in applied && applied.html) {
-          // Success: update iframe via setIframeContent — tries DOM in-place
-          // patch first (preserves scroll, form state, animations); falls back
-          // to srcDoc replace + scroll preservation if DOM patch fails.
-          setIframeContent({
-            html: applied.html,
-            mode: "patch",
-            patches: patchResp!.patches,
-          });
-          setHistory((prev) => {
-            const idx = historyIndexRef.current;
-            const base = idx >= 0 ? prev.slice(0, idx + 1) : [];
-            const next = [...base, applied.html];
-            historyIndexRef.current = next.length - 1;
-            setHistoryIndex(next.length - 1);
-            return next;
-          });
-          lastPushedOutputRef.current = applied.html;
-          if (projectId) {
-            db.setSetting(`html:${projectId}`, applied.html).catch(
-              warn("setSetting:html::projectId"),
-            );
-          }
-          // Persist to disk too — the user's session 2026-04-29 had
-          // patches reported as "Patched · Translated…" but reload kept
-          // showing the old English copy. Cause: this path only updated
-          // the iframe + IndexedDB cache, never the actual .html file.
-          // On refresh, EditorScreen rehydrates from disk first and
-          // wins over the cache, so the user's edits silently vanished.
-          if (projectPath) {
-            // BUG-31: write to projectFileName (the file the agent writes +
-            // the iframe loads), NOT {slug}.html. When the project name and
-            // folder slug differ (slug gets a uniquifier, e.g. name "teste" →
-            // folder "teste-xsfx"), the slug path produced a SECOND ghost
-            // file (teste-xsfx.html) that nothing ever loads, so the patch
-            // silently went nowhere and the project showed two HTMLs.
-            const filePath = `${projectPath.replace(/\/$/, "")}/${projectFileName}`;
-            writeFile(filePath, applied.html).catch((e) => {
-              console.warn("[patch] failed to persist to disk", filePath, e);
-            });
-          }
-          // Surface a compact claude message describing the patch + a
-          // mini-diff so the user can audit changes at a glance.
-          // Each patch contributes a "- removed / + added" row; we cap
-          // each side to 80 chars to keep the chat readable.
-          const summary = patchResp!.summary || `Applied ${applied.applied} patch(es)`;
-          const head = summary.startsWith("Applied") ? summary : `Patched · ${summary}`;
-          const diffLines: string[] = [];
-          for (const p of patchResp!.patches.slice(0, 6)) {
-            const a = p.search.replace(/\s+/g, " ").trim().slice(0, 80);
-            const b = p.replace.replace(/\s+/g, " ").trim().slice(0, 80);
-            if (!a && !b) continue;
-            diffLines.push(`- ${a}${a.length === 80 ? "…" : ""}`);
-            diffLines.push(`+ ${b}${b.length === 80 ? "…" : ""}`);
-          }
-          if (patchResp!.patches.length > 6) {
-            diffLines.push(`(+ ${patchResp!.patches.length - 6} more)`);
-          }
-          const note = diffLines.length
-            ? `${head}\n\n\`\`\`diff\n${diffLines.join("\n")}\n\`\`\``
-            : head;
-          setMessages((prev) => [
-            ...prev,
-            stamp({ role: "assistant", text: note, turn_id: turnId }),
-          ]);
-          if (projectId) db.saveMessage(projectId, "assistant", note, false).catch(() => {});
-        } else {
-          // Patch path didn't fit (no patches OR a search string didn't match)
-          // — fall back to the original full-rewrite style pipeline.
-          await applyStyle(userMsg, ctx, sideChannels);
-        }
-      }
-    } else {
-      await generate(userMsg, ctx, sideChannels);
     }
   };
 
