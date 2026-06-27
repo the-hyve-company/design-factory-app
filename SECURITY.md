@@ -42,25 +42,32 @@ into the iframe; the model does.
 
 Two sandbox modes:
 
-- **Permissive** (`sandbox="allow-scripts allow-same-origin"`) — the
-  default. Required by four DOM-coupled features in the current
-  surface: inline text edit, comment-mode click handler, in-place
-  patch DOM mutation, and the animated-scene transport bridge. Each of
-  these uses `iframe.contentDocument` directly; strict sandbox would
-  break them.
-
 - **Strict** (`sandbox="allow-scripts"` only, no `allow-same-origin`) —
-  opt-in via URL param `?strictSandbox=1` or localStorage key
-  `DF_STRICT_SANDBOX=1`. Disables the four features above.
+  the **default**. Generated HTML cannot share the parent origin, so it
+  can't read the parent's localStorage (provider tokens), call the
+  daemon's same-origin endpoints, or open the WS terminal even if a
+  prompt-injected generation tries.
 
-The tweaks-bridge and element-overlay paths are postMessage-only and
-forward-compatible with strict sandbox. Migrating the remaining
-DOM-coupled features to postMessage would let strict sandbox become the
-default without breaking surface area.
+- **Permissive** (`sandbox="allow-scripts allow-same-origin"`) — opt-in
+  via URL param `?permissiveSandbox=1` or localStorage key
+  `DF_PERMISSIVE_SANDBOX=1`. Required by four DOM-coupled features that
+  read `iframe.contentDocument` directly: inline text edit, comment-mode
+  click handler, in-place patch DOM mutation, and the animated-scene
+  transport bridge.
 
-The default is permissive because flipping it silently would break
-four user-visible features in the current build. Users who don't need
-those features can opt into strict mode today via the flag above.
+Under the strict default, reaching for inline Edit or Comment surfaces
+an in-app prompt to enable the permissive sandbox (one-time opt-in +
+reload); the in-place patch degrades gracefully to a full reload. When
+permissive is active, a posture badge is shown on the preview as a
+visible reminder that isolation is reduced. The tweaks-bridge and
+element-overlay paths are postMessage-only and already work under
+strict. Migrating the remaining DOM-coupled features to postMessage
+would remove the need for permissive entirely.
+
+The default flipped to strict because a permissive default let
+DF's own generated HTML escape the sandbox without user consent — the
+isolation the sandbox exists for. Feature continuity is preserved via
+the in-app opt-in rather than a weaker default.
 
 ### Daemon filesystem boundary
 

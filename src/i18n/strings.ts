@@ -822,6 +822,11 @@ const PT: Strings = {
   "editor.toast.dictationUnsupported": "Ditado em tempo real precisa de Chrome/Edge/Safari",
   "editor.toast.snapshotNotFound": "Snapshot não encontrado — pode ter sido removido.",
   "editor.present.exit": "Sair · Esc",
+  "editor.sandbox.gate.title": "Ativar modo de edição",
+  "editor.sandbox.gate.body":
+    "O modo {0} edita o preview direto na página, o que precisa de permissões extras no preview (isolamento reduzido). Recarrego a página pra ativar — teu projeto não se perde.",
+  "editor.sandbox.gate.cancel": "Cancelar",
+  "editor.sandbox.gate.enable": "Habilitar e recarregar",
   // ═══════════════════════════════════════════════════════════════════════
 
   // ─── — exhaustive i18n sweep ──────────────────────────────────────
@@ -2311,6 +2316,11 @@ const EN: Strings = {
   "editor.toast.dictationUnsupported": "Realtime dictation needs Chrome/Edge/Safari",
   "editor.toast.snapshotNotFound": "Snapshot not found — it may have been pruned.",
   "editor.present.exit": "Exit · Esc",
+  "editor.sandbox.gate.title": "Enable edit mode",
+  "editor.sandbox.gate.body":
+    "{0} mode edits the preview directly on the page, which needs extra preview permissions (reduced isolation). I'll reload the page to enable it — your project won't be lost.",
+  "editor.sandbox.gate.cancel": "Cancel",
+  "editor.sandbox.gate.enable": "Enable and reload",
   // ═══════════════════════════════════════════════════════════════════════
 
   // ─── — exhaustive i18n sweep ──────────────────────────────────────
