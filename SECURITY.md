@@ -92,7 +92,8 @@ testing untrusted generated HTML.
 The `/fs/write/artifact` endpoint is stricter: it always scopes writes
 under `projects/<slug>/`, uses realpath-based containment via
 `assertPathInScope`, and validates content via
-`validateArtifactStaticP0Minimal` (byte floor + HTML-shape sanity)
+`validateArtifactStaticP0Full` (type-aware: byte floor, structured-markup
+prelude, DOMParser parse, balanced tags, duplicate-id detection)
 before any disk write.
 
 The same boundary applies to the working directory a CLI provider is
