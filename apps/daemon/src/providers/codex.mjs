@@ -14,6 +14,7 @@
 // @file providers/codex.mjs
 
 import { spawnErrorMessage } from "./spawn-error.mjs";
+import { sanitizedSpawnEnv } from "../env-blocklist.mjs";
 
 // BUG-24: when the model picker doesn't reset on provider switch, a
 // Claude-only alias (opus/sonnet/haiku/claude-*) leaks into the codex
@@ -99,7 +100,11 @@ const codex = {
     // shell (CVE-2024-27980 hardening) → "spawn ENOENT" even though the
     // binary resolves correctly via PATHEXT. shell: true on win32 only
     // routes the spawn through cmd.exe so the .CMD wrapper executes.
-    const spawnOpts = { stdio: ["pipe", "pipe", "pipe"], shell: process.platform === "win32" };
+    const spawnOpts = {
+      stdio: ["pipe", "pipe", "pipe"],
+      shell: process.platform === "win32",
+      env: sanitizedSpawnEnv("codex"),
+    };
     if (cwd && typeof cwd === "string") spawnOpts.cwd = cwd;
 
     res.writeHead(200, {
@@ -157,7 +162,11 @@ const codex = {
     if (model && model !== "default" && !isForeignClaudeModel(model)) args.push("--model", model);
     args.push("-");
     const composed = systemPrompt ? `${systemPrompt}\n\n---\n\n${prompt}` : prompt;
-    const onceSpawnOpts = { stdio: ["pipe", "pipe", "pipe"], shell: process.platform === "win32" };
+    const onceSpawnOpts = {
+      stdio: ["pipe", "pipe", "pipe"],
+      shell: process.platform === "win32",
+      env: sanitizedSpawnEnv("codex"),
+    };
     if (cwd) onceSpawnOpts.cwd = cwd;
     const child = spawn(CODEX_BIN, args, onceSpawnOpts);
     child.stdin.write(composed);

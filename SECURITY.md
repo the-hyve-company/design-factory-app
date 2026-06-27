@@ -95,6 +95,17 @@ under `projects/<slug>/`, uses realpath-based containment via
 `validateArtifactStaticP0Minimal` (byte floor + HTML-shape sanity)
 before any disk write.
 
+The same boundary applies to the working directory a CLI provider is
+spawned in: `POST /<provider>/stream|once` rejects a `cwd` outside the
+workspace roots with HTTP 400 before dispatch (unless
+`DF_ALLOW_ARBITRARY_FS=1`). Without this, a forged `cwd` could let a
+spawned agent read or write anywhere the daemon process can.
+
+Likewise, `[attached image: <path>]` markers in a prompt are only read
+off disk and inlined to an API provider when the path resolves inside
+the workspace roots; an out-of-scope path keeps the marker as plain
+text instead of exfiltrating the file's bytes to a third-party API.
+
 ## Scope
 
 In scope:

@@ -23,6 +23,7 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { detectKimiVersion, kimiVersionHint } from "./kimi-compat.mjs";
+import { sanitizedSpawnEnv } from "../env-blocklist.mjs";
 
 const KIMI_BIN_ENV = "DF_KIMI_BIN";
 
@@ -182,6 +183,7 @@ const kimi = {
         cwd: cwd && typeof cwd === "string" ? cwd : process.cwd(),
         stdio: ["pipe", "pipe", "pipe"],
         shell: kspawn.useShell,
+        env: sanitizedSpawnEnv("kimi"),
       });
     } catch (err) {
       res.write(
@@ -468,6 +470,7 @@ const kimi = {
         cwd: cwd && typeof cwd === "string" ? cwd : process.cwd(),
         stdio: ["pipe", "pipe", "pipe"],
         shell: kspawn.useShell,
+        env: sanitizedSpawnEnv("kimi"),
       });
     } catch (err) {
       res.writeHead(500, { "Content-Type": "application/json" });

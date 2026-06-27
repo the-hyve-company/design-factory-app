@@ -29,11 +29,12 @@ import { existsSync, realpathSync, mkdirSync, readFileSync, writeFileSync } from
 import { resolve, join, dirname, basename, relative, isAbsolute } from "node:path";
 import { promisify } from "node:util";
 import { createHash, randomBytes } from "node:crypto";
+import { ssrfSafeFetch } from "./lib/ssrf-guard.mjs";
 import { WebSocketServer } from "ws";
 
 import { assertPathInScope, PathScopeError } from "./path-scope.mjs";
 import { normalizeProjectSlug, sanitizeVersionId } from "./slug.mjs";
-import { isBlockedEnvKey, filterEnv } from "./env-blocklist.mjs";
+import { isBlockedEnvKey, filterEnv, sanitizedSpawnEnv } from "./env-blocklist.mjs";
 import {
   writeArtifactSafely,
   deleteArtifactSafely,
@@ -252,9 +253,86 @@ async function whichBin(name) {
   return null;
 }
 
+// Best-effort AUTH detection for an installed CLI. Returns one of:
+//   { authed: true }                         → credential present (ready to use)
+//   { authed: false, loginHint: "<cmd>" }    → installed but NOT logged in
+//   { authed: null }                          → no reliable way to tell; caller
+//                                               must keep the optimistic default
+//
+// SAFETY: we only inspect the FILESYSTEM (known credential file/dir of each CLI)
+// and process env. We never run the CLI itself — running an unauthenticated CLI
+// can hang on a login prompt, hit the network, or have side effects. A missing
+// credential file is treated as "not logged in" ONLY for CLIs whose auth is
+// reliably file/env-bound. For CLIs where auth can come from sources we can't
+// see (e.g. opencode reads per-provider keys from project .env / arbitrary env
+// vars), we return `null` and keep the binary `available: true` rather than risk
+// a false negative — blocking a CLI that is actually logged in is worse than the
+// status quo (the user just gets the existing generate-time error).
+//
+// `existsSync` is already imported at the top of the file.
+function detectAgentAuth(def) {
+  const home = homedir();
+  switch (def.id) {
+    case "claude": {
+      // Claude Code: OAuth login writes ~/.claude/.credentials.json (key
+      // `claudeAiOauth`); an API key works via ANTHROPIC_API_KEY. We check for
+      // either signal. Path is stable across platforms (uses $HOME).
+      if (process.env.ANTHROPIC_API_KEY) return { authed: true };
+      const cred = join(home, ".claude", ".credentials.json");
+      if (existsSync(cred)) return { authed: true };
+      return { authed: false, loginHint: "claude /login" };
+    }
+    case "codex": {
+      // Codex CLI: `codex login` writes auth.json (OAuth tokens or
+      // OPENAI_API_KEY) under $CODEX_HOME (default ~/.codex). Honor the env
+      // override so a relocated CODEX_HOME is checked correctly.
+      if (process.env.OPENAI_API_KEY) return { authed: true };
+      const codexHome = process.env.CODEX_HOME || join(home, ".codex");
+      if (existsSync(join(codexHome, "auth.json"))) return { authed: true };
+      return { authed: false, loginHint: "codex login" };
+    }
+    case "gemini": {
+      // Gemini CLI: "Login with Google" caches OAuth in
+      // ~/.gemini/oauth_creds.json; an API key works via GEMINI_API_KEY or
+      // GOOGLE_API_KEY. Either signal counts as authenticated.
+      if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) return { authed: true };
+      if (existsSync(join(home, ".gemini", "oauth_creds.json"))) return { authed: true };
+      return { authed: false, loginHint: "gemini (faça login com Google)" };
+    }
+    case "kimi": {
+      // Kimi Code CLI: login writes ~/.kimi/credentials/kimi-code.json
+      // (access_token + refresh_token). No documented env-key bypass we can
+      // rely on, so file presence is the auth signal.
+      if (existsSync(join(home, ".kimi", "credentials", "kimi-code.json"))) {
+        return { authed: true };
+      }
+      return { authed: false, loginHint: "kimi (faça login)" };
+    }
+    case "opencode": {
+      // Opencode is a multi-provider router: it loads per-provider keys from
+      // ~/.local/share/opencode/auth.json ($XDG_DATA_HOME/opencode/auth.json)
+      // AND from environment variables / a project-local .env. The env/.env
+      // path is invisible to a daemon-side filesystem check, so the ABSENCE of
+      // auth.json does NOT prove "not logged in". To avoid a false negative
+      // (greying out a CLI that is actually usable), we do NOT gate opencode on
+      // auth — return null and keep the existing optimistic `available: true`.
+      return { authed: null };
+    }
+    default:
+      // Unknown CLI → no heuristic; preserve current behavior.
+      return { authed: null };
+  }
+}
+
 // Probe one agent: locate binary, run versionArgs with a timeout, parse the
 // first line of stdout for a semver-ish string. Failure modes (missing binary,
 // timeout, non-zero exit) all collapse to `available: false`.
+//
+// Beyond "is it installed", we also do a best-effort AUTH check (filesystem
+// only, see detectAgentAuth). An installed-but-not-logged-in CLI is reported
+// `available: false` with `authed: false` + a `detail` telling the user how to
+// log in — distinct from the "not installed" case (`available: false`,
+// `source: null`, no `authed` flag).
 async function probeAgent(def) {
   // Re-read the env each probe so a runtime "point to my CLI" (PUT /agents/bins,
   // which sets DF_<ID>_BIN) takes effect on the next rescan without a restart.
@@ -289,7 +367,35 @@ async function probeAgent(def) {
     const match = line.match(/\d+\.\d+(?:\.\d+)?(?:[-+][\w.]+)?/);
     version = match ? match[0] : line.trim() || null;
   } catch {}
-  return { id: def.id, label: def.label, bin, resolved, available: true, version, source };
+  // Binary is installed. Now decide if it's USABLE: best-effort auth check.
+  // `authed === false` → installed but no login → not selectable. We reuse the
+  // existing `available` field (the frontend already filters on it) and add a
+  // `detail` string that distinguishes "no login" from "not installed".
+  const auth = detectAgentAuth(def);
+  if (auth.authed === false) {
+    return {
+      id: def.id,
+      label: def.label,
+      bin,
+      resolved,
+      available: false,
+      version,
+      source,
+      authed: false,
+      detail: `instalado, mas sem login — rode '${auth.loginHint}'`,
+    };
+  }
+  // authed === true (verified) or authed === null (can't tell → optimistic).
+  return {
+    id: def.id,
+    label: def.label,
+    bin,
+    resolved,
+    available: true,
+    version,
+    source,
+    authed: auth.authed === true ? true : null,
+  };
 }
 
 let agentsCache = null;
@@ -901,8 +1007,14 @@ const cors = (req, res) => {
   return false;
 };
 
-const readJson = (req) =>
-  new Promise((resolve, reject) => {
+// Idempotent: the request stream can only be drained once, so we cache the
+// parse promise on `req`. This lets a pre-dispatch guard (cwd scope check)
+// read the body without starving the adapter's own readJson(req) call — both
+// share the single cached promise (resolved OR rejected, so a parse error
+// surfaces identically to both callers).
+const readJson = (req) => {
+  if (req.__dfBodyPromise) return req.__dfBodyPromise;
+  req.__dfBodyPromise = new Promise((resolve, reject) => {
     let data = "";
     let bytes = 0;
     req.on("data", (c) => {
@@ -924,6 +1036,8 @@ const readJson = (req) =>
     });
     req.on("error", reject);
   });
+  return req.__dfBodyPromise;
+};
 
 function expandHomePath(input) {
   let path = String(input || "");
@@ -2044,6 +2158,17 @@ const PROVIDER_DEPS = Object.freeze({
   spawn,
   CLAUDE_BIN,
   ensureGitRepo,
+  // Workspace-scope check for [attached image: PATH] markers — the API adapters
+  // pass this to extractImageAttachments so a forged absolute path can't read
+  // arbitrary files off disk and exfiltrate them to a third-party provider.
+  imagePathInScope: (p) => {
+    try {
+      resolveLocalFsPath(p, { write: false });
+      return true;
+    } catch {
+      return false;
+    }
+  },
 });
 
 const server = http.createServer(async (req, res) => {
@@ -2822,10 +2947,9 @@ const server = http.createServer(async (req, res) => {
       }
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 15000);
-      const r = await fetch(target, {
+      const r = await ssrfSafeFetch(target, {
         signal: controller.signal,
         headers: { "User-Agent": "design-factory/1.0 (DS extraction)" },
-        redirect: "follow",
       });
       clearTimeout(timer);
       const text = await r.text();
@@ -5692,6 +5816,36 @@ const server = http.createServer(async (req, res) => {
     if (m) {
       const provider = getProvider(m[1]);
       if (provider) {
+        // cwd scope guard — single choke point covering every provider
+        // (the 5 CLIs spawn with `body.cwd`). A forged cwd like "/etc" or
+        // "/home/user/.ssh" would let a CLI read/write outside the
+        // workspace; reject before dispatch. Reads via the cached readJson
+        // so the adapter's own readJson(req) still resolves. Parse errors
+        // fall through — the adapter surfaces its own 400.
+        if (!ALLOW_ARBITRARY_FS) {
+          let cwdToCheck = null;
+          try {
+            const body = await readJson(req);
+            if (body && typeof body.cwd === "string" && body.cwd.trim()) {
+              cwdToCheck = body.cwd;
+            }
+          } catch {
+            cwdToCheck = null;
+          }
+          if (cwdToCheck) {
+            try {
+              resolveLocalFsPath(cwdToCheck, { write: true });
+            } catch (e) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(
+                JSON.stringify({
+                  error: `cwd outside Design Factory workspace: ${String(e?.message || e)}`,
+                }),
+              );
+              return;
+            }
+          }
+        }
         // Heartbeat: keep SSE connections alive during provider buffering
         // windows (kimi-cli batches JSONL at turn end — without pings,
         // curl/browser/proxy timeouts kill the stream before events arrive).
@@ -5740,7 +5894,13 @@ const server = http.createServer(async (req, res) => {
         const agents = await listAgents().catch(() => []);
         const def = agents.find((a) => a.id === agentMap[p.id]);
         available = !!(def && def.available);
-        return { ...base, available, version: def?.version ?? null };
+        // Surface the auth reason so the picker can show "installed, no login"
+        // distinctly from "not installed". `detail` is only present when the
+        // CLI is installed-but-unauthenticated (see probeAgent).
+        const out = { ...base, available, version: def?.version ?? null };
+        if (def?.detail) out.detail = def.detail;
+        if (def && def.authed !== undefined) out.authed = def.authed;
+        return out;
       }
       // API providers: token presence.
       if (p.id === "anthropic") {
@@ -7547,7 +7707,11 @@ wss.on("connection", async (ws) => {
       cols: 80,
       rows: 24,
       cwd: process.env.HOME || "/",
-      env: { ...process.env, TERM: "xterm-256color" },
+      // Strip the daemon's launch-time provider keys / GitHub tokens from the
+      // interactive terminal: it's reachable over the WS (origin-checked, but
+      // a sandbox-escaped page is the threat), and the user's own shell rc
+      // re-exports anything they legitimately set themselves.
+      env: { ...sanitizedSpawnEnv("terminal"), TERM: "xterm-256color" },
     });
   } catch (e) {
     ws.send(

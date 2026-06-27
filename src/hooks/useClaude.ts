@@ -1,9 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 type UnlistenFn = () => void;
 import {
-  invokeGenerateBase,
   invokeApplyStyle,
-  invokeAddComponent,
   invokeEditorialVerb,
   type ProjectContext,
   type EditorialVerbInvocation,
@@ -88,18 +86,8 @@ export interface UseClaudeReturn {
   // Actions — each accepts optional sideChannels so the caller can persist
   // session_id / surface auth failures without subscribing to the full hook
   // state.
-  generate: (
-    prompt: string,
-    ctx: ProjectContext,
-    sideChannels?: StreamSideChannels,
-  ) => Promise<void>;
   applyStyle: (
     instruction: string,
-    ctx: ProjectContext,
-    sideChannels?: StreamSideChannels,
-  ) => Promise<void>;
-  addComponent: (
-    description: string,
     ctx: ProjectContext,
     sideChannels?: StreamSideChannels,
   ) => Promise<void>;
@@ -208,7 +196,7 @@ export function useClaudeState(): UseClaudeReturn {
 
   const runStream = useCallback(
     async (
-      invoker: (callbacks: Parameters<typeof invokeGenerateBase>[2]) => Promise<UnlistenFn>,
+      invoker: (callbacks: Parameters<typeof invokeApplyStyle>[2]) => Promise<UnlistenFn>,
       sideChannels?: StreamSideChannels,
       /** Original user prompt — passed in so the end-of-stream suspicious-
        *  done detector can decide whether a 4-char reply is legitimate
@@ -408,27 +396,9 @@ export function useClaudeState(): UseClaudeReturn {
     [status, cancel],
   );
 
-  const generate = useCallback(
-    async (prompt: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
-      await runStream((cbs) => invokeGenerateBase(prompt, ctx, cbs), sideChannels, prompt);
-    },
-    [runStream],
-  );
-
   const applyStyle = useCallback(
     async (instruction: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
       await runStream((cbs) => invokeApplyStyle(instruction, ctx, cbs), sideChannels, instruction);
-    },
-    [runStream],
-  );
-
-  const addComponent = useCallback(
-    async (description: string, ctx: ProjectContext, sideChannels?: StreamSideChannels) => {
-      await runStream(
-        (cbs) => invokeAddComponent(description, ctx, cbs),
-        sideChannels,
-        description,
-      );
     },
     [runStream],
   );
@@ -461,9 +431,7 @@ export function useClaudeState(): UseClaudeReturn {
     usage,
     result,
     tools,
-    generate,
     applyStyle,
-    addComponent,
     runVerb,
     cancel,
     reset,

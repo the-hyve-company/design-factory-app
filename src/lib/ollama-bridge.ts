@@ -34,7 +34,8 @@ async function streamOllamaViaBridge(
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
-        callbacks.onError(`bridge HTTP ${res.status}`);
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        callbacks.onError(body?.error ?? `bridge HTTP ${res.status}`);
         return;
       }
       const reader = res.body.getReader();

@@ -66,7 +66,6 @@ import {
   parseTweaksResponse,
   TWEAKS_SYSTEM_PROMPT,
   workspaceContextPreamble,
-  invokeConsult,
   looksLikeQuestion,
   GENERATE_CORE_SYSTEM,
   REFINE_SYSTEM,
@@ -78,7 +77,6 @@ import {
   upsertProviderSession,
   EMPTY_PROVIDER_SESSIONS,
 } from "@/lib/provider-sessions";
-import { bumpArtifactVersion } from "@/lib/artifact-state";
 import type { ProviderSessions } from "@/lib/schemas";
 import { ProviderIdSchema } from "@/lib/schemas";
 import { getBuiltinPrompt } from "@/runtime/builtin-prompts";
@@ -302,8 +300,6 @@ interface ChatMessage {
 // full documentation of the three sweeps (empty, dedup, leaked-HTML).
 import {
   sanitizeMessages as sanitizeMessagesImpl,
-  INTERRUPTED_RESPONSE_MARKER,
-  TRUNCATED_RESPONSE_MARKER,
 } from "@/lib/chat-sanitizer";
 function sanitizeMessages(msgs: ChatMessage[]): { messages: ChatMessage[]; cleaned: number } {
   return sanitizeMessagesImpl(msgs);
@@ -952,6 +948,30 @@ export function EditorScreen({
   // Abort handle for the currently-running tweaks stream, so the send button
   // can double as a Stop while tweaksLoading is true.
   const tweaksAbortRef = useRef<(() => void) | null>(null);
+  // BUG-CANCEL: the Assistant / @agent flow (`sendSkillCommand`) streams via
+  // `provider.stream()` DIRECTLY inside a `new Promise`, OUTSIDE the useClaude
+  // controller — so its `status` never flips to "streaming" and the STOP
+  // button never appeared. `agentStreaming` mirrors the tweaks `*Loading`
+  // pattern so the STOP button surfaces; `agentAbortRef` holds the
+  // `provider.stream()` unlisten so STOP (and unmount cleanup) can abort the
+  // daemon SSE without leaking the stream.
+  const [agentStreaming, setAgentStreaming] = useState(false);
+  const agentAbortRef = useRef<(() => void) | null>(null);
+  // BUG-CANCEL: raw unlisten kept separately so the unmount cleanup can close
+  // the SSE WITHOUT touching React state (agentAbortRef's handler calls
+  // setState, which would warn on an unmounted component). Cleared by the same
+  // paths that clear agentAbortRef.
+  const agentUnlistenRef = useRef<(() => void) | null>(null);
+  // BUG-CANCEL: on unmount, abort any in-flight Assistant / @agent stream so we
+  // don't leak the daemon SSE. Raw unlisten only — no setState.
+  useEffect(() => {
+    return () => {
+      try {
+        agentUnlistenRef.current?.();
+      } catch {}
+      agentUnlistenRef.current = null;
+    };
+  }, []);
   const tweaksAnchorRef = useRef<HTMLDivElement>(null);
   // Web Speech API for realtime dictation. Browser-native (Chrome/Edge/
   // Safari). Streams transcript into the chat input as the user speaks —
@@ -1302,9 +1322,7 @@ export function EditorScreen({
     modelName,
     result,
     tools,
-    generate,
     applyStyle,
-    addComponent,
     runVerb,
     cancel: cancelStream,
     reset,
@@ -2487,7 +2505,20 @@ export function EditorScreen({
             const foreign = provParse.success
               ? isModelForeignToProvider(cpModel, provParse.data)
               : false;
-            if (!foreign) setSelectedModel(cpModel);
+            if (!foreign) {
+              setSelectedModel(cpModel);
+              // Sync the provider's "last model" to the project's choice. The
+              // [selectedProvider] reset effect fires on the claude→project
+              // provider switch at mount and resets the model to
+              // nextModelForProvider(provider, readLastModel(provider)).
+              // Without this write, readLastModel can hold a stale value from a
+              // previous session (e.g. Qwen), the two effects race, the stale
+              // value wins, and the model silently flips off the project's
+              // choice on open (the GLM→Qwen-on-open bug). Writing here makes
+              // the reset effect converge to the project's model — same
+              // ordering rule as the retry handler (writeLastModel first).
+              if (provParse.success) writeLastModel(provParse.data, cpModel);
+            }
           }
         } catch {
           /* malformed JSON in setting — ignore, treat as no canonical+ */
@@ -4130,37 +4161,6 @@ export function EditorScreen({
         role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
         content: m.text,
       }));
-    const ctx = {
-      projectId,
-      projectPath: projectPath || "~/design-factory/projeto",
-      primaryFile: projectFileName,
-      mode,
-      conversationHistory,
-      hasDesignSystem: Boolean(dsPath),
-      designSystemPath: dsPath,
-      designSystemName: dsName,
-      designSystemMarkdown: dsMarkdown,
-      cwd: workspaceRoot ?? projectPath ?? undefined,
-      currentHtml: iframeHtml ?? undefined,
-      model: selectedModel,
-      // Drives spawnStream's provider dispatch in invoke* helpers. Without
-      // this, every consult/applyStyle/refine call defaulted to Claude even
-      // when the picker said Codex/Gemini/Anthropic — surfaced 2026-05-04
-      // as "Codex badge but Claude rate-limited".
-      providerId: selectedProvider,
-      // --resume path: set only when the active provider is Claude. Invokers
-      // gate on (providerId === "claude" && sessionId) internally, but
-      // forwarding this on non-Claude turns wastes no cycles and keeps the
-      // shape stable.
-      sessionId: selectedProvider === "claude" ? claudeSessionId : null,
-      // Canonical+ direction (Format / Rules / Taste) injected into the
-      // system prompt of EVERY turn as a compact summary. User
-      // decision 2026-05-17 (audit P0-C). prompt-invoker.buildGenerate
-      // System / buildRefineSystem read these via ctx.canonicalPlus +
-      // ctx.dialOverrides.
-      canonicalPlus: canonicalPlusPayload,
-      dialOverrides: tasteDialOverrides,
-    };
 
     // turn pipeline V2 (DF_ENABLE_TURN_PIPELINE_V2=1). When the
     // flag is on, route through the modular `sendUserTurn()` instead of
@@ -4423,297 +4423,6 @@ export function EditorScreen({
       // V2 ran end-to-end — return so the legacy fan-out below stays inert.
       return;
     }
-
-    // Side channels for session persistence and auth-failure surfacing —
-    // shared by the three generate-family calls below and threaded through
-    // useClaude. Captured by closure on this handleSend call so `projectId`
-    // is the one the user clicked on, not whatever it becomes later.
-    const sideChannels = {
-      onSession: (sid: string) => {
-        persistProviderSession(sid);
-        setAuthRequiredBanner(null); // successful init clears any stale auth banner
-        if (projectId) {
-          db.setProjectSession(projectId, sid).catch(() => {});
-          db.logSession(projectId, sid, workspaceRoot ?? undefined).catch(() => {});
-        }
-      },
-      onAuthRequired: (detail: string) => {
-        setAuthRequiredBanner(detail);
-      },
-      // Stream Lifecycle audit (PR #120). When the idle watchdog
-      // terminates a stream that went silent past 90s, mark the
-      // assistant placeholder paired with this turn so the chat
-      // surface renders a "resposta interrompida" banner with Retry.
-      onInterrupted: () => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.role === "assistant" && m.turn_id === turnId
-              ? { ...m, text: INTERRUPTED_RESPONSE_MARKER, streaming: false }
-              : m,
-          ),
-        );
-      },
-      // Same shape — provider returned `done` with a suspiciously thin
-      // payload (user repro: 4-char "Você" with zero tools). We
-      // overwrite the placeholder with the truncated marker so the
-      // bubble can show the structured error UI.
-      onSuspiciousDone: () => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.role === "assistant" && m.turn_id === turnId
-              ? { ...m, text: TRUNCATED_RESPONSE_MARKER, streaming: false }
-              : m,
-          ),
-        );
-      },
-      // When Claude writes/edits the project's HTML file, open it in
-      // a tab and refresh the iframe by reading the file from disk.
-      // Mirrors the same logic used in sendSkillCommand. Without
-      // this, first-prompt generation writes to disk but the iframe
-      // stays blank until the user opens the file manually.
-      onToolCall: (call: { name: string; input: Record<string, unknown> }) => {
-        const rawPath = (call.input?.file_path ?? call.input?.path) as string | undefined;
-        // Instrument BEFORE the early return so the timeline records every
-        // tool_call from the regular chat path (sideChannels), not just
-        // Write/Edit. User QA 2026-05-18 — timeline panel was showing
-        // only `client:handleSend` because this branch was never wired to
-        // the recorder.
-        recordTurn("tool", "tool_call", {
-          id: (call as { id?: string }).id ?? null,
-          name: call.name,
-          file_path: rawPath,
-          via: "sideChannels",
-        });
-        if ((call.name !== "Write" && call.name !== "Edit") || !rawPath) return;
-        // Code-tab auto-open removed 2026-05-03 — Write to the primary HTML
-        // already updates the preview iframe (refresh below); cracking open
-        // a code view on every tool call produced 2-3 duplicate tabs per
-        // turn (raw vs resolved path bypassed openFileTab's dedup). User
-        // wants code view via FileManager click only. Non-HTML writes also
-        // skip auto-open — same reason.
-        const isHtml = /\.(html?|svg)$/i.test(rawPath);
-        if (!isHtml) return;
-        // Resolve the path so we can read it from disk even when Claude used
-        // a relative path or just a basename. User reported "terminou de
-        // gerar e nao apareceu o html" — the previous strict
-        // `filePath.startsWith(projectPath)` check rejected those cases and
-        // left the iframe empty. 2026-04-27.
-        let resolved = rawPath;
-        if (projectPath) {
-          if (rawPath.startsWith("/")) {
-            resolved = rawPath;
-          } else if (rawPath.startsWith("./")) {
-            resolved = `${projectPath.replace(/\/$/, "")}/${rawPath.slice(2)}`;
-          } else if (!rawPath.includes("/")) {
-            // Bare filename — assume it sits inside projectPath.
-            resolved = `${projectPath.replace(/\/$/, "")}/${rawPath}`;
-          }
-        }
-        // Only refresh the iframe when the resolved file ends up inside the
-        // current project (or at least matches the primary file by name).
-        // This prevents random Writes elsewhere from clobbering the preview.
-        const inProject = projectPath && resolved.startsWith(projectPath);
-        const matchesPrimary = projectFileName && resolved.endsWith(`/${projectFileName}`);
-        if (!inProject && !matchesPrimary) return;
-        // Defer: tool_call fires before the file is actually written to disk.
-        // Re-read with a small delay so we get the new content, not the old.
-        void (async () => {
-          await new Promise((r) => setTimeout(r, 120));
-          try {
-            const fresh = await readFileViaBridge(resolved);
-            if (
-              fresh &&
-              typeof fresh === "object" &&
-              "content" in fresh &&
-              typeof (fresh as FsFile).content === "string"
-            ) {
-              const html = (fresh as FsFile).content;
-              setIframeHtml(html);
-              lastPushedOutputRef.current = html;
-              if (projectId)
-                void db
-                  .setSetting(`html:${projectId}`, html)
-                  .catch(warn("setSetting:html::projectId"));
-              // Provider Handoff Layer v1: bump snapshot_version so the
-              // next provider switch knows L3 needs to re-ship. Best-effort.
-              if (projectSlug) {
-                void bumpArtifactVersion(projectSlug, {
-                  primary_path: resolved,
-                  byte_size: html.length,
-                }).catch(() => {});
-              }
-            }
-          } catch {}
-        })();
-      },
-    };
-    // The legacy [FORMAT REMINDER ...] prepend that used to fire here
-    // every send was retired 2026-05-17 (audit P0-D, Rota A). The
-    // Canonical+ compact summary now ships in the system prompt of
-    // every turn (see prompt-invoker.buildGenerate/RefineSystem),
-    // carrying Direction / Constraints / Taste continuously — that
-    // covers the "no scene contract, no anti-slop guard" drift the
-    // reminder existed to prevent. Canvas spec (ratio / duration) is
-    // handled by videoRatio state + the canvas-aware export pipeline,
-    // not by reminder prose.
-    //
-    // The `projectDirection` state still hydrates for legacy projects
-    // (created via NewProjectLabScreen pre-migration) so the EditorScreen
-    // can show the original ratio in the canvas selector — but it no
-    // longer drives prompt content.
-
-    // Ask-mode shortcut: route conversational questions to
-    // invokeConsult, which streams a text-only response without
-    // firing Write/Edit tools. The chatMode toggle in the input bar
-    // forces Ask or Edit; Auto uses the looksLikeQuestion heuristic.
-    const wantsAsk = chatMode === "ask" || (chatMode === "auto" && looksLikeQuestion(userMsg));
-    if (wantsAsk) {
-      // The user + assistant placeholders were already pushed by the regular
-      // path above (around line 2314). Re-pushing here used to double the
-      // user message in the chat (regression report). Reuse the
-      // existing assistant placeholder via its index.
-      const claudeIdx = messages.length + 1;
-      let accumulated = "";
-      try {
-        await invokeConsult(userMsg, ctx, {
-          onText: (chunk) => {
-            accumulated += chunk;
-            setMessages((prev) => {
-              const next = [...prev];
-              if (next[claudeIdx]) {
-                next[claudeIdx] = { ...next[claudeIdx], text: accumulated };
-              }
-              return next;
-            });
-          },
-          onDone: (full) => {
-            const finalText = full || accumulated;
-            setMessages((prev) => {
-              const next = [...prev];
-              if (next[claudeIdx]) {
-                next[claudeIdx] = {
-                  ...next[claudeIdx],
-                  text: finalText || "(no response)",
-                  streaming: false,
-                };
-              }
-              return next;
-            });
-            if (projectId && finalText) {
-              db.saveMessage(projectId, "assistant", finalText, false).catch(() => {});
-            }
-          },
-          onError: (err) => {
-            setMessages((prev) => {
-              const next = [...prev];
-              if (next[claudeIdx]) {
-                next[claudeIdx] = { ...next[claudeIdx], text: `[error] ${err}`, streaming: false };
-              }
-              return next;
-            });
-          },
-        });
-      } catch (e) {
-        showToast(`Ask failed: ${String(e).slice(0, 80)}`);
-      }
-      return;
-    }
-
-    // Refine if we already have a design, else generate from scratch.
-    // 'Add component:' prefix (from palette) routes to the dedicated add_component
-    // system prompt instead of the generic apply_style one.
-    if (iframeHtml) {
-      const addMatch = userMsg.match(/^(?:add\s+component|component)\s*:\s*(.+)$/i);
-      if (addMatch) {
-        await addComponent(addMatch[1].trim(), ctx, sideChannels);
-      } else {
-        // Try search-replace patch first. Small, targeted edits skip the
-        // full-regen cost. On any parse / apply failure, fall back silently
-        // to invokeApplyStyle so the UX is identical for the user.
-        // The manualBusy flag drives the global status bar above the
-        // composer while this network request is in flight.
-        setManualBusy("patching...");
-        const patchResp = await invokeSearchReplaceEdit(userMsg, ctx).catch(() => null);
-        setManualBusy(null);
-        const applied =
-          patchResp && patchResp.patches.length > 0
-            ? applyPatches(iframeHtml, patchResp.patches)
-            : null;
-        if (applied && "applied" in applied && applied.html) {
-          // Success: update iframe via setIframeContent — tries DOM in-place
-          // patch first (preserves scroll, form state, animations); falls back
-          // to srcDoc replace + scroll preservation if DOM patch fails.
-          setIframeContent({
-            html: applied.html,
-            mode: "patch",
-            patches: patchResp!.patches,
-          });
-          setHistory((prev) => {
-            const idx = historyIndexRef.current;
-            const base = idx >= 0 ? prev.slice(0, idx + 1) : [];
-            const next = [...base, applied.html];
-            historyIndexRef.current = next.length - 1;
-            setHistoryIndex(next.length - 1);
-            return next;
-          });
-          lastPushedOutputRef.current = applied.html;
-          if (projectId) {
-            db.setSetting(`html:${projectId}`, applied.html).catch(
-              warn("setSetting:html::projectId"),
-            );
-          }
-          // Persist to disk too — the user's session 2026-04-29 had
-          // patches reported as "Patched · Translated…" but reload kept
-          // showing the old English copy. Cause: this path only updated
-          // the iframe + IndexedDB cache, never the actual .html file.
-          // On refresh, EditorScreen rehydrates from disk first and
-          // wins over the cache, so the user's edits silently vanished.
-          if (projectPath) {
-            // BUG-31: write to projectFileName (the file the agent writes +
-            // the iframe loads), NOT {slug}.html. When the project name and
-            // folder slug differ (slug gets a uniquifier, e.g. name "teste" →
-            // folder "teste-xsfx"), the slug path produced a SECOND ghost
-            // file (teste-xsfx.html) that nothing ever loads, so the patch
-            // silently went nowhere and the project showed two HTMLs.
-            const filePath = `${projectPath.replace(/\/$/, "")}/${projectFileName}`;
-            writeFile(filePath, applied.html).catch((e) => {
-              console.warn("[patch] failed to persist to disk", filePath, e);
-            });
-          }
-          // Surface a compact claude message describing the patch + a
-          // mini-diff so the user can audit changes at a glance.
-          // Each patch contributes a "- removed / + added" row; we cap
-          // each side to 80 chars to keep the chat readable.
-          const summary = patchResp!.summary || `Applied ${applied.applied} patch(es)`;
-          const head = summary.startsWith("Applied") ? summary : `Patched · ${summary}`;
-          const diffLines: string[] = [];
-          for (const p of patchResp!.patches.slice(0, 6)) {
-            const a = p.search.replace(/\s+/g, " ").trim().slice(0, 80);
-            const b = p.replace.replace(/\s+/g, " ").trim().slice(0, 80);
-            if (!a && !b) continue;
-            diffLines.push(`- ${a}${a.length === 80 ? "…" : ""}`);
-            diffLines.push(`+ ${b}${b.length === 80 ? "…" : ""}`);
-          }
-          if (patchResp!.patches.length > 6) {
-            diffLines.push(`(+ ${patchResp!.patches.length - 6} more)`);
-          }
-          const note = diffLines.length
-            ? `${head}\n\n\`\`\`diff\n${diffLines.join("\n")}\n\`\`\``
-            : head;
-          setMessages((prev) => [
-            ...prev,
-            stamp({ role: "assistant", text: note, turn_id: turnId }),
-          ]);
-          if (projectId) db.saveMessage(projectId, "assistant", note, false).catch(() => {});
-        } else {
-          // Patch path didn't fit (no patches OR a search string didn't match)
-          // — fall back to the original full-rewrite style pipeline.
-          await applyStyle(userMsg, ctx, sideChannels);
-        }
-      }
-    } else {
-      await generate(userMsg, ctx, sideChannels);
-    }
   };
 
   // Dynamic skill / command list scanned from the project's filesystem
@@ -4941,8 +4650,37 @@ export function EditorScreen({
       let accumulated = "";
       const liveTools: ToolUseRecord[] = [];
       try {
+        // Credential gate (defense in depth): never dispatch to a provider
+        // that isn't ready (no API key, server offline). Without this the
+        // daemon rejects the request and the user sees a cryptic
+        // "bridge HTTP 400" instead of an actionable message.
+        const st = await provider.status();
+        if (st.status !== "connected") {
+          const detail = st.detail ?? "credencial ausente ou serviço indisponível";
+          const msg = `${provider.meta.label} não está pronto: ${detail}. Configure em Settings → Providers.`;
+          recordTurn("client", "provider_not_ready", { provider: provider.meta.id, status: st.status }, { level: "warn" });
+          setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last?.role === "assistant") {
+              next[next.length - 1] = { ...last, text: `[error] ${msg}`, streaming: false };
+            }
+            return next;
+          });
+          showToast(msg);
+          recEndTurn({ reason: "error" });
+          return;
+        }
+        // BUG-CANCEL: mark this flow as streaming so the STOP button surfaces
+        // (status from useClaude never flips for this direct-stream path).
+        setAgentStreaming(true);
         await new Promise<void>((resolve) => {
-          void provider.stream(
+          // BUG-CANCEL: capture the unlisten so STOP / unmount can abort the
+          // daemon SSE. `provider.stream` returns Promise<UnlistenFn>; wire it
+          // into agentAbortRef once the stream is actually listening (same
+          // pattern as tweaksAbortRef). The abort closes the stream + resolves
+          // the outer Promise so the turn unwinds cleanly.
+          const streamPromise = provider.stream(
             effectivePrompt,
             {
               model: selectedModel,
@@ -5286,6 +5024,12 @@ export function EditorScreen({
                   has_artifact: finalText?.includes("<artifact") ?? false,
                 });
                 recEndTurn({ reason: "done" });
+                // BUG-CANCEL: stream finished on its own — clear the abort
+                // handle + streaming flag so STOP disappears and we don't
+                // hold a stale unlisten.
+                agentAbortRef.current = null;
+                agentUnlistenRef.current = null;
+                setAgentStreaming(false);
                 resolve();
               },
               onError: (err) => {
@@ -5359,8 +5103,58 @@ export function EditorScreen({
                   })();
                 }
                 recEndTurn({ reason: "error" });
+                // BUG-CANCEL: clear the abort handle + streaming flag on error.
+                agentAbortRef.current = null;
+                agentUnlistenRef.current = null;
+                setAgentStreaming(false);
                 resolve();
               },
+            },
+          );
+          // BUG-CANCEL: wire the abort into the ref once the stream is actually
+          // listening. Clicking STOP closes the daemon SSE (unlisten), marks
+          // the in-flight assistant message as interrupted (without breaking
+          // it), clears the streaming flag, and resolves the outer Promise so
+          // the turn unwinds. If the stream fails to start, surface the error
+          // and unwind too.
+          streamPromise.then(
+            (unlisten) => {
+              agentUnlistenRef.current = unlisten;
+              agentAbortRef.current = () => {
+                try {
+                  unlisten();
+                } catch {}
+                agentAbortRef.current = null;
+                agentUnlistenRef.current = null;
+                setAgentStreaming(false);
+                setMessages((prev) => {
+                  const next = [...prev];
+                  const last = next[next.length - 1];
+                  if (last?.role === "assistant" && last.streaming) {
+                    next[next.length - 1] = {
+                      ...last,
+                      text: `${last.text || ""}${last.text ? "\n\n" : ""}_[interrompido]_`,
+                      streaming: false,
+                    };
+                  }
+                  return next;
+                });
+                recEndTurn({ reason: "cancelled" });
+                resolve();
+              };
+            },
+            (err) => {
+              // stream() rejected before listening — nothing to abort.
+              agentAbortRef.current = null;
+              agentUnlistenRef.current = null;
+              setAgentStreaming(false);
+              recordTurn(
+                "client",
+                "stream_start_failed",
+                { err: String(err).slice(0, 200) },
+                { level: "error" },
+              );
+              resolve();
             },
           );
         });
@@ -5376,6 +5170,13 @@ export function EditorScreen({
           }
           return next;
         });
+      } finally {
+        // BUG-CANCEL: belt-and-suspenders — whatever path unwound the turn
+        // (done / error / cancel / throw), the STOP affordance must clear and
+        // the abort handle must not linger.
+        agentAbortRef.current = null;
+        agentUnlistenRef.current = null;
+        setAgentStreaming(false);
       }
     },
     [
@@ -7701,13 +7502,39 @@ export function EditorScreen({
                         onAnswerQuestion={(answer) => handleQuestionAnswer(i, msg.text, answer)}
                         onOpenSettings={onOpenSettings}
                         onRetry={() => {
+                          // BUG-RETRY-MODEL: re-send with the provider + model of
+                          // THE TURN BEING RETRIED, not the current global pick.
+                          // `handleSend` reads selectedProvider/selectedModel, so
+                          // if the global state drifted (live catalog reloaded /
+                          // user re-selected) the retry would silently swap the
+                          // model (GLM → Qwen). The assistant message (`msg`)
+                          // carries the original provider/model.
+                          //
+                          // Order matters: writeLastModel(provider, model) FIRST,
+                          // so the [selectedProvider] effect (~line 2687) — which
+                          // fires when we setSelectedProvider and recomputes via
+                          // nextModelForProvider(provider, readLastModel(provider))
+                          // — resolves back to msg.model instead of the catalog
+                          // default. setSelectedModel then lands the same value,
+                          // so every code path converges on the original pick.
+                          if (msg.provider) {
+                            if (msg.model) {
+                              writeLastModel(msg.provider, msg.model);
+                            }
+                            setSelectedProvider(msg.provider);
+                          }
+                          if (msg.model) {
+                            setSelectedModel(msg.model);
+                          }
                           // Find the last user message before this error and re-send it.
                           // Walks backward from this index so error mid-thread retries the
                           // turn that produced it, not whichever was last globally.
                           for (let j = i - 1; j >= 0; j--) {
                             if (messages[j].role === "user") {
                               setInput(messages[j].text);
-                              // Defer send so the input state lands first.
+                              // Defer send so the input + provider/model state land
+                              // first (and the [selectedProvider] reset effect runs)
+                              // before handleSend reads them.
                               window.setTimeout(() => {
                                 void handleSendRef.current();
                               }, 0);
@@ -7964,11 +7791,20 @@ export function EditorScreen({
                         {[turnStats.provider, turnStats.model].filter(Boolean).join("·")}
                       </span>
                     )}
-                    {(status === "streaming" || tweaksLoading) && (
+                    {(status === "streaming" || tweaksLoading || agentStreaming) && (
                       <button
                         type="button"
+                        // BUG-CANCEL: the Assistant / @agent flow streams outside
+                        // useClaude, so route STOP to the right aborter:
+                        //   useClaude stream → cancelStream
+                        //   tweaks stream    → tweaksAbortRef
+                        //   agent/skill stream → agentAbortRef
                         onClick={
-                          status === "streaming" ? cancelStream : () => tweaksAbortRef.current?.()
+                          status === "streaming"
+                            ? cancelStream
+                            : tweaksLoading
+                              ? () => tweaksAbortRef.current?.()
+                              : () => agentAbortRef.current?.()
                         }
                         style={{
                           background: "transparent",
@@ -8744,21 +8580,33 @@ export function EditorScreen({
                       </span>
                       <button
                         className="chat-input-send"
-                        data-disabled={status !== "streaming" && !tweaksLoading && !input.trim()}
+                        data-disabled={
+                          status !== "streaming" &&
+                          !tweaksLoading &&
+                          !agentStreaming &&
+                          !input.trim()
+                        }
+                        // BUG-CANCEL: send button doubles as Cancel during any
+                        // in-flight stream — including the Assistant / @agent
+                        // flow (agentStreaming), which streams outside useClaude.
                         onClick={
                           status === "streaming"
                             ? cancelStream
                             : tweaksLoading
                               ? () => tweaksAbortRef.current?.()
-                              : () => {
-                                  void handleSend();
-                                }
+                              : agentStreaming
+                                ? () => agentAbortRef.current?.()
+                                : () => {
+                                    void handleSend();
+                                  }
                         }
                         title={
-                          status === "streaming" || tweaksLoading ? "Cancel (Esc)" : "Send (⌘↵)"
+                          status === "streaming" || tweaksLoading || agentStreaming
+                            ? "Cancel (Esc)"
+                            : "Send (⌘↵)"
                         }
                       >
-                        {status === "streaming" || tweaksLoading ? (
+                        {status === "streaming" || tweaksLoading || agentStreaming ? (
                           <svg
                             width="12"
                             height="12"

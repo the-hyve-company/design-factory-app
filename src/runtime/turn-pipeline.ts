@@ -27,7 +27,11 @@
 
 import { getProvider } from "@/providers/registry";
 import { spawnStream, type PromptCategory } from "@/runtime/cli-spawner";
-import { workspaceContextPreamble, type ProjectContext } from "@/runtime/prompt-invoker";
+import {
+  workspaceContextPreamble,
+  VISUAL_CRAFT_CONTRACT,
+  type ProjectContext,
+} from "@/runtime/prompt-invoker";
 import { buildArtifactContractBlock } from "@/runtime/output-contract";
 import {
   dispatchParseResult,
@@ -231,6 +235,30 @@ export interface PrepareOptions {
   agent?: string;
 }
 
+/**
+ * The provider-agnostic craft floor, applied to FRESH WRITES only.
+ *
+ * Returns the `VISUAL_CRAFT_CONTRACT` block (a verifiable pre-Write
+ * self-check: balanced delimiters, closing tags, no external assets, no
+ * placeholder text) or "" when it doesn't apply. It lives HERE in the
+ * pipeline — not in any one UI caller — so every generation through
+ * `prepare()` gets the floor that levels weak providers up, regardless of
+ * which surface (EditorScreen, NewProjectForm, …) initiated the turn.
+ *
+ * Opt-outs:
+ * - `systemPromptOverride` set → the caller owns the whole prompt.
+ * - `hasCurrentFile` (a refine) → the file's markers already exist; the
+ *   contract is a fresh-write self-check, not an edit constraint.
+ *
+ * Single source of truth shared by `prepare()` (the send path) and
+ * `assembleTurnBlocks()` (the inspector preview) so they never drift.
+ */
+function craftContractBlock(opts: PrepareOptions, hasCurrentFile: boolean): string {
+  if (opts.systemPromptOverride !== undefined) return "";
+  if (hasCurrentFile) return "";
+  return `\n\n${VISUAL_CRAFT_CONTRACT}`;
+}
+
 export function prepare(input: UserTurnInput, opts: PrepareOptions = {}): TurnContext {
   if (input.signal?.aborted) {
     throw new TurnAbortError();
@@ -282,7 +310,11 @@ export function prepare(input: UserTurnInput, opts: PrepareOptions = {}): TurnCo
     const currentFileBlock = external.iframeHtml
       ? `\n\n## Current ${projectCtx.primaryFile} content\n\n\`\`\`html\n${external.iframeHtml}\n\`\`\`\n`
       : "";
-    systemPrompt = `${preamble}${extras}${currentFileBlock}`;
+    // Craft floor — fresh writes only. Was dead in the live path (only the
+    // legacy invokeGenerateBase reached it); wiring it here lands the
+    // verifiable self-check on every provider's fresh generation.
+    const craftBlock = craftContractBlock(opts, Boolean(external.iframeHtml));
+    systemPrompt = `${preamble}${extras}${currentFileBlock}${craftBlock}`;
   }
 
   // append OUTPUT-CONTRACT block when provider materializes via
@@ -403,6 +435,14 @@ export function assembleTurnBlocks(
         id: "current-file",
         label: `Current ${projectCtx.primaryFile} content`,
         content: external.iframeHtml,
+      });
+    }
+    const craftBlock = craftContractBlock(opts, Boolean(external.iframeHtml));
+    if (craftBlock) {
+      blocks.push({
+        id: "craft",
+        label: "Craft contract · fresh-write floor",
+        content: craftBlock.trim(),
       });
     }
   }
