@@ -25,25 +25,26 @@ beforeEach(() => {
 });
 
 describe("rules-taxonomy defaults", () => {
-  it("ships exactly 50 canonical builtin rules", () => {
-    // 50 brand-agnostic VISUAL taste defaults across 10 categories
-    // (no copy/voice/process rules). Each is written as
-    // "problem to avoid + concrete move".
-    expect(DEFAULT_BUILTIN_RULES.length).toBe(50);
+  it("ships exactly 132 canonical builtin rules", () => {
+    // 132 brand-agnostic craft defaults across 14 categories (the 10
+    // visual ones plus a11y, copy, i18n/RTL and laws-of-ux). Ported from
+    // docs/specs/df-rules-library.md. Each is "✗ avoid + ✓ do-instead".
+    expect(DEFAULT_BUILTIN_RULES.length).toBe(132);
   });
 
   it("all builtins have builtin: true and well-formed ids", () => {
     for (const r of DEFAULT_BUILTIN_RULES) {
       expect(r.builtin).toBe(true);
-      expect(r.id).toMatch(/^[a-z]{2}-/);
+      // category prefix can be alphanumeric (as-, ty-, a11y-, i18n-, lux-, …)
+      expect(r.id).toMatch(/^[a-z0-9]+-/);
       expect(r.title.length).toBeGreaterThan(0);
       expect(r.category.length).toBeGreaterThan(0);
     }
   });
 
-  it("anti-slop category covers the 5 anti-slop rules", () => {
+  it("anti-slop category covers the 13 anti-slop rules", () => {
     const as = DEFAULT_BUILTIN_RULES.filter((r) => r.category === "anti-slop");
-    expect(as.length).toBe(5);
+    expect(as.length).toBe(13);
     expect(as.every((r) => r.id.startsWith("as-"))).toBe(true);
   });
 
@@ -57,14 +58,17 @@ describe("rules-taxonomy defaults", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("each builtin description is a full instruction (not a 1-line chip)", () => {
-    // The 5 canonical rules carry their full instruction text in
-    // `description`, which gets concatenated into the system prompt
-    // when selected. Sanity-check the migration didn't leave any
-    // builtin with the old short-form descriptor (< 60 chars).
+  it("each builtin description is a full ✗/✓ instruction (not a 1-line chip)", () => {
+    // Every rule carries a complete "✗ avoid / ✓ do-instead" pair in
+    // `description`, concatenated into the system prompt when selected.
+    // Sanity-check the port left no builtin with an old short-form chip.
+    // The terse-but-complete library entries (e.g. lux-miller at 55) sit
+    // around 50+, so >40 still flags a stray one-word descriptor.
     for (const r of DEFAULT_BUILTIN_RULES) {
       expect(r.description, `rule ${r.id} missing description`).toBeDefined();
-      expect(r.description!.length, `rule ${r.id} description too short`).toBeGreaterThan(60);
+      expect(r.description, `rule ${r.id} missing ✗`).toContain("✗");
+      expect(r.description, `rule ${r.id} missing ✓`).toContain("✓");
+      expect(r.description!.length, `rule ${r.id} description too short`).toBeGreaterThan(40);
     }
   });
 });
@@ -140,7 +144,7 @@ describe("rules-taxonomy grouping", () => {
 
 describe("rules-taxonomy selection helpers", () => {
   it("findRule locates by id", () => {
-    expect(findRule("as-no-decorative-emojis")?.title).toBe("No decorative emojis");
+    expect(findRule("as-no-decorative-emojis")?.title).toBe("No emojis as icons");
   });
 
   it("findRule returns null for unknown id", () => {
@@ -149,7 +153,7 @@ describe("rules-taxonomy selection helpers", () => {
 
   it("describeRuleSelection in pt-BR", () => {
     expect(describeRuleSelection([])).toBe("Nenhuma regra");
-    expect(describeRuleSelection(["as-no-decorative-emojis"])).toBe("No decorative emojis");
+    expect(describeRuleSelection(["as-no-decorative-emojis"])).toBe("No emojis as icons");
     expect(describeRuleSelection(["as-no-decorative-emojis", "tn-skeu-premium-tier2"])).toBe(
       "2 regras",
     );
