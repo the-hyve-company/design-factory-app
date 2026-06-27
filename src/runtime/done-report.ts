@@ -58,6 +58,11 @@ export interface DoneReportInput {
   /** Deterministic craft net result (taste tells). Signals, never blocks —
    *  does not affect `overall`. Absent when no HTML artifact was checked. */
   craftCheck?: CraftCheckResult;
+  /** Which channel produced the artifact: `artifact` (the model emitted an
+   *  <artifact> block the gate parsed) or `tool` (a CLI provider wrote via
+   *  its native Write tool; the gate ran post-hoc on what it wrote).
+   *  Defaults to `artifact`. */
+  channel?: "artifact" | "tool";
 }
 
 export interface DoneReport {
@@ -80,6 +85,9 @@ export interface DoneReport {
   /** Deterministic craft net result. Null when no HTML artifact was
    *  checked. Surfaced separately from `overall` (warns, never blocks). */
   craftCheck: CraftCheckResult | null;
+  /** Channel that produced the artifact (`artifact` gate-parsed, or `tool`
+   *  CLI native-write validated post-hoc). */
+  channel: "artifact" | "tool";
 }
 
 /**
@@ -122,6 +130,7 @@ export function composeDoneReport(input: DoneReportInput): DoneReport {
     catastrophic,
     overall,
     craftCheck: input.craftCheck ?? null,
+    channel: input.channel ?? "artifact",
   };
 }
 
@@ -181,7 +190,11 @@ function baseSummary(report: DoneReport): string {
     case "catastrophic":
       return `✗ Catastrophic · ${report.provider}/${report.model} · ${report.catastrophic ?? "unknown"} · rolling back`;
     case "static-fail":
-      return `✗ Static P0 fail · ${report.provider}/${report.model} · ${describeStaticFail(report.staticP0)} · file not replaced`;
+      // Artifact channel: the gate blocked the write. Tool channel: the CLI
+      // already wrote the file, so this is a post-hoc diagnostic, not a block.
+      return `✗ Static P0 fail · ${report.provider}/${report.model} · ${describeStaticFail(report.staticP0)} · ${
+        report.channel === "tool" ? "written file has errors" : "file not replaced"
+      }`;
   }
 }
 

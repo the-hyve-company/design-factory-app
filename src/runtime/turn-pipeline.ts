@@ -38,13 +38,14 @@ import {
   type ProcessArtifactsOptions,
   type ProcessArtifactsOutcome,
 } from "@/runtime/process-artifacts";
-import { parseArtifact } from "@/runtime/artifact-processor";
+import { parseArtifact, sha256Hex } from "@/runtime/artifact-processor";
 import { validateArtifactStaticP0 } from "@/runtime/static-p0";
 import { composeDoneReport } from "@/runtime/done-report";
 import { runCraftChecks } from "@/runtime/craft-checks";
 import {
   fromBridgeToolCall,
   fromBridgeToolResult,
+  extractFileWrites,
   type NormalizedToolEvent,
 } from "@/runtime/tool-events";
 import { upsertProviderSession } from "@/lib/provider-sessions";
@@ -864,11 +865,17 @@ export async function validateTurnOutput(
   s: TurnStream,
   artifactOutcome: ProcessArtifactsOutcome,
 ): Promise<TurnValidation> {
-  // No artifact (skipped/rejected/write-failed) → nothing to validate.
-  // We treat all of these as `ok: true` because the failure modes
-  // surface elsewhere (rejected/write-failed land in the assistant
-  // message text via composeAssistantMessage).
+  // No artifact written by the gate. Tool-channel providers (Claude Code,
+  // and any CLI writing via its native Write tool) land here with
+  // `provider-uses-write` — they DID write, just outside the gate. Run the
+  // same nets on what they wrote so the craft net reaches them too; without
+  // this it would only ever see the 6 artifact-channel providers. Other
+  // skip/reject/write-failed reasons surface in the assistant message text.
   if (artifactOutcome.status !== "written") {
+    if (artifactOutcome.status === "skipped" && artifactOutcome.reason === "provider-uses-write") {
+      const toolReport = await validateToolChannelOutput(ctx, s);
+      if (toolReport) return { ok: true, doneReport: toolReport };
+    }
     return { ok: true, doneReport: null };
   }
 
@@ -915,6 +922,49 @@ export async function validateTurnOutput(
   }
 
   return { ok: true, doneReport };
+}
+
+/**
+ * Tool-channel craft net. Tool providers write via their native Write tool,
+ * so the artifact gate never sees the bytes. We enumerate the Write calls
+ * they emitted, take the final HTML write, and run the SAME Static P0 +
+ * craft net on it — surfaced as a `channel: "tool"` DoneReport. Static P0
+ * here is a post-hoc diagnostic (the file is already written), so it never
+ * blocks; craft tells warn exactly as on the artifact channel.
+ *
+ * Returns null when the provider surfaced no HTML write with content (e.g.
+ * writes that arrive as Bash/file_change frames) — that residual coverage
+ * gap is per-provider stream shape, tracked separately.
+ */
+async function validateToolChannelOutput(
+  ctx: TurnContext,
+  s: TurnStream,
+): Promise<DoneReport | null> {
+  const htmlWrites = extractFileWrites(s.toolEvents).filter(isHtmlWrite);
+  if (htmlWrites.length === 0) return null;
+  // The last write is the file's final state for the turn.
+  const primary = htmlWrites[htmlWrites.length - 1];
+  const contentHash = await sha256Hex(primary.content);
+  const staticP0 = validateArtifactStaticP0({
+    finalPath: primary.path,
+    content: primary.content,
+    contentHash,
+    type: "html",
+  });
+  const craftCheck = runCraftChecks({ content: primary.content, type: "html" });
+  return composeDoneReport({
+    artifactHash: contentHash,
+    provider: ctx.providerId,
+    model: ctx.model ?? "(unknown)",
+    duration_ms: Date.now() - ctx.startedAt,
+    staticP0,
+    craftCheck,
+    channel: "tool",
+  });
+}
+
+function isHtmlWrite(w: { path: string; content: string }): boolean {
+  return /\.html?$/i.test(w.path) || /<(?:!doctype html|html[\s>])/i.test(w.content);
 }
 
 function composeAssistantMessage(

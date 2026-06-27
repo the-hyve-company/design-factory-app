@@ -423,3 +423,38 @@ const CANONICAL_TOOL_NAMES = new Set([
 function defaultNow(): string {
   return new Date().toISOString();
 }
+
+// ─── File-write extraction (tool-channel craft net) ──────────────────────
+
+export interface ToolFileWrite {
+  /** Path the tool wrote to. */
+  path: string;
+  /** Full file content the tool wrote. */
+  content: string;
+}
+
+/**
+ * Pull completed file-writes out of a normalized tool-event stream — the
+ * native `Write` calls that carry the whole file content in their input.
+ *
+ * Why: tool-channel providers (Claude Code, and any CLI that writes via a
+ * Write tool) bypass the artifact gate, so the craft net never sees their
+ * output. Enumerating their writes lets the net run on what they produced,
+ * not just the artifact-channel providers.
+ *
+ * `Edit`/`MultiEdit` are skipped on purpose — they carry a fragment
+ * (old/new string), not the whole file, so a craft check on them would be
+ * meaningless. Providers that surface writes as Bash/file_change frames
+ * (rather than a Write call with content) yield nothing here — that
+ * coverage gap is per-provider stream shape, not this function.
+ */
+export function extractFileWrites(events: NormalizedToolEvent[]): ToolFileWrite[] {
+  const out: ToolFileWrite[] = [];
+  for (const ev of events) {
+    if (ev.type !== "tool_call" || ev.name !== "Write") continue;
+    const path = typeof ev.input.file_path === "string" ? ev.input.file_path : null;
+    const content = typeof ev.input.content === "string" ? ev.input.content : null;
+    if (path && content) out.push({ path, content });
+  }
+  return out;
+}
