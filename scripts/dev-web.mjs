@@ -24,8 +24,7 @@
 //
 // Zero external deps — pure Node core.
 
-import { spawn, spawnSync } from "node:child_process";
-import { createServer } from "node:net";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
@@ -37,6 +36,16 @@ import {
   statSync,
   readdirSync,
 } from "node:fs";
+import {
+  killTree,
+  pidAlive,
+  portInUse,
+  nextFreePort,
+  findPidsOnPort,
+  isNodeProcess,
+  isOurDaemon,
+  waitHealthy,
+} from "./df-core.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..");
@@ -47,7 +56,6 @@ const DIST_INDEX = join(DIST_DIR, "index.html");
 let DAEMON_PORT = Number(process.env.DF_BRIDGE_PORT || 1421);
 let VITE_PORT = Number(process.env.DF_VITE_PORT || 1420);
 const HEALTH_TIMEOUT_MS = 10_000;
-const HEALTH_POLL_MS = 200;
 const DOCS_URL = "https://github.com/the-hyve-company/design-factory-app#readme";
 
 // ── mode: prod (default for end users) vs dev (contributors) ─────────────────
@@ -137,90 +145,9 @@ function fatalPort(port) {
   process.exit(1);
 }
 
-async function portInUse(port) {
-  return new Promise((resolve) => {
-    const probe = createServer();
-    probe.once("error", (err) => {
-      if (err && /** @type {any} */ (err).code === "EADDRINUSE") resolve(true);
-      else resolve(false);
-    });
-    probe.once("listening", () => probe.close(() => resolve(false)));
-    probe.listen(port, "127.0.0.1");
-  });
-}
-
-async function nextFreePort(from, span = 40, reserved = new Set()) {
-  for (let p = from; p < from + span; p++) {
-    if (reserved.has(p)) continue;
-    if (!(await portInUse(p))) return p;
-  }
-  return null;
-}
-
-// is the process on this port one of OUR daemons? (then reuse instead of fighting it)
-async function isOurDaemon(port) {
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 800);
-    const res = await fetch(`http://127.0.0.1:${port}/healthz`, { signal: ctrl.signal });
-    clearTimeout(timer);
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-async function waitHealthy(port, budgetMs) {
-  const started = Date.now();
-  while (Date.now() - started < budgetMs) {
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 1000);
-      const res = await fetch(`http://127.0.0.1:${port}/healthz`, { signal: ctrl.signal });
-      clearTimeout(timer);
-      if (res.ok) return true;
-    } catch {
-      // retry
-    }
-    await new Promise((r) => setTimeout(r, HEALTH_POLL_MS));
-  }
-  return false;
-}
-
 let daemon = null;
 let vite = null;
 let shuttingDown = false;
-
-// ── process-tree kill (cross-platform) ──────────────────────────────────────
-// Unix: children are spawned detached (own process group), so the negative pid
-// kills the whole group — taking the daemon's grandchildren (ffmpeg/puppeteer/
-// pty) with it. Windows has no usable group here; taskkill /T walks the tree
-// (and /T also reaches the real vite behind the npm.cmd shell wrapper).
-function killTree(pid, signal = "SIGTERM") {
-  if (!pid) return;
-  try {
-    if (process.platform === "win32") {
-      spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { stdio: "ignore" });
-    } else {
-      try {
-        process.kill(-pid, signal);
-      } catch {
-        try {
-          process.kill(pid, signal);
-        } catch {}
-      }
-    }
-  } catch {}
-}
-
-const pidAlive = (pid) => {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-};
 
 function writeLock() {
   try {
@@ -345,55 +272,6 @@ function bindKeys() {
 }
 
 const t0 = Date.now();
-
-// resolve ports (reclaim own daemon / auto-pick next free) — returns a human note
-/** Find PIDs listening on `port`. Cross-platform: netstat on Windows,
- *  lsof on Mac/Linux. Empty array on failure / no listener. */
-function findPidsOnPort(port) {
-  try {
-    if (process.platform === "win32") {
-      // netstat -ano output: "  TCP    127.0.0.1:1420    0.0.0.0:0    LISTENING    12345"
-      const out = spawnSync("netstat", ["-ano"], { encoding: "utf8" }).stdout || "";
-      const re = new RegExp(`[: .]${port}\\s+\\S+\\s+LISTENING\\s+(\\d+)`, "m");
-      const pids = new Set();
-      for (const line of out.split(/\r?\n/)) {
-        const m = line.match(re);
-        if (m) pids.add(Number(m[1]));
-      }
-      return [...pids];
-    }
-    // POSIX — lsof -t -i :PORT lists owning PIDs, one per line.
-    const out =
-      spawnSync("lsof", ["-tiTCP:" + port, "-sTCP:LISTEN"], { encoding: "utf8" }).stdout || "";
-    return out
-      .split(/\r?\n/)
-      .map((s) => Number(s.trim()))
-      .filter((n) => Number.isFinite(n) && n > 0);
-  } catch {
-    return [];
-  }
-}
-
-/** True when the PID is a node process. Used as a safety filter before
- *  killing — we never reap SSH sessions, VS Code port-forwards, browser
- *  tabs, etc. Cross-platform via process name lookup. */
-function isNodeProcess(pid) {
-  try {
-    if (process.platform === "win32") {
-      // tasklist /FI "PID eq N" /FO CSV → "Image Name","PID",...
-      const out =
-        spawnSync("tasklist", ["/FI", `PID eq ${pid}`, "/FO", "CSV", "/NH"], { encoding: "utf8" })
-          .stdout || "";
-      return /node\.exe/i.test(out);
-    }
-    // POSIX — `ps -p PID -o comm=` prints just the command name.
-    const out =
-      spawnSync("ps", ["-p", String(pid), "-o", "comm="], { encoding: "utf8" }).stdout || "";
-    return /\bnode\b/.test(out);
-  } catch {
-    return false;
-  }
-}
 
 /** Fallback reaper: when a port the script wants is held by a stray
  *  node process AND the lockfile-based reapPriorInstance() didn't catch
