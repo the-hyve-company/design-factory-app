@@ -46,6 +46,7 @@ import {
   isOurDaemon,
   waitHealthy,
 } from "./df-core.mjs";
+import { registerInstance, deregisterInstance } from "./df-registry.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..");
@@ -212,6 +213,7 @@ function shutdown(reason, code = 0) {
   }
   process.stdout.write("\n  " + dim(`${reason} — encerrando…`) + "\n");
   deleteLock();
+  deregisterInstance(repoRoot); // drop us from the global registry
   for (const child of [vite, daemon]) {
     if (!child || child.killed) continue;
     killTree(child.pid);
@@ -496,6 +498,17 @@ async function boot() {
 
   // record this instance so the NEXT launch can start fresh (kill us first)
   writeLock();
+  // …and in the GLOBAL registry so a launcher / `df` in ANY clone sees us
+  // (cross-clone). registerInstance prunes dead rows in the same pass.
+  registerInstance({
+    folder: repoRoot,
+    mode: MODE,
+    daemonPort: DAEMON_PORT,
+    vitePort: VITE_PORT,
+    daemonPid: daemon ? daemon.pid : null,
+    vitePid: vite ? vite.pid : null,
+    startedAt: Date.now(),
+  });
 
   setTimeout(() => {
     if (shuttingDown) return;
