@@ -92,8 +92,8 @@ import {
 import { parseDesignSystem } from "@/lib/ds-google";
 import { ProviderIdSchema } from "@/lib/schemas";
 import {
-  defaultModelForProvider,
   getModelsForProvider,
+  nextModelForProvider,
   readLastModel,
   useLiveModelOptions,
   writeLastModel,
@@ -465,7 +465,7 @@ export function NewProjectFormSkeu({
   // Provider + model.
   const [provider, setProvider] = useState<ProviderId>("claude");
   const [model, setModel] = useState<string>(
-    () => readLastModel("claude") ?? defaultModelForProvider("claude"),
+    () => nextModelForProvider("claude", readLastModel("claude")),
   );
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const modelMenuRef = useRef<HTMLDivElement>(null);
@@ -541,8 +541,12 @@ export function NewProjectFormSkeu({
       const parsed = ProviderIdSchema.safeParse(raw);
       if (parsed.success) {
         setProvider(parsed.data);
-        const remembered = readLastModel(parsed.data);
-        setModel(remembered ?? defaultModelForProvider(parsed.data));
+        // nextModelForProvider validates the remembered id against the new
+        // provider: a static-catalog provider (claude) rejects a stale cross-
+        // provider id (e.g. an Ollama `qwen3:32b` left in last-model:claude)
+        // and falls back to its default instead of re-applying it and failing
+        // at generation. Live-catalog providers (ollama/openrouter) keep it.
+        setModel(nextModelForProvider(parsed.data, readLastModel(parsed.data)));
       }
     });
     const onProviderChange = (e: Event) => {
@@ -550,8 +554,12 @@ export function NewProjectFormSkeu({
       const parsed = ProviderIdSchema.safeParse(detail?.providerId);
       if (parsed.success) {
         setProvider(parsed.data);
-        const remembered = readLastModel(parsed.data);
-        setModel(remembered ?? defaultModelForProvider(parsed.data));
+        // nextModelForProvider validates the remembered id against the new
+        // provider: a static-catalog provider (claude) rejects a stale cross-
+        // provider id (e.g. an Ollama `qwen3:32b` left in last-model:claude)
+        // and falls back to its default instead of re-applying it and failing
+        // at generation. Live-catalog providers (ollama/openrouter) keep it.
+        setModel(nextModelForProvider(parsed.data, readLastModel(parsed.data)));
       }
     };
     window.addEventListener("df:provider-change", onProviderChange);
@@ -910,8 +918,10 @@ export function NewProjectFormSkeu({
                     // Model is provider-scoped — switching provider invalidates
                     // the current model id. Try a remembered model for the new
                     // provider first; fall back to the provider's default.
-                    const remembered = readLastModel(id);
-                    setModel(remembered ?? defaultModelForProvider(id));
+                    // Validate the remembered id against the new provider —
+                    // static-catalog providers reject a stale cross-provider
+                    // model; live-catalog providers keep it.
+                    setModel(nextModelForProvider(id, readLastModel(id)));
                     setProviderMenuOpen(false);
                   }}
                   menuRef={providerMenuRef}

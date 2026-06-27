@@ -67,7 +67,9 @@ const anthropic = {
     res.flushHeaders?.();
     // Inline any [attached image: PATH] markers as base64 vision blocks —
     // the API can't read the user's disk like the CLI providers can.
-    const { text: userText, images } = extractImageAttachments(prompt);
+    const { text: userText, images } = extractImageAttachments(prompt, {
+      isInScope: deps.imagePathInScope,
+    });
     const userContent =
       images.length > 0
         ? [

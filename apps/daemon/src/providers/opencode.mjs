@@ -15,6 +15,7 @@
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { sanitizedSpawnEnv } from "../env-blocklist.mjs";
 
 const OPENCODE_BIN_ENV = "DF_OPENCODE_BIN";
 
@@ -111,7 +112,11 @@ const opencode = {
     // 2026-05-15: piping → 30s hang; ignoring stdin → JSON events
     // flow in ~200ms.
     // Windows .CMD/long-cmdline fix — see resolveOpencodeSpawn() above.
-    const spawnOpts = { stdio: ["ignore", "pipe", "pipe"], shell: ospawn.useShell };
+    const spawnOpts = {
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: ospawn.useShell,
+      env: sanitizedSpawnEnv("opencode"),
+    };
     if (cwd && typeof cwd === "string") spawnOpts.cwd = cwd;
 
     res.writeHead(200, {
@@ -338,7 +343,11 @@ const opencode = {
     if (cwd && typeof cwd === "string") args.push("--dir", cwd);
     const composed = systemPrompt ? `${systemPrompt}\n\n---\n\n${prompt}` : prompt;
     args.push(composed);
-    const onceSpawnOpts = { stdio: ["ignore", "pipe", "pipe"], shell: ospawn.useShell };
+    const onceSpawnOpts = {
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: ospawn.useShell,
+      env: sanitizedSpawnEnv("opencode"),
+    };
     if (cwd) onceSpawnOpts.cwd = cwd;
     const child = spawn(ospawn.cmd, args, onceSpawnOpts);
 

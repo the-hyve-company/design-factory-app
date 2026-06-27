@@ -66,7 +66,9 @@ const geminiApi = {
     if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
     // Inline [attached image: PATH] markers as base64 image_url parts —
     // Gemini's OpenAI-compat endpoint accepts the same shape.
-    const { text: gUserText, images: gImages } = extractImageAttachments(prompt);
+    const { text: gUserText, images: gImages } = extractImageAttachments(prompt, {
+      isInScope: deps.imagePathInScope,
+    });
     messages.push(
       gImages.length > 0
         ? {

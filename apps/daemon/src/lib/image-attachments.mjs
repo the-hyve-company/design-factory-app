@@ -27,7 +27,8 @@ const EXT_MIME = {
 };
 
 function mimeForPath(p) {
-  return EXT_MIME[extname(p).toLowerCase()] || "image/png";
+  // null = unsupported extension → caller keeps the marker, never reads the file.
+  return EXT_MIME[extname(p).toLowerCase()] || null;
 }
 
 /**
@@ -37,7 +38,13 @@ function mimeForPath(p) {
  *   that resolved to a real file on disk. Markers whose file is missing are
  *   left in the text (so the model still sees a reference) and skipped.
  */
-export function extractImageAttachments(prompt) {
+export function extractImageAttachments(prompt, opts = {}) {
+  // `isInScope(path)` gates which absolute paths may be read off disk. The API
+  // adapters pass the daemon's workspace-scope check so a forged
+  // `[attached image: /home/user/.aws/credentials]` can't exfiltrate an
+  // arbitrary file to a third-party provider. Defaults to allow-all only when
+  // omitted (e.g. unit tests); production callers always pass it.
+  const isInScope = typeof opts.isInScope === "function" ? opts.isInScope : () => true;
   if (typeof prompt !== "string" || !prompt.includes("[attached image:")) {
     return { text: prompt, images: [] };
   }
@@ -45,12 +52,14 @@ export function extractImageAttachments(prompt) {
   const text = prompt.replace(MARKER_RE, (whole, rawPath) => {
     const path = String(rawPath).trim();
     try {
+      const mime = mimeForPath(path);
+      // Unsupported extension or SVG (most vision APIs reject SVG base64):
+      // keep the marker in text so the model still knows it was referenced.
+      if (!mime || mime === "image/svg+xml") return whole;
+      // Out of workspace scope → never read (anti-exfiltration).
+      if (!isInScope(path)) return whole;
       if (!existsSync(path)) return whole; // keep the marker; file gone
       const buf = readFileSync(path);
-      // SVG can't go through most vision APIs as base64 image — leave the
-      // marker in text so the model at least knows it was referenced.
-      const mime = mimeForPath(path);
-      if (mime === "image/svg+xml") return whole;
       images.push({ mime, base64: buf.toString("base64"), path });
       return ""; // drop the marker; the image rides as a vision block now
     } catch {

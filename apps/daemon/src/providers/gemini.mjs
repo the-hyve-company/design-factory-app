@@ -11,6 +11,7 @@
 // @file providers/gemini.mjs
 
 import { spawnErrorMessage } from "./spawn-error.mjs";
+import { sanitizedSpawnEnv } from "../env-blocklist.mjs";
 
 /** @type {import("./types.mjs").ProviderAdapter} */
 const gemini = {
@@ -59,7 +60,11 @@ const gemini = {
     }
     const composed = systemPrompt ? `${systemPrompt}\n\n---\n\n${prompt}` : prompt;
     // Windows .CMD spawn fix — see codex.mjs for the full rationale.
-    const spawnOpts = { stdio: ["pipe", "pipe", "pipe"], shell: process.platform === "win32" };
+    const spawnOpts = {
+      stdio: ["pipe", "pipe", "pipe"],
+      shell: process.platform === "win32",
+      env: sanitizedSpawnEnv("gemini"),
+    };
     if (cwd && typeof cwd === "string") spawnOpts.cwd = cwd;
 
     res.writeHead(200, {
@@ -110,7 +115,11 @@ const gemini = {
     const args = ["--skip-trust", "--yolo"];
     if (model && model !== "default") args.push("--model", model);
     const composed = systemPrompt ? `${systemPrompt}\n\n---\n\n${prompt}` : prompt;
-    const onceSpawnOpts = { stdio: ["pipe", "pipe", "pipe"], shell: process.platform === "win32" };
+    const onceSpawnOpts = {
+      stdio: ["pipe", "pipe", "pipe"],
+      shell: process.platform === "win32",
+      env: sanitizedSpawnEnv("gemini"),
+    };
     if (cwd) onceSpawnOpts.cwd = cwd;
     const child = spawn(GEMINI_BIN, args, onceSpawnOpts);
     child.stdin.write(composed);
