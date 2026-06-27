@@ -24,6 +24,12 @@ export interface Rule {
   title: string;
   /** Category id — used to group rows in the modal. */
   category: string;
+  /** Severity tier — P0 must-fix · P1 should-fix · P2 polish. Builtins only. */
+  tier?: "P0" | "P1" | "P2";
+  /** Factory-default rule: ships enabled and pre-fills the picker. Builtins only. */
+  core?: boolean;
+  /** Has a deterministic static-p0 check (grep / heuristic). Builtins only. */
+  checkable?: boolean;
   /** 1-line helper. Optional. */
   description?: string;
   /** True for rules shipped with DF (cannot be deleted, can be edited). */
@@ -43,6 +49,9 @@ export const RuleSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   category: z.string().min(1),
+  tier: z.enum(["P0", "P1", "P2"]).optional(),
+  core: z.boolean().optional(),
+  checkable: z.boolean().optional(),
   description: z.string().optional(),
   builtin: z.boolean(),
 });
@@ -63,429 +72,1483 @@ export const RULE_CATEGORIES: ReadonlyArray<RuleCategoryMeta> = Object.freeze([
   { id: "icons", label: "Icons", hint: "iconography" },
   { id: "forms", label: "Forms", hint: "inputs & controls" },
   { id: "states", label: "States", hint: "interaction states" },
+  { id: "a11y", label: "Accessibility", hint: "contrast, focus, keyboard" },
+  { id: "copy", label: "Copy", hint: "voice & microcopy" },
+  { id: "i18n-rtl", label: "i18n & RTL", hint: "locale & direction" },
+  { id: "laws-of-ux", label: "Laws of UX", hint: "usability heuristics" },
   { id: "custom", label: "Custom", hint: "your additions" },
 ]);
 
-// ─── Defaults — 50 visual-taste builtin rules ─────────────────────────
+// ─── Defaults — 132 brand-agnostic craft builtin rules ────────────────
 //
-// 50 brand-agnostic VISUAL taste defaults across 10 categories.
-// No copy/voice/process rules; nothing tied to any specific brand.
+// 132 brand-agnostic craft defaults across 14 categories: the 10 visual
+// ones plus accessibility, copy, i18n/RTL and laws-of-ux. Nothing tied to
+// any specific brand. Ported from docs/specs/df-rules-library.md (the
+// research-backed library — see 2026-06-26-df-craft-enforcement.md).
 //
-// Each `description` is a short 1-2 sentence mini-prompt (problem to
-// avoid, then the concrete move) concatenated into the system prompt
-// when the rule is enabled. Keep ids kebab-case with a 2-letter
-// category prefix (as/ly/ty/co/de/mo/im/ic/fo/st). `title` is the
-// picker-row label only; PT+EN copy lives in i18n/builtin-labels.ts
+// Each `description` is a compact ✗ avoid / ✓ do-instead pair (with the
+// concrete value when it matters), concatenated into the system prompt
+// when the rule is enabled. `tier` (P0/P1/P2) = severity; `core` = ships
+// in the factory default set (14 rules); `checkable` = has a deterministic
+// static-p0 detector. Keep ids kebab-case with a category prefix. `title`
+// is the picker-row label only; PT+EN copy lives in i18n/builtin-labels.ts
 // and the EN here must match the EN title there.
 export const DEFAULT_BUILTIN_RULES: ReadonlyArray<Rule> = Object.freeze([
-  // ─── Anti-slop ─────────────────────────────────────────────────────
+  // ─── Anti-slop (13) ─────────────────────────────────────────
   {
-    id: "as-no-decorative-emojis",
-    title: "No decorative emojis",
+    id: "as-no-shadcn-default",
+    title: "Override the default shadcn/Tailwind look",
     category: "anti-slop",
+    tier: "P0",
+    core: false,
+    checkable: true,
     description:
-      "Colored emojis used as icons or bullets (🚀⚡✨🔥) pull an interface toward casual chat and read as a default-template tell. Carry meaning through type weight and a consistent monochrome icon set instead.",
-    builtin: true,
-  },
-  {
-    id: "as-no-invented-decoration",
-    title: "No invented decoration",
-    category: "anti-slop",
-    description:
-      "Gradients, glows, blurs, particle fields, and animated backgrounds added for their own sake date a design and fight the content. Reach for an effect only when it earns its place — otherwise let type, spacing, and a restrained palette carry it.",
+      "✗ Default zinc/slate neutrals + indigo accent + `0.5rem` radius on everything.\n✓ Override four axes: accent hue, the `--radius` scale, the display font, the neutral ramp.",
     builtin: true,
   },
   {
     id: "as-no-generic-ai-gradient",
     title: "No generic AI gradient",
     category: "anti-slop",
+    tier: "P0",
+    core: true,
+    checkable: true,
     description:
-      "The violet-to-blue hero gradient is an instant template tell. If a gradient earns its place, build it from colors already in the palette and keep the hue shift small and intentional.",
+      "✗ Two-stop violet→blue / blue→cyan / indigo→pink gradient on hero or background.\n✓ Flat surface; or a same-family ramp (hue shift ≤30°) that marks real hierarchy.",
+    builtin: true,
+  },
+  {
+    id: "as-no-gradient-text",
+    title: "No gradient-filled headline text",
+    category: "anti-slop",
+    tier: "P0",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `background-clip:text` with a multi-hue gradient on headings.\n✓ Solid token color; size + weight carry it. If intentional, one per page, unset on `::selection`.",
+    builtin: true,
+  },
+  {
+    id: "as-no-unprompted-glow",
+    title: "No unprompted neon glow",
+    category: "anti-slop",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `box-shadow:0 0 …` halos / glowing `text-shadow` as ambient decoration.\n✓ Glow only on a genuinely active/recording/pressed element; depth via a real elevation shadow.",
+    builtin: true,
+  },
+  {
+    id: "as-no-decorative-emojis",
+    title: "No emojis as icons",
+    category: "anti-slop",
+    tier: "P0",
+    core: true,
+    checkable: true,
+    description:
+      '✗ Emoji icons/bullets (🚀 ⚡ ✨ 🔥 🎯) in `<h*>`, `<button>`, `<li>`, `class*="icon"`.\n✓ One monoline SVG set, 1.6–1.8px stroke, `currentColor`; emphasis via type weight.',
+    builtin: true,
+  },
+  {
+    id: "as-no-invented-decoration",
+    title: "No invented decoration",
+    category: "anti-slop",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Gradients, glows, blurs, particle fields added for their own sake.\n✓ Drop any effect that, if removed, loses no information; let type + spacing carry it.",
     builtin: true,
   },
   {
     id: "as-no-default-glassmorphism",
     title: "No default glassmorphism",
     category: "anti-slop",
+    tier: "P1",
+    core: false,
+    checkable: true,
     description:
-      "Frosted, semi-transparent blur on every surface is a dated default that hurts legibility. Use solid, opaque surfaces unless the blur genuinely communicates layering over content behind it.",
+      "✗ `backdrop-filter:blur()` frost on cards, headers, and modals at once.\n✓ Solid surfaces; glass on 1-2 semantic surfaces only (fixed nav, modal scrim), where content sits behind.",
     builtin: true,
   },
   {
     id: "as-no-effect-stacking",
     title: "No stacked effects",
     category: "anti-slop",
+    tier: "P1",
+    core: false,
+    checkable: false,
     description:
-      "Piling shadow plus gradient plus blur plus border plus glow onto one element reads as over-designed and muddy. Pick one treatment per element and let it do the work.",
+      "✗ Shadow + gradient + blur + border + glow piled on one element.\n✓ One treatment per element; depth from a single elevation system.",
     builtin: true,
   },
-  // ─── Layout & composition ──────────────────────────────────────────
+  {
+    id: "as-no-aurora-bg",
+    title: "No aurora / mesh / blob background",
+    category: "anti-slop",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Animated multi-`radial-gradient` aurora or drifting `filter:blur` color blobs.\n✓ Solid surface; tension from layout, not a moving backdrop.",
+    builtin: true,
+  },
+  {
+    id: "as-no-decorative-bg-pattern",
+    title: "No decorative background pattern",
+    category: "anti-slop",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Tiled dot-grids, blueprint grids, decorative wave/blob SVGs as filler.\n✓ Plain surface; whitespace as structure (pattern only if it encodes real data).",
+    builtin: true,
+  },
+  {
+    id: "as-no-tasteful-default-cliche",
+    title: 'Avoid the "tasteful default" cliché',
+    category: "anti-slop",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      '✗ Reflexive cream `#F4F1EA`+serif+sage, "near-black+acid-green", or broadsheet-hairline looks.\n✓ A palette/voice grounded in the subject; justify a known look as a deliberate choice.',
+    builtin: true,
+  },
+  {
+    id: "as-break-perfect-symmetry",
+    title: "Break perfect symmetry with intention",
+    category: "anti-slop",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Evenly-weighted, perfectly symmetric layout, identical rhythm top-to-bottom.\n✓ Alternate density (one tight section, one breathing); anchor with a deliberate asymmetry.",
+    builtin: true,
+  },
+  {
+    id: "as-soul-80-20",
+    title: "80% proven, 20% distinctive",
+    category: "anti-slop",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ A flawless but anonymous template with zero risk.\n✓ One signature move — a bold type/color call, an unexpected proportion, product-specific microcopy.",
+    builtin: true,
+  },
+  // ─── Layout (12) ─────────────────────────────────────────
   {
     id: "ly-generous-spacing",
-    title: "Generous, consistent spacing",
+    title: "Generous, intentional spacing",
     category: "layout",
+    tier: "P1",
+    core: true,
+    checkable: false,
     description:
-      "Cramped, uneven spacing is the fastest way to look unfinished. Give elements room to breathe and use one consistent spacing rhythm — whitespace is structure, not wasted space.",
-    builtin: true,
-  },
-  {
-    id: "ly-no-card-bars",
-    title: "No card bars or accents",
-    category: "layout",
-    description:
-      "A colored bar stuck on the top or side of a card adds no information and dates the design (the 2019-dashboard look). Signal hierarchy or status with the card's own content — a stronger heading, a small status dot, a tinted background.",
-    builtin: true,
-  },
-  {
-    id: "ly-dont-center-everything",
-    title: "Don't center everything",
-    category: "layout",
-    description:
-      "Centering all text and content blocks by default is a tell and makes long copy hard to scan. Left-align body text and content; reserve centering for short, deliberate moments like a hero or an empty state.",
-    builtin: true,
-  },
-  {
-    id: "ly-consistent-alignment-edges",
-    title: "Consistent alignment edges",
-    category: "layout",
-    description:
-      "Elements that don't share alignment lines read as careless. Align to a small set of shared edges or a grid so columns, labels, and content snap to the same verticals.",
-    builtin: true,
-  },
-  {
-    id: "ly-proximity-grouping",
-    title: "Group by proximity",
-    category: "layout",
-    description:
-      "Related items belong close together; unrelated ones need a clear gap. Use spacing to group and separate before reaching for borders or boxes — proximity does most of the structural work.",
+      "✗ Cramped, evenly-distributed elements with no breathing room.\n✓ Generous whitespace; group by proximity, separate by gap.",
     builtin: true,
   },
   {
     id: "ly-clear-hierarchy",
     title: "One clear focal point",
     category: "layout",
+    tier: "P1",
+    core: true,
+    checkable: false,
     description:
-      "When everything competes for attention, nothing wins. Establish one primary element per screen and let size, weight, and spacing make the reading order obvious.",
+      "✗ Flat layout where everything competes equally.\n✓ One primary focal point per view; de-emphasize the rest.",
+    builtin: true,
+  },
+  {
+    id: "ly-spacing-scale",
+    title: "Spacing on a scale",
+    category: "layout",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description: "✗ Arbitrary margins/paddings (13px, 27px…).\n✓ 4/8/12/16/24/32/48/64.",
+    builtin: true,
+  },
+  {
+    id: "ly-padding-ratio",
+    title: "Horizontal padding > vertical",
+    category: "layout",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description: "✗ Equal H/V padding on buttons/chips.\n✓ Horizontal ≈ 2× vertical.",
+    builtin: true,
+  },
+  {
+    id: "ly-dont-center-everything",
+    title: "Don't center everything",
+    category: "layout",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ All text and blocks center-aligned.\n✓ Left-align body and long text; center only short hero/empty states.",
+    builtin: true,
+  },
+  {
+    id: "ly-no-hero-three-card",
+    title: "Break the hero + 3-card cliché",
+    category: "layout",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Centered hero followed by a row of three identical feature cards.\n✓ Vary one section — asymmetric split, full-bleed quote, inline demo.",
+    builtin: true,
+  },
+  {
+    id: "ly-no-uniform-bento",
+    title: "No uniform bento grid",
+    category: "layout",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ A grid of equal-size bento tiles, equal weight.\n✓ Size cells by importance; let the grid express hierarchy.",
+    builtin: true,
+  },
+  {
+    id: "ly-grid-system",
+    title: "Align to a grid",
+    category: "layout",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Ad-hoc widths and misaligned columns.\n✓ A 12-column grid with consistent gutters; align to it.",
+    builtin: true,
+  },
+  {
+    id: "ly-concentric-radius",
+    title: "Concentric corner radii",
+    category: "layout",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Same radius on an inner element and its padded container.\n✓ Outer radius = inner radius + padding.",
+    builtin: true,
+  },
+  {
+    id: "ly-vary-density",
+    title: "Vary section density",
+    category: "layout",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Identical vertical rhythm down the whole page.\n✓ Alternate tight and breathing sections for intentional pace.",
     builtin: true,
   },
   {
     id: "ly-optical-alignment",
-    title: "Optical alignment",
+    title: "Align optically",
     category: "layout",
+    tier: "P2",
+    core: false,
+    checkable: false,
     description:
-      "Mathematically centered isn't always visually centered — icons with descenders, triangles, and play glyphs look off. Trust the eye and nudge until it reads aligned rather than relying on geometric centering alone.",
+      "✗ Pure metric centering of icons/glyphs/play buttons.\n✓ Nudge for optical balance (triangles, type with descenders).",
     builtin: true,
   },
-  // ─── Typography ────────────────────────────────────────────────────
+  {
+    id: "ly-no-fake-logo-cloud",
+    title: "No filler logo cloud",
+    category: "layout",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      '✗ A gray "Trusted by" logo row as decoration.\n✓ Real logos, or drop the section.',
+    builtin: true,
+  },
+  // ─── Typography (15) ─────────────────────────────────────────
   {
     id: "ty-limited-type-scale",
-    title: "Limited type scale",
+    title: "Use a limited type scale",
     category: "typography",
+    tier: "P0",
+    core: true,
+    checkable: true,
     description:
-      "Many ad-hoc font sizes make a layout read as assembled rather than designed. Pick a small set of sizes with clear jumps between them and reuse it — hierarchy comes from deliberate contrast, not a new size per element.",
-    builtin: true,
-  },
-  {
-    id: "ty-tabular-figures",
-    title: "Tabular figures for numbers",
-    category: "typography",
-    description:
-      "Proportional digits shift left and right between rows, so numbers in tables, prices, and counters won't line up. Use tabular figures (font-variant-numeric: tabular-nums) anywhere digits need to align in columns.",
-    builtin: true,
-  },
-  {
-    id: "ty-comfortable-measure",
-    title: "Comfortable measure & leading",
-    category: "typography",
-    description:
-      "Lines that run too long are hard to read and tight leading makes paragraphs feel cramped. Cap body line length around 45-75 characters and give body text generous line-height; tighten leading only on large display type.",
-    builtin: true,
-  },
-  {
-    id: "ty-one-or-two-typefaces",
-    title: "One or two typefaces",
-    category: "typography",
-    description:
-      "A font zoo fragments the design. Use one typeface, or at most a display face paired with a text face, and create variety with weight and size instead of more families.",
+      "✗ Arbitrary font sizes (17px, 22px, 29px…).\n✓ One scale: 12/14/16/18/20/24/30/36/48/64.",
     builtin: true,
   },
   {
     id: "ty-weight-for-hierarchy",
-    title: "Weight for hierarchy, not color",
+    title: "Weight, not just size, builds hierarchy",
     category: "typography",
+    tier: "P1",
+    core: true,
+    checkable: true,
     description:
-      "Reaching for color or ALL CAPS to mark importance clutters the palette and hurts readability. Drive hierarchy with size and weight first; color is an accent, not a heading system.",
+      "✗ Hierarchy by size alone; body weights below 400.\n✓ Weights 400/500/600/700; pair size + weight; never <400 for text.",
     builtin: true,
   },
   {
-    id: "ty-no-justify-long-text",
-    title: "Don't justify long text",
+    id: "ty-comfortable-measure",
+    title: "Keep a comfortable measure",
     category: "typography",
+    tier: "P1",
+    core: true,
+    checkable: true,
     description:
-      "Justified text on the web opens uneven rivers of whitespace because browsers lack fine hyphenation. Left-align body copy (ragged right) for even word spacing and a steadier read.",
+      "✗ Body lines spanning the full container width.\n✓ 45–75 characters (~66); `max-width: 65ch` on text blocks.",
     builtin: true,
   },
   {
-    id: "ty-tracking-by-size",
-    title: "Tracking by size",
+    id: "ty-body-min-16",
+    title: "Body text ≥16px",
     category: "typography",
-    description:
-      "Default letter-spacing rarely fits every size. Tighten tracking slightly on large headings, leave body text at normal, and open it up for small uppercase labels so each reads cleanly.",
-    builtin: true,
-  },
-  // ─── Color ─────────────────────────────────────────────────────────
-  {
-    id: "co-honor-existing-palette",
-    title: "Honor the existing palette",
-    category: "color",
-    description:
-      "Introducing a fresh hue for every new component fragments the design until nothing reads as one system. Build from the palette already in play — derive tints and shades from existing hues rather than adding orphan colors.",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description: "✗ Body copy below 16px.\n✓ 16–18px body; 14px only for secondary/meta labels.",
     builtin: true,
   },
   {
-    id: "co-no-raw-black",
-    title: "Soften pure black & white",
-    category: "color",
+    id: "ty-line-height",
+    title: "Line-height by role",
+    category: "typography",
+    tier: "P1",
+    core: false,
+    checkable: true,
     description:
-      "Pure black (#000) and pure white (#fff) feel harsh and flat against real content — they crush shadow detail and read as unconsidered. Soften slightly toward a near-black and a near-white so surfaces feel intentional.",
+      "✗ One tight line-height on everything.\n✓ Body 1.5; headings 1.1–1.25 (tighter as size grows).",
     builtin: true,
   },
   {
-    id: "co-accent-sparingly",
-    title: "Accent color sparingly",
-    category: "color",
+    id: "ty-no-default-fonts",
+    title: "No default system fonts",
+    category: "typography",
+    tier: "P1",
+    core: false,
+    checkable: true,
     description:
-      "An accent color used everywhere stops accenting anything. Spend it on the one element that should draw the eye — a primary action, an active state — and keep chrome and large surfaces neutral.",
+      "✗ Inter / Roboto / Arial / Times / Open Sans / Montserrat / bare `system-ui` as the brand face.\n✓ A deliberately chosen display + text pairing; system stack only as fallback.",
     builtin: true,
   },
+  {
+    id: "ty-display-font-on-headings",
+    title: "Headings use the display face",
+    category: "typography",
+    tier: "P0",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Hardcoded Inter/system on `h1`/`h2` when a display font is set.\n✓ `var(--font-display)` on headings; `var(--font-text)` on body.",
+    builtin: true,
+  },
+  {
+    id: "ty-text-wrap",
+    title: "Tidy wrapping",
+    category: "typography",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Ragged, orphan-heavy headline wraps.\n✓ `text-wrap: balance` on headings, `pretty` on body.",
+    builtin: true,
+  },
+  {
+    id: "ty-font-smoothing",
+    title: "Smooth text on dark",
+    category: "typography",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Heavy-looking text on dark surfaces.\n✓ `-webkit-font-smoothing: antialiased` for light-on-dark.",
+    builtin: true,
+  },
+  {
+    id: "ty-smart-quotes",
+    title: "Curly quotes and apostrophes",
+    category: "typography",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Straight `'` `\"` in rendered copy.\n✓ Curly `\" \"` `' '` and proper apostrophes.",
+    builtin: true,
+  },
+  {
+    id: "ty-tabular-nums",
+    title: "Tabular figures for data",
+    category: "typography",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Proportional figures in tables, timers, prices, counters.\n✓ `font-variant-numeric: tabular-nums` so digits align.",
+    builtin: true,
+  },
+  {
+    id: "ty-no-hover-type-shift",
+    title: "Don't reflow type on hover",
+    category: "typography",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `font-size` / `font-weight` / `text-transform` changing on `:hover`.\n✓ Shift color/opacity/background only; reserve weight as a static layout slot.",
+    builtin: true,
+  },
+  {
+    id: "ty-underline-links-only",
+    title: "Underline means link",
+    category: "typography",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Underline as decoration on non-links.\n✓ Underline reserved for `<a>`; emphasis via weight/color.",
+    builtin: true,
+  },
+  {
+    id: "ty-no-bold-italic-stack",
+    title: "One emphasis axis at a time",
+    category: "typography",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Bold + italic stacked on the same run.\n✓ Pick one emphasis axis; reserve the other.",
+    builtin: true,
+  },
+  {
+    id: "ty-sentence-case",
+    title: "Sentence case for UI",
+    category: "typography",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Title Case or ALL CAPS across headings, buttons, labels.\n✓ Sentence case; ALL CAPS only on tiny labels with letter-spacing.",
+    builtin: true,
+  },
+  // ─── Color (14) ─────────────────────────────────────────
   {
     id: "co-few-colors-neutral-base",
     title: "Few colors, neutral base",
     category: "color",
+    tier: "P1",
+    core: true,
+    checkable: false,
     description:
-      "A rainbow palette reads as chaotic and amateur. Let a neutral scale carry the bulk of the interface and treat color as the exception that marks meaning, not the default for every surface.",
+      "✗ Many competing hues across the screen.\n✓ 70–90% neutrals + one accent (5–10%) + semantic (0–5%).",
     builtin: true,
   },
   {
-    id: "co-semantic-colors-consistent",
-    title: "Consistent semantic colors",
+    id: "co-no-raw-black",
+    title: "No pure black or white",
     category: "color",
+    tier: "P0",
+    core: true,
+    checkable: true,
     description:
-      "Inventing a new success-green or error-red per component breaks the mental model. Define one color each for success, warning, error, and info, and reuse them everywhere those meanings appear.",
+      "✗ `#000` / `#fff` as bg or fg.\n✓ Dark: bg `#0f0f0f`, fg `#f0f0f0`. Light: bg `#fafafa`, fg `#111111`.",
     builtin: true,
   },
   {
-    id: "co-desaturate-large-fills",
-    title: "Desaturate large fills",
+    id: "co-accent-sparingly",
+    title: "Ration the accent",
     category: "color",
+    tier: "P1",
+    core: false,
+    checkable: true,
     description:
-      "Fully saturated color across a big area vibrates and tires the eye. Reserve high saturation for small accents and use muted, desaturated tones for large backgrounds and fills.",
-    builtin: true,
-  },
-  // ─── Depth & elevation ─────────────────────────────────────────────
-  {
-    id: "de-soft-consistent-shadows",
-    title: "Soft, consistent shadows",
-    category: "depth",
-    description:
-      "Harsh, dark drop shadows look cheap and inconsistent shadows break the sense of space. Use one elevation system with soft, diffuse shadows cast as if from a single light direction.",
+      "✗ Accent on links, CTA, chips, rings all at once.\n✓ ≤2 visible accent uses per screen (links and rings count).",
     builtin: true,
   },
   {
-    id: "de-hairline-borders",
-    title: "Hairline, low-contrast borders",
-    category: "depth",
+    id: "co-one-accent",
+    title: "One accent only",
+    category: "color",
+    tier: "P1",
+    core: false,
+    checkable: false,
     description:
-      "Heavy black 1px borders on everything box the design in and add visual noise. Use thin, low-contrast dividers — or whitespace — and keep border weight consistent across the UI.",
+      "✗ A second invented accent hue.\n✓ Single `--accent`; extra meaning via `--success` / `--warn` / `--danger`.",
     builtin: true,
   },
+  {
+    id: "co-oklch",
+    title: "Author color in OKLCH",
+    category: "color",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `hex` / `rgb` / `hsl` for color decisions and ramps.\n✓ `oklch()` — perceptual lightness, controllable chroma/hue.",
+    builtin: true,
+  },
+  {
+    id: "co-chroma-budget",
+    title: "Budget the chroma",
+    category: "color",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      '✗ Saturated "neutrals" and huge fully-saturated fills.\n✓ Neutrals C≈0; accent C≤0.20; large fills low chroma.',
+    builtin: true,
+  },
+  {
+    id: "co-semantic-token-names",
+    title: "Name tokens by purpose",
+    category: "color",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `--blue-500`, `--green-500`.\n✓ `--accent`, `--success` — named by role, not hue.",
+    builtin: true,
+  },
+  {
+    id: "co-no-tailwind-indigo",
+    title: "No default Tailwind indigo",
+    category: "color",
+    tier: "P0",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `#6366f1` `#4f46e5` `#4338ca` `#3730a3` `#8b5cf6` `#7c3aed` `#a855f7` as accent.\n✓ The brief's `--accent`. (A `var(--accent)` that resolves to indigo is fine — it's intentional.)",
+    builtin: true,
+  },
+  {
+    id: "co-functional-gradient",
+    title: "Gradients separate, don't decorate",
+    category: "color",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Decorative gradient filling empty space.\n✓ Gradient only to separate hierarchy (header→body, CTA), same family, hue shift ≤30°.",
+    builtin: true,
+  },
+  {
+    id: "co-dark-translucent-borders",
+    title: "Translucent borders on dark",
+    category: "color",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Solid dark borders on dark surfaces.\n✓ `1px rgba(255,255,255,0.08)` — reads as structure without noise.",
+    builtin: true,
+  },
+  {
+    id: "co-12-step-ramp",
+    title: "A 12-step role ramp",
+    category: "color",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Ad-hoc tints invented per component.\n✓ A 12-step scale with fixed roles (bg, subtle, ui, border, solid, text…); each decision picks a step.",
+    builtin: true,
+  },
+  {
+    id: "co-hover-active-from-ramp",
+    title: "States step the ramp",
+    category: "color",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Random hover/active colors.\n✓ Hover/active = next step on the ramp, not a new color.",
+    builtin: true,
+  },
+  {
+    id: "co-state-by-token",
+    title: "Semantic states use tokens",
+    category: "color",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Raw red/green for error/success.\n✓ `--danger` / `--success` / `--warn`; pair with icon + text (not color alone).",
+    builtin: true,
+  },
+  {
+    id: "co-no-pure-saturated-on-white",
+    title: "Tame brand color for text",
+    category: "color",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Bright brand accent as body-text color (fails contrast).\n✓ Darken to a 600-level shade for text; reserve the bright variant for fills.",
+    builtin: true,
+  },
+  // ─── Depth (8) ─────────────────────────────────────────
   {
     id: "de-consistent-radius",
-    title: "Consistent corner radius",
+    title: "One radius system",
     category: "depth",
+    tier: "P1",
+    core: true,
+    checkable: true,
     description:
-      "Mixing sharp corners, small radii, and full pills at random looks accidental. Pick one radius scale and apply it by component role — and keep nested radii visually concentric.",
+      "✗ Mixed corner radii across components.\n✓ One `--radius` scale; concentric for nested elements.",
     builtin: true,
   },
   {
-    id: "de-layering-restraint",
-    title: "Restrained layering",
+    id: "de-shadow-blur-ratio",
+    title: "Soft, plausible shadows",
     category: "depth",
+    tier: "P2",
+    core: false,
+    checkable: true,
     description:
-      "When every element floats on its own shadow, depth loses meaning and the screen feels busy. Keep elevation levels few and intentional — most content sits flat on the surface.",
-    builtin: true,
-  },
-  // ─── Motion ────────────────────────────────────────────────────────
-  {
-    id: "mo-motion-serves-meaning",
-    title: "Motion serves meaning",
-    category: "motion",
-    description:
-      "Animation that loops or fires with no reason reads as nervous noise. Use motion to show a state change — something appeared, loaded, or moved — so every animation is legible from a single still frame.",
+      "✗ Hard shadows with blur ≈ offset and high alpha.\n✓ Blur ≈ 2× offset, low alpha; light comes from one direction.",
     builtin: true,
   },
   {
-    id: "mo-no-decorative-spinners",
-    title: "No decorative spinners",
-    category: "motion",
+    id: "de-no-shadow-dark",
+    title: "No drop shadows on dark",
+    category: "depth",
+    tier: "P2",
+    core: false,
+    checkable: true,
     description:
-      "A permanent spinner on an idle surface reads as broken and trains people to ignore real loading states. Reserve indefinite spinners for genuine in-progress work; for visual interest use a subtle static treatment.",
+      "✗ `box-shadow` for elevation on dark surfaces (invisible/muddy).\n✓ Depth via a lighter surface + translucent border on dark.",
+    builtin: true,
+  },
+  {
+    id: "de-shadow-over-border",
+    title: "Shadow beats heavy border",
+    category: "depth",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Thick borders to separate cards.\n✓ A subtle multi-layer shadow (or a hairline) reads cleaner than a heavy border.",
+    builtin: true,
+  },
+  {
+    id: "de-nested-brightness",
+    title: "Gentle nesting steps",
+    category: "depth",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Big brightness jumps between nested containers.\n✓ ≤12% brightness step (dark) / ≤7% (light) per nesting level.",
+    builtin: true,
+  },
+  {
+    id: "de-single-elevation-system",
+    title: "One elevation scale",
+    category: "depth",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Random shadow values per element.\n✓ A fixed elevation scale (sm/md/lg); pick a level, don't invent.",
+    builtin: true,
+  },
+  {
+    id: "de-image-outline",
+    title: "Hairline edge on images",
+    category: "depth",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Images floating with no edge definition.\n✓ `1px rgba(0,0,0,0.1)` inset/outline to seat them on the surface.",
+    builtin: true,
+  },
+  {
+    id: "de-one-treatment",
+    title: "One depth treatment per element",
+    category: "depth",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Shadow + border + gradient + glow stacked on one element.\n✓ Choose one depth treatment.",
+    builtin: true,
+  },
+  // ─── Motion (15) ─────────────────────────────────────────
+  {
+    id: "mo-gpu-only-props",
+    title: "Animate only compositor props",
+    category: "motion",
+    tier: "P0",
+    core: true,
+    checkable: true,
+    description:
+      "✗ Animating `width`/`height`/`top`/`left`/`margin` (layout thrash).\n✓ Only `transform` / `opacity` / `filter` / `clip-path`.",
     builtin: true,
   },
   {
     id: "mo-honor-reduced-motion",
     title: "Honor reduced motion",
     category: "motion",
+    tier: "P0",
+    core: true,
+    checkable: true,
     description:
-      "Parallax, slide-ins, and autoplay motion are uncomfortable or painful for some people. Honor the reduced-motion preference: keep essential feedback and offer a still or quick cross-fade fallback for the rest.",
+      "✗ Transforms/parallax with no reduced-motion path.\n✓ `@media (prefers-reduced-motion: reduce)` strips axis motion; keep opacity/color crossfades.",
     builtin: true,
   },
   {
-    id: "mo-quick-subtle-timing",
-    title: "Quick, subtle timing",
+    id: "mo-no-transition-all",
+    title: "Never `transition: all`",
     category: "motion",
-    description:
-      "Slow, bouncy default transitions make an interface feel sluggish. Keep UI motion short (around 150-250ms) with a consistent ease-out curve so it feels responsive rather than theatrical.",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description: "✗ `transition: all`.\n✓ Name the exact properties (`transform`, `opacity`).",
     builtin: true,
   },
   {
-    id: "mo-restrained-entrances",
-    title: "Restrained entrances",
+    id: "mo-duration-by-type",
+    title: "Duration by interaction type",
     category: "motion",
+    tier: "P1",
+    core: false,
+    checkable: true,
     description:
-      "Animating everything on load creates a distracting cascade. Animate the entrance of genuinely new content only, and use a light stagger just where it helps reveal reading order.",
+      "✗ One long duration on everything.\n✓ 50–100ms instant · 150ms default · 200–300ms entering · 300–500ms cross-screen.",
     builtin: true,
   },
-  // ─── Imagery ───────────────────────────────────────────────────────
   {
-    id: "im-preserve-aspect-ratio",
-    title: "Preserve aspect ratio",
+    id: "mo-micro-under-500",
+    title: "Microinteractions <500ms",
+    category: "motion",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ >500ms on hover/press/toggle/validation.\n✓ Keep non-navigation motion <500ms; frequent (seen 50×/session) ≤200ms.",
+    builtin: true,
+  },
+  {
+    id: "mo-ease-out-enter",
+    title: "Ease-out in, accelerate out",
+    category: "motion",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ `linear`/`ease-in` on entrances; exit slower than enter.\n✓ Ease-out on enter, accelerate on exit, exit ≤ enter duration.",
+    builtin: true,
+  },
+  {
+    id: "mo-curve-vs-spring",
+    title: "Curve vs spring by property",
+    category: "motion",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ A timing curve on physical `scale`/position; a spring on opacity.\n✓ Curve for opacity/color; spring for position/scale/rotation/gesture.",
+    builtin: true,
+  },
+  {
+    id: "mo-m3-easing",
+    title: "Use the real M3 easing",
+    category: "motion",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      '✗ `cubic-bezier(0.4,0,0.2,1)` labeled "Material 3" (that\'s M2/legacy).\n✓ M3 standard `cubic-bezier(0.2,0,0,1)` — front-loaded, settles on target.',
+    builtin: true,
+  },
+  {
+    id: "mo-press-scale",
+    title: "Sane press scale",
+    category: "motion",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `scale(0.8)` on press (collapses).\n✓ 0.90–0.97; ~2px travel reads as a real press.",
+    builtin: true,
+  },
+  {
+    id: "mo-dialog-not-scale-zero",
+    title: "Dialogs don't grow from zero",
+    category: "motion",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Modal animating from `scale(0)`.\n✓ `scale(0.96)→1` + opacity; subtle, not a pop.",
+    builtin: true,
+  },
+  {
+    id: "mo-linear-only-loops",
+    title: "`linear` only for loops",
+    category: "motion",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `linear` timing on one-shot transitions.\n✓ `linear` only for spinners/continuous loops; eased everywhere else.",
+    builtin: true,
+  },
+  {
+    id: "mo-will-change-sparingly",
+    title: "`will-change` with restraint",
+    category: "motion",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `will-change: all` or on many idle elements.\n✓ Only on an element about to animate; remove after.",
+    builtin: true,
+  },
+  {
+    id: "mo-selective-reveal",
+    title: "Reveal sparingly on scroll",
+    category: "motion",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Universal fade-up on every section on scroll.\n✓ One restrained reveal where it earns attention; content visible by default.",
+    builtin: true,
+  },
+  {
+    id: "mo-no-endless-loop",
+    title: "No endless ambient motion",
+    category: "motion",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Infinite background loops; spinner forever.\n✓ Cap cycles; cancel on route change; pause control for motion >5s; spinner→progress at 60s.",
+    builtin: true,
+  },
+  {
+    id: "mo-css-spring",
+    title: "Spring feel without a framework",
+    category: "motion",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      '✗ "Springy" motion faked with a long ease (sluggish).\n✓ CSS `linear()` easing for real spring feel on a single property (~1.3kB, no JS).',
+    builtin: true,
+  },
+  // ─── Imagery (6) ─────────────────────────────────────────
+  {
+    id: "im-no-stock-cdn",
+    title: "No placeholder image CDNs",
     category: "imagery",
+    tier: "P1",
+    core: false,
+    checkable: true,
     description:
-      "Stretched or squashed images look amateur instantly. Preserve the original aspect ratio and use object-fit (cover or contain) to fit a frame — crop deliberately rather than distort.",
+      "✗ `unsplash.com` / `placehold.co` / `picsum.photos` / `placekitten.com`.\n✓ Real assets, or a labeled local placeholder.",
+    builtin: true,
+  },
+  {
+    id: "im-aspect-ratio",
+    title: "Reserve image space",
+    category: "imagery",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Images with no dimensions (layout shift on load).\n✓ Set `aspect-ratio` + `object-fit: cover`.",
+    builtin: true,
+  },
+  {
+    id: "im-no-distortion",
+    title: "Never distort images",
+    category: "imagery",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Stretching via mismatched `width`/`height`.\n✓ `object-fit: cover`; crop, don't squash.",
+    builtin: true,
+  },
+  {
+    id: "im-overlay-legible",
+    title: "Keep text on images legible",
+    category: "imagery",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Text laid directly over a busy photo.\n✓ A scrim, gradient, blur, or duotone behind the text.",
+    builtin: true,
+  },
+  {
+    id: "im-subtle-outline",
+    title: "Seat images on the surface",
+    category: "imagery",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Photos blending into the background edge.\n✓ `1px rgba(0,0,0,0.1)` outline to define the edge.",
     builtin: true,
   },
   {
     id: "im-consistent-treatment",
-    title: "Consistent image treatment",
+    title: "One image treatment",
     category: "imagery",
+    tier: "P2",
+    core: false,
+    checkable: false,
     description:
-      "A set of images with different ratios, corner radii, and color grades reads as a pile, not a system. Apply the same ratio, radius, and treatment across a group so it feels intentional.",
+      "✗ Mixed radii, ratios, and filters across images.\n✓ One consistent treatment (radius, ratio, filter) per surface.",
     builtin: true,
   },
+  // ─── Icons (4) ─────────────────────────────────────────
   {
-    id: "im-overlay-for-legibility",
-    title: "Overlay for text on images",
-    category: "imagery",
-    description:
-      "Text laid directly over a photo usually fails contrast somewhere in the image. Add a scrim, gradient, or tint behind the text so it stays readable across the whole image, light areas included.",
-    builtin: true,
-  },
-  {
-    id: "im-avoid-generic-stock",
-    title: "Avoid generic stock",
-    category: "imagery",
-    description:
-      "Generic, low-resolution stock photos cheapen a design. Prefer real, sharp, on-topic imagery — and when you don't have it, a clean illustration, pattern, or solid surface beats filler stock.",
-    builtin: true,
-  },
-  // ─── Icons ─────────────────────────────────────────────────────────
-  {
-    id: "ic-consistent-set-weight",
-    title: "Consistent icon set",
+    id: "ic-monoline-stroke",
+    title: "One monoline icon set",
     category: "icons",
+    tier: "P1",
+    core: false,
+    checkable: true,
     description:
-      "Mixing icon families, or filled and outline styles at random, looks careless. Use a single icon set with one consistent stroke weight so icons read as siblings.",
+      "✗ Mixed icon styles / heavy random weights.\n✓ One set, 1.6–1.8px stroke, on a 24px grid.",
     builtin: true,
   },
   {
-    id: "ic-size-align-to-text",
-    title: "Size & align icons to text",
+    id: "ic-currentcolor",
+    title: "Icons inherit color",
     category: "icons",
+    tier: "P2",
+    core: false,
+    checkable: true,
     description:
-      "Icons that don't match their label's size or baseline look bolted on. Size icons relative to adjacent text and align them optically to the text baseline or center.",
+      "✗ Hardcoded fills on icons.\n✓ `stroke`/`fill: currentColor` so they theme with text.",
     builtin: true,
   },
   {
-    id: "ic-icons-clarify-not-decorate",
+    id: "ic-clarify-not-decorate",
     title: "Icons clarify, not decorate",
     category: "icons",
+    tier: "P1",
+    core: false,
+    checkable: false,
     description:
-      "An icon on every line becomes noise and slows scanning. Use icons where they speed recognition, pair them with a label when the meaning is ambiguous, and drop them where text alone is clearer.",
+      "✗ An icon on every list item as decoration.\n✓ Icons only where they speed scanning; the text label stays.",
     builtin: true,
   },
-  // ─── Forms & controls ──────────────────────────────────────────────
   {
-    id: "fo-clear-input-affordance",
-    title: "Inputs look editable",
+    id: "ic-optical-size",
+    title: "Optically size and align",
+    category: "icons",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Icons mismatched to text size / off the baseline.\n✓ Size to the adjacent text; align optically to the cap height.",
+    builtin: true,
+  },
+  // ─── Forms (9) ─────────────────────────────────────────
+  {
+    id: "fo-label-every-input",
+    title: "Every input has a real label",
     category: "forms",
+    tier: "P0",
+    core: false,
+    checkable: true,
     description:
-      "Borderless, flat fields leave people unsure what's clickable. Give inputs a clear affordance — a visible border or filled background, enough internal padding, and an obvious focus state.",
+      "✗ Placeholder as the only label.\n✓ `<label for>` always; placeholder shows an example, not the name.",
     builtin: true,
   },
   {
-    id: "fo-label-above-or-clear",
-    title: "Keep a visible label",
+    id: "fo-error-wiring",
+    title: "Wire errors to the field",
     category: "forms",
+    tier: "P1",
+    core: false,
+    checkable: false,
     description:
-      "Placeholder-only fields lose their label the moment someone types and hurt accessibility. Keep a persistent visible label above or beside each field; use placeholder text only for format hints.",
+      '✗ Error text floating, unconnected to the input.\n✓ `aria-describedby` + `aria-invalid="true"` + `role="alert"` on the message.',
     builtin: true,
   },
   {
-    id: "fo-generous-touch-targets",
-    title: "Generous touch targets",
+    id: "fo-inline-validation",
+    title: "Validate inline, on blur",
     category: "forms",
+    tier: "P2",
+    core: false,
+    checkable: false,
     description:
-      "Tiny, tightly-packed controls are hard to hit, especially on touch. Give interactive targets at least ~44px of hit area and enough space between them to avoid mis-taps.",
+      "✗ Errors only on submit, summarized at the top.\n✓ Validate on blur; show the error next to the field.",
     builtin: true,
   },
   {
-    id: "fo-align-fields",
-    title: "Align form fields",
+    id: "fo-error-actionable",
+    title: "Actionable field errors",
     category: "forms",
-    description:
-      "Fields of random widths and misaligned labels make a form feel chaotic. Align labels and inputs to a shared column and size each field to the length of content it expects.",
-    builtin: true,
-  },
-  // ─── States & interaction ──────────────────────────────────────────
-  {
-    id: "st-visible-focus",
-    title: "Visible focus state",
-    category: "states",
-    description:
-      "Removing the focus outline strands keyboard users with no idea where they are. Keep a clear, styled focus ring on every interactive element — never remove the outline without a visible replacement.",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description: '✗ "Invalid input."\n✓ "Email must include @ and a domain."',
     builtin: true,
   },
   {
-    id: "st-interactive-feedback",
-    title: "Interactive feedback",
-    category: "states",
+    id: "fo-no-redundant-entry",
+    title: "Don't re-ask known data",
+    category: "forms",
+    tier: "P2",
+    core: false,
+    checkable: false,
     description:
-      "Controls that don't react feel dead or broken. Give every clickable element visible hover, active, and pressed feedback so it confirms it can be used and that the tap registered.",
+      "✗ Re-asking data the user already gave in the same flow (WCAG 3.3.7).\n✓ Carry it forward or offer a select; autofill alone doesn't satisfy it.",
     builtin: true,
   },
+  {
+    id: "fo-correct-input-types",
+    title: "Correct input types",
+    category: "forms",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      '✗ `type="text"` for email/number/tel/date.\n✓ Right `type` + `inputmode` + `autocomplete`.',
+    builtin: true,
+  },
+  {
+    id: "fo-no-reset-button",
+    title: "No destructive reset",
+    category: "forms",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      '✗ A "Reset"/"Clear" button beside Submit.\n✓ Drop it; accidental data loss outweighs the rare use.',
+    builtin: true,
+  },
+  {
+    id: "fo-submit-state",
+    title: "Guard the submit",
+    category: "forms",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Submit clickable repeatedly during request.\n✓ Disable + loading state on submit; prevent double-send.",
+    builtin: true,
+  },
+  {
+    id: "fo-mark-optional",
+    title: "Mark optional, not asterisk soup",
+    category: "forms",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      '✗ Asterisks on most fields.\n✓ Assume required; label the few optional ones "(optional)".',
+    builtin: true,
+  },
+  // ─── States (10) ─────────────────────────────────────────
   {
     id: "st-design-empty-error",
-    title: "Design empty & error states",
+    title: "Design every state, not just happy path",
     category: "states",
+    tier: "P1",
+    core: true,
+    checkable: false,
     description:
-      "Shipping only the happy path leaves empty, loading, and error states looking broken. Design these states deliberately — a helpful empty state, a clear error, a calm loading placeholder.",
+      "✗ Only the populated, success view.\n✓ Design empty, loading, error, and success states too.",
     builtin: true,
   },
   {
-    id: "st-disabled-reads-disabled",
-    title: "Disabled reads as disabled",
+    id: "st-eight-states",
+    title: "Cover interactive states",
     category: "states",
+    tier: "P1",
+    core: false,
+    checkable: false,
     description:
-      "A disabled control that looks active invites dead clicks, but one that vanishes confuses. Lower its contrast so it clearly reads as unavailable while staying legible and in place.",
+      "✗ Components with only a default state.\n✓ default / hover / active / focus / disabled / loading / error / selected as needed.",
     builtin: true,
   },
   {
-    id: "st-selected-distinct-from-hover",
-    title: "Selected distinct from hover",
+    id: "st-loading-pattern",
+    title: "Right loading pattern",
     category: "states",
+    tier: "P2",
+    core: false,
+    checkable: false,
     description:
-      "When the selected state looks like hover, people lose track of where they are. Make the current/selected state clearly distinct from transient hover — a different fill or marker, not just a shade.",
+      "✗ Blank screen or layout jump while loading.\n✓ Skeleton when layout is known; spinner when not; escalate spinner→progress at 60s.",
+    builtin: true,
+  },
+  {
+    id: "st-optimistic-ui",
+    title: "Optimistic, then confirm",
+    category: "states",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Blocking the UI until the server responds.\n✓ Update optimistically; motion confirms a change, never performs it.",
+    builtin: true,
+  },
+  {
+    id: "st-selected-not-hover",
+    title: "Selected ≠ hover",
+    category: "states",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Selected state looks like transient hover.\n✓ Selected = persistent bg-tint + weight; hover = lighter, transient.",
+    builtin: true,
+  },
+  {
+    id: "st-active-no-state-lines",
+    title: "Active by fill, not bars",
+    category: "states",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Colored left/top bar to mark active.\n✓ Active = bg-tint + weight + (optional) icon; no decorative state line.",
+    builtin: true,
+  },
+  {
+    id: "st-focus-visible",
+    title: "Visible keyboard focus",
+    category: "states",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `outline: none` with no replacement.\n✓ `:focus-visible` ring, ≥3:1 contrast, ≥2px.",
+    builtin: true,
+  },
+  {
+    id: "st-disabled-legible",
+    title: "Disabled stays readable",
+    category: "states",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Disabled = low opacity only (unreadable, no semantics).\n✓ Reduced emphasis + `not-allowed` cursor + `aria-disabled`; keep it legible.",
+    builtin: true,
+  },
+  {
+    id: "st-error-actionable",
+    title: "Errors say what to do",
+    category: "states",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description: '✗ "An error occurred."\n✓ What happened + how to fix + a way forward.',
+    builtin: true,
+  },
+  {
+    id: "st-empty-onboards",
+    title: "Empty state onboards",
+    category: "states",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description: '✗ "No data" dead end.\n✓ Explain what goes here + a primary action to fill it.',
+    builtin: true,
+  },
+  // ─── Accessibility (10) ─────────────────────────────────────────
+  {
+    id: "a11y-contrast-aa",
+    title: "Meet WCAG 2.2 AA contrast",
+    category: "a11y",
+    tier: "P0",
+    core: true,
+    checkable: true,
+    description:
+      "✗ Body text below 4.5:1.\n✓ 4.5:1 body · 3:1 large (≥18pt/14pt bold) & non-text · inclusive (exactly 4.5:1 passes).",
+    builtin: true,
+  },
+  {
+    id: "a11y-focus-visible",
+    title: "Keep focus visible",
+    category: "a11y",
+    tier: "P0",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `outline: none` killing keyboard focus.\n✓ `:focus-visible` indicator, ≥3:1, ≥2px perimeter.",
+    builtin: true,
+  },
+  {
+    id: "a11y-keyboard",
+    title: "Fully keyboard-operable",
+    category: "a11y",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Click-only handlers; positive `tabindex` reordering.\n✓ Everything reachable/operable by keyboard in DOM order; no `tabindex>0`.",
+    builtin: true,
+  },
+  {
+    id: "a11y-native-elements",
+    title: "Native elements first",
+    category: "a11y",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      '✗ `<div role="button">` / bare `<a>` with click handler.\n✓ `<button>` for actions, `<a href>` for navigation; ARIA only when nothing native fits.',
+    builtin: true,
+  },
+  {
+    id: "a11y-alt-text",
+    title: "Text alternatives",
+    category: "a11y",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      '✗ `<img>` without `alt`; icon-only button with no label.\n✓ `alt` for content, `alt=""` for decorative, `aria-label` on icon buttons.',
+    builtin: true,
+  },
+  {
+    id: "a11y-html-lang",
+    title: "Declare the language",
+    category: "a11y",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      '✗ `<html>` with no `lang`.\n✓ `<html lang="…">`; inner `lang` on sub-tree switches.',
+    builtin: true,
+  },
+  {
+    id: "a11y-heading-order",
+    title: "Sane heading order",
+    category: "a11y",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Skipped levels (`h1`→`h3`); heading level chosen by size.\n✓ One `<h1>`, no skips; style the level you mean independently of size.",
+    builtin: true,
+  },
+  {
+    id: "a11y-landmarks",
+    title: "Use landmarks",
+    category: "a11y",
+    tier: "P2",
+    core: false,
+    checkable: true,
+    description:
+      "✗ A page built from `<div>`s only.\n✓ `<header>` `<nav>` `<main>` `<aside>` `<footer>`.",
+    builtin: true,
+  },
+  {
+    id: "a11y-no-invent-aria",
+    title: "Never invent ARIA",
+    category: "a11y",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Guessed `aria-*` (ARIA pages average more errors, not fewer).\n✓ Native element → restyle native → APG pattern verbatim; last resort only.",
+    builtin: true,
+  },
+  {
+    id: "a11y-target-size",
+    title: "Adequate target size",
+    category: "a11y",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Interactive targets below 24×24px.\n✓ ≥24×24 (AA floor); 44×44 is the craft commitment.",
+    builtin: true,
+  },
+  // ─── Copy (6) ─────────────────────────────────────────
+  {
+    id: "cp-no-generic-copy",
+    title: "No generic marketing copy",
+    category: "copy",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      '✗ "We help teams collaborate", "Welcome", "Get started".\n✓ Specific to the product and audience; say what it actually does.',
+    builtin: true,
+  },
+  {
+    id: "cp-no-fake-metrics",
+    title: "No invented metrics",
+    category: "copy",
+    tier: "P0",
+    core: false,
+    checkable: true,
+    description:
+      '✗ "10× faster", "99.9% uptime", "3× more productive".\n✓ A real source, or a clearly labeled placeholder.',
+    builtin: true,
+  },
+  {
+    id: "cp-no-em-dash-tell",
+    title: "Cut the AI punctuation tells",
+    category: "copy",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ Em-dashes (—), `--`, and `...` peppered through copy.\n✓ Commas/periods; a real ellipsis `…` only when truly needed.",
+    builtin: true,
+  },
+  {
+    id: "cp-actionable-buttons",
+    title: "Verbs on buttons",
+    category: "copy",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      '✗ "Submit", "Get started", "Click here".\n✓ Verb + object: "Start tracking", "Create project".',
+    builtin: true,
+  },
+  {
+    id: "cp-sentence-case",
+    title: "Sentence case in UI",
+    category: "copy",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description: "✗ Title Case across UI labels.\n✓ Sentence case; reserve caps for tiny labels.",
+    builtin: true,
+  },
+  {
+    id: "cp-no-filler",
+    title: "No filler copy",
+    category: "copy",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      '✗ `lorem ipsum`, "feature one/two/three", "sample content".\n✓ Real copy, or solve the empty section with composition.',
+    builtin: true,
+  },
+  // ─── i18n & RTL (4) ─────────────────────────────────────────
+  {
+    id: "i18n-logical-properties",
+    title: "Logical, not physical, properties",
+    category: "i18n-rtl",
+    tier: "P1",
+    core: false,
+    checkable: true,
+    description:
+      "✗ `margin-left/right`, `left`/`right`, `text-align: left`.\n✓ `margin-inline`, `inset-inline`, `text-align: start` so RTL mirrors for free.",
+    builtin: true,
+  },
+  {
+    id: "i18n-rtl-aware",
+    title: "Respect direction",
+    category: "i18n-rtl",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      '✗ Layout assuming LTR only.\n✓ Honor `dir="rtl"`; mirror layout — but not directional icons that map to physical motion.',
+    builtin: true,
+  },
+  {
+    id: "i18n-locale-format",
+    title: "Localize numbers and dates",
+    category: "i18n-rtl",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Hardcoded date/number/currency formats.\n✓ `Intl.DateTimeFormat` / `Intl.NumberFormat`.",
+    builtin: true,
+  },
+  {
+    id: "i18n-room-to-expand",
+    title: "Leave room for translation",
+    category: "i18n-rtl",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Tight, fixed-width labels; text baked into images.\n✓ Real (translatable) text; allow ~30% expansion without breaking layout.",
+    builtin: true,
+  },
+  // ─── Laws of UX (6) ─────────────────────────────────────────
+  {
+    id: "lux-fitts",
+    title: "Size and place by frequency (Fitts)",
+    category: "laws-of-ux",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Tiny primary actions far from where the user is.\n✓ Bigger, closer targets for frequent/important actions.",
+    builtin: true,
+  },
+  {
+    id: "lux-hick",
+    title: "Reduce choices (Hick)",
+    category: "laws-of-ux",
+    tier: "P1",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Twenty equal-weight options at once.\n✓ Group, prioritize, and progressively disclose.",
+    builtin: true,
+  },
+  {
+    id: "lux-miller",
+    title: "Chunk into groups (Miller)",
+    category: "laws-of-ux",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description: "✗ A flat list of 9+ nav items.\n✓ Chunk into 5±2 groups.",
+    builtin: true,
+  },
+  {
+    id: "lux-jakob",
+    title: "Match conventions (Jakob)",
+    category: "laws-of-ux",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Reinventing cart, search, nav, or form patterns.\n✓ Use familiar patterns; spend novelty in the distinctive 20%.",
+    builtin: true,
+  },
+  {
+    id: "lux-proximity",
+    title: "Group by proximity (Gestalt)",
+    category: "laws-of-ux",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Uniform spacing with no grouping.\n✓ Related items close; clear gaps between groups.",
+    builtin: true,
+  },
+  {
+    id: "lux-aesthetic-usability",
+    title: "Polish helps, doesn't replace",
+    category: "laws-of-ux",
+    tier: "P2",
+    core: false,
+    checkable: false,
+    description:
+      "✗ Relying on looks to mask broken flows.\n✓ Polish raises perceived usability — but fix the real usability too.",
     builtin: true,
   },
 ]);
