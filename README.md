@@ -22,10 +22,6 @@ direção e taste mais operáveis dentro do design assistido por IA. Uma
 alternativa open-source ao Claude Design e outras aplicações fechadas de design
 assistido por IA.
 
-<p align="center">
-  <img src="docs/readme/assets/hero.png" alt="Design Factory em ação — chat com direção à esquerda, artefato gerado à direita" width="100%">
-</p>
-
 ---
 
 ## O que já entra nessa versão

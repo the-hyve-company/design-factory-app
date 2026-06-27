@@ -21,10 +21,6 @@ An open experiment offering a local workspace that makes context, direction,
 and taste more operable inside AI-assisted design. An open-source alternative
 to Claude Design and other closed AI-assisted design applications.
 
-<p align="center">
-  <img src="docs/readme/assets/hero.png" alt="Design Factory in action — direction chat on the left, generated artifact on the right" width="100%">
-</p>
-
 ---
 
 ## What ships in this version
