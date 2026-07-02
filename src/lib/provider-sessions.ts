@@ -43,11 +43,48 @@ import {
 // another process (e.g. VS Code) that doesn't speak HTTP. No import cycle:
 // claude-bridge does not import provider-sessions.
 import { BRIDGE_URL } from "@/lib/claude-bridge";
+import { getProvider } from "@/providers/registry";
 
 export const EMPTY_PROVIDER_SESSIONS: ProviderSessions = {
   version: 1,
   sessions: {},
 };
+
+/**
+ * Capability-gated resume lookup — audit WS3 `resume-parity-all-capable`.
+ *
+ * Warm-resume used to be Claude-only in practice: every EditorScreen
+ * call-site hardcoded `selectedProvider === "claude" ? claudeSessionId :
+ * null` even though codex and gemini declare `supportsResume`. This
+ * helper is the single decision point:
+ *
+ *   1. the provider must declare `capabilities.supportsResume === true`
+ *      (kimi's `-r` exists upstream but is declared false until the
+ *      pipeline wiring is validated — the capability matrix is the gate,
+ *      not the CLI's man page);
+ *   2. the sessionId must come from THAT provider's own entry in the
+ *      per-provider map (`.df/provider-sessions.json`) — never from
+ *      another provider's session (a codex UUID passed to
+ *      `claude --resume` just errors);
+ *   3. `legacyClaudeSessionId` covers the historical claude-only column
+ *      (`projects.session_id`) as a claude-scoped fallback.
+ *
+ * Returns null for cold start (provider stateless, or no session yet).
+ */
+export function resumeSessionIdFor(
+  provider: ProviderIdValue,
+  sessions: ProviderSessions,
+  legacyClaudeSessionId?: string | null,
+): string | null {
+  const adapter = getProvider(provider);
+  if (adapter?.capabilities.supportsResume !== true) return null;
+  const own = sessions.sessions[provider]?.sessionId;
+  if (typeof own === "string" && own.length > 0) return own;
+  if (provider === "claude" && legacyClaudeSessionId && legacyClaudeSessionId.length > 0) {
+    return legacyClaudeSessionId;
+  }
+  return null;
+}
 
 /**
  * Read `.df/provider-sessions.json`. Tolerant of older files written by

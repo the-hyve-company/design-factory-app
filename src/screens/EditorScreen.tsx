@@ -76,6 +76,7 @@ import { migrateLegacyChatMessages } from "@/lib/migrations";
 import {
   readProviderSessions,
   upsertProviderSession,
+  resumeSessionIdFor,
   EMPTY_PROVIDER_SESSIONS,
 } from "@/lib/provider-sessions";
 import type { ProviderSessions } from "@/lib/schemas";
@@ -1062,14 +1063,22 @@ export function EditorScreen({
   // Provider Handoff Layer v1: per-provider session map persisted to
   // `.df/provider-sessions.json`. Each entry has its own sessionId +
   // artifact_version_seen. The legacy `claudeSessionId` above is the
-  // claude-only mirror — kept so existing call sites work unchanged.
-  // When a v2 refactor migrates the chat to the handoff builder we drop
-  // the mirror and read straight from this map.
-  // providerSessions value is not currently read in JSX (the Fresh
-  // button was the sole reader). The setter is still wired so the map
-  // stays in sync with disk for future surfaces (Settings panel,
-  // command palette). Underscore prefix silences the unused-var lint.
-  const [, setProviderSessions] = useState<ProviderSessions>(EMPTY_PROVIDER_SESSIONS);
+  // claude-only mirror of the historical `projects.session_id` column.
+  // Audit WS3 `resume-parity-all-capable`: the send paths now read this
+  // map through `resumeSessionIdFor` (capability-gated, per-provider)
+  // instead of the old hardcoded `selectedProvider === "claude" ?
+  // claudeSessionId : null` — codex/gemini declare supportsResume and
+  // get their own warm resume; each provider only ever receives a
+  // session id IT emitted.
+  const [providerSessions, setProviderSessions] =
+    useState<ProviderSessions>(EMPTY_PROVIDER_SESSIONS);
+  // Session id forwarded to the pipeline for the CURRENT provider. Null
+  // for cold start or resume-incapable providers (the capability matrix
+  // is the gate — see resumeSessionIdFor).
+  const resumeSessionId = useMemo(
+    () => resumeSessionIdFor(selectedProvider, providerSessions, claudeSessionId),
+    [selectedProvider, providerSessions, claudeSessionId],
+  );
   // "Run claude login" banner — set by onAuthRequired. Dismiss on next
   // successful stream init.
   const [authRequiredBanner, setAuthRequiredBanner] = useState<string | null>(null);
@@ -1522,7 +1531,24 @@ export function EditorScreen({
   const projectSlugRef = useRef<string | null>(null);
   const persistProviderSession = useCallback(
     (sid: string) => {
-      setClaudeSessionId(sid);
+      // Legacy claude-only mirror: only claude sessions feed it — a codex
+      // UUID stored here would ride into `claude --resume` and error
+      // (audit WS3 resume-parity-all-capable).
+      if (selectedProvider === "claude") setClaudeSessionId(sid);
+      // Optimistic in-memory update so the NEXT turn resumes even if the
+      // disk write below is still in flight (or fails).
+      setProviderSessions((prev) => ({
+        ...prev,
+        sessions: {
+          ...prev.sessions,
+          [selectedProvider]: {
+            sessionId: sid,
+            created_at: prev.sessions[selectedProvider]?.created_at ?? Date.now(),
+            last_used_at: Date.now(),
+            artifact_version_seen: prev.sessions[selectedProvider]?.artifact_version_seen ?? 0,
+          },
+        },
+      }));
       const slug = projectSlugRef.current;
       if (!slug) return;
       void upsertProviderSession(slug, selectedProvider, { sessionId: sid })
@@ -4014,14 +4040,19 @@ export function EditorScreen({
         cwd: workspaceRoot ?? projectPath ?? undefined,
         currentHtml: iframeHtml ?? undefined,
         model: selectedModel,
-        sessionId: selectedProvider === "claude" ? claudeSessionId : null,
+        sessionId: resumeSessionId,
       };
       const verbSideChannels = {
         onSession: (sid: string) => {
           persistProviderSession(sid);
           setAuthRequiredBanner(null);
           if (projectId) {
-            db.setProjectSession(projectId, sid).catch(() => {});
+            // Legacy claude-only column (projects.session_id) — writing a
+            // codex/gemini id here would seed claudeSessionId on the next
+            // mount and break `claude --resume` (WS3 resume parity).
+            if (selectedProvider === "claude") {
+              db.setProjectSession(projectId, sid).catch(() => {});
+            }
             db.logSession(projectId, sid, workspaceRoot ?? undefined).catch(() => {});
           }
         },
@@ -4342,7 +4373,7 @@ export function EditorScreen({
                 markdown: dsMarkdown ?? undefined,
               },
               model: selectedModel,
-              sessionId: selectedProvider === "claude" ? claudeSessionId : null,
+              sessionId: resumeSessionId,
               history: conversationHistory,
               ...(priorCraftFindings.length > 0 ? { priorCraftFindings } : {}),
             };
@@ -4389,7 +4420,11 @@ export function EditorScreen({
               persistProviderSession(sid);
               setAuthRequiredBanner(null);
               if (projectId) {
-                db.setProjectSession(projectId, sid).catch(() => {});
+                // Legacy claude-only column — see the sibling onSession
+                // handlers (WS3 resume parity).
+                if (selectedProvider === "claude") {
+                  db.setProjectSession(projectId, sid).catch(() => {});
+                }
                 db.logSession(projectId, sid, workspaceRoot ?? undefined).catch(() => {});
               }
             },
@@ -6267,7 +6302,7 @@ export function EditorScreen({
         currentHtml: iframeHtml,
         model: selectedModel,
         providerId: selectedProvider,
-        sessionId: selectedProvider === "claude" ? claudeSessionId : null,
+        sessionId: resumeSessionId,
       };
 
       // Fix (Bug 2, regression report): "qnd usei comments e
@@ -6355,7 +6390,12 @@ export function EditorScreen({
           persistProviderSession(sid);
           setAuthRequiredBanner(null);
           if (projectId) {
-            db.setProjectSession(projectId, sid).catch(() => {});
+            // Legacy claude-only column (projects.session_id) — writing a
+            // codex/gemini id here would seed claudeSessionId on the next
+            // mount and break `claude --resume` (WS3 resume parity).
+            if (selectedProvider === "claude") {
+              db.setProjectSession(projectId, sid).catch(() => {});
+            }
             db.logSession(projectId, sid, workspaceRoot ?? undefined).catch(() => {});
           }
         },
@@ -6378,7 +6418,7 @@ export function EditorScreen({
       workspaceRoot,
       selectedModel,
       selectedProvider,
-      claudeSessionId,
+      resumeSessionId,
       persistProviderSession,
       setIframeContent,
     ],

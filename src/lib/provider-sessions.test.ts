@@ -12,6 +12,7 @@ import {
   writeProviderSessions,
   upsertProviderSession,
   clearProviderSession,
+  resumeSessionIdFor,
 } from "@/lib/provider-sessions";
 
 let lastWritten: unknown = null;
@@ -127,5 +128,82 @@ describe("clearProviderSession", () => {
   it("is a no-op when the provider has no entry", async () => {
     const r = await clearProviderSession("smoke", "claude");
     expect(r).toEqual(EMPTY_PROVIDER_SESSIONS);
+  });
+});
+
+// ─── resumeSessionIdFor — audit WS3 resume-parity-all-capable ─────────────
+
+describe("resumeSessionIdFor (capability-gated resume)", () => {
+  function sessionsWith(entries: Record<string, string>): ProviderSessions {
+    const now = Date.now();
+    const sessions: ProviderSessions["sessions"] = {};
+    for (const [provider, sessionId] of Object.entries(entries)) {
+      sessions[provider as keyof ProviderSessions["sessions"]] = {
+        sessionId,
+        created_at: now,
+        last_used_at: now,
+        artifact_version_seen: 0,
+      };
+    }
+    return { version: 1, sessions };
+  }
+
+  it("returns the provider's own session for every resume-capable provider", () => {
+    const sessions = sessionsWith({
+      claude: "sess-claude",
+      codex: "sess-codex",
+      gemini: "sess-gemini",
+    });
+    expect(resumeSessionIdFor("claude", sessions)).toBe("sess-claude");
+    expect(resumeSessionIdFor("codex", sessions)).toBe("sess-codex");
+    expect(resumeSessionIdFor("gemini", sessions)).toBe("sess-gemini");
+  });
+
+  it("returns null for providers that don't declare supportsResume — even with a stored session", () => {
+    const sessions = sessionsWith({
+      kimi: "sess-kimi",
+      opencode: "sess-oc",
+      anthropic: "sess-api",
+      openai: "sess-oai",
+      "gemini-api": "sess-gapi",
+      openrouter: "sess-or",
+      ollama: "sess-ol",
+    });
+    for (const provider of [
+      "kimi",
+      "opencode",
+      "anthropic",
+      "openai",
+      "gemini-api",
+      "openrouter",
+      "ollama",
+    ] as const) {
+      expect(resumeSessionIdFor(provider, sessions), provider).toBeNull();
+    }
+  });
+
+  it("never leaks another provider's session id", () => {
+    // A codex UUID must not ride into `claude --resume` (and vice versa).
+    const sessions = sessionsWith({ codex: "codex-uuid-1" });
+    expect(resumeSessionIdFor("claude", sessions)).toBeNull();
+    expect(resumeSessionIdFor("gemini", sessions)).toBeNull();
+    expect(resumeSessionIdFor("codex", sessions)).toBe("codex-uuid-1");
+  });
+
+  it("falls back to the legacy claude-only column for claude ONLY", () => {
+    const empty = EMPTY_PROVIDER_SESSIONS;
+    expect(resumeSessionIdFor("claude", empty, "legacy-claude-id")).toBe("legacy-claude-id");
+    expect(resumeSessionIdFor("codex", empty, "legacy-claude-id")).toBeNull();
+    expect(resumeSessionIdFor("gemini", empty, "legacy-claude-id")).toBeNull();
+  });
+
+  it("prefers the per-provider map over the legacy column", () => {
+    const sessions = sessionsWith({ claude: "map-wins" });
+    expect(resumeSessionIdFor("claude", sessions, "legacy-loses")).toBe("map-wins");
+  });
+
+  it("returns null on cold start (no sessions anywhere)", () => {
+    expect(resumeSessionIdFor("claude", EMPTY_PROVIDER_SESSIONS)).toBeNull();
+    expect(resumeSessionIdFor("codex", EMPTY_PROVIDER_SESSIONS, null)).toBeNull();
   });
 });
