@@ -35,7 +35,7 @@ import { buildCraftReminderBlock } from "./craft-feedback";
 import { getLang } from "@/i18n/index";
 import type { Lang } from "@/i18n/index";
 import type { CraftFinding } from "./craft-checks";
-import type { ProviderId } from "@/providers/types";
+import type { ProviderCapabilities, ProviderId } from "@/providers/types";
 
 type DialOverrides = Partial<Record<DialKey, Partial<DialDirection>>>;
 
@@ -345,6 +345,54 @@ export function artifactContractForCtx(ctx: ProjectContext, opts?: { isEdit?: bo
   });
 }
 
+// ─── Current-file gate (audit WS3 `currentfile-block-gate-by-class`) ──────
+
+/**
+ * Should the composer inline the WHOLE current HTML into the system
+ * prompt? Before this gate, every provider got the full file every edit
+ * turn, which:
+ *   · penalized tool-channel providers (Claude/Codex/Kimi/Opencode) —
+ *     they have a native Read tool and the absolute PROJECT_PATH
+ *     binding; inlining duplicates a file they should read from disk
+ *     (and pushes big documents into every turn's token budget);
+ *   · penalized warm resumes — a resumed session's transcript already
+ *     contains the file (the model emitted it last turn).
+ *
+ * Inline only for the artifact channel on a COLD turn:
+ *   fileWrite === "artifact" && !(supportsResume && sessionId present)
+ * Tool providers get a pointer block instead (read from disk); resumed
+ * artifact providers (gemini warm) get nothing — the transcript has it.
+ * Artifact providers with supportsResume but NO live session (gemini
+ * cold start) still get the inline — the audit's coarser
+ * `!supportsResume` condition would starve gemini cold edits.
+ */
+export function shouldInlineCurrentFile(
+  caps: Pick<ProviderCapabilities, "fileWrite" | "supportsResume"> | undefined,
+  sessionId: string | null | undefined,
+): boolean {
+  const fileWrite = caps?.fileWrite ?? "artifact";
+  if (fileWrite === "tool") return false;
+  if (caps?.supportsResume === true && typeof sessionId === "string" && sessionId.length > 0) {
+    return false;
+  }
+  return true;
+}
+
+/** Pointer block tool-channel providers receive instead of the inline —
+ *  the file lives on disk and they have a native Read tool. */
+function currentFilePointerBlock(primaryFile: string): string {
+  return [
+    `## Current ${primaryFile} — on disk, not inlined`,
+    "",
+    "The user is refining an EXISTING file. Before editing:",
+    `- Read PRIMARY_FILE (${primaryFile}) at the absolute PROJECT_PATH`,
+    "  binding above using your native Read tool.",
+    "- Apply the surgical-edit-first strategy from the output contract.",
+    "- Do NOT regenerate from scratch — the current file is the source",
+    "  of truth for everything the user did not ask you to change.",
+  ].join("\n");
+}
+
 // ─── The composer ─────────────────────────────────────────────────────────
 
 export type SystemPromptKind = "generate" | "verb";
@@ -410,6 +458,9 @@ export function composeSystemBlocks(ctx: ProjectContext, opts: SystemPromptOptio
   }
 
   if (opts.kind === "generate") {
+    // Provider resolved once — feeds the current-file gate (5) and the
+    // artifact contract (7).
+    const provider = ctx.providerId ? getProvider(ctx.providerId) : undefined;
     // 4. Direction extras (editable core + canonical+ full block).
     if (opts.preambleExtras) {
       blocks.push({
@@ -418,13 +469,26 @@ export function composeSystemBlocks(ctx: ProjectContext, opts: SystemPromptOptio
         content: opts.preambleExtras.trim(),
       });
     }
-    // 5. Current-file block (refine turns).
+    // 5. Current-file block (refine turns) — gated by provider class
+    //    (audit WS3 `currentfile-block-gate-by-class`):
+    //    · artifact channel, cold turn → inline the whole file (only
+    //      way the model sees it);
+    //    · tool channel → pointer block (native Read from disk);
+    //    · artifact channel, warm resume → nothing (transcript has it).
     if (ctx.currentHtml) {
-      blocks.push({
-        id: "current-file",
-        label: `Current ${ctx.primaryFile} content`,
-        content: `## Current ${ctx.primaryFile} content\n\n\`\`\`html\n${ctx.currentHtml}\n\`\`\``,
-      });
+      if (shouldInlineCurrentFile(provider?.capabilities, ctx.sessionId)) {
+        blocks.push({
+          id: "current-file",
+          label: `Current ${ctx.primaryFile} content`,
+          content: `## Current ${ctx.primaryFile} content\n\n\`\`\`html\n${ctx.currentHtml}\n\`\`\``,
+        });
+      } else if (provider?.capabilities.fileWrite === "tool") {
+        blocks.push({
+          id: "current-file-pointer",
+          label: `Current ${ctx.primaryFile} — read from disk`,
+          content: currentFilePointerBlock(ctx.primaryFile),
+        });
+      }
     }
     // 6. Craft floor — fresh writes only. Refines skip it: the file's
     //    markers already exist and the contract is a fresh-write
@@ -453,7 +517,6 @@ export function composeSystemBlocks(ctx: ProjectContext, opts: SystemPromptOptio
     //    Identifier comes from the shared toRepoRelativeArtifactPath
     //    helper (audit WS3 `artifact-identifier-parity`) — same scheme
     //    as the verb path's artifactContractForCtx.
-    const provider = ctx.providerId ? getProvider(ctx.providerId) : undefined;
     const fileWrite = provider?.capabilities.fileWrite ?? "artifact";
     const filePath = toRepoRelativeArtifactPath(ctx.projectPath, ctx.primaryFile);
     const contract = buildArtifactContractBlock({

@@ -33,10 +33,7 @@ import {
   type ProjectContext,
   type SystemPromptOptions,
 } from "@/runtime/prompt-composer";
-import {
-  buildArtifactContractBlock,
-  toRepoRelativeArtifactPath,
-} from "@/runtime/output-contract";
+import { buildArtifactContractBlock, toRepoRelativeArtifactPath } from "@/runtime/output-contract";
 import {
   dispatchParseResult,
   type ProcessArtifactsOptions,
@@ -276,6 +273,9 @@ function projectContextFromInput(input: UserTurnInput): ProjectContext {
       ? { designSystemMarkdown: external.designSystem.markdown }
       : {}),
     ...(external.iframeHtml !== undefined ? { currentHtml: external.iframeHtml } : {}),
+    // Threaded so the composer's current-file gate can tell a warm
+    // (resumed) turn from a cold start (WS3 currentfile-block-gate-by-class).
+    ...(external.sessionId !== undefined ? { sessionId: external.sessionId } : {}),
     ...(external.model !== undefined ? { model: external.model } : {}),
     ...(external.priorCraftFindings !== undefined && external.priorCraftFindings.length > 0
       ? { priorCraftFindings: external.priorCraftFindings }

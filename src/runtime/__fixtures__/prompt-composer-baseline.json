@@ -28,10 +28,6 @@
         {
           "id": "direction",
           "content": "Design a self-contained HTML document — a single file opened in an\niframe. Treat it as finished, intentional work. Not a wireframe.\n\nOutput: ALWAYS use the Write tool. NEVER stream HTML/CSS/JS as chat\nprose. Chat reply = short status (1-3 lines). File = code only.\n\nDiscipline:\n- Palette: small intentional set. One color leads, the rest restrain.\n- Type: 1-2 faces with weight contrast. Hold the chosen scale.\n- Space: a single scale, applied consistently.\n- Shape: one radius system. Lines and corners cohere.\n- Depth: shadows only when the design needs them.\n- Motion: only when it serves comprehension or hierarchy.\n\nContent: real copy. If the user didn't supply it, write 1-2 plausible\nsentences that fit the use case. No Lorem ipsum, no 'Feature 1/2/3',\nno decorative emoji.\n\nAnti-slop: no AI-shimmer haze gradients, no stacks of mismatched\nshadows, no pill-chip badges everywhere, no placeholder grey squares.\n\nSelf-critique once before emitting: intentional or templated? If\ntemplated, change one thing — narrow the palette, tighten the type,\nor remove half the decoration.\n\nWhen a design system or taste skill is loaded, it overrides these\ndefaults — follow IT first.\n\nProject Direction Summary — fixture\nDirection: fixture landing"
-        },
-        {
-          "id": "current-file",
-          "content": "## Current fixture.html content\n\n```html\n<!DOCTYPE html><html><head><style>:root{--x:1}</style></head><body><h1>Fixture</h1></body></html>\n```"
         }
       ]
     },
