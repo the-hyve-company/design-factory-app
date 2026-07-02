@@ -1,0 +1,4 @@
+{"role":"assistant","content":[{"type":"think","think":"planning the file write","encrypted":null},{"type":"text","text":"Criando o arquivo. "}]}
+{"role":"assistant","content":[],"tool_calls":[{"id":"kimi-call-1","type":"function","function":{"name":"WriteFile","arguments":"{\"path\":\"projects/demo/index.html\",\"content\":\"<!DOCTYPE html>\"}"}}]}
+{"role":"tool","tool_call_id":"kimi-call-1","content":"ok"}
+{"role":"assistant","content":[{"type":"text","text":"Feito."}],"usage":{"prompt_tokens":800,"completion_tokens":200}}

@@ -1,0 +1,6 @@
+{"type":"init","session_id":"gem-sess-42","model":"gemini-3.5-flash"}
+{"type":"message","role":"assistant","content":"Aqui está o layout. "}
+{"type":"tool_use","tool_id":"g-tool-1","tool_name":"write_file","parameters":{"file_path":"projects/demo/index.html","content":"<!DOCTYPE html>"}}
+{"type":"tool_result","tool_id":"g-tool-1","status":"success","output":"ok"}
+{"type":"message","role":"assistant","content":"Arquivo gravado."}
+{"type":"result","stats":{"input_tokens":700,"output_tokens":250,"cached":50}}
