@@ -45,13 +45,13 @@ const ADAPTERS_WITH_TERMINAL = [
 ];
 
 // claude.mjs / codex.mjs / gemini.mjs delegate termination to the
-// shared wirers in index.mjs (wireStreamJson / wireCodexJson /
+// shared wirers in stream-wirers.mjs (wireStreamJson / wireCodexJson /
 // wireGeminiJson); the wirers themselves carry the contract guard.
-// anthropic.mjs delegates to pipeAnthropicStream in index.mjs.
+// anthropic.mjs delegates to pipeAnthropicStream in stream-wirers.mjs.
 const DELEGATED_ADAPTERS = ["claude.mjs", "codex.mjs", "gemini.mjs", "anthropic.mjs"];
 
 // Source paths for the shared wirers + pipeAnthropicStream.
-const SHARED_WIRER_SOURCE = join(__dirname, "..", "index.mjs");
+const SHARED_WIRER_SOURCE = join(__dirname, "..", "stream-wirers.mjs");
 
 const EMPTY_COMPLETION_RX = /completed without text or artifact/;
 
@@ -85,7 +85,7 @@ describe("provider adapter contract — release readiness", () => {
         streaming: true,
         tools: false,
         multimodal: false,
-        sessions: false,
+        supportsResume: false,
         mcp: false,
         fileWrite: "artifact",
       },

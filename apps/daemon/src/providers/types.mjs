@@ -33,11 +33,20 @@
  * write files via native tool calls (Write/Edit/Bash); artifact-driven
  * providers stream text and the runtime parses an `<artifact>` block.
  *
+ * Vocabulary parity (audit WS3 `unify-capability-shape`): fields that
+ * describe the SAME concept as the frontend matrix
+ * (src/providers/types.ts) use the SAME name — `tools`, `mcp`,
+ * `fileWrite`, `supportsResume` (renamed from the old `sessions`).
+ * Side-specific fields are intentional: `streaming`/`multimodal` are
+ * transport truths only the daemon knows; `nativeSkills`/
+ * `nativeAgents`/`streamJson` are harness features only the front
+ * consumes. capability-parity.test.ts locks the shared subset.
+ *
  * @typedef {Object} ProviderCapabilities
  * @property {boolean} streaming Server-sent events / incremental chunks
  * @property {boolean} tools Native function calling / tool use
  * @property {boolean} multimodal Image input support
- * @property {boolean} sessions Session resume (--resume / session_id)
+ * @property {boolean} supportsResume Session resume (--resume / session_id)
  * @property {boolean} mcp MCP server protocol support
  * @property {"tool"|"artifact"} fileWrite How the provider materializes
  *           files. "tool" = native Write/Edit calls; "artifact" = `<artifact>`

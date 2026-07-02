@@ -97,6 +97,8 @@ vi.mock("@/lib/provider-sessions", () => ({
   EMPTY_PROVIDER_SESSIONS: { version: 1, sessions: {} },
   readProviderSessions: vi.fn(async () => ({ version: 1, sessions: {} })),
   upsertProviderSession: vi.fn(async () => ({ version: 1, sessions: {} })),
+  // WS3 resume parity — cold start in the happy path (no session yet).
+  resumeSessionIdFor: vi.fn(() => null),
 }));
 
 vi.mock("@/runtime/send-user-turn", () => ({

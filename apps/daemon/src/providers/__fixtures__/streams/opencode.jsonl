@@ -1,0 +1,5 @@
+{"type":"step_start","sessionID":"oc-sess-1","part":{}}
+{"type":"text","part":{"text":"Gerando. ","time":{"start":1,"end":2}}}
+{"type":"tool_use","part":{"tool":"write","callID":"oc-call-1","state":{"status":"completed","input":{"path":"projects/demo/index.html","content":"<!DOCTYPE html>"},"output":"written"}}}
+{"type":"text","part":{"text":"Feito.","time":{"start":3,"end":4}}}
+{"type":"step_finish","part":{"tokens":{"input":600,"output":150,"total":750},"cost":0}}

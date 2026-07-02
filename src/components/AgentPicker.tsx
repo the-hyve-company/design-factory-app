@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchAgents, type AgentId, type DetectedAgent } from "@/lib/agent-registry";
 import { db, writeGlobalConfig, readGlobalConfig, BRIDGE_URL } from "@/lib/claude-bridge";
-import { getProvider } from "@/providers/registry";
+import { getProvider, PROVIDERS } from "@/providers/registry";
 
 const STORAGE_KEY = "df_active_agent";
 
@@ -62,6 +62,19 @@ interface Props {
   /** Optional callback fired when the user picks a different agent. */
   onChange?: (id: PickerId) => void;
 }
+
+// Dropdown groups derived from each adapter's meta.transport — the
+// hardcoded id arrays here were one of the duplicated lists the audit
+// flagged (WS3 provider-meta-transport-needstoken). Registry order is
+// preserved inside each group.
+const PICKER_GROUPS = [
+  { title: "CLIs", ids: PROVIDERS.filter((p) => p.meta.transport === "cli").map((p) => p.meta.id) },
+  { title: "APIs", ids: PROVIDERS.filter((p) => p.meta.transport === "api").map((p) => p.meta.id) },
+  {
+    title: "Local",
+    ids: PROVIDERS.filter((p) => p.meta.transport === "local").map((p) => p.meta.id),
+  },
+] as const;
 
 const VALID_STORED_IDS = new Set<string>([
   "claude",
@@ -224,10 +237,25 @@ export function AgentPicker({ onChange }: Props) {
         version: a.version ?? null,
       }))
       .filter((e) => SUPPORTED_NOW.has(e.id)),
-    { id: "anthropic", label: "Anthropic API", available: fallbackReady.anthropic === true, version: null },
+    {
+      id: "anthropic",
+      label: "Anthropic API",
+      available: fallbackReady.anthropic === true,
+      version: null,
+    },
     { id: "openai", label: "OpenAI API", available: fallbackReady.openai === true, version: null },
-    { id: "gemini-api", label: "Gemini API", available: fallbackReady["gemini-api"] === true, version: null },
-    { id: "openrouter", label: "OpenRouter", available: fallbackReady.openrouter === true, version: null },
+    {
+      id: "gemini-api",
+      label: "Gemini API",
+      available: fallbackReady["gemini-api"] === true,
+      version: null,
+    },
+    {
+      id: "openrouter",
+      label: "OpenRouter",
+      available: fallbackReady.openrouter === true,
+      version: null,
+    },
     { id: "ollama", label: "Ollama", available: fallbackReady.ollama === true, version: null },
   ];
 
@@ -306,11 +334,7 @@ export function AgentPicker({ onChange }: Props) {
       </button>
       {open && (
         <div role="listbox" style={menuStyle}>
-          {[
-            { title: "CLIs", ids: ["claude", "codex", "gemini", "opencode", "kimi"] as const },
-            { title: "APIs", ids: ["anthropic", "openai", "gemini-api", "openrouter"] as const },
-            { title: "Local", ids: ["ollama"] as const },
-          ].map((group) => {
+          {PICKER_GROUPS.map((group) => {
             // User direction 2026-05-15: dropdown shows ONLY
             // connected/available entries. Greyed-out "not installed"
             // and "needs auth" rows are hidden — users discover them in

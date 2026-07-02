@@ -126,7 +126,7 @@ const kimi = {
     streaming: true,
     tools: true,
     multimodal: false,
-    sessions: false,
+    supportsResume: false,
     mcp: false,
     // kimi-cli executes Edit/Write/Bash via native tool layer.
     // Runtime observes tool events from the stream-json output —
@@ -135,7 +135,10 @@ const kimi = {
   },
 
   async stream(req, res, deps) {
+    // deps.spawn preferred (DI convention shared with claude/codex/gemini/
+    // opencode) so the golden fixture suite can inject a fake child.
     const { readJson } = deps;
+    const spawnFn = deps.spawn ?? spawn;
     let body;
     try {
       body = await readJson(req);
@@ -179,7 +182,7 @@ const kimi = {
     const turnStartedAt = Date.now();
     let child;
     try {
-      child = spawn(kspawn.cmd, args, {
+      child = spawnFn(kspawn.cmd, args, {
         cwd: cwd && typeof cwd === "string" ? cwd : process.cwd(),
         stdio: ["pipe", "pipe", "pipe"],
         shell: kspawn.useShell,
@@ -441,6 +444,7 @@ const kimi = {
 
   async once(req, res, deps) {
     const { readJson } = deps;
+    const spawnFn = deps.spawn ?? spawn;
     let body;
     try {
       body = await readJson(req);
@@ -466,7 +470,7 @@ const kimi = {
 
     let child;
     try {
-      child = spawn(kspawn.cmd, args, {
+      child = spawnFn(kspawn.cmd, args, {
         cwd: cwd && typeof cwd === "string" ? cwd : process.cwd(),
         stdio: ["pipe", "pipe", "pipe"],
         shell: kspawn.useShell,

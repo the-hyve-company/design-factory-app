@@ -16,6 +16,8 @@ export const codexProvider: LLMProvider = {
     label: "Codex CLI",
     blurb: "OpenAI's coding agent. GPT-5/o3/o4 family with reasoning effort knob.",
     binary: "codex",
+    transport: "cli",
+    needsToken: false,
   },
   capabilities: {
     tools: true, // command_execution / Bash

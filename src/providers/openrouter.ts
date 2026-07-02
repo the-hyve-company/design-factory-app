@@ -16,6 +16,8 @@ export const openrouterProvider: LLMProvider = {
     label: "OpenRouter API",
     blurb: "200+ models behind one key. Llama 3.3 70B free + paid options.",
     binary: "openrouter",
+    transport: "api",
+    needsToken: true,
   },
   capabilities: {
     tools: false,

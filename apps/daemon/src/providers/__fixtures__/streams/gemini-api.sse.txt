@@ -1,0 +1,10 @@
+data: {"id":"gapi-1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"role":"assistant"}}]}
+
+data: {"id":"gapi-1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"Layout pronto. "}}]}
+
+data: {"id":"gapi-1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"<artifact identifier=\"projects/demo/index.html\" type=\"text/html\" title=\"demo\"><!DOCTYPE html>…</artifact>"}}]}
+
+data: {"id":"gapi-1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{}}],"usage":{"prompt_tokens":950,"completion_tokens":260}}
+
+data: [DONE]
+

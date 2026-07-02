@@ -74,7 +74,7 @@ const claude = {
     streaming: true,
     tools: true,
     multimodal: true,
-    sessions: true,
+    supportsResume: true,
     mcp: true,
     // Claude has native Write/Edit. Tool-driven channel.
     fileWrite: "tool",

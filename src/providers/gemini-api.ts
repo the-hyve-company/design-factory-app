@@ -11,6 +11,8 @@ export const geminiApiProvider: LLMProvider = {
     label: "Gemini API",
     blurb: "Direct API. Bring your own key, default gemini-2.0-flash.",
     binary: "gemini-api",
+    transport: "api",
+    needsToken: true,
   },
   capabilities: {
     tools: false,

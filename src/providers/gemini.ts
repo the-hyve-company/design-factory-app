@@ -15,6 +15,8 @@ export const geminiProvider: LLMProvider = {
     label: "Gemini CLI",
     blurb: "Google's CLI. Generous free tier on Flash; stream-json output.",
     binary: "gemini",
+    transport: "cli",
+    needsToken: false,
   },
   capabilities: {
     tools: false,

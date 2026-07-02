@@ -10,6 +10,8 @@ export const openaiProvider: LLMProvider = {
     label: "OpenAI API",
     blurb: "Direct API. Bring your own key, default gpt-4o-mini.",
     binary: "openai",
+    transport: "api",
+    needsToken: true,
   },
   capabilities: {
     tools: false,

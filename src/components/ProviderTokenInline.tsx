@@ -20,7 +20,19 @@ import { ghHasToken, ghGetUser, type GithubUserProfile } from "@/lib/github-brid
 import { CliInstallHint } from "@/components/CliInstallHint";
 import { useT } from "@/i18n";
 
-type Provider = "anthropic" | "openrouter" | "openai" | "gemini-api" | "kimi";
+// Providers whose row renders a BYOK token input. Kept in lockstep with
+// `meta.needsToken` on the provider adapters (audit WS3
+// `provider-meta-transport-needstoken`) — provider-meta.test.ts asserts
+// the two never drift. The union stays local because the CONFIG_SERVICE
+// mapping below is inherently token-provider-specific.
+export const TOKEN_PROVIDERS = ["anthropic", "openrouter", "openai", "gemini-api", "kimi"] as const;
+type Provider = (typeof TOKEN_PROVIDERS)[number];
+
+/** Type guard used by SettingsScreen to narrow a ProviderId into the
+ *  token-input union after checking `meta.needsToken`. */
+export function isTokenProvider(id: string): id is Provider {
+  return (TOKEN_PROVIDERS as readonly string[]).includes(id);
+}
 
 // Every BYOK key round-trips through the daemon's GET/PUT /config/{service}
 // endpoints — same contract: GET → {tokenSet, source}; PUT {token} →

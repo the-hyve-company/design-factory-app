@@ -15,6 +15,8 @@ export const opencodeProvider: LLMProvider = {
     label: "Opencode CLI",
     blurb: "sst.dev open-source agent CLI. MIT-licensed alternative to Claude Code.",
     binary: "opencode",
+    transport: "cli",
+    needsToken: false,
   },
   capabilities: {
     tools: true,

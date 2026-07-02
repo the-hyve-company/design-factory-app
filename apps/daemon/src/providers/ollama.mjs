@@ -89,7 +89,7 @@ const ollama = {
     streaming: true,
     tools: false,
     multimodal: false,
-    sessions: false,
+    supportsResume: false,
     mcp: false,
     // local Ollama: chat completion only.
     fileWrite: "artifact",

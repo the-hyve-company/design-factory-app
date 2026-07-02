@@ -25,6 +25,47 @@
 
 import type { LLMProvider, ProviderCapabilities } from "@/providers/types";
 
+/**
+ * Canonical repo-relative artifact path — audit WS3
+ * `artifact-identifier-parity`.
+ *
+ * Before this helper, the two live paths computed the contract's
+ * identifier DIFFERENTLY:
+ *   · generate path (composeSystemBlocks / prepare-override) only
+ *     stripped a `~/` prefix — an absolute projectPath
+ *     (`/home/u/design-factory/projects/slug`) leaked through whole,
+ *     and the daemon's normalizeIdentifier re-prefixed it into a bogus
+ *     nested `projects/<slug>/home/u/.../index.html` (role "variant",
+ *     not the primary override);
+ *   · verb path (artifactContractForCtx) reduced the path down to the
+ *     `projects/<slug>/` stem the daemon accepts verbatim.
+ * Net effect: the 6 artifact-channel providers could materialize a
+ * generate turn into a DIFFERENT file than the 4 tool-channel ones
+ * (which write via the absolute PROJECT_PATH binding in the preamble).
+ *
+ * This helper is the single source both paths now use. Rules:
+ *   · normalize Windows separators, strip `~/` and trailing slashes;
+ *   · when the path ends in a `projects/<slug>` segment, reduce to that
+ *     stem (the form `resolve-artifact-target.mjs` normalizes 1:1);
+ *   · otherwise keep the (tilde-stripped) path as-is — the daemon
+ *     prefixes it under `projects/<projectId>/`;
+ *   · empty/missing input falls back to `projects/default/`.
+ */
+export function toRepoRelativeArtifactPath(
+  projectPath: string | null | undefined,
+  primaryFile: string | null | undefined,
+): string {
+  const file = primaryFile && primaryFile.length > 0 ? primaryFile : "index.html";
+  const raw = (projectPath ?? "")
+    .replace(/\\/g, "/")
+    .replace(/^~\/?/, "")
+    .replace(/\/+$/, "");
+  if (!raw) return `projects/default/${file}`;
+  const stemMatch = raw.match(/(?:^|\/)(projects\/[^/]+)$/);
+  const stem = stemMatch ? stemMatch[1] : raw;
+  return `${stem}/${file}`;
+}
+
 export interface OutputContractContext {
   /** `fileWrite` capability of the active provider. The composer
    *  emits a block only when the provider materializes via `<artifact>`. */

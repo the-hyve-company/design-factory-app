@@ -59,7 +59,7 @@ const opencode = {
     streaming: true,
     tools: true,
     multimodal: false,
-    sessions: false,
+    supportsResume: false,
     mcp: false,
     // opencode `run --print` runs native tools against the working
     // directory; the agent writes files itself. Tool-driven channel.

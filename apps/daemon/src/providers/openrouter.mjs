@@ -23,7 +23,7 @@ const openrouter = {
     streaming: true,
     tools: false,
     multimodal: false,
-    sessions: false,
+    supportsResume: false,
     mcp: false,
     // OpenRouter is a stateless chat-completion proxy.
     fileWrite: "artifact",

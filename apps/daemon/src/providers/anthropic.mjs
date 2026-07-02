@@ -24,7 +24,7 @@ const anthropic = {
     streaming: true,
     tools: false,
     multimodal: true,
-    sessions: false,
+    supportsResume: false,
     mcp: false,
     // Anthropic API direct: text stream only, no tool loop in the
     // daemon's pipeAnthropicStream. Runtime parses <artifact>.

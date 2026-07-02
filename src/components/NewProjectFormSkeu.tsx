@@ -1587,16 +1587,12 @@ export function ProviderRocker({
 
   const items: SearchableDropdownItem<(typeof PROVIDERS)[number]>[] = PROVIDERS.map((p) => {
     const status = statusByProvider?.[p.meta.id]?.status;
-    // Compact sub-label: transport + status hint when not ready.
+    // Compact sub-label: transport + status hint when not ready. Label
+    // derives from meta.transport — the id whitelist here was one of the
+    // duplicated lists the audit flagged (WS3
+    // provider-meta-transport-needstoken).
     const transport =
-      p.meta.id === "ollama"
-        ? "Local"
-        : p.meta.id === "anthropic" ||
-            p.meta.id === "openai" ||
-            p.meta.id === "gemini-api" ||
-            p.meta.id === "openrouter"
-          ? "API"
-          : "CLI";
+      p.meta.transport === "local" ? "Local" : p.meta.transport === "api" ? "API" : "CLI";
     const statusHint =
       status === "connected"
         ? ""

@@ -20,7 +20,7 @@ import { PROVIDERS, listProviders, getProvider, describeProvider } from "../prov
 
 const READINESS = new Set(["stable", "beta", "experimental"]);
 const FILE_WRITE = new Set(["tool", "artifact"]);
-const REQUIRED_CAPS = ["streaming", "tools", "multimodal", "sessions", "mcp", "fileWrite"];
+const REQUIRED_CAPS = ["streaming", "tools", "multimodal", "supportsResume", "mcp", "fileWrite"];
 
 describe("GET /providers — registry contract", () => {
   it("listProviders returns 10 entries", () => {

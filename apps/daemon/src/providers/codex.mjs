@@ -37,7 +37,7 @@ const codex = {
     streaming: true,
     tools: true,
     multimodal: true,
-    sessions: true,
+    supportsResume: true,
     mcp: false,
     // codex command_execution coerced into normalized tool events.
     fileWrite: "tool",

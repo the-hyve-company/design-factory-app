@@ -17,6 +17,8 @@ export const anthropicProvider: LLMProvider = {
     label: "Anthropic API",
     blurb: "Direct API access (BYOK). No CLI required, but no tool loop.",
     binary: "(api)",
+    transport: "api",
+    needsToken: true,
   },
   capabilities: {
     tools: false,
