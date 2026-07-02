@@ -22,6 +22,7 @@ import {
   type ChatBlock,
 } from "@/lib/claude-bridge";
 import { useSkillRegistry } from "@/hooks/useSkillRegistry";
+import { isSkillOffered } from "@/lib/skill-capability-gate";
 function formatDuration(ms: number): string {
   if (!ms || ms < 1000) return `${Math.max(0, Math.round(ms))}ms`;
   const s = ms / 1000;
@@ -298,9 +299,7 @@ interface ChatMessage {
 // historical snapshots. Extracted to `@/lib/chat-sanitizer` so the
 // invariants are unit-testable. See that module for
 // full documentation of the three sweeps (empty, dedup, leaked-HTML).
-import {
-  sanitizeMessages as sanitizeMessagesImpl,
-} from "@/lib/chat-sanitizer";
+import { sanitizeMessages as sanitizeMessagesImpl } from "@/lib/chat-sanitizer";
 function sanitizeMessages(msgs: ChatMessage[]): { messages: ChatMessage[]; cleaned: number } {
   return sanitizeMessagesImpl(msgs);
 }
@@ -4474,6 +4473,10 @@ export function EditorScreen({
     }
 
     for (const s of registrySkills) {
+      // Capability gate: skills that require an output channel no DF
+      // provider offers (e.g. image generation) stay on disk but are
+      // not offered in the menu. See src/lib/skill-capability-gate.ts.
+      if (!isSkillOffered(s)) continue;
       list.push({
         id: s.id,
         trigger: s.trigger,
@@ -4658,7 +4661,12 @@ export function EditorScreen({
         if (st.status !== "connected") {
           const detail = st.detail ?? "credencial ausente ou serviço indisponível";
           const msg = `${provider.meta.label} não está pronto: ${detail}. Configure em Settings → Providers.`;
-          recordTurn("client", "provider_not_ready", { provider: provider.meta.id, status: st.status }, { level: "warn" });
+          recordTurn(
+            "client",
+            "provider_not_ready",
+            { provider: provider.meta.id, status: st.status },
+            { level: "warn" },
+          );
           setMessages((prev) => {
             const next = [...prev];
             const last = next[next.length - 1];
