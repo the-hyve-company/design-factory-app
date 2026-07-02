@@ -1705,22 +1705,33 @@ export function getCoreRuleIds(): string[] {
   return DEFAULT_BUILTIN_RULES.filter((r) => r.core).map((r) => r.id);
 }
 
-/** Resolve a persisted `default_rule_ids` setting (raw string from
- *  db.getSetting) to a clean id list: valid JSON array, keep only ids
- *  that still exist, fall back to the core set when absent/empty/corrupt. */
+/** Resolve a persisted `default_rule_ids` setting to a clean id list.
+ *  Accepts BOTH storage shapes: the raw JSON string from db.getSetting
+ *  AND the already-parsed string[] from the filesystem GlobalConfig.
+ *  Keeps only ids that still exist (deduped, order preserved); falls
+ *  back to the factory core set when absent/empty/corrupt. */
 export function resolveDefaultRuleIds(raw: unknown): string[] {
+  let arr: unknown = null;
   if (typeof raw === "string" && raw.trim()) {
     try {
-      const arr: unknown = JSON.parse(raw);
-      if (Array.isArray(arr)) {
-        const known = arr.filter(
-          (id): id is string => typeof id === "string" && findRule(id) !== null,
-        );
-        if (known.length > 0) return known;
-      }
+      arr = JSON.parse(raw);
     } catch {
       // corrupt JSON → fall back to the factory core set
+      arr = null;
     }
+  } else if (Array.isArray(raw)) {
+    arr = raw;
+  }
+  if (Array.isArray(arr)) {
+    const seen = new Set<string>();
+    const known: string[] = [];
+    for (const id of arr) {
+      if (typeof id !== "string" || seen.has(id)) continue;
+      if (findRule(id) === null) continue;
+      seen.add(id);
+      known.push(id);
+    }
+    if (known.length > 0) return known;
   }
   return getCoreRuleIds();
 }

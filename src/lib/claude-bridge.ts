@@ -794,6 +794,11 @@ export interface GlobalConfig {
     | "gemini-api"
     | "openrouter"
     | "ollama";
+  /** Personal default rule set — the ids that pre-fill the New Project
+   *  rules picker. Mirrors GlobalConfigSchema in lib/schemas.ts. Unknown
+   *  ids are dropped at read time (`resolveDefaultRuleIds`); absent/empty
+   *  falls back to the 14-rule factory core set. */
+  default_rule_ids?: string[];
   model?: string;
   skills_custom_path?: string;
   builtin_prompts?: Record<string, string>;

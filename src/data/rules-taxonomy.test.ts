@@ -196,4 +196,24 @@ describe("rules-taxonomy factory default set", () => {
       "ty-limited-type-scale",
     ]);
   });
+
+  it("resolveDefaultRuleIds accepts an already-parsed array (fs config shape)", () => {
+    expect(
+      resolveDefaultRuleIds(["as-no-decorative-emojis", "nope-zzz", "ty-limited-type-scale"]),
+    ).toEqual(["as-no-decorative-emojis", "ty-limited-type-scale"]);
+    expect(resolveDefaultRuleIds([])).toEqual(getCoreRuleIds());
+    expect(resolveDefaultRuleIds([42, null])).toEqual(getCoreRuleIds());
+  });
+
+  it("resolveDefaultRuleIds dedupes while preserving order", () => {
+    const saved = JSON.stringify([
+      "ty-limited-type-scale",
+      "as-no-decorative-emojis",
+      "ty-limited-type-scale",
+    ]);
+    expect(resolveDefaultRuleIds(saved)).toEqual([
+      "ty-limited-type-scale",
+      "as-no-decorative-emojis",
+    ]);
+  });
 });
