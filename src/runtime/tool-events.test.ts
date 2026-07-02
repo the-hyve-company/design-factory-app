@@ -210,13 +210,95 @@ describe("normalizeToolEvent — Gemini", () => {
 });
 
 describe("normalizeToolEvent — providers without tool support", () => {
-  it.each(["ollama", "openrouter", "opencode"] as const)("returns null for %s", (provider) => {
+  it.each(["ollama", "openrouter"] as const)("returns null for %s", (provider) => {
     const ev = normalizeToolEvent(
       {
         provider,
         kind: "tool_call",
         raw: { id: "x", name: "Bash", input: { command: "ls" } },
       },
+      { now: fixedNow },
+    );
+    expect(ev).toBeNull();
+  });
+});
+
+describe("normalizeToolEvent — opencode (audit WS1 craft-net-10-10)", () => {
+  // The daemon coerces opencode's ACP vocabulary into the canonical shape
+  // before the SSE, so the client normalizer receives Claude-shaped events
+  // tagged provider "opencode". Listing opencode as text-only here was the
+  // gap that let it escape the tool-channel craft net.
+
+  it("normalizes a Write coerced from opencode `write` (inline content)", () => {
+    const ev = normalizeToolEvent(
+      {
+        provider: "opencode",
+        kind: "tool_call",
+        raw: {
+          id: "oc-1",
+          name: "Write",
+          input: { file_path: "/projects/p/index.html", content: "<!DOCTYPE html>…" },
+        },
+      },
+      { now: fixedNow },
+    );
+    expect(ev).toEqual({
+      type: "tool_call",
+      id: "oc-1",
+      name: "Write",
+      input: { file_path: "/projects/p/index.html", content: "<!DOCTYPE html>…" },
+      provider: "opencode",
+      timestamp: "2026-05-04T12:00:00.000Z",
+    });
+  });
+
+  it("normalizes a Write coerced from opencode `apply_patch` (path-only)", () => {
+    const ev = normalizeToolEvent(
+      {
+        provider: "opencode",
+        kind: "tool_call",
+        raw: {
+          id: "oc-2",
+          name: "Write",
+          input: { file_path: "/projects/p/index.html", patchText: "*** Begin Patch…" },
+        },
+      },
+      { now: fixedNow },
+    );
+    expect(ev).not.toBeNull();
+    expect(ev!.type).toBe("tool_call");
+    if (ev!.type === "tool_call") {
+      expect(ev!.input.file_path).toBe("/projects/p/index.html");
+      // No inline content — the pipeline's disk read-back recovers it.
+      expect(ev!.input.content).toBeUndefined();
+    }
+  });
+
+  it("normalizes tool results (ok and error)", () => {
+    const ok = normalizeToolEvent(
+      {
+        provider: "opencode",
+        kind: "tool_result",
+        raw: { id: "oc-1", isError: false, content: "completed" },
+      },
+      { now: fixedNow },
+    );
+    expect(ok).toMatchObject({ type: "tool_result", toolCallId: "oc-1", ok: true });
+
+    const err = normalizeToolEvent(
+      {
+        provider: "opencode",
+        kind: "tool_result",
+        raw: { id: "oc-1", isError: true, content: "boom" },
+      },
+      { now: fixedNow },
+    );
+    expect(err).toMatchObject({ type: "tool_error", toolCallId: "oc-1", reason: "boom" });
+  });
+
+  it("still degrades gracefully on a malformed opencode event", () => {
+    const ev = normalizeToolEvent(
+      { provider: "opencode", kind: "tool_call", raw: { name: "Write" } },
       { now: fixedNow },
     );
     expect(ev).toBeNull();

@@ -389,9 +389,16 @@ export const DEFERRED_CHECKS: ReadonlyArray<{ ruleId: string; why: string }> = O
   { ruleId: "a11y-target-size", why: "needs rendered hit-area geometry" },
 ]);
 
+// Both type vocabularies reach this net: the artifact channel carries the
+// MIME type from the <artifact> tag ("text/html" — see output-contract),
+// the tool channel the short form ("html"). Accepting only the short form
+// made the net silently no-op on every artifact-channel document (checked
+// list came back empty and "clean" read as "audited").
+const HTML_ARTIFACT_TYPES = new Set(["html", "text/html", "application/xhtml+xml"]);
+
 function isHtmlArtifact(input: CraftCheckInput): boolean {
-  if (input.type === "html") return true;
-  if (input.type && input.type !== "html") return false;
+  if (HTML_ARTIFACT_TYPES.has(input.type)) return true;
+  if (input.type) return false;
   return /<(?:!doctype html|html[\s>])/i.test(input.content);
 }
 

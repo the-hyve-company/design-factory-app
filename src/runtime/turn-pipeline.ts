@@ -896,13 +896,16 @@ async function validateToolChannelOutput(
   const primary = await resolveToolChannelHtml(s.toolEvents, readFile);
   if (!primary) return null;
   const contentHash = await sha256Hex(primary.content);
+  // MIME form, not the short "html": static-p0's type table is keyed by
+  // MIME — the short form used to fall through to `type-not-supported`,
+  // so every tool-channel done report carried a bogus static fail.
   const staticP0 = validateArtifactStaticP0({
     finalPath: primary.path,
     content: primary.content,
     contentHash,
-    type: "html",
+    type: "text/html",
   });
-  const craftCheck = runCraftChecks({ content: primary.content, type: "html" });
+  const craftCheck = runCraftChecks({ content: primary.content, type: "text/html" });
   return composeDoneReport({
     artifactHash: contentHash,
     provider: ctx.providerId,
@@ -916,16 +919,20 @@ async function validateToolChannelOutput(
 
 /**
  * Find the HTML a tool-channel provider wrote this turn, two ways:
- *   1. Writes that carry content inline (Claude Code) — taken directly.
- *   2. Writes that carry only a path (Codex `file_change`) — read back off
- *      disk best-effort. This is FAIL-SAFE: a missing/unreadable/non-HTML
- *      file yields no result, so it never regresses (worst case: no craft
- *      report, exactly as before). opencode emits no tool events at all, so
- *      it stays uncovered by this path.
+ *   1. Writes that carry content inline (Claude Code, opencode `write`
+ *      with `{path, content}`) — taken directly.
+ *   2. Writes that carry only a path (Codex `file_change`, opencode
+ *      `apply_patch` which carries `patchText` but not the whole file) —
+ *      read back off disk best-effort. This is FAIL-SAFE: a missing/
+ *      unreadable/non-HTML file yields no result, so it never regresses
+ *      (worst case: no craft report, exactly as before).
  *
  * NOTE: the disk-read branch is verified by unit test (injected reader) but
- * not yet by a live Codex run — coverage of Codex is best-effort pending
- * that end-to-end confirmation.
+ * not yet by a live Codex/opencode run — coverage of both is best-effort
+ * pending that end-to-end confirmation. opencode residual: turns where the
+ * CLI emits tool frames with no usable path (or none at all — older
+ * opencode versions without `--format json` tool events) still yield no
+ * craft report.
  */
 async function resolveToolChannelHtml(
   events: NormalizedToolEvent[],

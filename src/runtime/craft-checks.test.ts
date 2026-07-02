@@ -28,6 +28,19 @@ describe("runCraftChecks — clean", () => {
     expect(r.deferred.length).toBe(DEFERRED_CHECKS.length);
   });
 
+  it('runs on the MIME form "text/html" too (artifact channel vocabulary)', () => {
+    // Regression: the artifact channel carries type="text/html" (from the
+    // <artifact> tag). The net used to accept only the short "html" and
+    // silently no-op'd on every artifact-channel document.
+    const r = runCraftChecks({ content: CLEAN, type: "text/html" });
+    expect(r.checked.length).toBeGreaterThan(10);
+    const warn = runCraftChecks({
+      content: CLEAN.replace("</body>", '<div style="color:#6366f1">x</div></body>'),
+      type: "text/html",
+    });
+    expect(warn.status).toBe("warn");
+  });
+
   it("non-HTML artifacts are not inspected but still list deferred checks", () => {
     const r = runCraftChecks({ content: "# Title\n\nbody", type: "markdown" });
     expect(r.status).toBe("clean");

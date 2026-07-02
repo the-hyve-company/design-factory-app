@@ -12,7 +12,9 @@
 //   - Gemini CLI (stream-json): tool calls vary by model; daemon currently
 //     emits text-only. Mapper supports the shape Gemini *will* emit when
 //     daemon integrates `--tools`.
-//   - Ollama / OpenRouter / opencode: text only — no tool events ever.
+//   - opencode (`run --format json`): ACP-style tool events; the daemon
+//     coerces them into the canonical Write/Edit/Bash/Read shape.
+//   - Ollama / OpenRouter: text only — no tool events ever.
 //
 // The dev bridge (apps/daemon/src/index.mjs) already translates per-provider
 // stream events into a common SSE vocabulary: `tool_call` and `tool_result`
@@ -111,7 +113,7 @@ export type RawToolEvent =
 
 /**
  * Normalize a raw tool event into the canonical envelope. Returns null
- * when the provider doesn't emit tools (Ollama/OpenRouter/opencode), when
+ * when the provider doesn't emit tools (Ollama/OpenRouter), when
  * the event shape isn't recognised, or when a required field is missing.
  *
  * The function NEVER throws — malformed input is a debug signal, not a
@@ -137,9 +139,16 @@ export function normalizeToolEvent(
       return mapCodex(event, now);
     case "gemini":
       return mapGemini(event, now);
+    case "opencode":
+      // The daemon coerces opencode's ACP tool vocabulary (apply_patch/
+      // write/edit/bash/read) into the canonical Claude shape before it
+      // hits the SSE — same wire format as the Claude family, so the
+      // mapper is shared. Coverage fix (audit WS1 `craft-net-10-10`):
+      // opencode used to be listed as text-only here, which dropped its
+      // Write events and let it escape the tool-channel craft net.
+      return mapClaudeFamily(event, now);
     case "ollama":
     case "openrouter":
-    case "opencode":
     // Text-only providers — openai/gemini-api/kimi/anthropic API
     // adapters are all OpenAI-compatible (or text-completion) chat
     // shape. None expose structured tool events to the runtime.
