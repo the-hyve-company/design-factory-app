@@ -18,6 +18,8 @@
 // Each check maps to a `checkable: true` rule id in rules-taxonomy.ts so the
 // UI can show the offending rule's ✗/✓ guidance and target an auto-fix.
 
+import { buildCraftFpContext, isDsColor, type CraftFpContext } from "@/runtime/craft-fp";
+
 export type CraftTier = "P0" | "P1" | "P2";
 
 export interface CraftFinding {
@@ -51,6 +53,20 @@ export interface CraftCheckInput {
   /** Artifact type (`html`, `markdown`, `svg`, ...). Craft checks only run
    *  on HTML-ish artifacts. */
   type: string;
+  /** The attached design system's markdown, when the project has one.
+   *  Colors it codifies are exempt in the color checks (anti-FP — see
+   *  craft-fp.ts): a DS that encodes indigo on purpose must not trip the
+   *  shadcn-tell detector on every artifact. */
+  designSystemMarkdown?: string | null;
+}
+
+/** What each check receives: the raw source plus the anti-FP context
+ *  (token-stripped scan texts + the DS color allowlist). */
+interface CraftScan {
+  /** Raw artifact source, untouched. Most checks scan this. */
+  raw: string;
+  /** Anti-FP scan context — see craft-fp.ts for the three moves. */
+  fp: CraftFpContext;
 }
 
 // ─── Check registry ───────────────────────────────────────────────────
@@ -61,8 +77,9 @@ interface CraftCheck {
   tier: CraftTier;
   title: string;
   /** Returns a finding body when the tell is present, else null. Pure;
-   *  operates on the raw artifact source (CSS lives inline in <style>). */
-  run(html: string): { detail: string; sample?: string } | null;
+   *  operates on the raw artifact source (CSS lives inline in <style>)
+   *  and/or the anti-FP scan texts. */
+  run(scan: CraftScan): { detail: string; sample?: string } | null;
 }
 
 /** Truncate a matched snippet for display. */
@@ -121,17 +138,22 @@ const CHECKS: CraftCheck[] = [
     ruleId: "co-no-raw-black",
     tier: "P0",
     title: "No pure black or white",
-    run(html) {
-      const m =
-        html.match(/#(?:000|000000|fff|ffffff)(?![0-9a-f])/i) ||
-        html.match(/rgb\(\s*0\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)/i);
-      return m
-        ? {
-            detail:
-              "Pure #000/#fff is harsh — use a near-black/near-white (e.g. #0f0f0f / #f0f0f0).",
-            sample: snip(m[0]),
-          }
-        : null;
+    run({ fp }) {
+      // Effective-value check: var() usages are RESOLVED first (a model
+      // that routes #000 through an invented token still gets flagged),
+      // token declarations are stripped (defining a token isn't using
+      // it), and DS-codified colors are exempt.
+      const re =
+        /#(?:000|000000|fff|ffffff)(?![0-9a-f])|rgb\(\s*0\s*,\s*0\s*,\s*0\s*\)|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)/gi;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(fp.scanTextResolved))) {
+        if (isDsColor(m[0], fp.dsColors)) continue;
+        return {
+          detail: "Pure #000/#fff is harsh — use a near-black/near-white (e.g. #0f0f0f / #f0f0f0).",
+          sample: snip(m[0]),
+        };
+      }
+      return null;
     },
   },
   {
@@ -139,14 +161,22 @@ const CHECKS: CraftCheck[] = [
     ruleId: "co-no-tailwind-indigo",
     tier: "P0",
     title: "No default Tailwind indigo",
-    run(html) {
-      const m = html.match(TAILWIND_INDIGO);
-      return m
-        ? {
-            detail: "The default indigo/violet ramp is the shadcn tell — pick a real accent hue.",
-            sample: snip(m[0]),
-          }
-        : null;
+    run({ fp }) {
+      // Literal-usage check on the UNRESOLVED text: the rule itself
+      // blesses token-mediated indigo ("A var(--accent) that resolves to
+      // indigo is fine — it's intentional"), so declarations are stripped
+      // and var() usages are NOT resolved. Only hardcoded literals in
+      // component CSS fire — minus anything the DS codifies.
+      const re = new RegExp(TAILWIND_INDIGO.source, "gi");
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(fp.scanTextUnresolved))) {
+        if (isDsColor(m[0], fp.dsColors)) continue;
+        return {
+          detail: "The default indigo/violet ramp is the shadcn tell — pick a real accent hue.",
+          sample: snip(m[0]),
+        };
+      }
+      return null;
     },
   },
   {
@@ -154,10 +184,16 @@ const CHECKS: CraftCheck[] = [
     ruleId: "as-no-generic-ai-gradient",
     tier: "P0",
     title: "No generic AI gradient",
-    run(html) {
-      const hit = gradients(html).find(
-        (g) => /linear-gradient/i.test(g) && AI_PURPLE.test(g) && AI_COOL.test(g),
-      );
+    run({ fp }) {
+      // Effective-value check (vars resolved). A gradient whose color
+      // literals are ALL codified by the attached DS is that system's
+      // deliberate ramp, not the AI default — skip it.
+      const hit = gradients(fp.scanTextResolved).find((g) => {
+        if (!/linear-gradient/i.test(g) || !AI_PURPLE.test(g) || !AI_COOL.test(g)) return false;
+        const literals = g.match(/#[0-9a-f]{3,8}\b|rgba?\([^)]*\)/gi) ?? [];
+        const allFromDs = literals.length > 0 && literals.every((c) => isDsColor(c, fp.dsColors));
+        return !allFromDs;
+      });
       return hit
         ? {
             detail:
@@ -172,7 +208,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "as-no-gradient-text",
     tier: "P0",
     title: "No gradient-filled headline text",
-    run(html) {
+    run({ raw: html }) {
       const m = html.match(/(?:-webkit-)?background-clip:\s*text/i);
       return m && /-gradient\(/i.test(html)
         ? {
@@ -188,7 +224,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "as-no-decorative-emojis",
     tier: "P0",
     title: "No emojis as icons",
-    run(html) {
+    run({ raw: html }) {
       const found = html.match(EMOJI_RE);
       if (!found) return null;
       const distinct = Array.from(new Set(found));
@@ -203,7 +239,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "ty-no-default-fonts",
     tier: "P1",
     title: "No default system fonts",
-    run(html) {
+    run({ raw: html }) {
       const m = html.match(
         /font-family:\s*["']?(Inter|Roboto|Arial|Helvetica(?:\s+Neue)?|Open Sans|Montserrat|Lato|Poppins|Nunito|Raleway|Times(?:\s+New\s+Roman)?)\b/i,
       );
@@ -221,7 +257,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "cp-no-em-dash-tell",
     tier: "P1",
     title: "Cut the AI punctuation tells",
-    run(html) {
+    run({ raw: html }) {
       // strip <style>/<script> so CSS values / code don't false-positive
       const text = html.replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1>/gi, "");
       const m = text.match(/[—…]/);
@@ -239,7 +275,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "mo-no-transition-all",
     tier: "P1",
     title: "Never `transition: all`",
-    run(html) {
+    run({ raw: html }) {
       const m = html.match(/transition(?:-property)?:\s*all\b/i);
       return m
         ? {
@@ -255,7 +291,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "mo-gpu-only-props",
     tier: "P0",
     title: "Animate only compositor props",
-    run(html) {
+    run({ raw: html }) {
       const m = html.match(
         /transition(?:-property)?:\s*[^;}{]*\b(width|height|top|left|right|bottom|margin|padding)\b/i,
       );
@@ -272,7 +308,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "mo-honor-reduced-motion",
     tier: "P0",
     title: "Honor reduced motion",
-    run(html) {
+    run({ raw: html }) {
       const animates = /@keyframes|animation:\s*[^;]*\d|transition:\s*[^;]*\b\d/i.test(html);
       if (!animates) return null;
       return /prefers-reduced-motion/i.test(html)
@@ -288,7 +324,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "mo-will-change-sparingly",
     tier: "P2",
     title: "`will-change` with restraint",
-    run(html) {
+    run({ raw: html }) {
       const m = html.match(/will-change:\s*all\b/i);
       if (m)
         return {
@@ -305,7 +341,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "as-no-default-glassmorphism",
     tier: "P1",
     title: "No default glassmorphism",
-    run(html) {
+    run({ raw: html }) {
       const n = countMatches(html, /backdrop-filter:\s*blur/gi);
       return n >= 3
         ? {
@@ -319,7 +355,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "as-no-aurora-bg",
     tier: "P1",
     title: "No aurora / mesh / blob background",
-    run(html) {
+    run({ raw: html }) {
       const n = countMatches(html, /radial-gradient/gi);
       return n >= 3
         ? {
@@ -333,7 +369,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "a11y-html-lang",
     tier: "P1",
     title: "Declare the language",
-    run(html) {
+    run({ raw: html }) {
       if (!/<html\b/i.test(html)) return null;
       return /<html\b(?![^>]*\blang=)/i.test(html)
         ? {
@@ -348,7 +384,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "a11y-alt-text",
     tier: "P1",
     title: "Text alternatives",
-    run(html) {
+    run({ raw: html }) {
       const imgs = html.match(/<img\b(?![^>]*\balt=)[^>]*>/gi);
       return imgs
         ? {
@@ -363,7 +399,7 @@ const CHECKS: CraftCheck[] = [
     ruleId: "a11y-focus-visible",
     tier: "P0",
     title: "Keep focus visible",
-    run(html) {
+    run({ raw: html }) {
       const m = html.match(/outline:\s*(?:none|0)\b/i);
       if (!m) return null;
       return /:focus-visible/i.test(html)
@@ -415,11 +451,17 @@ export function runCraftChecks(input: CraftCheckInput): CraftCheckResult {
   if (!isHtmlArtifact(input)) {
     return { status: "clean", findings: [], checked: [], deferred };
   }
+  const scan: CraftScan = {
+    raw: input.content,
+    fp: buildCraftFpContext(input.content, {
+      designSystemMarkdown: input.designSystemMarkdown ?? null,
+    }),
+  };
   const findings: CraftFinding[] = [];
   const checked: string[] = [];
   for (const check of CHECKS) {
     checked.push(check.id);
-    const hit = check.run(input.content);
+    const hit = check.run(scan);
     if (hit) {
       findings.push({
         ruleId: check.ruleId,

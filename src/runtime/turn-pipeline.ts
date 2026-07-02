@@ -850,10 +850,13 @@ export async function validateTurnOutput(
     type: artifact.type,
   });
 
-  // Deterministic craft net — signals taste tells (does not block).
+  // Deterministic craft net — signals taste tells (does not block). The
+  // DS markdown feeds the anti-FP allowlist (craft-fp.ts): colors the
+  // attached design system codifies don't fire the color checks.
   const craftCheck = runCraftChecks({
     content: artifact.content,
     type: artifact.type,
+    designSystemMarkdown: ctx.input.context?.designSystem?.markdown ?? null,
   });
 
   const doneReport = composeDoneReport({
@@ -905,7 +908,11 @@ async function validateToolChannelOutput(
     contentHash,
     type: "text/html",
   });
-  const craftCheck = runCraftChecks({ content: primary.content, type: "text/html" });
+  const craftCheck = runCraftChecks({
+    content: primary.content,
+    type: "text/html",
+    designSystemMarkdown: ctx.input.context?.designSystem?.markdown ?? null,
+  });
   return composeDoneReport({
     artifactHash: contentHash,
     provider: ctx.providerId,

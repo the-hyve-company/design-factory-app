@@ -466,6 +466,59 @@ describe("validateTurnOutput", () => {
     expect(v.doneReport?.staticP0.status).toBe("pass");
   });
 
+  it("threads the DS markdown into the craft net's anti-FP allowlist", async () => {
+    // Same literal-indigo document twice: without a DS the tell fires;
+    // with a DS that codifies the color it doesn't (fp-hardening-port).
+    const htmlDoc =
+      "<!doctype html><html><head><title>t</title><style>a{color:#6366f1}</style></head><body><h1>Hello</h1><p>" +
+      "content ".repeat(40) +
+      "</p></body></html>";
+    const mkStream = (): TurnStream => ({
+      fullText: "done",
+      tools: [],
+      toolEvents: [
+        {
+          type: "tool_call",
+          id: "w1",
+          name: "Write",
+          input: { file_path: "/proj/index.html", content: htmlDoc },
+          provider: "claude",
+          timestamp: "2026-05-04T12:00:00.000Z",
+        },
+      ],
+      sessionId: null,
+      meta: null,
+      result: null,
+      errored: false,
+      aborted: false,
+    });
+    const skipped = {
+      status: "skipped",
+      reason: "provider-uses-write",
+      cleanedText: "",
+    } as const;
+
+    const noDs = await validateTurnOutput(prepare(baseInput), mkStream(), skipped);
+    expect(noDs.doneReport?.craftCheck?.findings.map((f) => f.ruleId)).toContain(
+      "co-no-tailwind-indigo",
+    );
+
+    const withDs = await validateTurnOutput(
+      prepare({
+        ...baseInput,
+        context: {
+          ...baseInput.context,
+          designSystem: { name: "ds", path: "/ds", markdown: "accent: `#6366f1`" },
+        },
+      }),
+      mkStream(),
+      skipped,
+    );
+    expect(withDs.doneReport?.craftCheck?.findings.map((f) => f.ruleId)).not.toContain(
+      "co-no-tailwind-indigo",
+    );
+  });
+
   it("is fail-safe when a path-only write can't be read (no regression)", async () => {
     const ctx = prepare(baseInput);
     const s: TurnStream = {
