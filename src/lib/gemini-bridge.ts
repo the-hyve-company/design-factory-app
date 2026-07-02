@@ -69,6 +69,10 @@ async function streamGeminiViaBridge(
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
+          } else if (event === "session" && typeof data.sessionId === "string") {
+            // Resume parity (WS3): daemon surfaces gemini's session id;
+            // the UI persists it per-provider for the next --resume.
+            callbacks.onSession?.(data.sessionId);
           } else if (event === "meta" && data) {
             callbacks.onMeta?.(data);
           } else if (event === "usage" && data) {

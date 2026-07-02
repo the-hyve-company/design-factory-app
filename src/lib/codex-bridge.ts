@@ -75,6 +75,11 @@ async function streamCodexViaBridge(
           if (event === "text" && typeof data.content === "string") {
             full += data.content;
             callbacks.onText(data.content);
+          } else if (event === "session" && typeof data.sessionId === "string") {
+            // Resume parity (WS3): daemon surfaces codex's thread_id as
+            // the canonical session event; the UI persists it
+            // per-provider for the next `codex resume <UUID>`.
+            callbacks.onSession?.(data.sessionId);
           } else if (event === "meta" && data) {
             callbacks.onMeta?.(data);
           } else if (event === "usage" && data) {
