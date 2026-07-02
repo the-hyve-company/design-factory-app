@@ -41,6 +41,7 @@
     "i18n:baseline": "node scripts/i18n-audit.mjs --baseline",
     "smoke:daemon": "node scripts/daemon-smoke.mjs",
     "smoke:public-files": "node scripts/public-files-smoke.mjs",
+    "catalog:build": "node scripts/build-catalog.mjs && prettier --write docs/catalog.md",
     "test:e2e:providers": "node scripts/e2e-providers.mjs",
     "test:e2e:leak-regression": "node scripts/e2e-leak-regression.mjs",
     "test:e2e:modals": "node scripts/validate-modals.mjs",
