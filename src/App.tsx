@@ -17,26 +17,9 @@ import {
   listDesignSystemsFromFilesystem,
 } from "@/lib/claude-bridge";
 import { setLang, t as tFn, type Lang } from "@/i18n";
-import {
-  setFormatOverrides,
-  setDirectionOverrides,
-  setDisabledFormatIds,
-  setDisabledDirectionIds,
-  setCustomFormats,
-  setCustomDirections,
-} from "@/data/direction-data";
 import { warn } from "@/lib/error-surface";
 import { slugFromPath } from "@/lib/project-files";
-import {
-  setUserRules as setRulesUserSlot,
-  setBuiltinOverrides as setRulesBuiltinOverrides,
-  setDisabledRuleIds,
-  setCustomRuleCategories,
-  setCategoryLabelOverrides,
-  RuleSchema,
-  type Rule,
-} from "@/data/rules-taxonomy";
-import { setCustomFormatCategories } from "@/data/format-taxonomy";
+import { hydrateConfigSlots } from "@/lib/boot-hydration";
 import { ErrorToastDock } from "@/components/ErrorToastDock";
 import { OriginGuardBanner } from "@/components/OriginGuardBanner";
 import { startRecoverySync } from "@/lib/chat-recovery-sync";
@@ -139,127 +122,13 @@ export function App() {
       if (accent && /^#[0-9a-fA-F]{6}$/.test(accent)) {
         document.documentElement.style.setProperty("--df-accent-user", accent);
       }
-      // Bootstrap user overrides for formats + directions. Defaults live
-      // in direction-data.ts (read-only); these maps are merged on top at
-      // runtime via the effective-getter functions.
-      if (fromFs?.format_overrides) {
-        setFormatOverrides(fromFs.format_overrides);
-      }
-      if (fromFs?.direction_overrides) {
-        setDirectionOverrides(fromFs.direction_overrides);
-      }
-      // Disabled lists — items toggled OFF in Settings should NOT appear in
-      // the Direction Modal. Stored in db.setSetting (per-device).
-      try {
-        const fmtRaw = await db.getSetting("formats_disabled").catch(() => null);
-        if (fmtRaw) {
-          const a = JSON.parse(fmtRaw);
-          if (Array.isArray(a)) setDisabledFormatIds(a);
-        }
-        const dirRaw = await db.getSetting("directions_disabled").catch(() => null);
-        if (dirRaw) {
-          const a = JSON.parse(dirRaw);
-          if (Array.isArray(a)) setDisabledDirectionIds(a);
-        }
-      } catch {}
-      // Custom formats / directions authored by the user. Persisted in
-      // global config (filesystem) so they sync between devices.
-      if (Array.isArray(fromFs?.custom_formats)) {
-        setCustomFormats(fromFs!.custom_formats as never);
-      }
-      if (Array.isArray(fromFs?.custom_directions)) {
-        setCustomDirections(fromFs!.custom_directions as never);
-      }
-      // Unified rules catalog bootstrap.
-      if (Array.isArray(fromFs?.custom_rules)) {
-        const parsed: Rule[] = [];
-        for (const raw of fromFs!.custom_rules) {
-          const r = RuleSchema.safeParse(raw);
-          if (r.success) parsed.push(r.data);
-        }
-        setRulesUserSlot(parsed);
-      } else {
-        // DB fallback when filesystem bridge is offline.
-        const dbRules = await db.getSetting("custom_rules").catch(() => null);
-        if (dbRules) {
-          try {
-            const arr = JSON.parse(dbRules);
-            if (Array.isArray(arr)) {
-              const parsed: Rule[] = [];
-              for (const raw of arr) {
-                const r = RuleSchema.safeParse(raw);
-                if (r.success) parsed.push(r.data);
-              }
-              setRulesUserSlot(parsed);
-            }
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-      if (fromFs?.builtin_rule_overrides && typeof fromFs.builtin_rule_overrides === "object") {
-        setRulesBuiltinOverrides(fromFs.builtin_rule_overrides as never);
-      } else {
-        const dbOver = await db.getSetting("builtin_rule_overrides").catch(() => null);
-        if (dbOver) {
-          try {
-            const obj = JSON.parse(dbOver);
-            if (obj && typeof obj === "object") setRulesBuiltinOverrides(obj as never);
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-      const dbDisabled = await db.getSetting("rules_disabled").catch(() => null);
-      if (dbDisabled) {
-        try {
-          const arr = JSON.parse(dbDisabled);
-          if (Array.isArray(arr)) setDisabledRuleIds(arr);
-        } catch {
-          /* ignore */
-        }
-      }
-
-      // category overrides + custom categories (Padrões mgmt)
-      if (Array.isArray(fromFs?.custom_rule_categories)) {
-        setCustomRuleCategories(fromFs!.custom_rule_categories as never);
-      } else {
-        const dbCats = await db.getSetting("custom_rule_categories").catch(() => null);
-        if (dbCats) {
-          try {
-            const arr = JSON.parse(dbCats);
-            if (Array.isArray(arr)) setCustomRuleCategories(arr);
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-      if (fromFs?.rule_category_overrides && typeof fromFs.rule_category_overrides === "object") {
-        setCategoryLabelOverrides(fromFs.rule_category_overrides as never);
-      } else {
-        const dbCatOver = await db.getSetting("rule_category_overrides").catch(() => null);
-        if (dbCatOver) {
-          try {
-            const obj = JSON.parse(dbCatOver);
-            if (obj && typeof obj === "object") setCategoryLabelOverrides(obj as never);
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-      if (Array.isArray(fromFs?.custom_format_categories)) {
-        setCustomFormatCategories(fromFs!.custom_format_categories as never);
-      } else {
-        const dbFmtCats = await db.getSetting("custom_format_categories").catch(() => null);
-        if (dbFmtCats) {
-          try {
-            const arr = JSON.parse(dbFmtCats);
-            if (Array.isArray(arr)) setCustomFormatCategories(arr);
-          } catch {
-            /* ignore */
-          }
-        }
-      }
+      // Unified boot hydration — EVERY module-level config slot (rules,
+      // formats, directions, canvas, personal default rule set) hydrates
+      // here, before the first picker/generation can happen. Previously
+      // only a subset hydrated at boot and the rest waited for each
+      // Settings editor's mount (split-brain: the session's 1st project
+      // generated with an incomplete config). See lib/boot-hydration.ts.
+      await hydrateConfigSlots(fromFs, (k) => db.getSetting(k));
     })();
     (document.documentElement.style as unknown as { zoom?: string }).zoom = "1";
     const ORPHANS = [
