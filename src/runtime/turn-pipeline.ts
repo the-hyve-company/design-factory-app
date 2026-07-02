@@ -28,10 +28,11 @@
 import { getProvider } from "@/providers/registry";
 import { spawnStream, type PromptCategory } from "@/runtime/cli-spawner";
 import {
-  workspaceContextPreamble,
-  VISUAL_CRAFT_CONTRACT,
+  buildSystemPrompt,
+  composeSystemBlocks,
   type ProjectContext,
-} from "@/runtime/prompt-invoker";
+  type SystemPromptOptions,
+} from "@/runtime/prompt-composer";
 import { buildArtifactContractBlock } from "@/runtime/output-contract";
 import {
   dispatchParseResult,
@@ -240,27 +241,42 @@ export interface PrepareOptions {
 }
 
 /**
- * The provider-agnostic craft floor, applied to FRESH WRITES only.
- *
- * Returns the `VISUAL_CRAFT_CONTRACT` block (a verifiable pre-Write
- * self-check: balanced delimiters, closing tags, no external assets, no
- * placeholder text) or "" when it doesn't apply. It lives HERE in the
- * pipeline — not in any one UI caller — so every generation through
- * `prepare()` gets the floor that levels weak providers up, regardless of
- * which surface (EditorScreen, NewProjectForm, …) initiated the turn.
- *
- * Opt-outs:
- * - `systemPromptOverride` set → the caller owns the whole prompt.
- * - `hasCurrentFile` (a refine) → the file's markers already exist; the
- *   contract is a fresh-write self-check, not an edit constraint.
- *
- * Single source of truth shared by `prepare()` (the send path) and
- * `assembleTurnBlocks()` (the inspector preview) so they never drift.
+ * Compose the ProjectContext the composer consumes from the pipeline's
+ * external input. Single source shared by `prepare()` (the send path)
+ * and `assembleTurnBlocks()` (the inspector preview) — they used to
+ * duplicate this literal, which was the inspector's main drift vector.
  */
-function craftContractBlock(opts: PrepareOptions, hasCurrentFile: boolean): string {
-  if (opts.systemPromptOverride !== undefined) return "";
-  if (hasCurrentFile) return "";
-  return `\n\n${VISUAL_CRAFT_CONTRACT}`;
+function projectContextFromInput(input: UserTurnInput): ProjectContext {
+  const external = input.context ?? {};
+  return {
+    projectId: input.projectId,
+    projectPath: external.projectPath ?? "~/design-factory/projeto",
+    primaryFile: external.primaryFile ?? "index.html",
+    mode: "hifi",
+    conversationHistory: external.history ?? [],
+    hasDesignSystem: Boolean(external.designSystem?.path),
+    cwd: external.workspaceRoot ?? undefined,
+    providerId: input.providerId,
+    ...(external.designSystem?.path !== undefined
+      ? { designSystemPath: external.designSystem.path }
+      : {}),
+    ...(external.designSystem?.name !== undefined
+      ? { designSystemName: external.designSystem.name }
+      : {}),
+    ...(external.designSystem?.markdown !== undefined
+      ? { designSystemMarkdown: external.designSystem.markdown }
+      : {}),
+    ...(external.iframeHtml !== undefined ? { currentHtml: external.iframeHtml } : {}),
+    ...(external.model !== undefined ? { model: external.model } : {}),
+  };
+}
+
+/** Composer options for a pipeline turn (kind "generate"). */
+function composerOptsFromPrepare(opts: PrepareOptions): SystemPromptOptions {
+  return {
+    kind: "generate",
+    ...(opts.preambleExtras ? { preambleExtras: opts.preambleExtras } : {}),
+  };
 }
 
 export function prepare(input: UserTurnInput, opts: PrepareOptions = {}): TurnContext {
@@ -281,63 +297,36 @@ export function prepare(input: UserTurnInput, opts: PrepareOptions = {}): TurnCo
   const turnId = opts.turnId ?? `t${now}`;
   const external = input.context ?? {};
 
-  // Compose project context for the preamble.
-  const projectCtx: ProjectContext = {
-    projectId: input.projectId,
-    projectPath: external.projectPath ?? "~/design-factory/projeto",
-    primaryFile: external.primaryFile ?? "index.html",
-    mode: "hifi",
-    conversationHistory: external.history ?? [],
-    hasDesignSystem: Boolean(external.designSystem?.path),
-    cwd: external.workspaceRoot ?? undefined,
-    ...(external.designSystem?.path !== undefined
-      ? { designSystemPath: external.designSystem.path }
-      : {}),
-    ...(external.designSystem?.name !== undefined
-      ? { designSystemName: external.designSystem.name }
-      : {}),
-    ...(external.designSystem?.markdown !== undefined
-      ? { designSystemMarkdown: external.designSystem.markdown }
-      : {}),
-    ...(external.iframeHtml !== undefined ? { currentHtml: external.iframeHtml } : {}),
-    ...(external.model !== undefined ? { model: external.model } : {}),
-  };
+  // Compose project context for the composer.
+  const projectCtx = projectContextFromInput(input);
 
-  // System prompt: override → use it. Else: preamble + extras + current
-  // file block.
+  // System prompt: override → the caller owns the whole prompt (only the
+  // artifact contract is still appended below). Else → the single
+  // composer (injection boundary + preamble + locale + extras + current
+  // file + craft floor + artifact contract). See prompt-composer.ts.
   let systemPrompt: string;
   if (opts.systemPromptOverride !== undefined) {
     systemPrompt = opts.systemPromptOverride;
+    // append OUTPUT-CONTRACT block when provider materializes via
+    // artifact channel. Tool-driven providers (Claude/Codex/etc) get a
+    // clean prompt because they write via native Write/Edit calls.
+    // F3.2 — When the turn ships with existing iframeHtml, the model is
+    // refining an existing file. Pass isEdit so the contract gets the
+    // "emit the WHOLE file even for tiny changes" reminder; otherwise
+    // OpenRouter/Gemini cheap models return prose explaining the diff
+    // and trip the "completed without text or artifact" rejection.
+    const filePath = `${projectCtx.projectPath?.replace(/^~\/?/, "") ?? "projects/default"}/${projectCtx.primaryFile ?? "index.html"}`;
+    const contractBlock = buildArtifactContractBlock({
+      fileWrite: capabilities.fileWrite,
+      filePath,
+      ...(input.projectId ? { projectName: input.projectId } : {}),
+      ...(external.iframeHtml ? { isEdit: true } : {}),
+    });
+    if (contractBlock) {
+      systemPrompt = `${systemPrompt}${contractBlock}`;
+    }
   } else {
-    const preamble = workspaceContextPreamble(projectCtx);
-    const extras = opts.preambleExtras ? `\n\n${opts.preambleExtras}` : "";
-    const currentFileBlock = external.iframeHtml
-      ? `\n\n## Current ${projectCtx.primaryFile} content\n\n\`\`\`html\n${external.iframeHtml}\n\`\`\`\n`
-      : "";
-    // Craft floor — fresh writes only. Was dead in the live path (only the
-    // legacy invokeGenerateBase reached it); wiring it here lands the
-    // verifiable self-check on every provider's fresh generation.
-    const craftBlock = craftContractBlock(opts, Boolean(external.iframeHtml));
-    systemPrompt = `${preamble}${extras}${currentFileBlock}${craftBlock}`;
-  }
-
-  // append OUTPUT-CONTRACT block when provider materializes via
-  // artifact channel. Tool-driven providers (Claude/Codex/etc) get a
-  // clean prompt because they write via native Write/Edit calls.
-  // F3.2 — When the turn ships with existing iframeHtml, the model is
-  // refining an existing file. Pass isEdit so the contract gets the
-  // "emit the WHOLE file even for tiny changes" reminder; otherwise
-  // OpenRouter/Gemini cheap models return prose explaining the diff
-  // and trip the "completed without text or artifact" rejection.
-  const filePath = `${projectCtx.projectPath?.replace(/^~\/?/, "") ?? "projects/default"}/${projectCtx.primaryFile ?? "index.html"}`;
-  const contractBlock = buildArtifactContractBlock({
-    fileWrite: capabilities.fileWrite,
-    filePath,
-    ...(input.projectId ? { projectName: input.projectId } : {}),
-    ...(external.iframeHtml ? { isEdit: true } : {}),
-  });
-  if (contractBlock) {
-    systemPrompt = `${systemPrompt}${contractBlock}`;
+    systemPrompt = buildSystemPrompt(projectCtx, composerOptsFromPrepare(opts));
   }
 
   // User block: attachments first, then user text.
@@ -380,39 +369,17 @@ export interface TurnPreviewBlock {
 
 /**
  * Returns the prompt as the labeled blocks the engine assembles, for the
- * PromptConsole inspector. MUST stay in sync with prepare() above — same
- * builders, same order — so the inspector shows exactly what gets sent
- * (preamble → project direction → current file → contract → user message).
- * Preview-only: it never touches the send path, so drift at worst shows a
- * slightly-off preview, never a broken turn.
+ * PromptConsole inspector. Same context builder + same composer as
+ * prepare() — the block list IS what buildSystemPrompt joins, so the
+ * inspector shows exactly what gets sent and cannot drift (before the
+ * WS2 refactor this function re-implemented the assembly by hand).
  */
 export function assembleTurnBlocks(
   input: UserTurnInput,
   opts: PrepareOptions = {},
 ): TurnPreviewBlock[] {
-  const provider = getProvider(input.providerId);
-  const capabilities = provider?.capabilities ?? { fileWrite: "artifact" as const };
   const external = input.context ?? {};
-  const projectCtx: ProjectContext = {
-    projectId: input.projectId,
-    projectPath: external.projectPath ?? "~/design-factory/projeto",
-    primaryFile: external.primaryFile ?? "index.html",
-    mode: "hifi",
-    conversationHistory: external.history ?? [],
-    hasDesignSystem: Boolean(external.designSystem?.path),
-    cwd: external.workspaceRoot ?? undefined,
-    ...(external.designSystem?.path !== undefined
-      ? { designSystemPath: external.designSystem.path }
-      : {}),
-    ...(external.designSystem?.name !== undefined
-      ? { designSystemName: external.designSystem.name }
-      : {}),
-    ...(external.designSystem?.markdown !== undefined
-      ? { designSystemMarkdown: external.designSystem.markdown }
-      : {}),
-    ...(external.iframeHtml !== undefined ? { currentHtml: external.iframeHtml } : {}),
-    ...(external.model !== undefined ? { model: external.model } : {}),
-  };
+  const projectCtx = projectContextFromInput(input);
 
   const blocks: TurnPreviewBlock[] = [];
   if (opts.systemPromptOverride !== undefined) {
@@ -421,48 +388,26 @@ export function assembleTurnBlocks(
       label: "System prompt (override)",
       content: opts.systemPromptOverride,
     });
+    // Mirror prepare()'s override path: only the artifact contract is
+    // appended after a caller-owned prompt.
+    const provider = getProvider(input.providerId);
+    const capabilities = provider?.capabilities ?? { fileWrite: "artifact" as const };
+    const filePath = `${projectCtx.projectPath?.replace(/^~\/?/, "") ?? "projects/default"}/${projectCtx.primaryFile ?? "index.html"}`;
+    const contractBlock = buildArtifactContractBlock({
+      fileWrite: capabilities.fileWrite,
+      filePath,
+      ...(input.projectId ? { projectName: input.projectId } : {}),
+      ...(external.iframeHtml ? { isEdit: true } : {}),
+    });
+    if (contractBlock) {
+      blocks.push({
+        id: "contract",
+        label: "Artifact output contract (API providers)",
+        content: contractBlock.trim(),
+      });
+    }
   } else {
-    blocks.push({
-      id: "preamble",
-      label: "Workspace preamble · output contract · design system",
-      content: workspaceContextPreamble(projectCtx),
-    });
-    if (opts.preambleExtras) {
-      blocks.push({
-        id: "direction",
-        label: "Project direction · Format / Rules / Taste",
-        content: opts.preambleExtras,
-      });
-    }
-    if (external.iframeHtml) {
-      blocks.push({
-        id: "current-file",
-        label: `Current ${projectCtx.primaryFile} content`,
-        content: external.iframeHtml,
-      });
-    }
-    const craftBlock = craftContractBlock(opts, Boolean(external.iframeHtml));
-    if (craftBlock) {
-      blocks.push({
-        id: "craft",
-        label: "Craft contract · fresh-write floor",
-        content: craftBlock.trim(),
-      });
-    }
-  }
-  const filePath = `${projectCtx.projectPath?.replace(/^~\/?/, "") ?? "projects/default"}/${projectCtx.primaryFile ?? "index.html"}`;
-  const contractBlock = buildArtifactContractBlock({
-    fileWrite: capabilities.fileWrite,
-    filePath,
-    ...(input.projectId ? { projectName: input.projectId } : {}),
-    ...(external.iframeHtml ? { isEdit: true } : {}),
-  });
-  if (contractBlock) {
-    blocks.push({
-      id: "contract",
-      label: "Artifact output contract (API providers)",
-      content: contractBlock.trim(),
-    });
+    blocks.push(...composeSystemBlocks(projectCtx, composerOptsFromPrepare(opts)));
   }
   blocks.push({
     id: "user",

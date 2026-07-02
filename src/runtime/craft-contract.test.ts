@@ -1,21 +1,20 @@
 // Visual Craft Contract — sanity tests.
 //
 // User asked (2026-05-19) to add a craft contract block to fresh
-// writes only. Tests verify:
+// writes only. WS2 refactor note: these tests now exercise the LIVE
+// composer (`buildSystemPrompt`, consumed by prepare() and the verb
+// paths) instead of the retired legacy builders (buildGenerateSystem —
+// dead code — and buildRefineSystem). Every original invariant is
+// preserved:
 //   1. VISUAL_CRAFT_CONTRACT contains the verifiable markers
-//   2. buildGenerateSystem (fresh writes) includes the contract
-//   3. buildRefineSystem (edits) does NOT include the contract — refines
-//      operate on existing files where markers are already present
-//   4. The contract sits between core and artifact contract so it
-//      applies to BOTH tool-channel and artifact-channel providers
+//   2. kind "generate" fresh writes include the contract
+//   3. kind "generate" edits + kind "verb" do NOT include the contract —
+//      refines operate on existing files where markers are already present
+//   4. The contract sits between core direction and artifact contract so
+//      it applies to BOTH tool-channel and artifact-channel providers
 
 import { describe, it, expect } from "vitest";
-import {
-  VISUAL_CRAFT_CONTRACT,
-  buildGenerateSystem,
-  buildRefineSystem,
-  type ProjectContext,
-} from "./prompt-invoker";
+import { VISUAL_CRAFT_CONTRACT, buildSystemPrompt, type ProjectContext } from "./prompt-composer";
 
 const baseCtx: ProjectContext = {
   projectPath: "/repo/design-factory/projects/test",
@@ -23,6 +22,7 @@ const baseCtx: ProjectContext = {
   mode: "hifi",
   hasDesignSystem: false,
   conversationHistory: [],
+  providerId: "claude",
 };
 
 describe("VISUAL_CRAFT_CONTRACT", () => {
@@ -58,38 +58,49 @@ describe("VISUAL_CRAFT_CONTRACT", () => {
   });
 });
 
-describe("buildGenerateSystem (fresh write)", () => {
+describe("buildSystemPrompt kind 'generate' (fresh write)", () => {
   it("includes the craft contract", () => {
-    const sys = buildGenerateSystem(baseCtx, "core text");
+    const sys = buildSystemPrompt(baseCtx, { kind: "generate", preambleExtras: "core text" });
     expect(sys).toContain("## Craft contract");
     expect(sys).toContain("balances ( [ {");
   });
 
-  it("places craft contract AFTER core (so it amplifies, not overrides)", () => {
-    const sys = buildGenerateSystem(baseCtx, "MARKER_CORE_BODY");
+  it("places craft contract AFTER the direction core (so it amplifies, not overrides)", () => {
+    const sys = buildSystemPrompt(baseCtx, {
+      kind: "generate",
+      preambleExtras: "MARKER_CORE_BODY",
+    });
     const coreIdx = sys.indexOf("MARKER_CORE_BODY");
     const craftIdx = sys.indexOf("## Craft contract");
     expect(coreIdx).toBeGreaterThanOrEqual(0);
     expect(craftIdx).toBeGreaterThan(coreIdx);
   });
 
-  it("preserves the existing preamble + fidelity + summary structure", () => {
-    const sys = buildGenerateSystem(baseCtx, "CORE");
-    expect(sys).toContain("Fidelity: High fidelity");
+  it("preserves the live prompt structure (preamble + direction + craft)", () => {
+    const sys = buildSystemPrompt(baseCtx, { kind: "generate", preambleExtras: "CORE" });
+    expect(sys).toContain("# DesignFactory — project agent session");
     expect(sys).toContain("CORE");
     expect(sys).toContain("## Craft contract");
   });
+
+  it("does NOT include the craft contract on an edit (current file present)", () => {
+    const sys = buildSystemPrompt(
+      { ...baseCtx, currentHtml: "<!DOCTYPE html><html></html>" },
+      { kind: "generate", preambleExtras: "CORE" },
+    );
+    expect(sys).not.toContain("## Craft contract");
+  });
 });
 
-describe("buildRefineSystem (edit path)", () => {
+describe("buildSystemPrompt kind 'verb' (edit path)", () => {
   it("does NOT include the craft contract", () => {
-    const sys = buildRefineSystem(baseCtx, "core text");
+    const sys = buildSystemPrompt(baseCtx, { kind: "verb", core: "core text" });
     expect(sys).not.toContain("## Craft contract");
     expect(sys).not.toContain("balances ( [ {");
   });
 
-  it("still includes core + summary + artifact contract block", () => {
-    const sys = buildRefineSystem(baseCtx, "MARKER_CORE_REFINE");
+  it("still includes the core verbatim", () => {
+    const sys = buildSystemPrompt(baseCtx, { kind: "verb", core: "MARKER_CORE_REFINE" });
     expect(sys).toContain("MARKER_CORE_REFINE");
   });
 });
