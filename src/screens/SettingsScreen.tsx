@@ -12,7 +12,7 @@ import { InsumosPanel, type InsumoTab } from "@/components/InsumosPanel";
 // `gh auth` in the terminal directly when they need those flows
 // (VercelPublishCard / GithubProviderCard exports in
 // ProviderTokenInline.tsx are marked DEPRECATED and no longer rendered).
-import { InlineProviderToken } from "@/components/ProviderTokenInline";
+import { InlineProviderToken, isTokenProvider } from "@/components/ProviderTokenInline";
 import { ColorPickerPopover } from "@/components/dfds";
 import "@/styles/settings-appearance.css";
 
@@ -555,19 +555,9 @@ function ProvidersPanel({
   const { t, tf } = useT();
   const [expandedId, setExpandedId] = useState<ProviderId | null>(null);
 
-  // Categorize providers via meta.id whitelists. Used to label each row.
-  const PROVIDER_TYPE: Record<string, "cli" | "api" | "local"> = {
-    claude: "cli",
-    codex: "cli",
-    gemini: "cli",
-    opencode: "cli",
-    kimi: "cli",
-    anthropic: "api",
-    openai: "api",
-    "gemini-api": "api",
-    openrouter: "api",
-    ollama: "local",
-  };
+  // Row label comes straight from the adapter's meta.transport — the
+  // per-screen id whitelist was one of the duplicated lists the audit
+  // flagged (WS3 provider-meta-transport-needstoken).
 
   // Visible-in-Settings whitelist — mirrors AgentPicker + the daemon
   // registry. V1 beta roster (10 entries). Removed in cleanup
@@ -630,7 +620,7 @@ function ProvidersPanel({
             const isConnected = report?.status === "connected";
             const active = defaultProvider === p.meta.id;
             const expanded = expandedId === p.meta.id;
-            const type = PROVIDER_TYPE[p.meta.id] ?? "cli";
+            const type = p.meta.transport;
             const statusLabel =
               report?.status === "connected"
                 ? report.version
@@ -704,11 +694,7 @@ function ProvidersPanel({
                   <div className="provider-v13-detail">
                     <p className="provider-v13-blurb">{p.meta.blurb}</p>
                     {report?.detail && !isConnected && <ProviderDetail detail={report.detail} />}
-                    {(p.meta.id === "anthropic" ||
-                      p.meta.id === "openrouter" ||
-                      p.meta.id === "openai" ||
-                      p.meta.id === "gemini-api" ||
-                      p.meta.id === "kimi") && (
+                    {p.meta.needsToken && isTokenProvider(p.meta.id) && (
                       <InlineProviderToken provider={p.meta.id} onSaved={() => void onRefresh()} />
                     )}
                     <div className="provider-v13-actions">

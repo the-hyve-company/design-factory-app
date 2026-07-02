@@ -12,6 +12,8 @@ export const ollamaProvider: LLMProvider = {
     label: "Ollama",
     blurb: "Local weights — Llama, Qwen, Mistral, Hermes. Free, fully local, no accounts.",
     binary: "ollama",
+    transport: "local",
+    needsToken: false,
   },
   capabilities: {
     tools: false,

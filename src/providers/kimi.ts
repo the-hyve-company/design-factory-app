@@ -22,6 +22,8 @@ export const kimiProvider: LLMProvider = {
     label: "Kimi Code CLI",
     blurb: "Moonshot AI's open-source coding CLI. Native tools, OAuth, kimi-k2 family.",
     binary: "kimi",
+    transport: "cli",
+    needsToken: true,
   },
   capabilities: {
     // kimi-cli executes Bash/Edit/Write via its native tool layer.

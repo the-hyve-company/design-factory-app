@@ -101,6 +101,20 @@ export interface ProviderMeta {
   hint?: string;
   /** Label for the underlying CLI/binary, shown in Settings. */
   binary: string;
+  /** How the provider is reached (audit WS3
+   *  `provider-meta-transport-needstoken`) — the single source the UI
+   *  reads for the CLI/API/Local tag, the picker groups, and the
+   *  transport sub-label. Before this field, four screens each kept
+   *  their own hardcoded id whitelist and drifted independently.
+   *    - "cli"   → PATH-resolved binary spawned by the daemon
+   *    - "api"   → BYOK HTTP API proxied by the daemon
+   *    - "local" → local server (Ollama) */
+  transport: "cli" | "api" | "local";
+  /** Whether Settings renders a BYOK token input for this provider.
+   *  Orthogonal to transport — kimi is a CLI that still takes a
+   *  Moonshot key. Kept in lockstep with ProviderTokenInline's
+   *  TOKEN_PROVIDERS union (provider-meta.test.ts enforces). */
+  needsToken: boolean;
 }
 
 export interface ProviderStatusReport {

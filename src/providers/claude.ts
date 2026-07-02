@@ -13,6 +13,8 @@ export const claudeProvider: LLMProvider = {
     label: "Claude Code",
     blurb: "Anthropic's official CLI. Full native skills, agents, tools and MCP.",
     binary: "claude",
+    transport: "cli",
+    needsToken: false,
   },
   capabilities: {
     tools: true,
