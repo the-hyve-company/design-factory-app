@@ -28,6 +28,19 @@ describe("runCraftChecks — clean", () => {
     expect(r.deferred.length).toBe(DEFERRED_CHECKS.length);
   });
 
+  it('runs on the MIME form "text/html" too (artifact channel vocabulary)', () => {
+    // Regression: the artifact channel carries type="text/html" (from the
+    // <artifact> tag). The net used to accept only the short "html" and
+    // silently no-op'd on every artifact-channel document.
+    const r = runCraftChecks({ content: CLEAN, type: "text/html" });
+    expect(r.checked.length).toBeGreaterThan(10);
+    const warn = runCraftChecks({
+      content: CLEAN.replace("</body>", '<div style="color:#6366f1">x</div></body>'),
+      type: "text/html",
+    });
+    expect(warn.status).toBe("warn");
+  });
+
   it("non-HTML artifacts are not inspected but still list deferred checks", () => {
     const r = runCraftChecks({ content: "# Title\n\nbody", type: "markdown" });
     expect(r.status).toBe("clean");
@@ -50,6 +63,68 @@ describe("runCraftChecks — individual tells", () => {
 
   it("flags the generic violet→cyan AI gradient", () => {
     const g = html("", "h1{background:linear-gradient(135deg,#8b5cf6,#06b6d4)}");
+    expect(ruleIds(g)).toContain("as-no-generic-ai-gradient");
+  });
+
+  // ── Anti-FP hardening (audit WS1 fp-hardening-port) ───────────────────
+
+  it("does NOT flag indigo encoded as a token and used via var() (rule blesses it)", () => {
+    // co-no-tailwind-indigo's own text: "A var(--accent) that resolves to
+    // indigo is fine — it's intentional."
+    const g = html("", ":root{--accent:#6366f1}.btn{color:var(--accent)}");
+    expect(ruleIds(g)).not.toContain("co-no-tailwind-indigo");
+  });
+
+  it("does NOT flag literal indigo when the attached DS codifies it", () => {
+    const content = html("", "a{color:#6366f1}");
+    const withDs = runCraftChecks({
+      content,
+      type: "html",
+      designSystemMarkdown: "## Palette\n- accent: `#6366f1`\n",
+    });
+    expect(withDs.findings.map((f) => f.ruleId)).not.toContain("co-no-tailwind-indigo");
+    // Without the DS the same literal still fires.
+    expect(ruleIds(content)).toContain("co-no-tailwind-indigo");
+  });
+
+  it("STILL flags pure black routed through a model-invented token (resolved)", () => {
+    const g = html("", ":root{--bg:#000}body{background:var(--bg)}");
+    expect(ruleIds(g)).toContain("co-no-raw-black");
+  });
+
+  it("does NOT flag pure black declared only in an alternate theme scope", () => {
+    const g = html(
+      "",
+      ':root{--bg:#101010}[data-theme="oled"]{--bg:#000}body{background:var(--bg)}',
+    );
+    expect(ruleIds(g)).not.toContain("co-no-raw-black");
+  });
+
+  it("does NOT flag pure white when the DS codifies it", () => {
+    const content = html("", "body{background:#ffffff}");
+    const withDs = runCraftChecks({
+      content,
+      type: "html",
+      designSystemMarkdown: "- paper: #FFFFFF",
+    });
+    expect(withDs.findings.map((f) => f.ruleId)).not.toContain("co-no-raw-black");
+  });
+
+  it("skips the AI-gradient check when every stop is a DS color", () => {
+    const content = html("", "h1{background:linear-gradient(135deg,#8b5cf6,#06b6d4)}");
+    const withDs = runCraftChecks({
+      content,
+      type: "html",
+      designSystemMarkdown: "brand ramp: #8b5cf6 → #06b6d4",
+    });
+    expect(withDs.findings.map((f) => f.ruleId)).not.toContain("as-no-generic-ai-gradient");
+  });
+
+  it("still catches the AI gradient hidden behind invented tokens (resolved)", () => {
+    const g = html(
+      "",
+      ":root{--ga:#8b5cf6;--gb:#06b6d4}h1{background:linear-gradient(135deg,var(--ga),var(--gb))}",
+    );
     expect(ruleIds(g)).toContain("as-no-generic-ai-gradient");
   });
 

@@ -191,3 +191,43 @@ describe("kind 'verb' — preamble inheritance", () => {
     expect(blocks.some((b) => b.id === "contract")).toBe(false);
   });
 });
+
+// ─── Craft reminder (audit WS1 agent-reminder-self-correct) ─────────────
+
+describe("craft-reminder block", () => {
+  const findings = [
+    {
+      ruleId: "mo-no-transition-all",
+      tier: "P1" as const,
+      title: "Never `transition: all`",
+      detail: "Name the exact properties.",
+    },
+    {
+      ruleId: "co-no-raw-black",
+      tier: "P0" as const,
+      title: "No pure black or white",
+      detail: "Use a near-black.",
+      sample: "#000",
+    },
+  ];
+
+  it("emits the reminder P0-first on generate turns with prior findings", () => {
+    const blocks = composeSystemBlocks(
+      { ...baseCtx, priorCraftFindings: findings },
+      { kind: "generate" },
+    );
+    const reminder = blocks.find((b) => b.id === "craft-reminder");
+    expect(reminder).toBeDefined();
+    expect(reminder!.content).toContain("Craft reminder");
+    expect(reminder!.content.indexOf("[P0] co-no-raw-black")).toBeLessThan(
+      reminder!.content.indexOf("[P1] mo-no-transition-all"),
+    );
+  });
+
+  it("emits no reminder block without prior findings", () => {
+    const blocks = composeSystemBlocks(baseCtx, { kind: "generate" });
+    expect(blocks.some((b) => b.id === "craft-reminder")).toBe(false);
+    const empty = composeSystemBlocks({ ...baseCtx, priorCraftFindings: [] }, { kind: "generate" });
+    expect(empty.some((b) => b.id === "craft-reminder")).toBe(false);
+  });
+});

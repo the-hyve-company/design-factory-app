@@ -220,6 +220,70 @@ describe("validateArtifactStaticP0 — JavaScript", () => {
   });
 });
 
+// ─── Goal-aware JS parse (audit WS1 `js-module-vs-script-fix`) ──────────
+//
+// The old `new Function(content)` check used the FUNCTION-BODY goal:
+// false FAIL on ESM `export`, false PASS on top-level `return`. The core
+// now detects the goal symbol and validates accordingly.
+
+describe("validateArtifactStaticP0 — JavaScript goal symbol", () => {
+  const js = (content: string) =>
+    validateArtifactStaticP0(
+      input({
+        type: "application/javascript",
+        content: `${content}\n// ${"x".repeat(220)}\n`,
+        finalPath: "/x.js",
+      }),
+    );
+
+  it("passes an ESM module with export declarations (old false FAIL)", () => {
+    const r = js(`export const answer = 42;\nexport function main() { return answer; }`);
+    expect(r.status).toBe("pass");
+  });
+
+  it("passes an ESM module with static imports (incl. multi-line named)", () => {
+    const r = js(
+      `import { a,\n  b as c } from "./util.js";\nimport "./side-effect.js";\nexport default a + c;`,
+    );
+    expect(r.status).toBe("pass");
+  });
+
+  it("passes export { … } from re-exports and export *", () => {
+    const r = js(`export { x, y } from "./m.js";\nexport * from "./n.js";\nconst local = 1;`);
+    expect(r.status).toBe("pass");
+  });
+
+  it("passes a module using import.meta and top-level await", () => {
+    const r = js(`const base = import.meta.url;\nexport const data = await fetch(base);`);
+    expect(r.status).toBe("pass");
+  });
+
+  it("fails top-level return in a script (old false PASS)", () => {
+    const r = js(`const x = 1;\nif (x) return;\nconsole.log(x);`);
+    expect(r.status).toBe("fail");
+    if (r.status === "fail") {
+      expect(r.reason).toBe("invalid-js");
+      expect(r.details.toLowerCase()).toContain("return");
+    }
+  });
+
+  it("still passes return INSIDE a function", () => {
+    const r = js(`function pick(a) { if (a) return a; return null; }\npick(1);`);
+    expect(r.status).toBe("pass");
+  });
+
+  it("dynamic import() stays valid in script goal (not misdetected as module)", () => {
+    const r = js(`async function load() { const m = await import("./x.js"); return m; }\nload();`);
+    expect(r.status).toBe("pass");
+  });
+
+  it("fails a module with a real syntax error after the rewrite", () => {
+    const r = js(`export const broken = ((( ;`);
+    expect(r.status).toBe("fail");
+    if (r.status === "fail") expect(r.reason).toBe("invalid-js");
+  });
+});
+
 describe("validateArtifactStaticP0 — binary types", () => {
   it("passes binary content at byte floor (skip introspection)", () => {
     // 32 bytes of "binary-ish" content — Static P0 only checks size for

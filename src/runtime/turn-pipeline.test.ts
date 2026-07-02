@@ -81,6 +81,35 @@ beforeEach(() => {
   });
 });
 
+// ─── Craft reminder threading (agent-reminder-self-correct) ─────────────
+
+describe("prepare — prior craft findings reach the system prompt", () => {
+  it("injects the craft-reminder block when the context carries findings", () => {
+    const ctx = prepare({
+      ...baseInput,
+      context: {
+        ...baseInput.context,
+        priorCraftFindings: [
+          {
+            ruleId: "co-no-raw-black",
+            tier: "P0",
+            title: "No pure black or white",
+            detail: "Use a near-black.",
+            sample: "#000",
+          },
+        ],
+      },
+    });
+    expect(ctx.systemPrompt).toContain("Craft reminder");
+    expect(ctx.systemPrompt).toContain("[P0] co-no-raw-black");
+  });
+
+  it("emits no reminder without findings", () => {
+    const ctx = prepare(baseInput);
+    expect(ctx.systemPrompt).not.toContain("Craft reminder");
+  });
+});
+
 // ─── isTurnPipelineV2Enabled ────────────────────────────────────────────
 
 describe("isTurnPipelineV2Enabled", () => {
@@ -377,6 +406,146 @@ describe("validateTurnOutput", () => {
     expect(v.ok).toBe(true);
     expect(v.doneReport?.channel).toBe("tool");
     expect(v.doneReport?.craftCheck).not.toBeNull();
+  });
+
+  it("runs the craft net on an opencode apply_patch write via disk read-back", async () => {
+    // opencode's `apply_patch` surfaces as a Write tool_call carrying
+    // `file_path` + `patchText` but NOT the whole file content — same
+    // read-back path as Codex. This closes the last provider gap
+    // (audit WS1 craft-net-10-10).
+    const ctx = prepare({ ...baseInput, providerId: "opencode" });
+    const html =
+      "<!doctype html><html><head><title>t</title></head><body>" +
+      '<main style="color:#6366f1"><h1>Hello</h1><p>' +
+      "real content real content ".repeat(20) +
+      "</p></main></body></html>";
+    const s: TurnStream = {
+      fullText: "done",
+      tools: [],
+      toolEvents: [
+        {
+          type: "tool_call",
+          id: "opencode-call-1",
+          name: "Write",
+          input: { file_path: "/proj/index.html", patchText: "*** Begin Patch…" },
+          provider: "opencode",
+          timestamp: "2026-05-04T12:00:00.000Z",
+        },
+      ],
+      sessionId: null,
+      meta: null,
+      result: null,
+      errored: false,
+      aborted: false,
+    };
+    const fakeReader = async (p: string) => (p === "/proj/index.html" ? { content: html } : null);
+    const v = await validateTurnOutput(
+      ctx,
+      s,
+      { status: "skipped", reason: "provider-uses-write", cleanedText: "" },
+      fakeReader,
+    );
+    expect(v.ok).toBe(true);
+    expect(v.doneReport?.channel).toBe("tool");
+    expect(v.doneReport?.provider).toBe("opencode");
+    // The fixture hardcodes the Tailwind indigo tell — the craft net saw it.
+    expect(v.doneReport?.craftCheck?.status).toBe("warn");
+    expect(v.doneReport?.craftCheck?.findings.map((f) => f.ruleId)).toContain(
+      "co-no-tailwind-indigo",
+    );
+  });
+
+  it("takes opencode `write` output inline when the event carries content", async () => {
+    const ctx = prepare({ ...baseInput, providerId: "opencode" });
+    const html =
+      "<!doctype html><html><head><title>t</title></head><body><h1>Hi</h1><p>" +
+      "content ".repeat(40) +
+      "</p></body></html>";
+    const s: TurnStream = {
+      fullText: "done",
+      tools: [],
+      toolEvents: [
+        {
+          type: "tool_call",
+          id: "opencode-call-1",
+          name: "Write",
+          input: { file_path: "/proj/index.html", content: html },
+          provider: "opencode",
+          timestamp: "2026-05-04T12:00:00.000Z",
+        },
+      ],
+      sessionId: null,
+      meta: null,
+      result: null,
+      errored: false,
+      aborted: false,
+    };
+    // Reader that would throw — proving the inline branch never hits disk.
+    const explodingReader = async () => {
+      throw new Error("should not read disk for inline writes");
+    };
+    const v = await validateTurnOutput(
+      ctx,
+      s,
+      { status: "skipped", reason: "provider-uses-write", cleanedText: "" },
+      explodingReader,
+    );
+    expect(v.ok).toBe(true);
+    expect(v.doneReport?.channel).toBe("tool");
+    expect(v.doneReport?.staticP0.status).toBe("pass");
+  });
+
+  it("threads the DS markdown into the craft net's anti-FP allowlist", async () => {
+    // Same literal-indigo document twice: without a DS the tell fires;
+    // with a DS that codifies the color it doesn't (fp-hardening-port).
+    const htmlDoc =
+      "<!doctype html><html><head><title>t</title><style>a{color:#6366f1}</style></head><body><h1>Hello</h1><p>" +
+      "content ".repeat(40) +
+      "</p></body></html>";
+    const mkStream = (): TurnStream => ({
+      fullText: "done",
+      tools: [],
+      toolEvents: [
+        {
+          type: "tool_call",
+          id: "w1",
+          name: "Write",
+          input: { file_path: "/proj/index.html", content: htmlDoc },
+          provider: "claude",
+          timestamp: "2026-05-04T12:00:00.000Z",
+        },
+      ],
+      sessionId: null,
+      meta: null,
+      result: null,
+      errored: false,
+      aborted: false,
+    });
+    const skipped = {
+      status: "skipped",
+      reason: "provider-uses-write",
+      cleanedText: "",
+    } as const;
+
+    const noDs = await validateTurnOutput(prepare(baseInput), mkStream(), skipped);
+    expect(noDs.doneReport?.craftCheck?.findings.map((f) => f.ruleId)).toContain(
+      "co-no-tailwind-indigo",
+    );
+
+    const withDs = await validateTurnOutput(
+      prepare({
+        ...baseInput,
+        context: {
+          ...baseInput.context,
+          designSystem: { name: "ds", path: "/ds", markdown: "accent: `#6366f1`" },
+        },
+      }),
+      mkStream(),
+      skipped,
+    );
+    expect(withDs.doneReport?.craftCheck?.findings.map((f) => f.ruleId)).not.toContain(
+      "co-no-tailwind-indigo",
+    );
   });
 
   it("is fail-safe when a path-only write can't be read (no regression)", async () => {
