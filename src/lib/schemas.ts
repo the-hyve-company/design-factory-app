@@ -224,6 +224,11 @@ export const GlobalConfigSchema = z.object({
    *  to pt-BR when unset. */
   language: z.enum(["pt", "en", "xx"]).optional(),
   default_provider: ProviderIdSchema.optional(),
+  /** Personal default rule set — the ids that pre-fill the New Project
+   *  rules picker. Unknown ids are dropped at read time by
+   *  `resolveDefaultRuleIds`; absent/empty falls back to the 14-rule
+   *  factory core set (`getCoreRuleIds`). */
+  default_rule_ids: z.array(z.string()).optional(),
   model: z.string().optional(),
   skills_custom_path: z.string().optional(),
   builtin_prompts: z.record(z.string(), z.string()).optional(),

@@ -3382,3 +3382,22 @@
   gap: 18px;
 }
 
+
+/* ─── RuleCreateModal extras (WS4): tier + include-in-default ───────── */
+.rcm-checkrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--df-font-sans);
+  font-size: 12.5px;
+  color: var(--df-text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+.rcm-checkrow input[type="checkbox"] {
+  accent-color: var(--df-accent-user, var(--df-accent-ok));
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+}

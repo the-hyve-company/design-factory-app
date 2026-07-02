@@ -827,3 +827,76 @@
     max-height: 88vh;
   }
 }
+
+/* ─── Rules picker at 132-rule scale (WS4) ────────────────────────────
+ * Badges (tier/core/auto) form a right-aligned metadata column between
+ * the row label and the desc — consistent position so long lists scan
+ * as a table. Filter pills sit under the search bowl and compose with
+ * the query (active pill force-expands matching categories). */
+
+.dmv2-row-badge {
+  flex-shrink: 0;
+  font-family: var(--df-font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--df-border-subtle);
+  color: var(--df-text-muted);
+  background: var(--df-bg-base);
+}
+.dmv2-row-badge--p0 {
+  color: var(--df-accent-danger);
+  border-color: color-mix(in srgb, var(--df-accent-danger) 35%, transparent);
+}
+.dmv2-row-badge--p1 {
+  color: var(--df-accent-warn);
+  border-color: color-mix(in srgb, var(--df-accent-warn) 35%, transparent);
+}
+/* P2 keeps the muted base look — polish tier shouldn't shout. */
+.dmv2-row-badge--core {
+  color: var(--df-accent-user, var(--df-accent-ok));
+  border-color: color-mix(in srgb, var(--df-accent-user, var(--df-accent-ok)) 40%, transparent);
+}
+/* Dashed border reads as "machine-verified" vs human judgment. */
+.dmv2-row-badge--auto {
+  border-style: dashed;
+}
+
+.dmv2-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: -4px 20px 12px;
+}
+.dmv2-filter-pill {
+  font-family: var(--df-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--df-border-subtle);
+  background: var(--df-bg-base);
+  color: var(--df-text-secondary);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease;
+}
+.dmv2-filter-pill:hover {
+  color: var(--df-text-primary);
+}
+/* Active = bg tint + accent text (no side bars, weight carries state). */
+.dmv2-filter-pill.is-on {
+  color: var(--df-accent-user, var(--df-accent-ok));
+  border-color: color-mix(in srgb, var(--df-accent-user, var(--df-accent-ok)) 45%, transparent);
+  background: color-mix(in srgb, var(--df-accent-user, var(--df-accent-ok)) 12%, transparent);
+}

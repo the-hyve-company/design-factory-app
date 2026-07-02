@@ -279,6 +279,31 @@ const PT: Strings = {
   "rules.new.cancel": "Cancelar",
   "rules.new.save": "Criar regra",
   "rules.new.saving": "Salvando…",
+  "rules.new.tier.label": "Severidade (opcional)",
+  "rules.new.tier.none": "Sem severidade",
+  "rules.new.tier.p0": "P0 — obrigatória",
+  "rules.new.tier.p1": "P1 — recomendada",
+  "rules.new.tier.p2": "P2 — polimento",
+  "rules.new.default.label": "Incluir no meu padrão de novos projetos",
+  "rules.new.default.help": "A regra já entra selecionada em todo projeto novo.",
+
+  // Rules picker — escala 132 (filtros, badges, restaurar padrão)
+  "rules.filter.aria": "Filtrar regras",
+  "rules.filter.core": "Essenciais",
+  "rules.filter.selected": "Selecionadas",
+  "rules.badge.core": "essencial",
+  "rules.badge.core.title": "Faz parte do conjunto padrão de fábrica (14 regras)",
+  "rules.badge.auto": "auto",
+  "rules.badge.auto.title": "Auto-checada: verificada automaticamente após a geração",
+  "rules.badge.tier.p0.title": "P0: obrigatória (must-fix)",
+  "rules.badge.tier.p1.title": "P1: recomendada (should-fix)",
+  "rules.badge.tier.p2.title": "P2: polimento",
+  "rules.restore.default": "Restaurar padrão",
+  "rules.restore.default.title": "Volta a seleção pro seu conjunto padrão de novos projetos",
+
+  // RulesEditor — eixo "padrão em novos projetos"
+  "settings.rules.default.toggle": "Padrão em novos projetos",
+  "settings.rules.default.hint": "Entra pré-selecionada no picker de regras de todo projeto novo",
 
   // Common modal actions
   "modal.close": "Fechar",
@@ -495,6 +520,7 @@ const PT: Strings = {
   "newproject.ds.modal.selected": "selecionado",
   "newproject.ds.modal.empty":
     "Nenhum design system no disco. Crie um pela aba Home → Design Systems.",
+  "newproject.ds.modal.empty.cta": "Criar/importar design system",
 
   // SettingsScreen sidebar/headers
   "settings.nav.providers": "Providers",
@@ -1792,6 +1818,31 @@ const EN: Strings = {
   "rules.new.cancel": "Cancel",
   "rules.new.save": "Create rule",
   "rules.new.saving": "Saving…",
+  "rules.new.tier.label": "Severity (optional)",
+  "rules.new.tier.none": "No severity",
+  "rules.new.tier.p0": "P0 — must-fix",
+  "rules.new.tier.p1": "P1 — should-fix",
+  "rules.new.tier.p2": "P2 — polish",
+  "rules.new.default.label": "Include in my default for new projects",
+  "rules.new.default.help": "The rule starts selected in every new project.",
+
+  // Rules picker — 132-rule scale (filters, badges, restore default)
+  "rules.filter.aria": "Filter rules",
+  "rules.filter.core": "Core",
+  "rules.filter.selected": "Selected",
+  "rules.badge.core": "core",
+  "rules.badge.core.title": "Part of the factory default set (14 rules)",
+  "rules.badge.auto": "auto",
+  "rules.badge.auto.title": "Auto-checked: verified automatically after generation",
+  "rules.badge.tier.p0.title": "P0: must-fix",
+  "rules.badge.tier.p1.title": "P1: should-fix",
+  "rules.badge.tier.p2.title": "P2: polish",
+  "rules.restore.default": "Restore default",
+  "rules.restore.default.title": "Reset the selection to your default set for new projects",
+
+  // RulesEditor — "default in new projects" axis
+  "settings.rules.default.toggle": "Default in new projects",
+  "settings.rules.default.hint": "Pre-selected in the rules picker of every new project",
 
   // Common modal actions
   "modal.close": "Close",
@@ -2003,6 +2054,7 @@ const EN: Strings = {
   "newproject.ds.modal.selected": "selected",
   "newproject.ds.modal.empty":
     "No design systems on disk. Create one from the Home → Design Systems tab.",
+  "newproject.ds.modal.empty.cta": "Create/import design system",
 
   "settings.nav.providers": "Providers",
   "settings.nav.components": "Components",

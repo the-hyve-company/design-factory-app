@@ -951,3 +951,68 @@
     min-height: 280px;
   }
 }
+
+/* ─── RulesEditor detail (WS4) ────────────────────────────────────────
+ * Classes extracted from former inline styles (magic numbers) + the
+ * default-axis toggle row ("Padrão em novos projetos"). */
+
+.rules-md-code {
+  font-family: var(--df-font-mono);
+  font-size: 11px;
+  padding: 1px 4px;
+  background: var(--df-bg-base);
+  border-radius: 3px;
+}
+.rules-detail-builtin-actions {
+  margin-bottom: 18px;
+}
+.rules-desc-textarea {
+  min-height: 70px;
+}
+.rules-desc-preview {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: var(--df-bg-base);
+  border-radius: var(--df-r-sm);
+  box-shadow: var(--df-bezel-recessed);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--df-text-secondary);
+}
+.rules-detail-footrow {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+/* Default-axis toggle — reuses the row toggle skeu (.tx-mgr-toggle). */
+.rules-default-axis {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  background: var(--df-bg-base);
+  border-radius: var(--df-r-sm);
+  box-shadow: var(--df-bezel-recessed);
+}
+.rules-default-axis-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rules-default-axis-label {
+  font-family: var(--df-font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--df-text-primary);
+}
+.rules-default-axis-hint {
+  font-family: var(--df-font-mono);
+  font-size: 10.5px;
+  color: var(--df-text-muted);
+  letter-spacing: 0.02em;
+}
