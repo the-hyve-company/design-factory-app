@@ -42,9 +42,17 @@ export interface NewProjectModalProps {
   onClose: () => void;
   /** Forwarded to <NewProjectFormSkeu />. May be async. */
   onCreate: (payload: NewProjectFormPayload) => void | Promise<void>;
+  /** Forwarded to <NewProjectFormSkeu /> — DS empty-state CTA. Host
+   *  should close this modal and route to the design-systems tab. */
+  onOpenDesignSystems?: () => void;
 }
 
-export function NewProjectModal({ open, onClose, onCreate }: NewProjectModalProps) {
+export function NewProjectModal({
+  open,
+  onClose,
+  onCreate,
+  onOpenDesignSystems,
+}: NewProjectModalProps) {
   const { t } = useT();
   const cardRef = useRef<HTMLDivElement>(null);
   // v8: lift the name into the modal so the faceplate input edits it AND
@@ -167,6 +175,7 @@ export function NewProjectModal({ open, onClose, onCreate }: NewProjectModalProp
             showHero={false}
             controlledName={name}
             onCreate={onCreate}
+            onOpenDesignSystems={onOpenDesignSystems}
           />
         </div>
       </div>

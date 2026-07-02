@@ -107,10 +107,14 @@ import {
   getUserRules,
   setUserRules,
   getEffectiveRules,
-  getCoreRuleIds,
-  resolveDefaultRuleIds,
   type Rule,
 } from "@/data/rules-taxonomy";
+import {
+  getCachedDefaultRuleIds,
+  loadDefaultRuleIds,
+  saveDefaultRuleIds,
+} from "@/lib/default-rules";
+import type { RuleCreateOptions } from "@/components/RuleCreateModal";
 import {
   canvasLabel as canvasI18nLabel,
   formatCategoryLabel as fmtCatI18nLabel,
@@ -178,6 +182,10 @@ export interface NewProjectFormSkeuProps {
    *  route (still receives changes from internal input). When `controlledName`
    *  is provided, no longer fires from the form. */
   onNameChange?: (name: string) => void;
+  /** DS empty-state CTA — navigate to the design-systems tab (host closes
+   *  the modal + routes). Falls back to a plain location change when the
+   *  host doesn't wire it (standalone lab routes). */
+  onOpenDesignSystems?: () => void;
 }
 
 // ─── Static data ──────────────────────────────────────────────────────
@@ -415,6 +423,7 @@ export function NewProjectFormSkeu({
   initialTaste,
   controlledName,
   onNameChange,
+  onOpenDesignSystems,
 }: NewProjectFormSkeuProps) {
   // v7 (2026-05-05): i18n hook — re-renders this component when the
   // user flips the language toggle in Settings.
@@ -443,12 +452,14 @@ export function NewProjectFormSkeu({
   const [prompt, setPrompt] = useState("");
   const [canvas, setCanvas] = useState<CanvasSelection | null>(null);
   const [format, setFormat] = useState<FormatSelection | null>(null);
-  // Picker starts from the factory-core rule set (14 default-on rules), so
-  // craft ships enabled instead of an empty selection. The hydration effect
-  // below overrides it with the saved `default_rule_ids` when present. The
-  // ref keeps the resolved default so `reset()` returns to it, not to [].
-  const [rules, setRules] = useState<string[]>(() => getCoreRuleIds());
-  const defaultRuleIdsRef = useRef<string[]>(getCoreRuleIds());
+  // Picker starts from the member's default rule set — the boot-primed
+  // cache (`default_rule_ids`, resolved at App boot) so even the FIRST
+  // paint shows the personalized set; factory core (14) before any save.
+  // The async effect below re-reads from disk in case the cache is stale.
+  // `defaultRuleIds` keeps the resolved default so `reset()` and the
+  // modal's "Restaurar padrão" return to it, not to [].
+  const [rules, setRules] = useState<string[]>(() => getCachedDefaultRuleIds());
+  const [defaultRuleIds, setDefaultRuleIds] = useState<string[]>(() => getCachedDefaultRuleIds());
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -573,12 +584,12 @@ export function NewProjectFormSkeu({
     return () => window.removeEventListener("df:provider-change", onProviderChange);
   }, []);
 
-  // Hydrate the rule picker from the saved factory default (`default_rule_ids`),
-  // falling back to the core set. Runs once on mount, like default_provider.
+  // Hydrate the rule picker from the saved member default
+  // (`default_rule_ids`) — fs config first, db fallback, core-set floor.
+  // Runs once on mount, like default_provider.
   useEffect(() => {
-    void db.getSetting("default_rule_ids").then((raw) => {
-      const resolved = resolveDefaultRuleIds(raw);
-      defaultRuleIdsRef.current = resolved;
+    void loadDefaultRuleIds().then((resolved) => {
+      setDefaultRuleIds(resolved);
       setRules(resolved);
     });
   }, []);
@@ -632,13 +643,22 @@ export function NewProjectFormSkeu({
 
   // When the user creates a new rule from inside RulesModal, persist it in
   // the user_rules slot and bump the catalog version so the modal re-reads.
-  const handleCreateRule = useCallback(async (rule: Rule) => {
-    const next = [...getUserRules(), rule];
-    setUserRules(next);
-    void writeGlobalConfig({ custom_rules: next as never }).catch(() => {});
-    void db.setSetting("custom_rules", JSON.stringify(next)).catch(() => {});
-    setRulesCatalogVersion((v) => v + 1);
-  }, []);
+  // "Incluir no meu padrão" additionally appends the id to
+  // `default_rule_ids` so future projects start with it.
+  const handleCreateRule = useCallback(
+    async (rule: Rule, opts: RuleCreateOptions) => {
+      const next = [...getUserRules(), rule];
+      setUserRules(next);
+      void writeGlobalConfig({ custom_rules: next as never }).catch(() => {});
+      void db.setSetting("custom_rules", JSON.stringify(next)).catch(() => {});
+      if (opts.addToDefault) {
+        const saved = await saveDefaultRuleIds([...defaultRuleIds, rule.id]);
+        setDefaultRuleIds(saved);
+      }
+      setRulesCatalogVersion((v) => v + 1);
+    },
+    [defaultRuleIds],
+  );
 
   // describeCanvas/describeFormatSelection now accept an
   // i18n bag so the trigger button labels flip pt↔en when the user
@@ -693,13 +713,13 @@ export function NewProjectFormSkeu({
     setPrompt("");
     setCanvas(null);
     setFormat(null);
-    setRules(defaultRuleIdsRef.current);
+    setRules(defaultRuleIds);
     setAttachments([]);
     setSelectedDsPath(null);
     setSubmitError(null);
     setDialValues({ ...DEFAULT_TASTE, ...(initialTaste ?? {}) });
     onReset?.();
-  }, [initialTaste, onReset, isControlled]);
+  }, [initialTaste, onReset, isControlled, defaultRuleIds]);
 
   const canBegin = name.trim().length > 0 && !submitting;
 
@@ -1203,6 +1223,7 @@ export function NewProjectFormSkeu({
         onApply={handleApplyRules}
         onCreateRule={handleCreateRule}
         catalogVersion={rulesCatalogVersion}
+        defaultIds={defaultRuleIds}
       />
 
       {/* DS MODAL */}
@@ -1242,7 +1263,22 @@ export function NewProjectFormSkeu({
               );
             })}
             {designSystems.length === 0 && (
-              <div className="reg-ds-modal-empty">{t("newproject.ds.modal.empty")}</div>
+              <div className="reg-ds-modal-empty">
+                <span>{t("newproject.ds.modal.empty")}</span>
+                {/* CTA — dead-end text becomes an actionable path to the
+                 * design-systems tab (WS4 ux-ds-empty-state-cta). */}
+                <button
+                  type="button"
+                  className="df-btn df-btn--primary df-btn--sm"
+                  onClick={() => {
+                    setDsModalOpen(false);
+                    if (onOpenDesignSystems) onOpenDesignSystems();
+                    else window.location.assign("/design-systems");
+                  }}
+                >
+                  {t("newproject.ds.modal.empty.cta")}
+                </button>
+              </div>
             )}
           </div>
         </div>

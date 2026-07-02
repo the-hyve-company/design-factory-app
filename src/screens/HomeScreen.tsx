@@ -1376,6 +1376,12 @@ export function HomeScreen({
         open={showNpModal}
         onClose={() => setShowNpModal(false)}
         onCreate={handleCreateFromNpModal}
+        onOpenDesignSystems={() => {
+          // DS empty-state CTA: close the console and land on the
+          // design-systems tab so "criar/importar DS" is one click away.
+          setShowNpModal(false);
+          navigate("/design-systems");
+        }}
       />
 
       {/* START FROM HTML MODAL */}

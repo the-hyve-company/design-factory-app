@@ -1597,6 +1597,11 @@
 .reg-ds-modal-empty {
   grid-column: 1 / -1;
   text-align: center;
+  /* WS4 ux-ds-empty-state-cta: text + CTA stack (was text-only). */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--df-sp-3);
   padding: 32px;
   color: var(--df-text-faint);
   font-family: var(--df-font-mono);
