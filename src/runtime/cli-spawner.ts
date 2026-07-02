@@ -73,6 +73,41 @@ export interface SpawnOverrides {
 
 const DEFAULT_PROVIDER_ID: ProviderId = "claude";
 
+/**
+ * Resolve the model that actually reaches `provider.stream/once` —
+ * audit WS3 `model-default-no-claude-leak`.
+ *
+ * CATEGORY_CONFIG pins Claude aliases (opus/sonnet/haiku) per category.
+ * Pre-fix, that alias rode into EVERY provider when the caller didn't
+ * pass an override — auxiliary flows (tweaks/export/consult) sent
+ * literal "opus" to kimi/openrouter/ollama, which either 404s upstream
+ * or silently mismatches. Live chat paths always pass `ctx.model`, so
+ * the leak was confined to overrideless calls — closed here at the
+ * single dispatch point instead of auditing every caller forever.
+ *
+ * Rules:
+ *   · explicit override wins, always;
+ *   · claude without override keeps the category alias (the tiering is
+ *     intentional: cheap categories ride haiku, generation rides opus);
+ *   · any OTHER provider without override gets NO model — every daemon
+ *     adapter maps a missing/"default" model to its own best default
+ *     (ollama probes /api/tags for what's actually pulled; openrouter
+ *     picks its cheapest; kimi defers to the CLI config). Forcing the
+ *     static catalog's first entry here would fight those resolvers —
+ *     deliberate divergence from the audit's "defaultModelForProvider"
+ *     suggestion, for the adapter-default reason above.
+ */
+export function resolveSpawnModel(
+  providerId: ProviderId | undefined,
+  categoryModel: string | undefined,
+  override: string | undefined,
+): string | undefined {
+  if (override) return override;
+  const target = providerId ?? DEFAULT_PROVIDER_ID;
+  if (target === "claude") return categoryModel;
+  return undefined;
+}
+
 function resolveProvider(id: ProviderId | undefined) {
   const target = id ?? DEFAULT_PROVIDER_ID;
   const provider = getProvider(target);
@@ -117,12 +152,13 @@ export async function spawnStream(
     callbacks.onError(notReady);
     return () => {};
   }
+  const model = resolveSpawnModel(o.providerId, config.model, o.model);
   return provider.stream(
     prompt,
     {
       ...config,
       systemPrompt,
-      ...(o.model ? { model: o.model } : {}),
+      model,
       cwd: o.cwd,
       agent: o.agent,
       sessionId: o.sessionId,
@@ -143,10 +179,11 @@ export async function spawnOnce(
   const provider = resolveProvider(o.providerId);
   const notReady = await checkProviderReady(provider);
   if (notReady) throw new Error(notReady);
+  const model = resolveSpawnModel(o.providerId, config.model, o.model);
   return provider.once(prompt, {
     ...config,
     systemPrompt,
-    ...(o.model ? { model: o.model } : {}),
+    model,
     cwd: o.cwd,
     agent: o.agent,
     sessionId: o.sessionId,
