@@ -18,13 +18,22 @@ import {
 } from "@/data/rules-taxonomy";
 import { useT } from "@/i18n";
 
+/** Extra intents captured alongside the rule itself. The host decides
+ *  how to honor them (e.g. append the id to `default_rule_ids`). */
+export interface RuleCreateOptions {
+  /** "Incluir no meu padrão" — add the new rule to the member's default
+   *  set so every future project starts with it. */
+  addToDefault: boolean;
+}
+
 interface RuleCreateModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (rule: Rule) => Promise<void> | void;
+  onCreate: (rule: Rule, opts: RuleCreateOptions) => Promise<void> | void;
 }
 
 const NEW_CAT_VALUE = "__new__";
+const TIER_NONE = "";
 
 export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProps) {
   const { t } = useT();
@@ -33,6 +42,8 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
   const [categoryChoice, setCategoryChoice] = useState<string>("custom");
   const [newCategory, setNewCategory] = useState("");
   const [description, setDescription] = useState("");
+  const [tier, setTier] = useState<"" | "P0" | "P1" | "P2">(TIER_NONE);
+  const [addToDefault, setAddToDefault] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +53,8 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
     setCategoryChoice("custom");
     setNewCategory("");
     setDescription("");
+    setTier(TIER_NONE);
+    setAddToDefault(false);
     setError(null);
     setSubmitting(false);
   }, [open]);
@@ -64,12 +77,13 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
       id: generateUserRuleId(effectiveCategory),
       title: title.trim(),
       category: effectiveCategory,
+      tier: tier === TIER_NONE ? undefined : tier,
       description: description.trim() || undefined,
       builtin: false,
     };
     try {
       setSubmitting(true);
-      await onCreate(rule);
+      await onCreate(rule, { addToDefault });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -202,6 +216,36 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
             spellCheck={false}
             maxLength={120}
           />
+        </div>
+
+        <div className="rcm-row">
+          <label className="rcm-label" htmlFor="rcm-tier">
+            {t("rules.new.tier.label")}
+          </label>
+          <select
+            id="rcm-tier"
+            className="rcm-select"
+            value={tier}
+            onChange={(e) => setTier(e.target.value as "" | "P0" | "P1" | "P2")}
+          >
+            <option value={TIER_NONE}>{t("rules.new.tier.none")}</option>
+            <option value="P0">P0 — {t("rules.new.tier.p0")}</option>
+            <option value="P1">P1 — {t("rules.new.tier.p1")}</option>
+            <option value="P2">P2 — {t("rules.new.tier.p2")}</option>
+          </select>
+        </div>
+
+        <div className="rcm-row">
+          <label className="rcm-checkrow" htmlFor="rcm-default">
+            <input
+              id="rcm-default"
+              type="checkbox"
+              checked={addToDefault}
+              onChange={(e) => setAddToDefault(e.target.checked)}
+            />
+            <span>{t("rules.new.default.label")}</span>
+          </label>
+          <span className="rcm-help">{t("rules.new.default.help")}</span>
         </div>
       </div>
     </DfModal>

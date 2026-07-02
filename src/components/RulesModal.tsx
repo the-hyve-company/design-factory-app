@@ -11,12 +11,20 @@
 //   - "+ New rule" trigger in the footer opens RuleCreateModal inline.
 //   - Newly-created rules land immediately under their chosen category
 //     and are flagged is-on (selected for the current project).
+//
+// Scale-132 affordances (the catalog grew ~50 → 132 rules):
+//   - Tier (P0/P1/P2), core and auto-checked badges per row.
+//   - Filter pills (core / selected / per-tier) compose with search;
+//     an active filter force-expands matching categories like search.
+//   - "Restaurar padrão" resets the draft to the member's saved default
+//     set (`default_rule_ids`), falling back to the factory core set.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DfModal } from "@/components/DfModal";
-import { RuleCreateModal } from "@/components/RuleCreateModal";
+import { RuleCreateModal, type RuleCreateOptions } from "@/components/RuleCreateModal";
 import {
   groupRulesByCategory,
+  getCoreRuleIds,
   getEffectiveRules,
   type Rule,
   type RuleCategoryMeta,
@@ -49,7 +57,10 @@ interface RulesModalProps {
   /** Tick when the underlying catalog changes (e.g., user adds a rule). */
   catalogVersion?: number;
   /** Called when a new rule is created from the inline "+ New rule" trigger. */
-  onCreateRule?: (rule: Rule) => Promise<void> | void;
+  onCreateRule?: (rule: Rule, opts: RuleCreateOptions) => Promise<void> | void;
+  /** The member's saved default set (`default_rule_ids`) — target of the
+   *  "Restaurar padrão" footer action. Absent/empty → factory core set. */
+  defaultIds?: string[];
 }
 
 interface FilteredGroup {
@@ -57,13 +68,39 @@ interface FilteredGroup {
   rules: Rule[];
 }
 
-function filterGroups(
+/** Quick-filter axis for the 132-rule catalog. "all" = no filter. */
+export type RuleFilter = "all" | "core" | "selected" | "P0" | "P1" | "P2";
+
+/** Pure predicate — one rule against one filter pill. Exported for tests. */
+export function ruleMatchesFilter(
+  rule: Rule,
+  filter: RuleFilter,
+  selected: ReadonlySet<string>,
+): boolean {
+  switch (filter) {
+    case "all":
+      return true;
+    case "core":
+      return rule.core === true;
+    case "selected":
+      return selected.has(rule.id);
+    default:
+      return rule.tier === filter;
+  }
+}
+
+/** Filter + search composition over the category groups. Exported for
+ *  tests. `matched` drives forced expansion while a query OR a filter
+ *  pill is active. */
+export function filterGroups(
   groups: Array<{ meta: RuleCategoryMeta; rules: Rule[] }>,
   query: string,
   lang: Lang,
+  filter: RuleFilter = "all",
+  selected: ReadonlySet<string> = new Set<string>(),
 ): { filtered: FilteredGroup[]; matched: Set<string> } {
   const q = query.trim().toLowerCase();
-  if (!q) return { filtered: groups, matched: new Set() };
+  if (!q && filter === "all") return { filtered: groups, matched: new Set() };
   const matched = new Set<string>();
   const filtered = groups
     .map((g) => {
@@ -72,6 +109,8 @@ function filterGroups(
       // "emojis" hits the same row regardless of UI language.
       const catLocalized = localizedCatLabel(g.meta).toLowerCase();
       const rules = g.rules.filter((r) => {
+        if (!ruleMatchesFilter(r, filter, selected)) return false;
+        if (!q) return true;
         const localizedTitle = ruleTitle(r, lang).toLowerCase();
         const localizedDesc = ruleDescription(r, lang).toLowerCase();
         return (
@@ -98,6 +137,7 @@ export function RulesModal({
   onApply,
   catalogVersion = 0,
   onCreateRule,
+  defaultIds,
 }: RulesModalProps) {
   const { t, lang } = useT();
   // Recompute groups whenever the catalog version bumps (e.g., user
@@ -106,6 +146,7 @@ export function RulesModal({
   const groups = useMemo(() => groupRulesByCategory(), [catalogVersion, open]);
   const [draft, setDraft] = useState<Set<string>>(() => new Set(initial));
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<RuleFilter>("all");
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const set = new Set<string>();
     for (const g of groups) {
@@ -122,6 +163,7 @@ export function RulesModal({
     if (!open) return;
     setDraft(new Set(initial));
     setQuery("");
+    setFilter("all");
     const next = new Set<string>();
     for (const g of groups) {
       if (g.rules.some((r) => initial.includes(r.id))) next.add(g.meta.id);
@@ -134,17 +176,20 @@ export function RulesModal({
   }, [open, initial, groups]);
 
   const { filtered, matched } = useMemo(
-    () => filterGroups(groups, query, lang),
-    [groups, query, lang],
+    () => filterGroups(groups, query, lang, filter, draft),
+    [groups, query, lang, filter, draft],
   );
   const visibleGroups = filtered;
+  // A live query OR an active filter pill locks categories expanded so
+  // every match is visible (same affordance search always had).
+  const filtersActive = Boolean(query.trim()) || filter !== "all";
   const isExpanded = (catId: string): boolean =>
-    query.trim() ? matched.has(catId) : expanded.has(catId);
+    filtersActive ? matched.has(catId) : expanded.has(catId);
 
   const totalCount = useMemo(() => getEffectiveRules().length, [groups]);
 
   const toggleCategory = (id: string) => {
-    if (query.trim()) return;
+    if (filtersActive) return;
     setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -177,6 +222,12 @@ export function RulesModal({
 
   const clear = () => setDraft(new Set());
 
+  // "Restaurar padrão" — reset the draft to the member's saved default
+  // set; when none is saved yet, the factory core set (14 rules).
+  const restoreDefault = () => {
+    setDraft(new Set(defaultIds && defaultIds.length > 0 ? defaultIds : getCoreRuleIds()));
+  };
+
   const apply = () => {
     onApply([...draft]);
     onClose();
@@ -199,11 +250,12 @@ export function RulesModal({
 
   const totalSelected = draft.size;
 
-  const handleRuleCreated = async (rule: Rule) => {
+  const handleRuleCreated = async (rule: Rule, opts: RuleCreateOptions) => {
     // Auto-select the newly-created rule for this project. Persistence is
-    // the host's responsibility (onCreateRule callback).
+    // the host's responsibility (onCreateRule callback) — including the
+    // opt-in "include in my default" flag.
     if (onCreateRule) {
-      await onCreateRule(rule);
+      await onCreateRule(rule, opts);
     }
     setDraft((prev) => {
       const next = new Set(prev);
@@ -267,6 +319,33 @@ export function RulesModal({
                 </button>
               )}
             </div>
+            <div className="dmv2-filter-row" role="group" aria-label={t("rules.filter.aria")}>
+              {(
+                [
+                  { id: "core" as const, label: t("rules.filter.core") },
+                  {
+                    id: "selected" as const,
+                    label:
+                      totalSelected > 0
+                        ? `${t("rules.filter.selected")} · ${totalSelected}`
+                        : t("rules.filter.selected"),
+                  },
+                  { id: "P0" as const, label: "P0" },
+                  { id: "P1" as const, label: "P1" },
+                  { id: "P2" as const, label: "P2" },
+                ] satisfies Array<{ id: RuleFilter; label: string }>
+              ).map((pill) => (
+                <button
+                  key={pill.id}
+                  type="button"
+                  className={`dmv2-filter-pill${filter === pill.id ? " is-on" : ""}`}
+                  aria-pressed={filter === pill.id}
+                  onClick={() => setFilter((curr) => (curr === pill.id ? "all" : pill.id))}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
           </>
         }
         foot={
@@ -287,6 +366,14 @@ export function RulesModal({
                 aria-label={t("rules.create.aria")}
               >
                 {t("rules.create.label")}
+              </button>
+              <button
+                type="button"
+                className="dmv2-btn-text"
+                onClick={restoreDefault}
+                title={t("rules.restore.default.title")}
+              >
+                {t("rules.restore.default")}
               </button>
               <button
                 type="button"
@@ -435,9 +522,48 @@ interface RuleRowProps {
   onToggle: () => void;
 }
 
+/** Ordered badge descriptors for a rule row. Pure — exported for tests.
+ *  `label`/`title` are i18n KEYS except tier (literal P0/P1/P2). */
+export function ruleBadges(
+  rule: Rule,
+): Array<{ kind: "tier" | "core" | "auto"; className: string; label: string; titleKey: string }> {
+  const out: Array<{
+    kind: "tier" | "core" | "auto";
+    className: string;
+    label: string;
+    titleKey: string;
+  }> = [];
+  if (rule.tier) {
+    out.push({
+      kind: "tier",
+      className: `dmv2-row-badge dmv2-row-badge--${rule.tier.toLowerCase()}`,
+      label: rule.tier,
+      titleKey: `rules.badge.tier.${rule.tier.toLowerCase()}.title`,
+    });
+  }
+  if (rule.core) {
+    out.push({
+      kind: "core",
+      className: "dmv2-row-badge dmv2-row-badge--core",
+      label: "rules.badge.core",
+      titleKey: "rules.badge.core.title",
+    });
+  }
+  if (rule.checkable) {
+    out.push({
+      kind: "auto",
+      className: "dmv2-row-badge dmv2-row-badge--auto",
+      label: "rules.badge.auto",
+      titleKey: "rules.badge.auto.title",
+    });
+  }
+  return out;
+}
+
 function RuleRow({ rule, checked, lang, onToggle }: RuleRowProps) {
   const title = ruleTitle(rule, lang);
   const desc = ruleDescription(rule, lang);
+  const badges = ruleBadges(rule);
   return (
     <button
       type="button"
@@ -456,6 +582,13 @@ function RuleRow({ rule, checked, lang, onToggle }: RuleRowProps) {
         <span className="dmv2-row-check-dot" />
       </span>
       <span className="dmv2-row-label">{title}</span>
+      {/* Metadata column: tier/core/auto badges sit right-aligned before
+       * the desc so 132 rows scan as a consistent table. */}
+      {badges.map((b) => (
+        <span key={b.kind} className={b.className} title={tFn(b.titleKey)}>
+          {b.kind === "tier" ? b.label : tFn(b.label)}
+        </span>
+      ))}
       {desc && <span className="dmv2-row-desc">{desc}</span>}
     </button>
   );
