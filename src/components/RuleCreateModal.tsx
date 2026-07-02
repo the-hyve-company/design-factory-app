@@ -229,9 +229,9 @@ export function RuleCreateModal({ open, onClose, onCreate }: RuleCreateModalProp
             onChange={(e) => setTier(e.target.value as "" | "P0" | "P1" | "P2")}
           >
             <option value={TIER_NONE}>{t("rules.new.tier.none")}</option>
-            <option value="P0">P0 — {t("rules.new.tier.p0")}</option>
-            <option value="P1">P1 — {t("rules.new.tier.p1")}</option>
-            <option value="P2">P2 — {t("rules.new.tier.p2")}</option>
+            <option value="P0">{t("rules.new.tier.p0")}</option>
+            <option value="P1">{t("rules.new.tier.p1")}</option>
+            <option value="P2">{t("rules.new.tier.p2")}</option>
           </select>
         </div>
 
