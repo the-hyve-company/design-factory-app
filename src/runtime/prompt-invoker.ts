@@ -14,6 +14,7 @@ export {
   workspaceContextPreamble,
   VISUAL_CRAFT_CONTRACT,
   INJECTION_RESISTANCE,
+  AGENT_CONTRACT_LIMITS,
   buildLocalePromptBlock,
   buildSystemPrompt,
 } from "./prompt-composer";
