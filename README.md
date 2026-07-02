@@ -128,13 +128,22 @@ projects/     Trabalho local (gitignored)
 
 ## Comandos
 
+O CLI `df` (em `scripts/df.mjs`) é quem sobe e gerencia a instância —
+`npm run dev:web` e `npm start` são atalhos pra ele:
+
 ```bash
-npm run dev:web     # app + daemon (abre o navegador)
+npm run dev:web     # df --dev: app + daemon (abre o navegador)
+npm start           # df --prod: build de produção + daemon
+npm run df status   # instâncias rodando (todas as pastas)
+npm run df stop     # parar a instância desta pasta
 npm run build       # TypeScript + Vite
 npm test            # Vitest
 ```
 
 Antes de um PR: `npx tsc --noEmit && npm test && npm run build`.
+
+O que vem no repo (skills com licença, exemplos, templates, 132 rules):
+[docs/catalog.md](docs/catalog.md).
 
 ---
 

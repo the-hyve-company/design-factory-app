@@ -11,9 +11,11 @@ starting point.
 | `pricing-card.html`       | Three-tier pricing block with the middle plan promoted via depth, no decorative bars | Marketing     |
 | `dashboard-stat-row.html` | KPI row pattern — tabular figures, scoped delta colors, no card bars                 | Internal tool |
 
-Each example follows the 30 default rules shipped with DF (no decorative
+Each example follows the builtin rules shipped with DF (no decorative
 emojis, no invented decoration, palette derives from the established
-neutrals + one accent, tabular nums on every numeric, etc).
+neutrals + one accent, tabular nums on every numeric, etc — the full
+set, 132 rules across 14 categories, is indexed in
+[docs/catalog.md](../docs/catalog.md)).
 
 To open: `open examples/landing-hero.html` (or double-click in Finder).
 To remix: copy the file into a new project's folder under

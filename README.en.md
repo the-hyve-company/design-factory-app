@@ -127,13 +127,22 @@ projects/     Local work (gitignored)
 
 ## Commands
 
+The `df` CLI (`scripts/df.mjs`) starts and manages the instance —
+`npm run dev:web` and `npm start` are shortcuts to it:
+
 ```bash
-npm run dev:web     # app + daemon (opens the browser)
+npm run dev:web     # df --dev: app + daemon (opens the browser)
+npm start           # df --prod: production build + daemon
+npm run df status   # running instances (all folders)
+npm run df stop     # stop this folder's instance
 npm run build       # TypeScript + Vite
 npm test            # Vitest
 ```
 
 Before a PR: `npx tsc --noEmit && npm test && npm run build`.
+
+What ships in the repo (licensed skills, examples, templates, 132 rules):
+[docs/catalog.md](docs/catalog.md).
 
 ---
 
