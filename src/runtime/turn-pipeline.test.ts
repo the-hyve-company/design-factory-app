@@ -81,6 +81,35 @@ beforeEach(() => {
   });
 });
 
+// ─── Craft reminder threading (agent-reminder-self-correct) ─────────────
+
+describe("prepare — prior craft findings reach the system prompt", () => {
+  it("injects the craft-reminder block when the context carries findings", () => {
+    const ctx = prepare({
+      ...baseInput,
+      context: {
+        ...baseInput.context,
+        priorCraftFindings: [
+          {
+            ruleId: "co-no-raw-black",
+            tier: "P0",
+            title: "No pure black or white",
+            detail: "Use a near-black.",
+            sample: "#000",
+          },
+        ],
+      },
+    });
+    expect(ctx.systemPrompt).toContain("Craft reminder");
+    expect(ctx.systemPrompt).toContain("[P0] co-no-raw-black");
+  });
+
+  it("emits no reminder without findings", () => {
+    const ctx = prepare(baseInput);
+    expect(ctx.systemPrompt).not.toContain("Craft reminder");
+  });
+});
+
 // ─── isTurnPipelineV2Enabled ────────────────────────────────────────────
 
 describe("isTurnPipelineV2Enabled", () => {

@@ -52,6 +52,7 @@ import {
 } from "@/runtime/tool-events";
 import { readFileViaBridge, isUsableHtmlContent } from "@/lib/claude-bridge";
 import { upsertProviderSession } from "@/lib/provider-sessions";
+import type { CraftFinding } from "@/runtime/craft-checks";
 import type { ProviderId, ProviderCapabilities } from "@/providers/types";
 import type {
   StreamCallbacks,
@@ -93,6 +94,11 @@ export interface TurnExternalContext {
   /** Conversation history slice. Pipeline does not recompute history — the
    *  wrapper owns it. */
   history?: Array<{ role: "user" | "assistant"; content: string }>;
+  /** Craft findings from the previous turn's done report. Forwarded into
+   *  the composer's craft-reminder block (audit WS1
+   *  `agent-reminder-self-correct`) so the model self-corrects flagged
+   *  tells on the next turn. The wrapper owns collecting them. */
+  priorCraftFindings?: CraftFinding[];
 }
 
 export interface UserTurnInput {
@@ -268,6 +274,9 @@ function projectContextFromInput(input: UserTurnInput): ProjectContext {
       : {}),
     ...(external.iframeHtml !== undefined ? { currentHtml: external.iframeHtml } : {}),
     ...(external.model !== undefined ? { model: external.model } : {}),
+    ...(external.priorCraftFindings !== undefined && external.priorCraftFindings.length > 0
+      ? { priorCraftFindings: external.priorCraftFindings }
+      : {}),
   };
 }
 

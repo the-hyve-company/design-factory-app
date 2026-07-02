@@ -110,6 +110,7 @@ import {
   type HtmlPatch,
 } from "@/runtime/patch-invoker";
 import { sendUserTurn, isTurnPipelineV2Enabled } from "@/runtime/send-user-turn";
+import { latestCraftFindings } from "@/runtime/craft-feedback";
 import { assembleTurnBlocks, type TurnPreviewBlock } from "@/runtime/turn-pipeline";
 import { FileManager } from "@/components/FileManager";
 import { ChatMessage, ChatAttachmentChips, type ToolUseRecord } from "@/components/ChatMessage";
@@ -3991,6 +3992,11 @@ export function EditorScreen({
         },
         onAuthRequired: (detail: string) => setAuthRequiredBanner(detail),
       };
+      // /polish consumes the latest deterministic craft warnings (audit
+      // WS1 autofix-rewire-craft). Opt-in by construction: the findings
+      // only ride when the USER invoked /polish — no automatic pass ever
+      // fires (craft decision #4). Other verbs keep their prompt clean.
+      const polishCraftFindings = verbHit.verb.id === "polish" ? latestCraftFindings(messages) : [];
       try {
         await runVerb(
           {
@@ -3998,6 +4004,7 @@ export function EditorScreen({
             systemPrompt: verbHit.verb.systemPrompt,
             modifiesHtml: verbHit.verb.modifiesHtml,
             args: verbHit.args,
+            ...(polishCraftFindings.length > 0 ? { craftFindings: polishCraftFindings } : {}),
           },
           verbCtx,
           verbSideChannels,
@@ -4279,6 +4286,11 @@ export function EditorScreen({
               fileTabHtml && currentTab?.filePath
                 ? (currentTab.filePath.split("/").pop() ?? projectFileName)
                 : null;
+            // Craft reminder (audit WS1 agent-reminder-self-correct): the
+            // previous turn's deterministic findings ride into this turn's
+            // system prompt (P0-first) so the model self-corrects them while
+            // doing what the user asked. Empty when the last report was clean.
+            const priorCraftFindings = latestCraftFindings(messages);
             return {
               projectPath: projectPath || "~/design-factory/projeto",
               primaryFile: fileTabName ?? projectFileName,
@@ -4297,6 +4309,7 @@ export function EditorScreen({
               model: selectedModel,
               sessionId: selectedProvider === "claude" ? claudeSessionId : null,
               history: conversationHistory,
+              ...(priorCraftFindings.length > 0 ? { priorCraftFindings } : {}),
             };
           })(),
         },

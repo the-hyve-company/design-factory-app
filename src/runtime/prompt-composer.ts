@@ -31,8 +31,10 @@ import {
   type DialKey,
   type DialDirection,
 } from "./canonical-plus-prompt";
+import { buildCraftReminderBlock } from "./craft-feedback";
 import { getLang } from "@/i18n/index";
 import type { Lang } from "@/i18n/index";
+import type { CraftFinding } from "./craft-checks";
 import type { ProviderId } from "@/providers/types";
 
 type DialOverrides = Partial<Record<DialKey, Partial<DialDirection>>>;
@@ -97,6 +99,16 @@ export interface ProjectContext {
    * (and the full block's phrases) respect customisation.
    */
   dialOverrides?: DialOverrides;
+  /**
+   * Craft findings from the PREVIOUS turn's done report (audit WS1
+   * `agent-reminder-self-correct`). When present on a generate turn, the
+   * composer emits a P0-first "craft reminder" block so the model
+   * self-corrects the flagged tells while doing whatever the user asked —
+   * the middle ground between the passive warn chip and an explicit
+   * /polish pass. The wrapper (EditorScreen) owns collecting them from
+   * the last assistant message.
+   */
+  priorCraftFindings?: CraftFinding[] | null;
 }
 
 // ─── Injection resistance (audit WS2 `pa-injection-resistance`) ──────────
@@ -433,6 +445,19 @@ export function composeSystemBlocks(ctx: ProjectContext, opts: SystemPromptOptio
         label: "Craft contract · fresh-write floor",
         content: VISUAL_CRAFT_CONTRACT,
       });
+    }
+    // 6b. Craft reminder — previous turn's deterministic findings come
+    //     back P0-first so the model self-corrects them as a rider on
+    //     this turn's work (audit WS1 `agent-reminder-self-correct`).
+    if (ctx.priorCraftFindings && ctx.priorCraftFindings.length > 0) {
+      const reminder = buildCraftReminderBlock(ctx.priorCraftFindings);
+      if (reminder) {
+        blocks.push({
+          id: "craft-reminder",
+          label: "Craft reminder · previous-turn findings",
+          content: reminder,
+        });
+      }
     }
     // 7. Artifact output contract — artifact-channel providers only.
     //    Path computation preserved from the legacy prepare() (differs

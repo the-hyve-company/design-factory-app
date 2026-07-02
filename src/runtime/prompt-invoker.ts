@@ -2,6 +2,8 @@ import { spawnStream, spawnOnce } from "./cli-spawner";
 import { extractHtmlFromOutput, validateTweaks, type TweaksConfig } from "./schema-validator";
 import { getBuiltinPrompt } from "./builtin-prompts";
 import { buildSystemPrompt, type ProjectContext } from "./prompt-composer";
+import { buildCraftFindingsBlock } from "./craft-feedback";
+import type { CraftFinding } from "./craft-checks";
 import type { StreamCallbacks } from "@/lib/claude-bridge";
 type UnlistenFn = () => void;
 
@@ -175,6 +177,13 @@ export interface EditorialVerbInvocation {
   systemPrompt: string;
   modifiesHtml: boolean;
   args: string;
+  /** Deterministic craft findings from the latest done report (audit WS1
+   *  `autofix-rewire-craft`). OPT-IN by construction: only ever populated
+   *  when the user explicitly invokes /polish — never automatically
+   *  (craft decision #4). When present, the findings ride into the verb
+   *  prompt as a P0-first fix list so the pass targets the exact tells
+   *  the net flagged. */
+  craftFindings?: CraftFinding[];
 }
 
 export async function invokeEditorialVerb(
@@ -184,8 +193,12 @@ export async function invokeEditorialVerb(
 ): Promise<UnlistenFn> {
   const html = ctx.currentHtml || "";
   const argsLine = verb.args.trim() ? `\n\nUser focus for this pass: ${verb.args.trim()}` : "";
+  const craftBlock =
+    verb.craftFindings && verb.craftFindings.length > 0
+      ? `\n\n${buildCraftFindingsBlock(verb.craftFindings)}`
+      : "";
   const prompt = verb.modifiesHtml
-    ? `Existing HTML document:\n${html}${argsLine}`
+    ? `Existing HTML document:\n${html}${argsLine}${craftBlock}`
     : `HTML to evaluate:\n${html}${argsLine}`;
 
   // Both verb classes route through the single composer (kind "verb")
