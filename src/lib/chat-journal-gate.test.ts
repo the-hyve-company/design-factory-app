@@ -143,12 +143,17 @@ describe("[gate] Durable Chat Journal — auditor verdict 2026-05-08", () => {
     expect(guard).toMatch(/http:\/\/localhost:1420/);
     expect(guard).toMatch(/http:\/\/127\.0\.0\.1:1420/);
     // Daemon parity — the canonical origins must match the daemon's
-    // DEFAULT_ALLOWED_ORIGINS list. If a future PR adds an origin to one
-    // side, this gate forces the other side to follow.
-    const daemon = readFileSync(resolve(repoRoot, "apps/daemon/src/index.mjs"), "utf8");
-    expect(daemon).toMatch(
-      /DEFAULT_ALLOWED_ORIGINS\s*=\s*\[[\s\S]*?http:\/\/localhost:1420[\s\S]*?http:\/\/127\.0\.0\.1:1420/,
+    // default allowlist. The literal list moved to lib/origins.mjs
+    // (origin-allowlist-narrow, 2026-07); index.mjs consumes the shared
+    // helper. If a future PR adds an origin to one side, this gate
+    // forces the other side to follow.
+    const daemonOrigins = readFileSync(
+      resolve(repoRoot, "apps/daemon/src/lib/origins.mjs"),
+      "utf8",
     );
+    expect(daemonOrigins).toMatch(/http:\/\/localhost:1420[\s\S]*?http:\/\/127\.0\.0\.1:1420/);
+    const daemon = readFileSync(resolve(repoRoot, "apps/daemon/src/index.mjs"), "utf8");
+    expect(daemon).toMatch(/DEFAULT_ALLOWED_ORIGINS\s*=\s*computeDefaultAllowedOrigins\(/);
 
     // Mount: the banner has to render on the App tree, not just exist.
     const banner = readFileSync(resolve(repoRoot, "src/components/OriginGuardBanner.tsx"), "utf8");

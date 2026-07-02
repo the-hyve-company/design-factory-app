@@ -72,8 +72,13 @@ the in-app opt-in rather than a weaker default.
 ### Daemon filesystem boundary
 
 The daemon listens on `127.0.0.1` and rejects browser requests whose
-`Origin` is not in the local allowlist. The terminal WebSocket applies
-the same origin check during the upgrade handshake.
+`Origin` is not in the local allowlist. The default allowlist is narrow:
+only the app's own origin (`localhost:1420` / `127.0.0.1:1420`) plus the
+port the dev launcher actually resolved (`DF_VITE_PORT`). Generic dev
+ports (`:3000`, `:5173`) are **not** trusted by default — serving the UI
+from another port requires `DF_VITE_PORT` or an explicit
+`DF_BRIDGE_ORIGIN` (CSV). The terminal WebSocket applies the same origin
+check during the upgrade handshake.
 
 Generic filesystem endpoints are scoped by default to Design Factory
 workspace roots: `projects/`, `design-systems/`, `skills/`, plus
@@ -107,6 +112,78 @@ off disk and inlined to an API provider when the path resolves inside
 the workspace roots; an out-of-scope path keeps the marker as plain
 text instead of exfiltrating the file's bytes to a third-party API.
 
+Skill installs (`POST /skills`) apply the same realpath containment to
+`extraFiles` entries: paths that resolve outside the skill's own folder
+(traversal or symlink) are skipped, `SKILL.md` cannot be overwritten via
+a normalized path, and each file is capped at 5 MB.
+
+Raw uploads are bounded too: `POST /audio/transcribe` rejects bodies
+over ~25 MB (`DF_MAX_AUDIO_BODY_BYTES`) with HTTP 413 instead of
+accumulating unbounded chunks in memory.
+
+### Outbound fetch (SSRF) guard
+
+`GET /fetch-url` (website → design.md extraction) fetches a
+client-supplied URL. The daemon validates the target before every
+request: only `http:`/`https:` schemes, DNS-resolved IPs are rejected
+when private, loopback, link-local, ULA or cloud-metadata
+(`169.254.169.254`), and redirects are followed manually so every hop is
+re-validated instead of silently followed. Residual caveat: DNS
+rebinding between lookup and connect is not fully closed (that would
+need IP-pinned connections) — proportionate for a local-first daemon.
+
+### Spawn environment hygiene
+
+Spawned provider CLIs (Claude, Codex, Gemini, Kimi, OpenCode) and the
+terminal PTY do **not** inherit the daemon's full environment. Each
+spawn env is sanitized: cross-provider API keys and tokens
+(`GH_TOKEN`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, …) are stripped,
+and only the key that the specific CLI legitimately reads is
+re-added. A generated payload that reaches a spawned agent (or a
+hijacked terminal) sees at most its own provider's credential, never
+the whole keychain.
+
+## Shared-host caveat and hardened mode
+
+The default posture assumes a **single-user machine**. Two consequences
+are explicit and by design:
+
+- Requests without an `Origin` header (curl, local scripts,
+  server-to-server) bypass the origin allowlist. Any process or user on
+  the same host can drive the daemon's endpoints.
+- The origin check authenticates _browser pages_, not _users_ — it does
+  not distinguish you from another local account on a shared host.
+
+If you run Design Factory on a shared or multi-user host, turn on
+hardened mode:
+
+```bash
+DF_REQUIRE_TOKEN=1 npm run dev:web
+```
+
+With `DF_REQUIRE_TOKEN=1`:
+
+- A random session token is generated once and stored with mode `0600`
+  (owner-only) at `<config-dir>/session-token` (the daemon logs the
+  exact path at startup). Other local users cannot read it.
+- Every state-changing request (anything except `GET`/`HEAD`/`OPTIONS`)
+  must present the token via the `X-DF-Token` header,
+  `Authorization: Bearer`, or `?df_token=` query param — otherwise 401/403.
+- The `/terminal` WebSocket upgrade requires the token as well
+  (`?df_token=`, since browsers can't set headers on WebSocket).
+- The terminal defaults **off** (see below).
+
+The interactive terminal (`WS /terminal`, a shell PTY — the daemon's
+largest blast radius) is additionally gated by `DF_ENABLE_TERMINAL`:
+
+| Mode                            | `DF_ENABLE_TERMINAL` unset | explicitly set      |
+| ------------------------------- | -------------------------- | ------------------- |
+| default (local)                 | enabled (current behavior) | explicit value wins |
+| hardened (`DF_REQUIRE_TOKEN=1`) | **disabled**               | explicit value wins |
+
+Both flags default to the backward-compatible local behavior — nothing
+changes for the single-user flow unless you opt in.
+
 ## Scope
 
 In scope:
@@ -125,7 +202,9 @@ Out of scope (but still nice to know about):
 
 - Bugs in the upstream provider CLIs (Claude, Codex, Gemini, Ollama).
 - Issues that require a malicious user already having shell access on
-  the same machine.
+  the same machine. (Hardened mode — `DF_REQUIRE_TOKEN=1`, see above —
+  raises the bar on shared hosts, but a same-user compromise still owns
+  everything the daemon can do.)
 - DoS by overloading the local daemon (single-user app).
 - Strict-sandbox feature breakage when opt-in flag is set — those
   features are documented as DOM-coupled and incompatible with
