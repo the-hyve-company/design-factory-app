@@ -14,13 +14,13 @@ Thanks for using Design Factory. Here is where to go depending on what you need.
 ## Questions and help
 
 For "how do I…" or "is this supposed to…" questions, open a
-[GitHub Discussion](https://github.com/THE-HYVE-COMPANY/design-factory/discussions)
+[GitHub Discussion](https://github.com/the-hyve-company/design-factory-app/discussions)
 if Discussions are enabled, otherwise open an issue with the **question** label.
 Search existing issues and discussions first — your question may already be answered.
 
 ## Reporting a bug
 
-Open a [bug report](https://github.com/THE-HYVE-COMPANY/design-factory/issues/new/choose)
+Open a [bug report](https://github.com/the-hyve-company/design-factory-app/issues/new/choose)
 using the template. Include your OS, Node version, the provider you used, and the
 steps to reproduce. The more specific the repro, the faster the fix.
 

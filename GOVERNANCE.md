@@ -2,10 +2,10 @@
 
 Design Factory is open-source. Anyone can fork, study, modify, and
 ship a derivative under the [Apache 2.0 License](LICENSE). What
-**this** repository — `design-factory` under
-[THE-HYVE-COMPANY](https://github.com/THE-HYVE-COMPANY) — represents
-is more specific: a single project with a single editorial direction,
-maintained by The HYVE Company.
+**this** repository —
+[`the-hyve-company/design-factory-app`](https://github.com/the-hyve-company/design-factory-app)
+— represents is more specific: a single project with a single editorial
+direction, maintained by The HYVE Company.
 
 This file makes that boundary explicit.
 
