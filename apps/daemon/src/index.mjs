@@ -54,6 +54,15 @@ import { listProviders, getProvider, describeProvider } from "./providers/index.
 import { probeOllamaHost, getModelCapabilities } from "./providers/ollama-host.mjs";
 import { configPath, getConfigDir } from "./lib/config-dir.mjs";
 import { armHeartbeat } from "./lib/sse-heartbeat.mjs";
+import {
+  isTokenRequired,
+  isTerminalEnabled,
+  loadOrCreateSessionToken,
+  checkRequestToken,
+  isStateChangingMethod,
+} from "./lib/loopback-auth.mjs";
+import { readBodyWithCap, BodyTooLargeError } from "./lib/body-cap.mjs";
+import { computeDefaultAllowedOrigins } from "./lib/origins.mjs";
 import { buildDsPreviewPrompt, stripHtmlFence } from "./ds-preview-prompt.mjs";
 import { coerceDesignMd } from "./ds-coerce.mjs";
 import { installDfSkill as installDfSkillShared } from "./skills-install.mjs";
@@ -153,27 +162,12 @@ const PORT = Number(process.env.DF_BRIDGE_PORT || 1421);
 // Default CORS is locked to localhost dev origins. Override via
 // DF_BRIDGE_ORIGIN (CSV of origins, or "*" to opt out — only set "*"
 // in trusted dev environments).
-const DEFAULT_ALLOWED_ORIGINS = [
-  "http://localhost:1420",
-  "http://127.0.0.1:1420",
-  // The dev launcher (scripts/dev-web.mjs) may reclaim a non-default Vite
-  // port when 1420 is busy; it passes the resolved port as DF_VITE_PORT so
-  // the served origin is trusted instead of rejected as a bad origin.
-  ...(process.env.DF_VITE_PORT
-    ? [
-        `http://localhost:${process.env.DF_VITE_PORT}`,
-        `http://127.0.0.1:${process.env.DF_VITE_PORT}`,
-      ]
-    : []),
-  // Common alt dev ports — when the user runs Vite/Next under
-  // DF_VITE_PORT override or via an external reverse proxy. User
-  // 2026-05-17 hit "fetch failed" because their browser tab was on
-  // :3000 while the daemon was rejecting CORS.
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-];
+// Default = app origin (1420) + the port the dev launcher resolved
+// (DF_VITE_PORT, set by scripts/dev-web.mjs when 1420 is busy). The old
+// generic :3000/:5173 guesses are gone — any local app on those common
+// ports could drive the daemon (origin confusion). Serving the UI from
+// another port now requires DF_VITE_PORT or an explicit DF_BRIDGE_ORIGIN.
+const DEFAULT_ALLOWED_ORIGINS = computeDefaultAllowedOrigins(process.env);
 const ORIGIN_RAW = process.env.DF_BRIDGE_ORIGIN ?? DEFAULT_ALLOWED_ORIGINS.join(",");
 const ALLOWED_ORIGINS =
   ORIGIN_RAW === "*"
@@ -187,6 +181,21 @@ const CLAUDE_BIN = process.env.DF_CLAUDE_BIN || "claude";
 const ALLOW_ARBITRARY_FS =
   process.env.DF_ALLOW_ARBITRARY_FS === "1" || process.env.DF_ALLOW_ARBITRARY_FS === "true";
 const MAX_JSON_BODY_BYTES = Number(process.env.DF_MAX_JSON_BODY_BYTES || 12 * 1024 * 1024);
+// Raw-body cap for POST /audio/transcribe (webm/opus blob). ~25MB matches
+// Groq's Whisper upload ceiling; anything bigger is rejected with 413
+// before it can accumulate in memory.
+const MAX_AUDIO_BODY_BYTES = Number(process.env.DF_MAX_AUDIO_BODY_BYTES || 25 * 1024 * 1024);
+
+// ── Opt-in loopback auth (DF_REQUIRE_TOKEN) ─────────────────────────────
+// Default OFF: local single-user flow is untouched. When ON, every
+// state-changing request (non-GET/HEAD/OPTIONS) and the /terminal WS
+// upgrade must present the session token persisted (mode 0600) in the
+// config dir. See lib/loopback-auth.mjs for the full threat model.
+const REQUIRE_TOKEN = isTokenRequired(process.env);
+const SESSION_TOKEN_INFO = REQUIRE_TOKEN ? loadOrCreateSessionToken(getConfigDir()) : null;
+// Terminal gate: explicit DF_ENABLE_TERMINAL wins; unset defaults to ON in
+// local mode, OFF in hardened (DF_REQUIRE_TOKEN) mode.
+const TERMINAL_ENABLED = isTerminalEnabled(process.env);
 
 // ─── Agent registry — multi-CLI detection ──────────────────────────────
 // Definitions for every CLI we know how to spawn. Used by GET /agents/list to
@@ -987,7 +996,7 @@ const isOriginAllowed = (req) => {
 
 const cors = (req, res) => {
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-DF-Token");
   const reqOrigin = req?.headers?.origin;
   if (ALLOWED_ORIGINS === "*") {
     res.setHeader("Access-Control-Allow-Origin", reqOrigin || "*");
@@ -2182,6 +2191,21 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(403, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "origin not allowed" }));
     return;
+  }
+
+  // ─── Session-token gate (opt-in, DF_REQUIRE_TOKEN) ────────────────────
+  // Origin-less requests pass the origin check by design (curl, server-to-
+  // server) — fine single-user, a hole on a shared host. In hardened mode
+  // every state-changing request must present the 0600 session token.
+  // Read-only GETs stay open so the UI shell can render; the whole
+  // mutation surface (fs writes, provider spawns, config, skills) is gated.
+  if (REQUIRE_TOKEN && isStateChangingMethod(req.method)) {
+    const verdict = checkRequestToken(req, { required: true, token: SESSION_TOKEN_INFO.token });
+    if (!verdict.ok) {
+      res.writeHead(verdict.status, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: verdict.error }));
+      return;
+    }
   }
 
   // ─── Filesystem endpoints ─────────────────────────────────────
@@ -5340,9 +5364,22 @@ const server = http.createServer(async (req, res) => {
         );
         return;
       }
-      const chunks = [];
-      for await (const chunk of req) chunks.push(chunk);
-      const audio = Buffer.concat(chunks);
+      // Bounded accumulation — an unbounded chunk loop here was a memory-
+      // DoS vector (the JSON body cap doesn't cover raw uploads).
+      let audio;
+      try {
+        audio = await readBodyWithCap(req, MAX_AUDIO_BODY_BYTES);
+      } catch (e) {
+        if (e instanceof BodyTooLargeError) {
+          res.writeHead(413, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: `audio too large (max ${MAX_AUDIO_BODY_BYTES} bytes)` }));
+          try {
+            req.destroy();
+          } catch {}
+          return;
+        }
+        throw e;
+      }
       if (audio.length < 512) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "audio too short or empty" }));
@@ -7685,7 +7722,22 @@ body { overflow: hidden !important; }
 const wss = new WebSocketServer({ noServer: true });
 
 server.on("upgrade", (req, socket, head) => {
-  if (req.url !== "/terminal") {
+  // Match on pathname (not the raw URL) — in hardened mode the browser
+  // appends the session token as ?df_token=… because `new WebSocket(url)`
+  // cannot set custom headers.
+  let pathname = req.url;
+  try {
+    pathname = new URL(req.url, "http://localhost").pathname;
+  } catch {}
+  if (pathname !== "/terminal") {
+    socket.destroy();
+    return;
+  }
+  // Terminal gate (DF_ENABLE_TERMINAL): a shell PTY is the daemon's largest
+  // blast radius. Enabled by default in local mode; defaults OFF when
+  // DF_REQUIRE_TOKEN is on. Explicit DF_ENABLE_TERMINAL always wins.
+  if (!TERMINAL_ENABLED) {
+    socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
     socket.destroy();
     return;
   }
@@ -7693,6 +7745,19 @@ server.on("upgrade", (req, socket, head) => {
     socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
     socket.destroy();
     return;
+  }
+  // In hardened mode the upgrade must also present the session token —
+  // Origin checks alone don't authenticate other local users on a shared
+  // host (WS clients outside the browser can send any Origin, or none).
+  if (REQUIRE_TOKEN) {
+    const verdict = checkRequestToken(req, { required: true, token: SESSION_TOKEN_INFO.token });
+    if (!verdict.ok) {
+      socket.write(
+        `HTTP/1.1 ${verdict.status} ${verdict.status === 401 ? "Unauthorized" : "Forbidden"}\r\nConnection: close\r\n\r\n`,
+      );
+      socket.destroy();
+      return;
+    }
   }
   wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
 });
@@ -7858,6 +7923,18 @@ server.listen(PORT, "127.0.0.1", () => {
     console.log(`[dev-bridge] CORS allowed origins: ${[...ALLOWED_ORIGINS].join(", ")}`);
   }
   console.log(`[dev-bridge] path scoping: realpath-based (assertPathInScope)`);
+  if (REQUIRE_TOKEN) {
+    console.log(
+      `[dev-bridge] loopback auth: ON (DF_REQUIRE_TOKEN) — state-changing requests + WS need the session token at ${SESSION_TOKEN_INFO.file}${SESSION_TOKEN_INFO.created ? " (created)" : ""}`,
+    );
+  } else {
+    console.log(
+      `[dev-bridge] loopback auth: off (single-user default; set DF_REQUIRE_TOKEN=1 on shared hosts)`,
+    );
+  }
+  console.log(
+    `[dev-bridge] terminal WS: ${TERMINAL_ENABLED ? "enabled" : "disabled (set DF_ENABLE_TERMINAL=1 to opt in)"}`,
+  );
   console.log(`[dev-bridge] claude binary: ${CLAUDE_BIN}`);
   console.log(
     `[dev-bridge] endpoints: GET /healthz · GET /ping (alias) · GET /agents/list · POST /claude/stream · POST /claude/once · POST /codex/stream · POST /codex/once · POST /gemini/stream · POST /gemini/once · GET /ollama/models · POST /ollama/stream · POST /ollama/once · GET|PUT /config/openrouter · GET /openrouter/models · POST /openrouter/stream · POST /openrouter/once · POST /opencode/stream · POST /opencode/once · GET /opencode/models · GET|PUT /config/anthropic · GET /anthropic/models · GET /openai/models · GET /gemini-api/models · GET|PUT /config/kimi · GET /kimi/models · POST /anthropic/stream · POST /anthropic/once · GET|PUT /config/vercel · POST /deploy/vercel · GET /deploy/vercel/status · GET /deploy/vercel/list · GET /deploy/vercel/test ·GET /vercel/projects · GET /vercel/projects/all · GET /vercel/projects/check · GET /vercel/teams · GET /vercel/user · POST /vercel/device/start · POST /vercel/device/poll · GET /gh/user · GET /projects/:slug/zip · GET|POST /projects/:slug/versions · GET|DELETE /projects/:slug/versions/:vid · WS /terminal`,

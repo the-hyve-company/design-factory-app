@@ -1,8 +1,14 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
+import { assertPathInScope, PathScopeError } from "./path-scope.mjs";
+
+// Per-file cap for extraFiles payloads (decoded bytes). Mirrors the
+// client-side skill-zip cap (src/lib/skill-zip-import.ts) so the daemon
+// enforces the same ceiling even when called directly.
+export const MAX_EXTRA_FILE_BYTES = 5 * 1024 * 1024;
 
 export function resolveRepoRoot(cwd = process.cwd()) {
   const git = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
@@ -181,14 +187,33 @@ export async function installDfSkill(input, { repoRoot = resolveRepoRoot() } = {
   await writeFile(filePath, serializeSkillMarkdown(validated), "utf8");
 
   if (input.extraFiles && typeof input.extraFiles === "object") {
+    // Realpath-based containment (assertPathInScope) instead of the old
+    // string checks (`includes("..")` / `startsWith(dir + "/")`) — string
+    // matching misses symlinks, case-insensitive filesystems and encoded
+    // segments. Out-of-scope entries are skipped (never written), matching
+    // the previous silent-skip contract for invalid paths.
+    const scopeRoot = realpathSync(dir); // dir was just mkdir'd above
     for (const [relPath, base64] of Object.entries(input.extraFiles)) {
       if (typeof base64 !== "string") continue;
-      if (!relPath || relPath.includes("..") || relPath.startsWith("/")) continue;
-      if (/^SKILL\.md$/i.test(relPath)) continue;
-      const dest = join(dir, relPath);
-      if (!dest.startsWith(dir + "/")) continue;
+      if (!relPath || typeof relPath !== "string") continue;
+      // Absolute paths were always rejected — keep that contract explicit
+      // (an absolute path inside the skill dir would pass the scope check).
+      if (relPath.startsWith("/") || /^[a-zA-Z]:[\\/]/.test(relPath)) continue;
+      let dest;
+      try {
+        dest = assertPathInScope(relPath, scopeRoot);
+      } catch (e) {
+        if (e instanceof PathScopeError) continue;
+        throw e;
+      }
+      if (dest === scopeRoot) continue; // refuse to clobber the skill dir itself
+      // Never overwrite the manifest — checked on the RESOLVED path so
+      // "references/../SKILL.md" can't sneak past a raw-string test.
+      if (dirname(dest) === scopeRoot && /^SKILL\.md$/i.test(basename(dest))) continue;
+      const buf = Buffer.from(base64, "base64");
+      if (buf.length > MAX_EXTRA_FILE_BYTES) continue;
       await mkdir(dirname(dest), { recursive: true });
-      await writeFile(dest, Buffer.from(base64, "base64"));
+      await writeFile(dest, buf);
     }
   }
 
