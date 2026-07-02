@@ -18,6 +18,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { db, writeGlobalConfig } from "@/lib/claude-bridge";
+import { loadDefaultRuleIds, saveDefaultRuleIds } from "@/lib/default-rules";
 import {
   TaxonomyManager,
   type TaxonomyItem,
@@ -26,7 +27,7 @@ import {
 import { PadroesConfirmModal } from "@/components/PadroesConfirmModal";
 import { PadroesCategoryManager, type ManagedCategory } from "@/components/PadroesCategoryManager";
 import { ImportExportControls, type ImportPreview } from "@/components/ImportExportControls";
-import { RuleCreateModal } from "@/components/RuleCreateModal";
+import { RuleCreateModal, type RuleCreateOptions } from "@/components/RuleCreateModal";
 import { useT, type Lang } from "@/i18n";
 import {
   ruleTitle as builtinRuleTitle,
@@ -167,16 +168,7 @@ function renderInlineMarkdown(input: string): React.ReactNode[] {
       tokens.push(<strong key={key++}>{tok.slice(2, -2)}</strong>);
     } else if (tok.startsWith("`")) {
       tokens.push(
-        <code
-          key={key++}
-          style={{
-            fontFamily: "var(--df-font-mono)",
-            fontSize: 11,
-            padding: "1px 4px",
-            background: "var(--df-bg-base)",
-            borderRadius: 3,
-          }}
-        >
+        <code key={key++} className="rules-md-code">
           {tok.slice(1, -1)}
         </code>,
       );
@@ -195,6 +187,9 @@ interface DetailFormProps {
   item: RuleItem;
   allItems: RuleItem[];
   categories: ReturnType<typeof getEffectiveCategories>;
+  /** Whether this rule belongs to the member's default set
+   *  (`default_rule_ids`) — the ids that pre-fill new projects. */
+  inDefault: boolean;
   onSave: (
     rule: Rule,
     patch: Partial<Pick<Rule, "title" | "description" | "category">>,
@@ -204,18 +199,21 @@ interface DetailFormProps {
   onResetBuiltin: (rule: Rule) => Promise<void>;
   onDuplicate: (rule: Rule) => Promise<void>;
   onToggleEnabled: (id: string, next: boolean) => void;
+  onToggleDefault: (id: string, next: boolean) => void;
 }
 
 function DetailForm({
   item,
   allItems,
   categories,
+  inDefault,
   onSave,
   onDelete,
   onDeleteBuiltinPermanent,
   onResetBuiltin,
   onDuplicate,
   onToggleEnabled,
+  onToggleDefault,
 }: DetailFormProps) {
   const { t, lang } = useT();
   const [title, setTitle] = useState(item.rule.title);
@@ -311,13 +309,33 @@ function DetailForm({
         </div>
       </div>
 
+      {/* Default-axis toggle — "Padrão em novos projetos". This is where
+       * the member EDITS the global default set (`default_rule_ids`) that
+       * pre-fills the New Project picker. Available for builtins AND
+       * user rules — extends the existing DetailForm, no separate panel. */}
+      <div className="rules-default-axis">
+        <button
+          type="button"
+          className={`tx-mgr-toggle${inDefault ? " is-on" : ""}`}
+          onClick={() => onToggleDefault(item.id, !inDefault)}
+          aria-pressed={inDefault}
+          aria-label={t("settings.rules.default.toggle")}
+        >
+          <span className="tx-mgr-toggle-thumb" />
+        </button>
+        <div className="rules-default-axis-text">
+          <span className="rules-default-axis-label">{t("settings.rules.default.toggle")}</span>
+          <span className="rules-default-axis-hint">{t("settings.rules.default.hint")}</span>
+        </div>
+      </div>
+
       {/* v19 — Builtin guidance + explicit Hide/Show + Reset (when edited)
        * Removed amber tip card ("Padrão do Design Factory…"). The
        * PADRÃO badge on the row + the action buttons below already convey
        * the affordance — the tip was visually loud and redundant. */}
       {item.rule.builtin && (
         <>
-          <div className="padroes-builtin-actions" style={{ marginBottom: 18 }}>
+          <div className="padroes-builtin-actions rules-detail-builtin-actions">
             <button
               type="button"
               className="padroes-action-btn"
@@ -384,42 +402,23 @@ function DetailForm({
           </label>
           <textarea
             id={`rule-desc-${item.id}`}
-            className="tx-mgr-textarea"
+            className="tx-mgr-textarea rules-desc-textarea"
             placeholder={t("settings.rules.field.description.placeholder")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            style={{ minHeight: 70 }}
           />
           {description && (
             <div
-              className="tx-mgr-field-help"
+              className="tx-mgr-field-help rules-desc-preview"
               aria-label={t("rules.editor.preview.aria")}
-              style={{
-                marginTop: 6,
-                padding: "8px 10px",
-                background: "var(--df-bg-base)",
-                borderRadius: "var(--df-r-sm)",
-                boxShadow: "var(--df-bezel-recessed)",
-                fontSize: 11.5,
-                lineHeight: 1.55,
-                color: "var(--df-text-secondary)",
-              }}
             >
               {renderInlineMarkdown(description)}
             </div>
           )}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            gap: 12,
-            marginTop: 6,
-          }}
-        >
+        <div className="rules-detail-footrow">
           <span className={`tx-mgr-status${savedTick > 0 ? " is-shown" : ""}`}>
             {t("settings.canvas.action.saved")}
           </span>
@@ -496,6 +495,9 @@ export function RulesEditor() {
   const [catLabelOverrides, setCatLabelOverrides] = useState<Record<string, string>>(() =>
     getCategoryLabelOverrides(),
   );
+  // The member's default set (`default_rule_ids`) — edited via the
+  // "Padrão em novos projetos" toggle in the DetailForm.
+  const [defaultIds, setDefaultIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     void loadDisabled().then((s) => setDisabled(s));
@@ -503,6 +505,7 @@ export function RulesEditor() {
       setHiddenBuiltins(s);
       setHiddenBuiltinRuleIds([...s]);
     });
+    void loadDefaultRuleIds().then((ids) => setDefaultIds(new Set(ids)));
   }, []);
 
   const allRules = useMemo<Rule[]>(() => {
@@ -578,6 +581,16 @@ export function RulesEditor() {
       void persistDisabled(out);
       return out;
     });
+  };
+
+  // Toggle a rule in/out of the member's default set. Persists to both
+  // stores via saveDefaultRuleIds (fs config canonical + db mirror).
+  const handleToggleDefault = async (id: string, next: boolean) => {
+    const out = new Set(defaultIds);
+    if (next) out.add(id);
+    else out.delete(id);
+    setDefaultIds(out);
+    await saveDefaultRuleIds([...out]);
   };
 
   const handleSave = async (
@@ -709,10 +722,17 @@ export function RulesEditor() {
     await persistUserRules(next);
   };
 
-  const handleCreate = async (rule: Rule) => {
+  const handleCreate = async (rule: Rule, opts: RuleCreateOptions) => {
     const next = [...userRules, rule];
     setUserRulesState(next);
     await persistUserRules(next);
+    if (opts.addToDefault) {
+      // Persist AFTER the rule itself so normalization sees the new id.
+      const out = new Set(defaultIds);
+      out.add(rule.id);
+      setDefaultIds(out);
+      await saveDefaultRuleIds([...out]);
+    }
     setCreateOpen(false);
   };
 
@@ -935,12 +955,14 @@ export function RulesEditor() {
             item={item}
             allItems={items}
             categories={categories}
+            inDefault={defaultIds.has(item.id)}
             onSave={handleSave}
             onDelete={handleDelete}
             onDeleteBuiltinPermanent={handleDeleteBuiltinPermanent}
             onResetBuiltin={handleResetBuiltin}
             onDuplicate={handleDuplicate}
             onToggleEnabled={(id, on) => void handleToggle(id, on)}
+            onToggleDefault={(id, on) => void handleToggleDefault(id, on)}
           />
         )}
       />
