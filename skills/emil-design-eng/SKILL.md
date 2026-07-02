@@ -1,14 +1,16 @@
 ---
 name: "emil-design-eng"
-description: "Original interaction-design and animation craft guidance for building UI that feels polished and responsive. Covers when to animate, easing, timing, springs, component press states, transforms, gestures, performance, and accessibility."
+description: "Interaction-design and animation craft guidance for building UI that feels polished and responsive. Covers when to animate, easing, timing, springs, component press states, transforms, gestures, performance, and accessibility."
 trigger: "/emil-design-eng"
 ---
 
 # Design Engineering
 
-> Inspired by the public work of Emil Kowalski (https://animations.dev).
-> This skill is original material — general interaction-design principles written in our own
-> words, with our own examples. It does not reproduce any paid course content.
+> Adapted from Emil Kowalski's MIT-licensed `emil-design-eng` skill
+> (https://github.com/emilkowalski/skills) — prose partially paraphrased, examples
+> re-illustrated. It encodes guidance Emil has published openly (that repository and
+> https://emilkowal.ski); it does not reproduce paid content from the animations.dev course.
+> See LICENSE and NOTICE.md in this folder.
 
 ## Initial Response
 

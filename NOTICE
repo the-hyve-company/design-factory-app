@@ -59,34 +59,50 @@ present in the resolved tree. Re-check dependency licenses before every
 Third-party bundled skills
 ------------------------------------------------------------------------
 
-The `skills/` directory ships a curated set of design skills authored by
-third parties. They are bundled under their own licenses; Design Factory
-claims no authorship of them. Where an upstream LICENSE was provided it
-is preserved alongside the skill.
+The `skills/` directory ships a curated set of design skills derived from
+third-party work. Design Factory claims no authorship of the underlying
+guidance. Every skill folder carries its own LICENSE (upstream license,
+preserved verbatim) and/or NOTICE.md (provenance record). This section is
+the index; the per-folder files are the detail. CI enforces that this
+index and the disk stay in sync (`npm run smoke:public-files`).
 
-  taste-skill (skills/taste-skill-main/)
-    MIT License — Copyright (c) 2026 Leonxlnx.
-    License preserved at skills/taste-skill-main/LICENSE.
+  brandkit (skills/brandkit/)
+    From "taste-skill" — MIT License, Copyright (c) 2026 Leonxlnx.
+    License preserved at skills/brandkit/LICENSE.
+    Source: https://github.com/Leonxlnx/taste-skill
 
-  ui-skills (skills/ui-skills-main/)
-    MIT License — Copyright (c) 2026 Julien Thibeaut.
-    License preserved at skills/ui-skills-main/LICENSE.
+  baseline-ui (skills/baseline-ui/)
+    From "ui-skills" — MIT License, Copyright (c) 2026 Julien Thibeaut
+    (GitHub: ibelick).
+    License preserved at skills/baseline-ui/LICENSE.
+    Source: https://github.com/ibelick/ui-skills
 
   frontend-design (skills/frontend-design/)
     Anthropic frontend-design skill — Apache License 2.0,
-    Copyright 2025 Anthropic, PBC.
+    Copyright 2025 Anthropic, PBC. The provider-specific phrasing was
+    made agent-neutral for Design Factory's multi-provider runtime.
+    License preserved at skills/frontend-design/LICENSE.txt.
     Source: https://github.com/anthropics/skills
 
-  frontend-guidelines-master (skills/frontend-guidelines-master/)
-    Adapted from Ben Delarre's "frontend-guidelines".
-    Source: https://github.com/bendc/frontend-guidelines
+  frontend-guidelines (skills/frontend-guidelines/)
+    Original text inspired by Benjamin De Cock's "frontend-guidelines",
+    which carries no explicit license. No upstream text or code is
+    reproduced; the practices are re-stated in original wording with
+    original examples. Provenance: skills/frontend-guidelines/NOTICE.md.
+    Upstream: https://github.com/bendc/frontend-guidelines
 
   emil-design-eng (skills/emil-design-eng/)
-    Emil Kowalski's design-engineering skill, distilled from his writing
-    at https://emilkowal.ski and the animations.dev course.
-    Source: https://github.com/emilkowalski/skill
+    Adapted from the MIT-licensed emil-design-eng skill in Emil
+    Kowalski's skills repository. References his public writing at
+    https://emilkowal.ski; does not reproduce paid content from the
+    animations.dev course.
+    License preserved at skills/emil-design-eng/LICENSE; provenance at
+    skills/emil-design-eng/NOTICE.md.
+    Source: https://github.com/emilkowalski/skills
 
-  make-interfaces-feel-better (skills/make-interfaces-feel-better-main/)
-    MIT License — Jakub Krehel. Based on the article "Details that make
-    interfaces feel better" (https://jakub.kr).
+  make-interfaces-feel-better (skills/make-interfaces-feel-better/)
+    MIT License — Jakub Krehel (declared in the upstream README; the
+    upstream repository has no standalone LICENSE file). Based on the
+    article "Details that make interfaces feel better" (https://jakub.kr).
+    License preserved at skills/make-interfaces-feel-better/LICENSE.
     Source: https://github.com/jakubkrehel/make-interfaces-feel-better
