@@ -23,7 +23,7 @@ const gemini = {
     streaming: true,
     tools: false,
     multimodal: true,
-    sessions: true,
+    supportsResume: true,
     mcp: false,
     // Gemini CLI emits stream-json text only. Runtime parses the
     // <artifact> block at stream end.

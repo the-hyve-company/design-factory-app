@@ -26,7 +26,13 @@ export const kimiProvider: LLMProvider = {
   capabilities: {
     // kimi-cli executes Bash/Edit/Write via its native tool layer.
     tools: true,
-    mcp: true,
+    // Reconciled with the daemon matrix (audit WS3
+    // `capability-parity-test`): kimi-cli can load MCP servers from its
+    // own config, but DF's spawn doesn't wire any MCP config through —
+    // the daemon declares the conservative false and the front now
+    // matches. Flip BOTH sides together if the adapter ever forwards
+    // .mcp.json.
+    mcp: false,
     nativeSkills: false,
     nativeAgents: false,
     // Print mode emits stream-json (JSONL events on stdout).

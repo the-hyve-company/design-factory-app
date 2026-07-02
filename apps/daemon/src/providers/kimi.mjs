@@ -126,7 +126,7 @@ const kimi = {
     streaming: true,
     tools: true,
     multimodal: false,
-    sessions: false,
+    supportsResume: false,
     mcp: false,
     // kimi-cli executes Edit/Write/Bash via native tool layer.
     // Runtime observes tool events from the stream-json output —

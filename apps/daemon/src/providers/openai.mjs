@@ -20,7 +20,7 @@ const openai = {
     streaming: true,
     tools: false,
     multimodal: false,
-    sessions: false,
+    supportsResume: false,
     mcp: false,
     fileWrite: "artifact",
   },
