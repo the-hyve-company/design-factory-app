@@ -413,6 +413,13 @@ const CHECKS: CraftCheck[] = [
   },
 ];
 
+/** Static index of the detector registry — one `{id, ruleId, tier}` row
+ *  per check. Consumed by rules-checks-coverage.test.ts, which locks the
+ *  taxonomy's `checkable` flags against this registry so the two can't
+ *  drift silently (audit WS1 `rules-checks-coverage-test`). */
+export const CRAFT_CHECK_INDEX: ReadonlyArray<{ id: string; ruleId: string; tier: CraftTier }> =
+  Object.freeze(CHECKS.map((c) => ({ id: c.id, ruleId: c.ruleId, tier: c.tier })));
+
 // Checks that need the rendered DOM (computed color, geometry, font
 // metrics) and so cannot be done by grep without high false-positives.
 // Listed so a clean result is never mistaken for a full audit.

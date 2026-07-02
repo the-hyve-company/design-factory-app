@@ -111,6 +111,7 @@ import {
 } from "@/runtime/patch-invoker";
 import { sendUserTurn, isTurnPipelineV2Enabled } from "@/runtime/send-user-turn";
 import { latestCraftFindings } from "@/runtime/craft-feedback";
+import { runCraftCritique } from "@/runtime/craft-critique";
 import { assembleTurnBlocks, type TurnPreviewBlock } from "@/runtime/turn-pipeline";
 import { FileManager } from "@/components/FileManager";
 import { ChatMessage, ChatAttachmentChips, type ToolUseRecord } from "@/components/ChatMessage";
@@ -3895,6 +3896,40 @@ export function EditorScreen({
     // for future use (e.g., a "show full direction" diagnostic) but
     // is no longer wired into the runtime hot path.
 
+    // ──── /critique — deterministic, read-only, LOCAL (no model call) ────
+    // Runs the same Static P0 + craft net the pipeline runs post-write
+    // against the current file and reports in chat (audit WS1
+    // critique-command). Intercepted before the verb/skill routing since
+    // it never reaches a provider; fixes stay opt-in via /polish.
+    if (/^\/critique\b/.test(visibleText.trim())) {
+      if (!iframeHtml) {
+        showToast(t("editor.toast.generateFirst"));
+        return;
+      }
+      setInput("");
+      const critique = runCraftCritique({
+        content: iframeHtml,
+        fileName: projectFileName,
+        designSystemMarkdown: dsMarkdown ?? null,
+      });
+      const critiqueTurnId = `t${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        stamp({ role: "user", text: "/critique", turn_id: critiqueTurnId }),
+        stamp({
+          role: "assistant",
+          provider: selectedProvider,
+          text: critique.report,
+          turn_id: critiqueTurnId,
+        }),
+      ]);
+      if (projectId) {
+        db.saveMessage(projectId, "user", "/critique", false).catch(() => {});
+        db.saveMessage(projectId, "assistant", critique.report, false).catch(() => {});
+      }
+      return;
+    }
+
     // ──── Editorial verb dispatch (intercept BEFORE generic slash routing) ────
     // `/polish`, `/bolder`, `/calmer` and friends are HYVE editorial
     // verbs registered in src/runtime/verbs/registry.ts. They must
@@ -4484,6 +4519,17 @@ export function EditorScreen({
         category: "Commands",
       });
     }
+
+    // /critique — deterministic read-only check (Static P0 + craft net),
+    // handled locally in handleSend, never sent to a provider. Listed
+    // here so it's discoverable next to the editorial commands.
+    list.push({
+      id: "local-critique",
+      trigger: "/critique",
+      label: "Critique",
+      description: "Deterministic craft check — reports, never edits",
+      category: "Commands",
+    });
 
     for (const s of registrySkills) {
       // Capability gate: skills that require an output channel no DF
