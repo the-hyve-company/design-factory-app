@@ -715,6 +715,7 @@ async function walkForSkills(root, { maxDepth, source, cwd, out, capTotal }) {
   const NOISE_FILES = new Set([
     "readme.md",
     "license.md",
+    "notice.md",
     "changelog.md",
     "contributing.md",
     "code_of_conduct.md",

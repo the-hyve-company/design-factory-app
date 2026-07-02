@@ -1,14 +1,15 @@
 ---
-name: "frontend-guidelines-master"
+name: "frontend-guidelines"
 description: "Opinionated, terse principles for writing clean HTML, CSS, and JavaScript — semantics, accessibility, performance, low-specificity CSS, transform-only animation, and stateless/functional JS. Use when authoring or reviewing frontend code, untangling CSS specificity, or replacing imperative loops and bind/apply with native and functional patterns."
-trigger: "/frontend-guidelines-master"
+trigger: "/frontend-guidelines"
 ---
 
 # Frontend Guidelines
 
-> Adapted from Ben Delarre's frontend-guidelines (https://github.com/bendc/frontend-guidelines).
-> The principles below are paraphrased and re-illustrated with original examples; no text or code
-> from the source is reproduced verbatim.
+> Inspired by Benjamin De Cock's frontend-guidelines (https://github.com/bendc/frontend-guidelines),
+> which carries no explicit license. The principles below are re-stated in original wording and
+> re-illustrated with original examples; no text or code from the source is reproduced verbatim.
+> See NOTICE.md in this folder for provenance details.
 
 A compact rulebook for hand-written HTML, CSS, and JavaScript. Each rule states the intent, then
 shows a weaker form against a preferred form. Optimize for clarity and maintainability first.

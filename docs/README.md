@@ -10,6 +10,7 @@ GitHub Pages, use [index.md](index.md) as the docs entry point.
 | [Quickstart](quickstart.md)           | Clone, install, connect a provider, create the first project.                  |
 | [Providers](providers.md)             | Understand CLI detection, BYOK API keys, Ollama, readiness, and model support. |
 | [Troubleshooting](troubleshooting.md) | Provider auth, missing CLIs, daemon issues, Ollama, and common runtime errors. |
+| [Catalog](catalog.md)                 | Auto-generated index of bundled skills (with licenses), examples, and rules.   |
 
 ## Agent support
 

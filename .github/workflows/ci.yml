@@ -61,6 +61,9 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run i18n:audit
-      - run: npm run smoke:public-files
-      - run: npm run smoke:daemon
+      - name: i18n audit
+        run: npm run i18n:audit
+      - name: OSS/IP leak gate (licenses, NOTICE parity, secrets, copyleft)
+        run: npm run smoke:public-files
+      - name: Daemon smoke
+        run: npm run smoke:daemon

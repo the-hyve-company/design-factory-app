@@ -46,4 +46,14 @@ System prompt body that the provider receives when the user invokes
 The single registry powers all 10 DF providers. CLI providers
 (Claude Code, Codex, Gemini, Opencode, Kimi) AND artifact-driven
 providers (Anthropic API, OpenAI API, Gemini API, OpenRouter, Ollama)
-read from the same source.
+read from the same source. Skill bodies must therefore be agent-neutral
+— never address one model by name.
+
+## Licensing of bundled skills
+
+Every bundled skill folder carries its upstream LICENSE (preserved
+verbatim) and/or a `NOTICE.md` provenance record. The root
+[NOTICE](../NOTICE) § "Third-party bundled skills" is the index; CI
+(`npm run smoke:public-files`) fails when the index and this directory
+disagree. Rules for contributing a skill: [CONTRIBUTING.md](../CONTRIBUTING.md)
+§ "Contributing skills and design systems".

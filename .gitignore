@@ -58,12 +58,12 @@ design-systems/*/.preview-error.json
 # local until someone explicitly adds them.
 /skills/*
 !/skills/README.md
+!/skills/baseline-ui/
+!/skills/brandkit/
 !/skills/emil-design-eng/
 !/skills/frontend-design/
-!/skills/frontend-guidelines-master/
-!/skills/make-interfaces-feel-better-main/
-!/skills/taste-skill-main/
-!/skills/ui-skills-main/
+!/skills/frontend-guidelines/
+!/skills/make-interfaces-feel-better/
 # Any dir at root that isn't a source/config dir is presumed to be a project
 # artifact. If you add a real top-level dir, whitelist it explicitly.
 /*.html

@@ -5,6 +5,27 @@ All notable changes to Design Factory are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+
+- **Bundled design systems** — the 10 design systems that shipped with the
+  initial release were removed for IP safety (#101). `design-systems/` now
+  ships empty; create or import your own through the app. CI enforces that
+  it stays empty.
+
+### Changed
+
+- **Bundled skills — license and attribution parity.** The 6 curated
+  third-party skills remain bundled, now with a complete licensing frame:
+  every skill folder carries its upstream LICENSE and/or a provenance
+  NOTICE.md, the root NOTICE indexes all of them, folder slugs match their
+  triggers (ZIP-download suffixes dropped), and a CI gate keeps NOTICE and
+  disk in sync.
+- **`/brandkit` capability-gated.** The skill depends on an image-output
+  channel no DF provider offers; it stays installed but is not offered in
+  the slash menu until a provider supports image generation.
+
 ## [1.1.1] — 2026-06-01
 
 ### Fixed
@@ -58,6 +79,8 @@ surfaced in the picker.
 
 ### Ships with
 
-- 10 curated design systems and 6 starter skills.
+- 10 curated design systems and 6 starter skills. _(The bundled design
+  systems were later removed for IP safety — see Unreleased. The 6 skills
+  remain, curated with license/attribution recorded in NOTICE.)_
 - Docs: quickstart, providers, troubleshooting, agent contract.
 - Cross-platform launchers (`start` / `update` for macOS and Windows).

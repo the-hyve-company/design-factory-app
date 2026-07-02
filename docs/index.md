@@ -19,6 +19,7 @@ plain Markdown and work directly on GitHub or GitHub Pages.
 | [Design systems](design-systems.md) | Give the model project-specific brand and component direction before it writes files. |
 | [Project files](project-files.md)   | How generated work is stored as regular files under `projects/`.                      |
 | [Skills](skills.md)                 | Reusable `/` instruction blocks, provider-agnostic, shared across every provider.     |
+| [Catalog](catalog.md)               | Auto-generated index of everything forkable: skills, examples, templates, rules.      |
 
 ## Agent support
 

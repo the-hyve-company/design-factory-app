@@ -32,9 +32,10 @@ Imported systems are stored under:
 design-systems/{slug}/design.md
 ```
 
-The repository also includes public examples under `design-systems/`.
-They are examples of structure and tone, not requirements for every
-project.
+The repository ships `design-systems/` **empty** by decision (#101 —
+IP safety): brand design systems carry third-party trade dress, so none
+are bundled and CI enforces that none return. Everything under that
+folder is yours — created or imported locally through the app.
 
 ## How it affects generation
 

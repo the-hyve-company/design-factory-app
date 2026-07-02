@@ -12,14 +12,23 @@
 //     via the NewProject modal (or attached later via the project
 //     drawer)
 //
-// User model (canon 2026-05-18): skills are uploaded MANUALLY —
-// this taxonomy ships empty and stays empty until the user lands
-// the first batch. The runtime + UI should:
-//   1. Render the skills picker empty without erroring.
-//   2. Allow the user's upload pipeline to push entries here as
-//      `Object.freeze`-able items.
+// User model (canon 2026-05-18, amended 2026-07-02): bundled skills
+// live ON DISK, not in this array. DF ships a curated set of
+// third-party skills under `<repoRoot>/skills/{slug}/SKILL.md` — six
+// today, each with an upstream LICENSE and/or provenance NOTICE.md
+// recorded in the root NOTICE file (§ Third-party bundled skills).
+// The daemon's registry walker (GET /skills/registry) serves those
+// alongside anything the user installs or imports.
 //
-// When skills land, each entry follows this shape:
+// THIS taxonomy array is a separate, in-app channel and it stays
+// empty: bundled + user skills reach the UI through the registry, so
+// hardcoding entries here would duplicate the source of truth. The
+// runtime + UI must therefore:
+//   1. Render correctly when this array is empty (it is).
+//   2. Keep working when the user deletes every skill on disk — the
+//      registry returning zero rows is a valid state.
+//
+// If an entry ever lands here, it follows this shape:
 
 export interface BuiltinSkill {
   id: string;
@@ -38,6 +47,7 @@ export interface BuiltinSkill {
   modifiesHtml: boolean;
 }
 
-/** Builtin skills bundled with DF. Empty until user upload —
- *  the runtime is contract-correct with the empty list. */
+/** In-app builtin skills. Deliberately empty — DF's bundled skills ship
+ *  on disk under `skills/` and are served by the daemon registry (see
+ *  header comment). The runtime is contract-correct with the empty list. */
 export const DEFAULT_BUILTIN_SKILLS: ReadonlyArray<BuiltinSkill> = Object.freeze([]);

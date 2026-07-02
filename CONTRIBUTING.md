@@ -127,6 +127,44 @@ Both halves are wired through their own registries:
 > `apps/daemon/src/index.mjs`. The dispatcher handles routing
 > generically — inline per-provider handlers are not accepted.
 
+## Contributing skills and design systems
+
+Skills (`skills/{slug}/SKILL.md`) and design systems (`design.md` files)
+are the repo's forkable content. PRs adding or changing them follow rules
+that the CI gate (`npm run smoke:public-files`) enforces mechanically:
+
+**Skills**
+
+1. **Folder = trigger.** The folder name must match the `trigger:` slug in
+   the SKILL.md frontmatter (`skills/my-skill/` ↔ `trigger: "/my-skill"`).
+   No ZIP-download suffixes (`-main`, `-master`).
+2. **License is mandatory.** Every skill folder must carry:
+   - the upstream `LICENSE`, preserved verbatim, when the skill derives
+     from licensed third-party work; and/or
+   - a `NOTICE.md` provenance record when the text is original (state what
+     inspired it, what is and is not reproduced, and under which license
+     your text lands — the repo default is Apache-2.0).
+     Unlicensed third-party text cannot be copied — paraphrase ideas in
+     your own words with your own examples, and say so in `NOTICE.md`.
+3. **Index it in the root `NOTICE`** under "Third-party bundled skills".
+   CI fails when NOTICE and `skills/` disagree in either direction.
+4. **Agent-neutral wording.** The body is sent to all 10 providers — never
+   address one model by name ("Claude/GPT can..."). Write "you".
+5. **Declare unsupported channels.** If the skill depends on an output
+   channel DF providers don't have (e.g. image generation), declare it in
+   frontmatter (`requires: ["image-generation"]`) so the capability gate
+   can keep it out of the slash menu instead of shipping a broken promise.
+6. **No secrets, no paid content.** The body becomes prompt context;
+   the secret-scan and the license rules above both run in CI.
+
+**Design systems**
+
+`design-systems/` ships **empty** by decision (#101 — IP safety): brand
+design systems, even paraphrased, carry third-party trade dress. Do not PR
+bundled design systems; CI rejects a non-empty `design-systems/`. Share
+them as external repos/gists the app can import instead. Generic structure
+examples belong in `examples/` (fixtures) — not brand systems.
+
 ## Commits
 
 We follow [Conventional Commits][cc]:
