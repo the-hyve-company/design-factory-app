@@ -24,7 +24,7 @@
 // (prompt-composer-equivalence.test.ts) meaningful.
 
 import { getProvider } from "@/providers/registry";
-import { buildArtifactContractBlock } from "./output-contract";
+import { buildArtifactContractBlock, toRepoRelativeArtifactPath } from "./output-contract";
 import {
   buildCanonicalPlusSummary,
   type CanonicalPlusInput,
@@ -324,29 +324,19 @@ export const VISUAL_CRAFT_CONTRACT = [
  * via QA matrix 2026-05-18 (openrouter/gemini-api mid-edit
  * EDIT_NOT_APPLIED).
  *
- * NOTE (audit WS3 `artifact-identifier-parity`, tracked separately): the
- * verb path strips the project path down to the `projects/<slug>/` stem,
- * while the generate path (in `composeSystemBlocks`) only strips the
- * `~/` prefix. Both computations are preserved AS-IS — this refactor
- * unifies the ASSEMBLY, not the identifier scheme; changing identifiers
- * is a behavioral change owned by that separate audit item.
+ * Path scheme (audit WS3 `artifact-identifier-parity` — CLOSED): both
+ * the verb path (here) and the generate path (`composeSystemBlocks` /
+ * `prepare()` override) now compute the identifier via the single
+ * `toRepoRelativeArtifactPath` helper in output-contract.ts, so the 6
+ * artifact-channel providers target the same file the 4 tool-channel
+ * ones write. Parity locked by artifact-path-parity.test.ts.
  */
 export function artifactContractForCtx(ctx: ProjectContext, opts?: { isEdit?: boolean }): string {
   const providerId = ctx.providerId ?? "claude";
   const provider = getProvider(providerId);
   if (!provider) return "";
   if (provider.capabilities.fileWrite !== "artifact") return "";
-  // Compute repo-relative path the artifact-writer expects. Project
-  // paths arrive as absolute repo-rooted paths
-  // (`<repoRoot>/projects/<slug>/`) or `~`-prefixed; we strip down to
-  // the `projects/<slug>/` form the contract example shows and the
-  // parser keys off.
-  const stem = (ctx.projectPath ?? "")
-    .replace(/^~\/?/, "")
-    .replace(/^.*?\/(projects\/[^/]+\/?)$/, "$1");
-  const filePath = stem
-    ? `${stem.replace(/\/$/, "")}/${ctx.primaryFile}`
-    : `projects/default/${ctx.primaryFile}`;
+  const filePath = toRepoRelativeArtifactPath(ctx.projectPath, ctx.primaryFile);
   return buildArtifactContractBlock({
     fileWrite: "artifact",
     filePath,
@@ -460,11 +450,12 @@ export function composeSystemBlocks(ctx: ProjectContext, opts: SystemPromptOptio
       }
     }
     // 7. Artifact output contract — artifact-channel providers only.
-    //    Path computation preserved from the legacy prepare() (differs
-    //    from the verb path's — see artifactContractForCtx note).
+    //    Identifier comes from the shared toRepoRelativeArtifactPath
+    //    helper (audit WS3 `artifact-identifier-parity`) — same scheme
+    //    as the verb path's artifactContractForCtx.
     const provider = ctx.providerId ? getProvider(ctx.providerId) : undefined;
     const fileWrite = provider?.capabilities.fileWrite ?? "artifact";
-    const filePath = `${ctx.projectPath?.replace(/^~\/?/, "") ?? "projects/default"}/${ctx.primaryFile ?? "index.html"}`;
+    const filePath = toRepoRelativeArtifactPath(ctx.projectPath, ctx.primaryFile);
     const contract = buildArtifactContractBlock({
       fileWrite,
       filePath,

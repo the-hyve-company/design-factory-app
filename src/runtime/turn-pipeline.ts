@@ -33,7 +33,10 @@ import {
   type ProjectContext,
   type SystemPromptOptions,
 } from "@/runtime/prompt-composer";
-import { buildArtifactContractBlock } from "@/runtime/output-contract";
+import {
+  buildArtifactContractBlock,
+  toRepoRelativeArtifactPath,
+} from "@/runtime/output-contract";
 import {
   dispatchParseResult,
   type ProcessArtifactsOptions,
@@ -324,7 +327,8 @@ export function prepare(input: UserTurnInput, opts: PrepareOptions = {}): TurnCo
     // "emit the WHOLE file even for tiny changes" reminder; otherwise
     // OpenRouter/Gemini cheap models return prose explaining the diff
     // and trip the "completed without text or artifact" rejection.
-    const filePath = `${projectCtx.projectPath?.replace(/^~\/?/, "") ?? "projects/default"}/${projectCtx.primaryFile ?? "index.html"}`;
+    // Identifier from the shared helper (WS3 artifact-identifier-parity).
+    const filePath = toRepoRelativeArtifactPath(projectCtx.projectPath, projectCtx.primaryFile);
     const contractBlock = buildArtifactContractBlock({
       fileWrite: capabilities.fileWrite,
       filePath,
@@ -401,7 +405,7 @@ export function assembleTurnBlocks(
     // appended after a caller-owned prompt.
     const provider = getProvider(input.providerId);
     const capabilities = provider?.capabilities ?? { fileWrite: "artifact" as const };
-    const filePath = `${projectCtx.projectPath?.replace(/^~\/?/, "") ?? "projects/default"}/${projectCtx.primaryFile ?? "index.html"}`;
+    const filePath = toRepoRelativeArtifactPath(projectCtx.projectPath, projectCtx.primaryFile);
     const contractBlock = buildArtifactContractBlock({
       fileWrite: capabilities.fileWrite,
       filePath,
