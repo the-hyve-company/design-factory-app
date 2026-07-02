@@ -31,6 +31,8 @@ import {
   type DialKey,
   type DialDirection,
 } from "./canonical-plus-prompt";
+import { getLang } from "@/i18n/index";
+import type { Lang } from "@/i18n/index";
 import type { ProviderId } from "@/providers/types";
 
 type DialOverrides = Partial<Record<DialKey, Partial<DialDirection>>>;
@@ -202,6 +204,39 @@ export function workspaceContextPreamble(ctx: ProjectContext): string {
   ].join("\n");
 }
 
+// ─── UI locale override (audit WS2 `pa-ui-locale-override`) ──────────────
+//
+// "Match the user's language" (in AGENT_CONTRACT_LIMITS) relies on the
+// model INFERRING the locale from the chat — API providers with a strong
+// English default (OpenAI, OpenRouter cheap models) routinely get it
+// wrong on short prompts. This block makes the UI locale explicit while
+// keeping template/DS copy untouched. The block itself stays in English
+// (meta-instructions ABOUT the locale, not in it).
+
+const LOCALE_NAMES: Partial<Record<Lang, string>> = {
+  pt: "Brazilian Portuguese (pt-BR)",
+  en: "English (en)",
+  // "xx" is the debug pseudo-locale — no block (never instruct a model
+  // to write in a placeholder language).
+};
+
+export function buildLocalePromptBlock(lang: Lang): string {
+  const name = LOCALE_NAMES[lang];
+  if (!name) return "";
+  return [
+    "## UI locale",
+    "",
+    `The user's app UI is set to ${name}.`,
+    `- Chat replies: write them in ${name}, unless the user's own messages`,
+    "  are in a different language — then match the user.",
+    "- User-facing copy you author inside the file (headings, labels,",
+    `  microcopy): default to ${name} under the same rule.`,
+    "- Do NOT translate: copy the user supplied verbatim, design-system",
+    "  tokens and names, rule ids, code identifiers, class names, or any",
+    "  template/design-system text quoted elsewhere in this prompt.",
+  ].join("\n");
+}
+
 // ─── Visual craft contract (moved from prompt-invoker.ts) ────────────────
 // Applied to FRESH WRITES only (not refines).
 //
@@ -316,6 +351,8 @@ export interface SystemPromptOptions {
    *  summary (would bias the critique), the artifact contract (they must
    *  NOT emit an artifact), and the tweaks guard. Default true. */
   modifiesHtml?: boolean;
+  /** UI language override (tests / previews). Defaults to getLang(). */
+  lang?: Lang;
 }
 
 export interface PromptBlock {
@@ -330,6 +367,7 @@ export interface PromptBlock {
  * function, two consumers — the inspector can't lie about the send path.
  */
 export function composeSystemBlocks(ctx: ProjectContext, opts: SystemPromptOptions): PromptBlock[] {
+  const lang = opts.lang ?? getLang();
   const blocks: PromptBlock[] = [];
 
   // 1. Injection resistance — ALWAYS first (frames the untrusted data
@@ -348,6 +386,12 @@ export function composeSystemBlocks(ctx: ProjectContext, opts: SystemPromptOptio
     label: "Workspace preamble · output contract · design system",
     content: workspaceContextPreamble(ctx).trim(),
   });
+
+  // 3. UI locale override.
+  const locale = buildLocalePromptBlock(lang);
+  if (locale) {
+    blocks.push({ id: "locale", label: "UI locale override", content: locale });
+  }
 
   if (opts.kind === "generate") {
     // 4. Direction extras (editable core + canonical+ full block).

@@ -14,6 +14,7 @@ export {
   workspaceContextPreamble,
   VISUAL_CRAFT_CONTRACT,
   INJECTION_RESISTANCE,
+  buildLocalePromptBlock,
   buildSystemPrompt,
 } from "./prompt-composer";
 export type { ProjectContext } from "./prompt-composer";
