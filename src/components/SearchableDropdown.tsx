@@ -152,7 +152,7 @@ export interface SearchableDropdownProps<T = unknown> {
   /** Label for clear button. Default "Limpar". */
   clearLabel?: string;
   /** Ref to the popover element — host can use it for outside-click logic. */
-  popoverRef?: React.RefObject<HTMLDivElement>;
+  popoverRef?: React.RefObject<HTMLDivElement | null>;
   /** Ref to the trigger element. When provided, the popover renders via
    *  React Portal into document.body and uses computed fixed coordinates
    *  relative to this trigger — escapes ALL parent `overflow: hidden`
@@ -160,7 +160,7 @@ export interface SearchableDropdownProps<T = unknown> {
    *  transform animation, which used to clip the DS / Model rocker
    *  popovers). When omitted, behaves like the legacy inline absolute
    *  positioning. */
-  triggerRef?: React.RefObject<HTMLElement>;
+  triggerRef?: React.RefObject<HTMLElement | null>;
 }
 
 export function SearchableDropdown<T = unknown>({

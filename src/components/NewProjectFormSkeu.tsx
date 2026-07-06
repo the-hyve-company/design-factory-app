@@ -1314,7 +1314,7 @@ interface DsDropdownProps {
   onPick: (path: string) => void;
   onClear: () => void;
   onOpenModal: () => void;
-  menuRef: React.RefObject<HTMLDivElement>;
+  menuRef: React.RefObject<HTMLDivElement | null>;
   t: (key: string) => string;
 }
 
@@ -1471,7 +1471,7 @@ interface ModelRockerProps {
   open: boolean;
   onToggle: () => void;
   onPick: (id: string) => void;
-  menuRef: React.RefObject<HTMLDivElement>;
+  menuRef: React.RefObject<HTMLDivElement | null>;
   /** Anchor side the popover opens from. Default `bottom-start` matches
    *  the NewProject modal (trigger near the top of its column). Surfaces
    *  where the trigger sits at the BOTTOM of the viewport (chat input
@@ -1569,7 +1569,7 @@ interface ProviderRockerProps {
   open: boolean;
   onToggle: () => void;
   onPick: (id: ProviderId) => void;
-  menuRef: React.RefObject<HTMLDivElement>;
+  menuRef: React.RefObject<HTMLDivElement | null>;
   statusByProvider: Record<ProviderId, ProviderStatusReport> | null;
 }
 
