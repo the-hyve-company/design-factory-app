@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseArgs, toPanelInstance } from "./df.mjs";
+import { parseArgs, toPanelInstance } from "./df-lib.mjs";
 
 describe("df parseArgs", () => {
   it("defaults to start with no args", () => {

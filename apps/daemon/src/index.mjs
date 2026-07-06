@@ -2575,7 +2575,6 @@ const server = http.createServer(async (req, res) => {
       await rm(dest, { recursive: true, force: true }).catch(() => {});
       await mkdir(dest, { recursive: true });
 
-      let cloneUrl = repoUrl;
       let tokenForClone = pat;
       if (!tokenForClone) {
         try {
@@ -2588,10 +2587,48 @@ const server = http.createServer(async (req, res) => {
           tokenForClone = (await readFile(DF_TOKEN_PATH, "utf8")).trim();
         } catch {}
       }
+      const cloneEnv = { ...process.env };
+      let askpassDir = null;
       if (tokenForClone && /^https:\/\/github\.com/.test(repoUrl)) {
-        cloneUrl = repoUrl.replace(/^https:\/\//, `https://${tokenForClone}@`);
+        askpassDir = await mkdtemp(join(tmpdir(), "df-git-askpass-"));
+        const askpassPath = join(
+          askpassDir,
+          process.platform === "win32" ? "askpass.cmd" : "askpass.sh",
+        );
+        const askpassScript =
+          process.platform === "win32"
+            ? [
+                "@echo off",
+                'echo %~1 | findstr /I "Username" >NUL',
+                "if %ERRORLEVEL%==0 (",
+                "  echo x-access-token",
+                ") else (",
+                "  echo %DF_GIT_TOKEN%",
+                ")",
+                "",
+              ].join("\r\n")
+            : [
+                "#!/bin/sh",
+                'case "$1" in',
+                '  *Username*) printf "%s\\n" "x-access-token" ;;',
+                '  *) printf "%s\\n" "$DF_GIT_TOKEN" ;;',
+                "esac",
+                "",
+              ].join("\n");
+        await writeFile(askpassPath, askpassScript, "utf8");
+        if (process.platform !== "win32") await chmod(askpassPath, 0o700).catch(() => {});
+        cloneEnv.GIT_ASKPASS = askpassPath;
+        cloneEnv.GIT_TERMINAL_PROMPT = "0";
+        cloneEnv.DF_GIT_TOKEN = tokenForClone;
       }
-      await execFileP("git", ["clone", "--depth=1", "--quiet", cloneUrl, dest], { timeout: 60000 });
+      try {
+        await execFileP("git", ["clone", "--depth=1", "--quiet", repoUrl, dest], {
+          timeout: 60000,
+          env: cloneEnv,
+        });
+      } finally {
+        if (askpassDir) await rm(askpassDir, { recursive: true, force: true }).catch(() => {});
+      }
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ path: dest, slug, reused: false }));
     } catch (e) {
@@ -3505,7 +3542,16 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const repoRoot = getRepoRoot();
-      const filePath = join(repoRoot, "projects", slug, ".df", "chat", `${threadId}.jsonl`);
+      const projectsRoot = resolveProjectsRoot(repoRoot);
+      let target;
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
+        return;
+      }
+      const filePath = join(target, ".df", "chat", `${threadId}.jsonl`);
       let text = "";
       try {
         text = await readFile(filePath, "utf8");
@@ -3558,7 +3604,16 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const repoRoot = getRepoRoot();
-      const filePath = join(repoRoot, "projects", slug, ".df", "chat", `${threadId}.jsonl`);
+      const projectsRoot = resolveProjectsRoot(repoRoot);
+      let target;
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
+        return;
+      }
+      const filePath = join(target, ".df", "chat", `${threadId}.jsonl`);
       let text = "";
       try {
         text = await readFile(filePath, "utf8");
@@ -3940,7 +3995,16 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const repoRoot = getRepoRoot();
-      const filePath = join(repoRoot, "projects", slug, ".df", "chat", `${threadId}.snapshot.json`);
+      const projectsRoot = resolveProjectsRoot(repoRoot);
+      let target;
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
+        return;
+      }
+      const filePath = join(target, ".df", "chat", `${threadId}.snapshot.json`);
       try {
         const text = await readFile(filePath, "utf8");
         const parsed = JSON.parse(text);
@@ -3968,18 +4032,23 @@ const server = http.createServer(async (req, res) => {
     try {
       const u = new URL(req.url, "http://localhost");
       const raw = u.searchParams.get("slug") || "";
-      const slug = raw
-        .toLowerCase()
-        .replace(/[^a-z0-9._-]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 80);
+      const slug = normalizeProjectSlug(raw);
       if (!slug) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: "slug required" }));
         return;
       }
       const repoRoot = getRepoRoot();
-      const metaPath = join(repoRoot, "projects", slug, ".df", "meta.json");
+      const projectsRoot = resolveProjectsRoot(repoRoot);
+      let target;
+      try {
+        target = assertPathInScope(slug, projectsRoot);
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
+        return;
+      }
+      const metaPath = join(target, ".df", "meta.json");
       // Read + parse separately so we never call writeHead BEFORE a possible
       // throw. The original code wrote headers first and then called
       // JSON.parse — when the file was empty/malformed the throw landed in
@@ -4078,18 +4147,23 @@ const server = http.createServer(async (req, res) => {
         try {
           const u = new URL(req.url, "http://localhost");
           const raw = u.searchParams.get("slug") || "";
-          const slug = raw
-            .toLowerCase()
-            .replace(/[^a-z0-9._-]+/g, "-")
-            .replace(/^-+|-+$/g, "")
-            .slice(0, 80);
+          const slug = normalizeProjectSlug(raw);
           if (!slug) {
             res.writeHead(400);
             res.end(JSON.stringify({ error: "slug required" }));
             return;
           }
           const repoRoot = getRepoRoot();
-          const filePath = join(repoRoot, "projects", slug, ".df", file);
+          const projectsRoot = resolveProjectsRoot(repoRoot);
+          let target;
+          try {
+            target = assertPathInScope(slug, projectsRoot);
+          } catch (e) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
+            return;
+          }
+          const filePath = join(target, ".df", file);
           let fileContent;
           try {
             fileContent = await readFile(filePath, "utf8");
@@ -6703,12 +6777,23 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ error: `invalid JSON: ${e}` }));
       return;
     }
-    const slug = typeof body?.slug === "string" ? body.slug : "";
+    const rawSlug = typeof body?.slug === "string" ? body.slug : "";
+    const slug = normalizeProjectSlug(rawSlug);
     const html = typeof body?.html === "string" ? body.html : "";
     const config = body?.config;
     if (!slug || !config || !html) {
       res.writeHead(400, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "slug + html + config required" }));
+      return;
+    }
+    const repoRoot = getRepoRoot();
+    const projectsRoot = resolveProjectsRoot(repoRoot);
+    let projectRoot;
+    try {
+      projectRoot = assertPathInScope(slug, projectsRoot);
+    } catch (e) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e instanceof PathScopeError ? e.message : String(e) }));
       return;
     }
     res.writeHead(200, {
@@ -6742,9 +6827,6 @@ const server = http.createServer(async (req, res) => {
       res.end();
     };
 
-    // Resolve project root same way other endpoints do.
-    const repoRoot = getRepoRoot();
-
     void (async () => {
       const startedAt = Date.now();
 
@@ -6776,10 +6858,8 @@ const server = http.createServer(async (req, res) => {
 
       // ── Setup tmp + project export dirs ──────────────────────────
       const ts = Date.now();
-      const projectRoot = join(repoRoot, "projects", slug);
       const exportDir = join(projectRoot, ".df", "exports");
-      const tmpDir = join("/tmp", `df-render-${ts}`);
-      await mkdir(tmpDir, { recursive: true });
+      const tmpDir = await mkdtemp(join(tmpdir(), "df-render-"));
       await mkdir(exportDir, { recursive: true });
       const htmlPath = join(tmpDir, "index.html");
       // Inject viewport-fit CSS so legacy HTML (sized for 1080×1080 etc.)

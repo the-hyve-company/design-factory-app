@@ -674,10 +674,10 @@ export async function pipeAnthropicStream(upstream, res) {
     const { value, done } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
-    let sep;
-    while ((sep = buffer.indexOf("\n\n")) >= 0) {
-      const frame = buffer.slice(0, sep);
-      buffer = buffer.slice(sep + 2);
+    let sepMatch;
+    while ((sepMatch = buffer.match(/\r?\n\r?\n/))) {
+      const frame = buffer.slice(0, sepMatch.index);
+      buffer = buffer.slice(sepMatch.index + sepMatch[0].length);
       if (!frame.trim()) continue;
       let event = "message";
       let dataStr = "";

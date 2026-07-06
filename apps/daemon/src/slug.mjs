@@ -26,11 +26,13 @@
  */
 export function normalizeProjectSlug(raw) {
   if (typeof raw !== "string") return "";
-  return raw
+  const slug = raw
     .toLowerCase()
     .replace(/[^a-z0-9._-]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+  if (slug === "." || slug === "..") return "";
+  return slug;
 }
 
 /**

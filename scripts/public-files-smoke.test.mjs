@@ -14,7 +14,7 @@ import {
   runAllChecks,
   SECRET_PATTERNS,
   COPYLEFT_RE,
-} from "./public-files-smoke.mjs";
+} from "./public-files-smoke-lib.mjs";
 
 let fx;
 

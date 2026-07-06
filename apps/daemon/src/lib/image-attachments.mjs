@@ -12,10 +12,12 @@
 // and returns the cleaned text + the decoded images. Each adapter then
 // formats the images into its own vision schema.
 
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { extname } from "node:path";
 
 const MARKER_RE = /\[attached image:\s*([^\]]+)\]/g;
+export const DEFAULT_MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+export const DEFAULT_MAX_IMAGES = 4;
 
 const EXT_MIME = {
   ".png": "image/png",
@@ -45,6 +47,14 @@ export function extractImageAttachments(prompt, opts = {}) {
   // arbitrary file to a third-party provider. Defaults to allow-all only when
   // omitted (e.g. unit tests); production callers always pass it.
   const isInScope = typeof opts.isInScope === "function" ? opts.isInScope : () => true;
+  const maxImageBytes =
+    Number.isFinite(opts.maxImageBytes) && opts.maxImageBytes >= 0
+      ? Math.floor(opts.maxImageBytes)
+      : DEFAULT_MAX_IMAGE_BYTES;
+  const maxImages =
+    Number.isFinite(opts.maxImages) && opts.maxImages >= 0
+      ? Math.floor(opts.maxImages)
+      : DEFAULT_MAX_IMAGES;
   if (typeof prompt !== "string" || !prompt.includes("[attached image:")) {
     return { text: prompt, images: [] };
   }
@@ -59,6 +69,9 @@ export function extractImageAttachments(prompt, opts = {}) {
       // Out of workspace scope → never read (anti-exfiltration).
       if (!isInScope(path)) return whole;
       if (!existsSync(path)) return whole; // keep the marker; file gone
+      if (images.length >= maxImages) return whole;
+      const st = statSync(path);
+      if (!st.isFile() || st.size > maxImageBytes) return whole;
       const buf = readFileSync(path);
       images.push({ mime, base64: buf.toString("base64"), path });
       return ""; // drop the marker; the image rides as a vision block now

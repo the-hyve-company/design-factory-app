@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, realpathSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, isAbsolute, join, relative } from "node:path";
 import { assertPathInScope, PathScopeError } from "./path-scope.mjs";
 
 // Per-file cap for extraFiles payloads (decoded bytes). Mirrors the
@@ -73,17 +73,31 @@ function sha16(value) {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
 }
 
+function toPortablePath(value) {
+  return String(value || "")
+    .split(/[\\/]+/)
+    .filter(Boolean)
+    .join("/");
+}
+
+function repoRelativePath(absPath, cwd) {
+  if (!cwd) return toPortablePath(absPath);
+  const rel = relative(cwd, absPath);
+  if (!rel || rel.startsWith("..") || isAbsolute(rel)) return toPortablePath(absPath);
+  return toPortablePath(rel);
+}
+
 function buildSkill({ raw, absPath, source, cwd }) {
   const parsed = parseSkillFile(raw);
-  const basename = absPath.split("/").pop().replace(/\.md$/i, "");
+  const fileBase = basename(absPath).replace(/\.md$/i, "");
   const name =
-    parsed.name || basename.replace(/[-_]/g, " ").replace(/^\w/, (char) => char.toUpperCase());
-  const rel = cwd && absPath.startsWith(cwd + "/") ? absPath.slice(cwd.length + 1) : absPath;
+    parsed.name || fileBase.replace(/[-_]/g, " ").replace(/^\w/, (char) => char.toUpperCase());
+  const rel = repoRelativePath(absPath, cwd);
   let trigger = parsed.trigger;
-  if (!trigger) trigger = "/" + slugifyName(parsed.name || basename);
+  if (!trigger) trigger = "/" + slugifyName(parsed.name || fileBase);
   const requires = parsed.requires.length ? parsed.requires : detectRequires(parsed.body);
   return {
-    id: `${source}:${rel || basename}`,
+    id: `${source}:${rel || fileBase}`,
     name,
     trigger,
     description: parsed.description,

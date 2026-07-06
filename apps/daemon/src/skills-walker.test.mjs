@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile, readdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, isAbsolute, join, relative } from "node:path";
 
 let repoRoot;
 
@@ -39,13 +39,28 @@ function parseSkillFile(raw) {
   return { name: pick("name"), trigger: pick("trigger"), body };
 }
 
+function toPortablePath(value) {
+  return String(value || "")
+    .split(/[\\/]+/)
+    .filter(Boolean)
+    .join("/");
+}
+
+function repoRelativePath(absPath, cwd) {
+  if (!cwd) return toPortablePath(absPath);
+  const rel = relative(cwd, absPath);
+  if (!rel || rel.startsWith("..") || isAbsolute(rel)) return toPortablePath(absPath);
+  return toPortablePath(rel);
+}
+
 function buildSkill({ raw, absPath, source, cwd }) {
   const parsed = parseSkillFile(raw);
   if (!parsed) return null;
-  const rel = cwd && absPath.startsWith(cwd + "/") ? absPath.slice(cwd.length + 1) : absPath;
+  const fileBase = basename(absPath).replace(/\.md$/i, "");
+  const rel = repoRelativePath(absPath, cwd);
   const trigger =
-    parsed.trigger || "/" + (parsed.name || "skill").toLowerCase().replace(/\s+/g, "-");
-  const id = source + ":" + (rel || absPath);
+    parsed.trigger || "/" + (parsed.name || fileBase).toLowerCase().replace(/\s+/g, "-");
+  const id = source + ":" + (rel || fileBase);
   return { id, name: parsed.name, trigger, source, path: absPath };
 }
 

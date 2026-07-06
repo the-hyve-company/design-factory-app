@@ -21,6 +21,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join, basename } from "node:path";
 import { readFileSync } from "node:fs";
+import { parseArgs, toPanelInstance } from "./df-lib.mjs";
 import { killTree, pidAlive } from "./df-core.mjs";
 import {
   listInstances,
@@ -48,28 +49,9 @@ function version() {
 
 // ── arg parsing ──────────────────────────────────────────────────────────────
 // First non-flag token is the command (default "start"). Flags are collected.
-export function parseArgs(argv) {
-  const flags = new Set();
-  let command = null;
-  for (const a of argv) {
-    if (a.startsWith("-")) flags.add(a);
-    else if (command === null) command = a;
-  }
-  return { command: command || "start", flags };
-}
-
 const paint = (state) => process.stdout.write(renderPanel(state, { color: COLOR }) + "\n");
 
 // Decorate registry rows for a panel (folder basename, url, relative age).
-export function toPanelInstance(e, now) {
-  return {
-    folder: "…/" + basename(e.folder),
-    url: `http://localhost:${e.vitePort}`,
-    healthy: e.healthy !== false,
-    since: relTime(e.startedAt, now),
-  };
-}
-
 // ── read a single key in raw mode (TTY only) ─────────────────────────────────
 function readKey(valid) {
   return new Promise((resolve) => {

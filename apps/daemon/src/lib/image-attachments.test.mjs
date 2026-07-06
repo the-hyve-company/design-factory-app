@@ -11,15 +11,18 @@ import { extractImageAttachments } from "./image-attachments.mjs";
 
 let dir;
 let inScopePng;
+let secondPng;
 let inScopeSvg;
 let inScopeTxt;
 
 beforeAll(() => {
   dir = mkdtempSync(join(tmpdir(), "df-img-"));
   inScopePng = join(dir, "logo.png");
+  secondPng = join(dir, "second.png");
   inScopeSvg = join(dir, "icon.svg");
   inScopeTxt = join(dir, "notes.txt");
   writeFileSync(inScopePng, Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]));
+  writeFileSync(secondPng, Buffer.from([0x89, 0x50, 0x4e, 0x47, 4, 5, 6]));
   writeFileSync(inScopeSvg, "<svg></svg>");
   writeFileSync(inScopeTxt, "hello");
 });
@@ -81,6 +84,28 @@ describe("extractImageAttachments — scope gate", () => {
       isInScope: () => false,
     });
     expect(images).toHaveLength(0);
+  });
+
+  it("keeps the marker when an in-scope image exceeds the byte cap", () => {
+    const { text, images } = extractImageAttachments(`[attached image: ${inScopePng}]`, {
+      isInScope: () => true,
+      maxImageBytes: 3,
+    });
+    expect(images).toHaveLength(0);
+    expect(text).toContain(`[attached image: ${inScopePng}]`);
+  });
+
+  it("keeps markers after the image-count cap is reached", () => {
+    const { text, images } = extractImageAttachments(
+      `[attached image: ${inScopePng}] [attached image: ${secondPng}]`,
+      {
+        isInScope: () => true,
+        maxImages: 1,
+      },
+    );
+    expect(images).toHaveLength(1);
+    expect(images[0].path).toBe(inScopePng);
+    expect(text).toContain(`[attached image: ${secondPng}]`);
   });
 
   it("returns the prompt untouched when there are no markers", () => {

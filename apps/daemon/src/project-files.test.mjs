@@ -136,7 +136,12 @@ describe("validateRegistryShape", () => {
 describe("registryPathForSlug / toRegistryKey / fromRegistryKey", () => {
   it("registryPathForSlug returns .df/project-files.json under slug", () => {
     const p = registryPathForSlug(slug, projectsRoot);
-    expect(p.endsWith(`${slug}/${REGISTRY_DIRNAME}/${REGISTRY_BASENAME}`)).toBe(true);
+    expect(
+      p
+        .split(/[\\/]+/)
+        .join("/")
+        .endsWith(`${slug}/${REGISTRY_DIRNAME}/${REGISTRY_BASENAME}`),
+    ).toBe(true);
   });
 
   it("toRegistryKey converts an absolute path to projects/slug/... form", () => {

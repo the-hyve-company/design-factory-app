@@ -49,6 +49,14 @@ describe("normalizeProjectSlug — UUID-vs-slug regression", () => {
     expect(normalizeProjectSlug("")).toBe("");
     expect(normalizeProjectSlug("---")).toBe("");
     expect(normalizeProjectSlug("!!!")).toBe("");
+    expect(normalizeProjectSlug(".")).toBe("");
+    expect(normalizeProjectSlug("..")).toBe("");
+  });
+
+  it("does not produce parent-directory slugs", () => {
+    expect(normalizeProjectSlug("../outside")).toBe("..-outside");
+    expect(normalizeProjectSlug("../../outside")).toBe("..-..-outside");
+    expect(normalizeProjectSlug("foo/../bar")).toBe("foo-..-bar");
   });
 
   it("returns empty string for non-string input", () => {

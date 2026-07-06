@@ -68,33 +68,63 @@ async function waitHealthy(port, deadlineMs = 8000) {
 const PROBES = [
   {
     label: "GET /healthz",
+    path: "/healthz",
     accepts: (status) => status === 200,
   },
   {
     label: "GET /fs/workspace-info",
+    path: "/fs/workspace-info",
     accepts: (status) => status === 200,
   },
   {
     label: "GET /fs/list-projects",
+    path: "/fs/list-projects",
     accepts: (status) => status === 200,
   },
   {
     label: "GET /skills/registry",
+    path: "/skills/registry",
     accepts: (status) => status === 200,
   },
   {
     label: "GET /providers/status",
+    path: "/providers/status",
     accepts: (status) => status === 200 || status === 404,
     // /providers/status is documented but not implemented on every
     // commit; a 404 is acceptable — the daemon is still up.
   },
+  {
+    label: "GET /fs/project-meta rejects slug=..",
+    path: "/fs/project-meta?slug=..",
+    accepts: (status) => status === 400,
+  },
+  {
+    label: "GET /fs/chat-read rejects slug=..",
+    path: "/fs/chat-read?slug=..&threadId=smoke",
+    accepts: (status) => status === 400,
+  },
+  {
+    label: "POST /hyperframes/render rejects slug=..",
+    method: "POST",
+    path: "/hyperframes/render",
+    body: {
+      slug: "..",
+      html: "<!doctype html><html><body>smoke</body></html>",
+      config: { ratio: "1:1", durationSec: 1 },
+    },
+    accepts: (status) => status === 400,
+  },
 ];
 
-async function runProbe(port, { label, accepts }) {
-  const path = label.replace(/^GET\s+/, "");
+async function runProbe(port, { label, method = "GET", path, body, accepts }) {
   const t0 = Date.now();
   try {
-    const r = await fetch(`http://127.0.0.1:${port}${path}`);
+    const init = { method };
+    if (body !== undefined) {
+      init.headers = { "Content-Type": "application/json" };
+      init.body = JSON.stringify(body);
+    }
+    const r = await fetch(`http://127.0.0.1:${port}${path}`, init);
     const ms = Date.now() - t0;
     const ok = accepts(r.status);
     return { label, ok, status: r.status, ms };
