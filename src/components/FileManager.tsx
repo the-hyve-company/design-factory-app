@@ -734,7 +734,7 @@ function InlineCreateCard({
   onChange: (s: string) => void;
   onCommit: () => void;
   onCancel: () => void;
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
 }) {
   return (
     <div className="home-pcard-tile entity-card">
